@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,9 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Get_File_Name.
-//Removed case sensitivity from Find_Entry.
 #ifndef SCRIPTS_INCLUDE__ENGINE_IO_H
 #define SCRIPTS_INCLUDE__ENGINE_IO_H
 #include "engine_vector.h"
@@ -101,13 +98,13 @@ public:
 	{
 		if (entry)
 		{
-			/*int crc = CRC_String(entry,0);
+			/*int crc = CRC_String(entry,0); //DA
 			if (EntryIndex.Is_Present(crc))
 			{
 				return EntryIndex[crc];
 			}*/
-			for (INIEntry *i = EntryList.First();i && i->Is_Valid();i = i->Next()) {
-				if (!_stricmp(entry,i->Entry)) {
+			for (INIEntry *i = EntryList.First(); i && i->Is_Valid(); i = i->Next()) { //DA
+				if (!_stricmp(entry, i->Entry)) {
 					return i;
 				}
 			}
@@ -181,7 +178,7 @@ public:
 	{
 		return *SectionIndex;
 	}
-	const char *Get_File_Name() {
+	const char *Get_File_Name() { //DA
 		return Filename;
 	}
 };

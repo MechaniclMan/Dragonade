@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Building Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -362,6 +362,13 @@ void DABuildingObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,un
 	Create_2D_WAV_Sound_Team(DestructionSounds[Team][0][BuildingType],0);
 	Create_2D_WAV_Sound_Team(DestructionSounds[Team][1][BuildingType],1);
 	Stop_Timer(1);
+}
+
+void DABuildingObserverClass::Custom(GameObject *obj, int Message, int Param, GameObject *Sender) {
+	if (Message == CUSTOM_EVENT_BUILDING_REVIVED) {
+		DestructionMessage = true;
+		DALogManager::Write_Log("_BUILDING", "%s revived.", DATranslationManager::Translate_With_Team_Name(obj));
+	}
 }
 
 void DABuildingManager::Init() {

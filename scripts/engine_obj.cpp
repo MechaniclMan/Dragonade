@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -179,7 +179,7 @@ bool NetworkObjectClass::Get_Object_Dirty_Bit(int clientId, DIRTY_BIT level)
 
 void DefenseObjectClass::Set_Health_Max(float health)
 {
-	HealthMax = WWMath::Clamp(health, 0, MAX_MAX_HEALTH);
+	HealthMax = WWMath::Clamp(health, 0, MAX_MAX_HEALTH_NEW);
 	if (HealthMax < Health)
 	{
 		Health = HealthMax;
@@ -220,7 +220,7 @@ float DefenseObjectClass::Get_Shield_Strength_Max() const
 
 void DefenseObjectClass::Set_Shield_Strength_Max(float str)
 {
-	ShieldStrengthMax = WWMath::Clamp(str, 0, MAX_MAX_SHIELD_STRENGTH);
+	ShieldStrengthMax = WWMath::Clamp(str, 0, MAX_MAX_SHIELD_STRENGTH_NEW);
 	if (ShieldStrengthMax < ShieldStrength)
 	{
 		ShieldStrength = ShieldStrengthMax;

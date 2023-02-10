@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,9 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Increment_Kills, Increment_Deaths, Decrement_Kills, and Decrement_Deaths.
 #include "general.h"
+
 #include "scripts.h"
 #include "SoldierGameObj.h"
 #include "cPlayer.h"
@@ -24,6 +23,10 @@
 #include "engine_tdb.h"
 #include "SysTimeClass.h"
 #include "cTeam.h"
+#include "engine_tt.h"
+#include "SCAnnouncement.h"
+#include "CombatManager.h" //DA
+
 RENEGADE_FUNCTION
 int SCRIPTS_API Get_Player_Count()
 AT2(0x00417040,0x00417040);
@@ -34,7 +37,7 @@ RENEGADE_FUNCTION
 void cPlayer::Set_Rung(int amount)
 AT2(0x00410790,0x00410790);
 RENEGADE_FUNCTION
-Vector3 cPlayer::Get_Color()
+Vector3 cPlayer::Get_Color() const
 AT2(0x0040E530,0x0040E530);
 RENEGADE_FUNCTION
 void cPlayer::Set_Wol_Rank(int rank)
@@ -78,7 +81,7 @@ const char SCRIPTS_API *Get_Player_Name(GameObject *obj)
 	{
 		return newstr("None");
 	}
-	return WideCharToChar(((cPlayer *)o->Get_Player_Data())->PlayerName);
+	return WideCharToChar(((cPlayer *)o->Get_Player_Data())->Get_Name());
 }
 
 const char SCRIPTS_API *Get_Player_Name_By_ID(int PlayerID)
@@ -86,9 +89,9 @@ const char SCRIPTS_API *Get_Player_Name_By_ID(int PlayerID)
 	cPlayer *x = Find_Player(PlayerID);
 	if (!x)
 	{
-		return 0;
+		return newstr("None");
 	}
-	return WideCharToChar(x->PlayerName);
+	return WideCharToChar(x->Get_Name());
 }
 
 GameObject SCRIPTS_API *Get_GameObj
@@ -98,7 +101,7 @@ GameObject SCRIPTS_API *Get_GameObj
 	if (!player)
 		return 0;
 
-	return player->Owner;
+	return player->Get_GameObj();
 }
 
 void SCRIPTS_API Change_Team_By_ID(int PlayerID,int Team)
@@ -165,7 +168,7 @@ long SCRIPTS_API Get_Player_ID(GameObject *obj)
 	{
 		return -1;
 	}
-	return ((cPlayer *)o->Get_Player_Data())->PlayerId;
+	return ((cPlayer *)o->Get_Player_Data())->Get_Id();
 }
 
 
@@ -177,7 +180,7 @@ int SCRIPTS_API Get_Team(int PlayerID)
 	{
 		return 0;
 	}
-	return x->PlayerType;
+	return x->Get_Player_Type();
 }
 
 int SCRIPTS_API Get_Rank(int PlayerID)
@@ -187,7 +190,7 @@ int SCRIPTS_API Get_Rank(int PlayerID)
 	{
 		return 0;
 	}
-	return x->Rung;
+	return x->Get_Rung();
 }
 
 int SCRIPTS_API Get_Kills(int PlayerID)
@@ -197,7 +200,7 @@ int SCRIPTS_API Get_Kills(int PlayerID)
 	{
 		return 0;
 	}
-	return x->Kills;
+	return x->Get_Kills();
 }
 
 int SCRIPTS_API Get_Deaths(int PlayerID)
@@ -207,7 +210,7 @@ int SCRIPTS_API Get_Deaths(int PlayerID)
 	{
 		return 0;
 	}
-	return x->Deaths;
+	return x->Get_Deaths();
 }
 
 float SCRIPTS_API Get_Score(int PlayerID)
@@ -217,7 +220,7 @@ float SCRIPTS_API Get_Score(int PlayerID)
 	{
 		return 0;
 	}
-	return x->Score;
+	return x->Get_Score();
 }
 
 float SCRIPTS_API Get_Money(int PlayerID)
@@ -227,18 +230,17 @@ float SCRIPTS_API Get_Money(int PlayerID)
 	{
 		return 0;
 	}
-	return x->Money;
+	return x->Get_Money();
 }
 
 float SCRIPTS_API Get_Kill_To_Death_Ratio(int PlayerID)
 {
-	int kills = Get_Kills(PlayerID);
-	int deaths = Get_Deaths(PlayerID);
-	if (deaths <= 0)
+	cPlayer *x = Find_Player(PlayerID);
+	if (!x)
 	{
-		return -1.0;
+		return 0;
 	}
-	return (float)kills/(float)deaths;
+	return x->Get_Kill_To_Death_Ratio();
 }
 
 void SCRIPTS_API Get_Player_Color(int PlayerID, unsigned int *red, unsigned int *green, unsigned int *blue)
@@ -266,11 +268,11 @@ bool SCRIPTS_API Purchase_Item(GameObject *obj,int cost)
 	{
 		return false;
 	}
-	if (!o->Get_Player_Data())
+	if (!((cPlayer *)o->Get_Player_Data()))
 	{
 		return false;
 	}
-	return ((PlayerDataClass *)o->Get_Player_Data())->Purchase_Item(cost);
+	return ((cPlayer *)o->Get_Player_Data())->Purchase_Item(cost);
 }
 
 void SCRIPTS_API Set_Money(int PlayerID,float amount)
@@ -342,7 +344,7 @@ GameObject SCRIPTS_API *Find_First_Player(int Team)
 	while (x)
 	{
 		GameObject *o = x->Data();
-		if (o && (o))
+		if (o)
 		{
 			if (Commands->Is_A_Star(o))
 			{
@@ -489,7 +491,7 @@ int SCRIPTS_API Get_Player_Type(GameObject *obj)
 	{
 		return 0;
 	}
-	return ((cPlayer *)o->Get_Player_Data())->PlayerType;
+	return ((cPlayer *)o->Get_Player_Data())->Get_Player_Type();
 }
 
 const wchar_t SCRIPTS_API *Get_Wide_Player_Name(GameObject *obj)
@@ -507,7 +509,7 @@ const wchar_t SCRIPTS_API *Get_Wide_Player_Name(GameObject *obj)
 	{
 		return L"None";
 	}
-	return ((cPlayer *)o->Get_Player_Data())->PlayerName.Peek_Buffer();
+	return ((cPlayer *)o->Get_Player_Data())->Get_Name().Peek_Buffer();
 }
 
 void cPlayer::Set_Name(const WideStringClass& name)
@@ -521,6 +523,11 @@ void cPlayer::Set_Id(uint32 id)
 	this->PlayerId = id;
 	this->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
 }
+
+/*void cPlayer::Set_Wol_ClanID(uint32 wolClanId) //DA
+{
+	this->WolClanId = wolClanId;
+}*/
 
 void cPlayer::Set_Is_Waiting_For_Intermission(bool waitingForIntermission)
 {
@@ -613,7 +620,7 @@ SCRIPTS_API int Get_Player_Team(int PlayerID)
 		{
                 return 0;
         }
-        return x->PlayerType;
+		return x->Get_Player_Type();
 }
 
 SCRIPTS_API int Get_Player_ID_By_Name(const char *Name)
@@ -663,71 +670,81 @@ SCRIPTS_API void Set_Team_Score(int ID,float score)
 	}
 }
 
-void cPlayer::Set_Kills(int kills) {
+void cPlayer::Set_Kills(int kills)
+{
 	Kills = kills;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 }
 
-void cPlayer::Set_Deaths(int deaths) {
+void cPlayer::Set_Deaths(int deaths)
+{
 	Deaths = deaths;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 }
 
-void cTeam::Set_Kills(int kills) {
-	Kills = kills;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
+void cTeam::Set_Kills(int _kills) //DA
+{
+	kills = _kills;
+	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
 }
 
-void cTeam::Increment_Kills() {
-	Kills++;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
-}
-
-void cTeam::Decrement_Kills() {
-	Kills--;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
-}
-
-int cTeam::Get_Kills() {
-	return Kills;
-}
-
-void cTeam::Set_Deaths(int deaths) {
-	Deaths = deaths;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
-}
-
-void cTeam::Increment_Deaths() {
-	Deaths++;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
-}
-
-void cTeam::Decrement_Deaths() {
-	Deaths--;
-	Set_Object_Dirty_Bit(BIT_RARE,true);
-}
-
-int cTeam::Get_Deaths() {
-	return Deaths;
-}
-
-void cTeam::Set_Score(float score) {
-	Score = score;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
-void cTeam::Increment_Score(float score) {
-	Score += score;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
-float cTeam::Get_Score() {
-	return Score;
-}
-
-float cTeam::Get_Kill_To_Death_Ratio() {
-	if (!Deaths) {
-		return 0.0f;
+void cTeam::Increment_Kills() //DA
+{
+	if (CombatManager::Is_Gameplay_Permitted())
+	{
+		kills++;
+		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
 	}
-	return (float)Kills/(float)Deaths;
+}
+
+void cTeam::Decrement_Kills() { //DA
+	kills--;
+	Set_Object_Dirty_Bit(BIT_RARE, true);
+}
+
+void cTeam::Set_Score(float _score)
+{
+	score = _score;
+	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_OCCASIONAL, true);
+}
+
+void cTeam::Set_Deaths(int _deaths)
+{
+	deaths = _deaths;
+	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+}
+
+void cTeam::Increment_Deaths() //DA
+{
+	if (CombatManager::Is_Gameplay_Permitted())
+	{
+		deaths++;
+		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+	}
+}
+
+void cTeam::Decrement_Deaths() { //DA
+	deaths--;
+	Set_Object_Dirty_Bit(BIT_RARE, true);
+}
+
+void cTeam::Increment_Score(float amount) //DA
+{
+	if (CombatManager::Is_Gameplay_Permitted())
+	{
+		score += amount;
+		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_OCCASIONAL, true);
+	}
+}
+
+float cTeam::Get_Kill_To_Death_Ratio() //DA
+{
+	return deaths == 0 ? -1.f : kills / deaths;
+}
+
+SCRIPTS_API void ChangeTeamDeaths(int teamId,int amount)
+{
+	cTeam *teamdata = Find_Team(teamId);
+	if (teamdata)
+		teamdata->Set_Deaths(teamdata->Get_Deaths()+amount);
 }

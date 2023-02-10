@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -34,7 +34,7 @@ public:
 	virtual	bool	Is_Always_Dirty( void )					{ return false; }
 	virtual	void	Get_Description( StringClass & description );
 	void	Expire( void );
-	void	Set_State( int state );
+	void	Set_State(int state); //DA
 protected:
 	enum
 	{
@@ -43,6 +43,7 @@ protected:
 		STATE_GRANTING,
 		STATE_EXPIRING,
 	};
+	//void						Set_State( int state ); //DA
 	void						Update_State( void );
 	AudibleSoundClass *	IdleSoundObj;
 	int						State;

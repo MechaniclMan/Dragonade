@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,6 +27,7 @@ public:
 	virtual void                        DumpPhys (FileClass &file);
 #endif
 	DECLARE_EDITABLE( SimpleGameObjDef, PhysicalGameObjDef );
+//protected: //DA
 	bool IsEditorObject; // 00A5
 	bool IsHiddenObject; // 00A6
 	int PlayerTerminalType; // 00A8

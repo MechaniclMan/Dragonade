@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -170,7 +170,7 @@ public:
 	void Set_Motd(const wchar_t *s) {Motd = s;}
 	void Set_Map_Name(const StringClass &map) {MapName = map;}
 	void Set_Mod_Name(const StringClass &mod);
-	SCRIPTS_API void Set_Time_Limit_Minutes(int time);
+	SCRIPTS_API void Set_Time_Limit_Minutes(int time); //DA
 	void Set_Radar_Mode(RadarModeEnum mode) {RadarMode = mode;}
 	unsigned int Get_Config_File_Mod_Time();
 	void Load_From_Server_Config(const char *);
@@ -220,7 +220,7 @@ public:
 	void Set_Is_Map_Cycle_Over(bool b) {MapCycleOver = b;}
 	void Set_QuickMatch_Server(bool b) {IsQuickMatch = b;}
 	const WideStringClass &Get_Owner() const {return Owner;}
-	WideStringClass &Get_Game_Title() {return GameTitle;}
+	WideStringClass &Get_Game_Title() {return GameTitle;} //DA
 	int Get_Version_Number() const {return ExeKey;}
 	bool Do_Exe_Versions_Match() {return ExeVersionsMatch;}
 	bool Do_String_Versions_Match() {return StringVersionsMatch;}
@@ -305,6 +305,7 @@ public:
 	unsigned long Get_Frame_Count() const {return FrameCount;}
 	void Increment_Hosted_Game_Number() {HostedGameNumber++;}
 	cGameData& operator=(const cGameData& rhs);
+//protected: //DA
 	static REF_DECL(bool, IsManualExit);
 	static REF_DECL(int, HostedGameNumber);
 	static REF_DECL(WideStringClass, WinText);
@@ -366,13 +367,15 @@ public:
 }; // 026C  0274
 
 class cGameDataCnc : public cGameData {
-public:
+//protected: //DA
+public: //DA
 	bool BaseDestructionEndsGame;
 	bool BeaconPlacementEndsGame;
 	int StartingCredits;
 	BaseControllerClass GDI;
 	BaseControllerClass Nod;
 	bool BasesInitalized;
+public:
 	cGameDataCnc();
 	~cGameDataCnc();
 	void On_Game_Begin();
@@ -410,13 +413,15 @@ public:
 };
 
 class cGameDataSkirmish : public cGameData {
-public:
+//protected: //DA
+public: //DA
 	bool BaseDestructionEndsGame;
 	bool BeaconPlacementEndsGame;
 	unsigned int StartingCredits;
 	BaseControllerClass GDI;
 	BaseControllerClass Nod;
 	bool BasesInitalized;
+public:
 	cGameDataSkirmish();
 	~cGameDataSkirmish();
 	void On_Game_Begin();

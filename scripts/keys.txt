@@ -1,4 +1,4 @@
-keys.cfg is the config file used for the custom key hooks in tt.dll 2.1.
+keys.cfg is the config file used for the custom key hooks in bandtest.dll 2.1.
 keys.cfg must go into the data folder.
 Each line in the file looks like this
 Jetpack=Y_Key

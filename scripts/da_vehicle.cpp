@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -43,7 +43,7 @@ void DAVehicleObserverClass::Init() {
 void DAVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	if (!VehicleOwner && Get_Vehicle()->Get_Lock_Owner()) {
 		VehicleOwner = ((SoldierGameObj*)Get_Vehicle()->Get_Lock_Owner())->Get_Player();
-		Team = VehicleOwner->Get_Team();
+		Team = VehicleOwner->Get_Player_Type();
 	}
 	if (Team == -2) {
 		Team = Get_Vehicle()->Get_Player_Type();
@@ -145,7 +145,7 @@ void DAVehicleManager::Init() {
 }
 
 bool DAVehicleManager::Check_Limit_For_Player(cPlayer *Player) {
-	return !((unsigned int)Get_Ground_Vehicle_Count(Player->Get_Team()) >= Get_Vehicle_Limit());
+	return !((unsigned int)Get_Ground_Vehicle_Count(Player->Get_Player_Type()) >= Get_Vehicle_Limit());
 }
 
 DAVehicleObserverClass *DAVehicleManager::Get_Vehicle_Data(GameObject *obj) {
@@ -496,7 +496,7 @@ bool DAVehicleManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 
 void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
 	DAVehicleObserverClass *VehicleData = Get_Vehicle_Data(Vehicle);
-	if (VehicleData->Get_Team() != -2 && VehicleData->Get_Team() != Player->Get_Team()) {
+	if (VehicleData->Get_Team() != -2 && VehicleData->Get_Team() != Player->Get_Player_Type()) {
 		StringClass String;
 		if (VehicleData->Get_Vehicle_Owner() && VehicleData->Get_Vehicle_Owner()->Is_Active()) {
 			String.Format("%ls has stolen %ls %s!",Player->Get_Name(),Make_Possessive(VehicleData->Get_Vehicle_Owner()->Get_Name()),DATranslationManager::Translate(Vehicle));
@@ -505,9 +505,9 @@ void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Play
 			String.Format("%ls has stolen %s!",Player->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Vehicle)));
 		}
 		if (EnableTheftMessage) {
-			DA::Color_Message_With_Team_Color(Player->Get_Team(),"%s",String);
+			DA::Color_Message_With_Team_Color(Player->Get_Player_Type(),"%s",String);
 		}
-		DALogManager::Write_Log("_VEHICLE","%d %s",Player->Get_Team(),String);
+		DALogManager::Write_Log("_VEHICLE","%d %s",Player->Get_Player_Type(),String);
 		if (VehicleData->Get_Time_Since_Last_Theft() >= 10) { //Reward players for stealing vehicles. 10 second timer to prevent exploits.
 			Player->Increment_Score(Vehicle->Get_Defense_Object()->Get_Death_Points());
 		}
@@ -516,7 +516,7 @@ void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Play
 	if (Seat == 0) {
 		VehicleData->Set_Vehicle_Owner(Player);
 	}
-	VehicleData->Set_Team(Player->Get_Team());
+	VehicleData->Set_Team(Player->Get_Player_Type());
 }
 
 bool DAVehicleManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
@@ -544,7 +544,7 @@ ScriptRegistrant<DAAirDroppedVehicleScript> DAAirDroppedVehicleScriptRegistrant(
 
 class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get overloaded by the Vehicle Queue if it is enabled.
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		int Team = Player->Get_Team();
+		int Team = Player->Get_Player_Type();
 		if (Team != 0 && Team != 1) {
 			return true;
 		}

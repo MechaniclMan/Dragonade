@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Get_Can_Object_Die.
 #ifndef TT_INCLUDE__DEFENSEOBJECTCLASS_H
 #define TT_INCLUDE__DEFENSEOBJECTCLASS_H
 #include "DataSafe.h"
@@ -41,13 +39,15 @@ public:
 	ArmorType	Get_Skin( void ) const 	{ return Skin;	}
 	enum {MAX_MAX_HEALTH					= 2000};//500};
 	enum {MAX_MAX_SHIELD_STRENGTH		= 2000};//500};
-	void				SCRIPTS_API Set_Health(float health);
-	void				SCRIPTS_API Add_Health(float add_health);
+	enum {MAX_MAX_HEALTH_NEW					= 10000};//500};
+	enum {MAX_MAX_SHIELD_STRENGTH_NEW		= 10000};//500};
+	void				SCRIPTS_API Set_Health(float health); //DA
+	void				SCRIPTS_API Add_Health(float add_health); //DA
 	float				SCRIPTS_API Get_Health(void) const ;
 	void				SCRIPTS_API Set_Health_Max(float health);
 	float				SCRIPTS_API Get_Health_Max(void) const ;
-	void				SCRIPTS_API Set_Shield_Strength(float str);
-	void				SCRIPTS_API Add_Shield_Strength(float str);
+	void				SCRIPTS_API Set_Shield_Strength(float str); //DA
+	void				SCRIPTS_API Add_Shield_Strength(float str); //DA
 	float				SCRIPTS_API Get_Shield_Strength(void) const ;
 	void				SCRIPTS_API Set_Shield_Strength_Max(float str);
 	float				SCRIPTS_API Get_Shield_Strength_Max(void) const ;
@@ -69,7 +69,7 @@ public:
 	void				SCRIPTS_API Mark_Owner_Dirty( void );
 	void Set_Damage_Points(float points) {DamagePoints = points;}
 	void Set_Death_Points(float points) {DeathPoints = points;}
-	bool Get_Can_Object_Die() { return CanObjectDie; }
+	bool Get_Can_Object_Die() { return CanObjectDie; } //DA
 private:
 	safe_float		Health;
 	safe_float		HealthMax;

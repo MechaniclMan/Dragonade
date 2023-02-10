@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -132,6 +132,8 @@ SCRIPTS_API uno Update_Network_Object;
 SCRIPTS_API unop Update_Network_Object_Player;
 SCRIPTS_API sct Send_Client_Text;
 SCRIPTS_API sca Send_Client_Announcement;
+SCRIPTS_API spkm Send_Player_Kill_Message;
+SCRIPTS_API spr Send_Purchase_Response;
 SCRIPTS_API dod Do_Objectives_Dlg;
 SCRIPTS_API sl Set_Player_Limit;
 SCRIPTS_API gl Get_Player_Limit;
@@ -204,6 +206,16 @@ SCRIPTS_API sovfp Set_Object_Visibility_For_Player;
 SCRIPTS_API sov Set_Object_Visibility;
 SCRIPTS_API lscg Lock_Soldier_Collision_Group;
 SCRIPTS_API ulscg Unlock_Soldier_Collision_Group;
+SCRIPTS_API iea Is_Engine_Enabled;
+SCRIPTS_API ss Stop_Timer;
+SCRIPTS_API ss2 Stop_Timer2;
+SCRIPTS_API htm Has_Timer;
+SCRIPTS_API cwsdp Create_2D_Wave_Sound_Dialog_Player;
+SCRIPTS_API fpup Force_Position_Update_Player;
+SCRIPTS_API sbgmo Set_Background_Music_Player_Offset;
+SCRIPTS_API setcam Set_Camera_Player;
+SCRIPTS_API settran Set_Definition_TranslationID_Player;
+SCRIPTS_API setnur Set_Net_Update_Rate_Player;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {
@@ -370,6 +382,23 @@ SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team)
 			if ((Get_Object_Type(o) == team) || (team == 2))
 			{
 				Create_2D_WAV_Sound_Player(o,soundname);
+			}
+		}
+		x = x->Next();
+	}
+}
+
+SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team)
+{
+	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
+	while (x)
+	{
+		GameObject *o = x->Data();
+		if (o)
+		{
+			if ((Get_Object_Type(o) == team) || (team == 2))
+			{
+				Create_2D_Wave_Sound_Dialog_Player(o,soundname);
 			}
 		}
 		x = x->Next();
@@ -1050,6 +1079,11 @@ AT2(0x006F2BD0,0x006F2190);
 RENEGADE_FUNCTION
 void BuildingGameObj::Collect_Building_Components()
 AT2(0x006843E0,0x00683C80);
+
+RENEGADE_FUNCTION
+void BuildingGameObj::Find_Closest_Poly(const Vector3 &pos, float *distance2)
+AT2(0x00685630,0x00684ED0);
+
 RENEGADE_FUNCTION
 void BaseControllerClass::Enable_Radar(bool Enable)
 AT3(0x006EFD00,0x006EF2C0,0x00558ED0);

@@ -44,28 +44,28 @@ inline WideStringClass WideStringFormat(const wchar_t *Format,...) {
 }
 
 inline char *A_Or_An(const char *String) {
-	if (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u') {
+	if (String && (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u')) {
 		return "An";
 	}
 	return "A";
 }
 
 inline wchar_t *A_Or_An(const wchar_t *String) {
-	if (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u') {
+	if (String && (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u')) {
 		return L"An";
 	}
 	return L"A";
 }
 
 inline char *a_or_an(const char *String) {
-	if (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u') {
+	if (String && (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u')) {
 		return "an";
 	}
 	return "a";
 }
 
 inline wchar_t *a_or_an(const wchar_t *String) {
-	if (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u') {
+	if (String && (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u')) {
 		return L"an";
 	}
 	return L"a";
@@ -88,14 +88,14 @@ inline WideStringClass a_or_an_Prepend(const wchar_t *String) {
 }
 
 inline StringClass Make_Possessive(const StringClass &String) {
-	if (String[String.Get_Length()] == 'S' || String[String.Get_Length()] == 's') {
+	if (!String.Is_Empty() && (String[String.Get_Length()] == 'S' || String[String.Get_Length()] == 's')) {
 		return String + "\'";
 	}
 	return String + "\'s'";
 }
 
 inline WideStringClass Make_Possessive(const WideStringClass &String) {
-	if (String[String.Get_Length()] == 'S' || String[String.Get_Length()] == 's') {
+	if (!String.Is_Empty() && (String[String.Get_Length()] == 'S' || String[String.Get_Length()] == 's')) {
 		return String + L"\'";
 	}
 	return String + L"\'s";

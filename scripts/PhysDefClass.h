@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -86,6 +86,10 @@ inline const char* GetCollisionGroupName(Collision_Group_Type group)
 	case AMPHIBIOUS_UNIT_FLOOR_COLLISION_GROUP:	return "Amphibious Unit Floor";
 	case UNDERGROUND_TRANSITION_COLLISION_GROUP:return "Underground Transition";
     case DEFAULT_AND_SOLDIER_ONLY_COLLISION_GROUP: return "Default and Soldier only";
+	case PLAYER_BUILDING_COLLISION_GROUP:		return "Player Building";
+	case PLAYER_BUILDING_GHOST_COLLISION_GROUP: return "Player Building Ghost";
+	case TRAIN_COLLISION_GROUP:					return "Train";
+	case TRAIN_TRACK_COLLISION_GROUP:			return "Train Track";
 	default: return NULL; // NULL == do not add to friendly name list
 	};
 };

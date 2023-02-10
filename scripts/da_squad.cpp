@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Squads Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -219,7 +219,7 @@ DASquadClass::DASquadClass(cPlayer *Player) {
 	DASquadMemberClass *NewMember = new DASquadMemberClass(this);
 	Player->Get_DA_Player()->Add_Observer(NewMember);
 	Members.Add(NewMember);
-	Team = Player->Get_Team();
+	Team = Player->Get_Player_Type();
 }
 
 void DASquadClass::Add(cPlayer *Player) {
@@ -436,11 +436,11 @@ void DASquadManagerClass::Team_Change_Event(cPlayer *Player) {
 			if (WaitList[i].Player == Player) {
 				DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
 				if (Squad) {
-					if (Squad->Get_Team() == Player->Get_Team() && Squad->Is_Leader(WaitList[i].Leader) && !Squad->Is_Full()) {
+					if (Squad->Get_Team() == Player->Get_Player_Type() && Squad->Is_Leader(WaitList[i].Leader) && !Squad->Is_Full()) {
 						Squad->Add(Player);
 					}
 				}
-				else if (WaitList[i].Leader->Get_Team() == Player->Get_Team() && Can_Create_Squads()) {
+				else if (WaitList[i].Leader->Get_Player_Type() == Player->Get_Player_Type() && Can_Create_Squads()) {
 					DASquadClass *NewSquad = Create_Squad(WaitList[i].Leader);
 					NewSquad->Add(Player);
 				}
@@ -450,11 +450,11 @@ void DASquadManagerClass::Team_Change_Event(cPlayer *Player) {
 			else if (WaitList[i].Leader == Player) {
 				DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
 				if (Squad) {
-					if (Squad->Get_Team() == WaitList[i].Player->Get_Team() && Squad->Is_Leader(Player) && !Squad->Is_Full()) {
+					if (Squad->Get_Team() == WaitList[i].Player->Get_Player_Type() && Squad->Is_Leader(Player) && !Squad->Is_Full()) {
 						Squad->Add(WaitList[i].Player);
 					}
 				}
-				else if (WaitList[i].Leader->Get_Team() == Player->Get_Team() && Can_Create_Squads()) {
+				else if (WaitList[i].Leader->Get_Player_Type() == Player->Get_Player_Type() && Can_Create_Squads()) {
 					DASquadClass *NewSquad = Create_Squad(Player);
 					NewSquad->Add(WaitList[i].Player);
 				}
@@ -616,7 +616,7 @@ void DASquadManagerClass::Think() {
 }
 
 bool DASquadManagerClass::Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID) {
-	if (Type == TEXT_MESSAGE_PRIVATE && Player->Get_ID() == ReceiverID) {
+	if (Type == TEXT_MESSAGE_PRIVATE && Player->Get_Id() == ReceiverID) {
 		DASquadClass *Squad = Find_Squad(Player);
 		if (Squad) {
 			Squad->Squad_Chat(Player,"%ls",Message);
@@ -710,7 +710,7 @@ bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &
 			else if (Is_Join_Pending(Player,Squad->Get_Leader()->Get_Owner())) {
 				DA::Private_Color_Message(Player,SQUADCOLOR,"You have already requested to join %ls squad.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			}
-			else if (!RemixSquads && Squad->Get_Team() != Player->Get_Team()) {
+			else if (!RemixSquads && Squad->Get_Team() != Player->Get_Player_Type()) {
 				DA::Private_Color_Message(Player,SQUADCOLOR,"You cannot join squads on the other team.");
 			}
 			else {
@@ -756,7 +756,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 					else if (Find_Squad(MatchPlayer)) {
 						DA::Private_Color_Message(Player,SQUADCOLOR,"%ls is already in a squad.",MatchPlayer->Get_Name());
 					}
-					else if (!RemixSquads && Squad->Get_Team() != MatchPlayer->Get_Team()) {
+					else if (!RemixSquads && Squad->Get_Team() != MatchPlayer->Get_Player_Type()) {
 						DA::Private_Color_Message(Player,SQUADCOLOR,"You cannot invite players on the other team.");
 					}
 					else {
@@ -779,7 +779,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 				else if (Find_Squad(MatchPlayer)) {
 					DA::Private_Color_Message(Player,SQUADCOLOR,"%ls is already in a squad.",MatchPlayer->Get_Name());
 				}
-				else if (!RemixSquads && Player->Get_Team() != MatchPlayer->Get_Team()) {
+				else if (!RemixSquads && Player->Get_Player_Type() != MatchPlayer->Get_Player_Type()) {
 					DA::Private_Color_Message(Player,SQUADCOLOR,"You cannot invite players on the other team.");
 				}
 				else {
@@ -879,7 +879,7 @@ void DASquadManagerClass::Join_Accepted(int JoinIndex) {
 			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			Squad->Leader_Message("Your squad is full.");
 		}
-		else if (Squad->Get_Team() != Player->Get_Team()) {
+		else if (Squad->Get_Team() != Player->Get_Player_Type()) {
 			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is on the other team. You have been added to the wait list and will be teamed with them next game.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			Squad->Leader_Message("%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
 			WaitList.Add(Joins[JoinIndex]);
@@ -901,7 +901,7 @@ void DASquadManagerClass::Invite_Accepted(int InviteIndex) {
 			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			Squad->Leader_Message("Your squad is full.");
 		}
-		else if (Squad->Get_Team() != Player->Get_Team()) {
+		else if (Squad->Get_Team() != Player->Get_Player_Type()) {
 			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is on the other team. You have been added to the wait list and will be teamed with them next game.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			Squad->Leader_Message("%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
 			WaitList.Add(Invites[InviteIndex]);
@@ -910,7 +910,7 @@ void DASquadManagerClass::Invite_Accepted(int InviteIndex) {
 			Squad->Add(Player);
 		}
 	}
-	else if (Invites[InviteIndex].Leader->Get_Team() != Player->Get_Team()) {
+	else if (Invites[InviteIndex].Leader->Get_Player_Type() != Player->Get_Player_Type()) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"%ls is on the other team. You have been added to the wait list and will be teamed with them next game.",Invites[InviteIndex].Leader->Get_Name());
 		DA::Private_Color_Message(Invites[InviteIndex].Leader,SQUADCOLOR,"%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
 		WaitList.Add(Invites[InviteIndex]);
@@ -1033,7 +1033,7 @@ DASquadClass *DASquadManagerClass::Find_Squad(cPlayer *Player) {
 }
 
 int DASquadManagerClass::Get_Max_Squad_Size() {
-	int Size = The_Game()->Get_Current_Players()/3;
+	int Size = (The_Game()->Get_Current_Players()/6)+1;
 	if (Size < MaxSquadSize) {
 		return Size;
 	}

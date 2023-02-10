@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -73,6 +73,7 @@ protected:
 	Collision_Group_Type	original_group;		// needed to undo underground state
 	ArmorType				original_skin;		// ^
 	ArmorType				original_armor;		// ^
+	const char *            original_weapon;    // ^
 	bool					underground;		// "am I currently underground?"
 	bool					could_fire;			// "could I fire before I went underground?"
 	bool					dig_pending;		// "is there a dig animation pending completion?"
@@ -200,6 +201,9 @@ protected:
 			};
 		};
 
+		original_weapon = Get_Current_Weapon(owner);
+		Commands->Select_Weapon(owner,0);
+
 		// nobody gets in or out...
 		Commands->Enable_Vehicle_Transitions(owner, false);
         Commands->Create_Explosion(Get_Parameter("DigExplosion"), Commands->Get_Position(owner), owner);
@@ -310,6 +314,8 @@ protected:
         // restore the original collision group
         movable_phys->Set_Immovable(false);
         movable_phys->Set_Collision_Group(original_group);
+
+		Commands->Select_Weapon(obj,original_weapon);
 
         // weapon firing is now allowed
         {

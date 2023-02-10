@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Crate Modifiers
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -25,7 +25,7 @@
 
 class DAWinningCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		if (Get_Building_Count(Player->Get_Team(),false) > Get_Building_Count(Player->Get_Team()?0:1,false)) { //Apply if player's team has more living buildings.
+		if (Get_Building_Count(Player->Get_Player_Type(),false) > Get_Building_Count(Player->Get_Player_Type()?0:1,false)) { //Apply if player's team has more living buildings.
 			Apply_Modifier(Odds);
 		}
 	}
@@ -37,7 +37,7 @@ Register_Crate_Modifier(DAWinningCrateModifierClass,"Winning");
 
 class DALosingCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		if (Get_Building_Count(Player->Get_Team(),false) < Get_Building_Count(Player->Get_Team()?0:1,false)) { //Apply if player's team has less living buildings.
+		if (Get_Building_Count(Player->Get_Player_Type(),false) < Get_Building_Count(Player->Get_Player_Type()?0:1,false)) { //Apply if player's team has less living buildings.
 			Apply_Modifier(Odds);
 		}
 	}
@@ -193,7 +193,7 @@ Register_Crate_Modifier(DACreditsLesserCrateModifierClass,"CreditsLesser");
 
 class DABaseDefenseDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Base_Defense(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Base_Defense(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if base defense is dead.
 			Apply_Modifier(Odds);
 		}
@@ -206,7 +206,7 @@ Register_Crate_Modifier(DABaseDefenseDestroyedCrateModifierClass,"BaseDefenseDes
 
 class DAPowerPlantDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Power_Plant(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Power_Plant(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if power plant is dead.
 			Apply_Modifier(Odds);
 		}
@@ -219,7 +219,7 @@ Register_Crate_Modifier(DAPowerPlantDestroyedCrateModifierClass,"PowerPlantDestr
 
 class DARefineryDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Refinery(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Refinery(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if refinery is dead.
 			Apply_Modifier(Odds);
 		}
@@ -232,7 +232,7 @@ Register_Crate_Modifier(DARefineryDestroyedCrateModifierClass,"RefineryDestroyed
 
 class DASoldierFactoryDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Soldier_Factory(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Soldier_Factory(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if soldier factory is dead.
 			Apply_Modifier(Odds);
 		}
@@ -245,7 +245,7 @@ Register_Crate_Modifier(DASoldierFactoryDestroyedCrateModifierClass,"SoldierFact
 
 class DAVehicleFactoryDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Vehicle_Factory(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Vehicle_Factory(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if vehicle factory is dead.
 			Apply_Modifier(Odds);
 		}
@@ -258,7 +258,7 @@ Register_Crate_Modifier(DAVehicleFactoryDestroyedCrateModifierClass,"VehicleFact
 
 class DAAirFactoryDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Helipad(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Helipad(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if air factory is dead.
 			Apply_Modifier(Odds);
 		}
@@ -271,7 +271,7 @@ Register_Crate_Modifier(DAAirFactoryDestroyedCrateModifierClass,"AirFactoryDestr
 
 class DANavalFactoryDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Naval_Factory(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Naval_Factory(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if vehicle factory is dead.
 			Apply_Modifier(Odds);
 		}
@@ -284,7 +284,7 @@ Register_Crate_Modifier(DANavalFactoryDestroyedCrateModifierClass,"NavalFactoryD
 
 class DARepairBayDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Repair_Bay(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Repair_Bay(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if repair bay is dead.
 			Apply_Modifier(Odds);
 		}
@@ -297,7 +297,7 @@ Register_Crate_Modifier(DARepairBayDestroyedCrateModifierClass,"RepairBayDestroy
 
 class DACommCenterDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
-		BuildingGameObj *Building = (BuildingGameObj*)Find_Com_Center(Player->Get_Team());
+		BuildingGameObj *Building = (BuildingGameObj*)Find_Com_Center(Player->Get_Player_Type());
 		if (Building && Building->Is_Destroyed()) { //Apply if repair bay is dead.
 			Apply_Modifier(Odds);
 		}
@@ -312,7 +312,7 @@ class DAFactoriesDestroyedCrateModifierClass : public DACrateModifierClass {
 	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
 		for (SLNode<BuildingGameObj> *x = GameObjManager::BuildingGameObjList.Head();x;x = x->Next()) {
 			BuildingGameObj *Building = x->Data();
-			if (Building->Get_Player_Type() == Player->Get_Team() && !Building->Is_Destroyed()) { //On their team and alive.
+			if (Building->Get_Player_Type() == Player->Get_Player_Type() && !Building->Is_Destroyed()) { //On their team and alive.
 				if (Building->As_SoldierFactoryGameObj() || Building->As_VehicleFactoryGameObj() || Building->As_NavalFactoryGameObj() || Building->As_AirFactoryGameObj()) {
 					return;
 				}

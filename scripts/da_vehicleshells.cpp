@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Shells Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -106,7 +106,7 @@ void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Da
 			if (DAVehicleOwnershipGameFeature) {
 				cPlayer *HighestRepairer = DADamageLog::Get_Highest_Repairer_Team(Get_Owner(),2);
 				if (HighestRepairer) {
-					if (VOGFOwner && VOGFOwner->Is_Active() && HighestRepairer->Get_Team() == VOGFOwner->Get_Team() && !DAVehicleOwnershipGameFeature->Get_Vehicle_Data(VOGFOwner) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,VOGFOwner)) {
+					if (VOGFOwner && VOGFOwner->Is_Active() && HighestRepairer->Get_Player_Type() == VOGFOwner->Get_Player_Type() && !DAVehicleOwnershipGameFeature->Get_Vehicle_Data(VOGFOwner) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,VOGFOwner)) {
 						DA::Page_Player(VOGFOwner,"Your previously bound vehicle has been revived and rebound to you.");
 					}
 					else if (!DAVehicleOwnershipGameFeature->Get_Vehicle_Data(HighestRepairer) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,HighestRepairer)) {

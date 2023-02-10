@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Legacy SSGM Interface
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -79,21 +79,17 @@ public:
 class DASSGMPluginManager : public DAEventClass {
 public:
 	static void Init();
-	static void AddConsoleOutputHook_Hook(ConsoleOutputHook Hook);
-	static void AddHostHook_Hook(HostHook Hook);
 
 	static DynamicVectorClass<Plugin*> Events[EVENT_COUNT];
 	
 private:
 	virtual bool Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID);
 	virtual bool Radio_Event(cPlayer *Player,int PlayerType,int AnnouncementID,int IconID,AnnouncementEnum AnnouncementType);
-	virtual bool Host_Chat_Event(int ID,TextMessageEnum Type,const char *Message);
 	virtual void Player_Join_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Level_Loaded_Event();
 	virtual void Settings_Loaded_Event();
 	virtual void Game_Over_Event();
-	virtual void Console_Output_Event(const char *Output);
 	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
 	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);

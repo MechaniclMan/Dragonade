@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -96,6 +96,12 @@ void JFW_Vehicle_Regen::Custom(GameObject *obj,int type,int param,GameObject *se
 void JFW_Disable_Transition::Created(GameObject *obj)
 {
 	Commands->Enable_Vehicle_Transitions(obj,false);
+	Destroy_Script();
+}
+
+void JFW_Enable_Transition::Created(GameObject *obj)
+{
+	Commands->Enable_Vehicle_Transitions(obj, true);
 	Destroy_Script();
 }
 
@@ -694,6 +700,8 @@ ScriptRegistrant<JFW_PCT_Pokable> JFW_PCT_Pokable_Registrant("JFW_PCT_Pokable","
 ScriptRegistrant<JFW_PCT_Pokable> M00_PCT_Pokable_Registrant("M00_PCT_Pokable_DAK","");
 ScriptRegistrant<JFW_Vehicle_Regen> JFW_Vechicle_Regen_Registrant("JFW_Vechicle_Regen","");
 ScriptRegistrant<JFW_Disable_Transition> JFW_Disable_Transition_Registrant("JFW_Disable_Transition","");
+ScriptRegistrant<JFW_Enable_Transition> JFW_Enable_Transition_Registrant("JFW_Enable_Transition", "");
+ScriptRegistrant<JFW_Disable_Transition> M00_Disable_Transition_Registrant("M00_Disable_Transition", "");
 ScriptRegistrant<JFW_Permanent_No_Falling_Damage> JFW_Permanent_No_Falling_Damage_Registrant("JFW_Permanent_No_Falling_Damage","");
 ScriptRegistrant<JFW_Death_Powerup> JFW_Death_Powerup_Registrant("JFW_Death_Powerup","");
 ScriptRegistrant<JFW_GrantPowerup_Created> JFW_GrantPowerup_Created_Registrant("JFW_GrantPowerup_Created","WeaponDef:string");

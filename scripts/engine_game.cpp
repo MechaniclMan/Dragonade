@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -480,23 +480,10 @@ GameObject SCRIPTS_API *Find_Building_By_Preset(int Team,const char *Preset_Name
 void SCRIPTS_API Restore_Building(GameObject* obj) 
 {
 	if (!obj) return;
-	
-	BuildingGameObj* building = obj->As_BuildingGameObj();
-	if (!building || !building->Is_Destroyed())
-		return;
-
-	building->Set_Is_Destroyed(false);
-
-	BaseControllerClass* base = BaseControllerClass::Find_Base(Get_Object_Type(building));
-	if (base) 
+	BuildingGameObj *Building = obj->As_BuildingGameObj();
+	if (Building)
 	{
-		if (building->As_SoldierFactoryGameObj())
-			base->Set_Can_Generate_Soldiers(true);
-		
-		if (building->As_VehicleFactoryGameObj())
-			base->Set_Can_Generate_Vehicles(true);
-		
-		base->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+		Building->On_Revived();
 	}
 }
 
@@ -656,7 +643,7 @@ BuildingAggregateClass *BuildingGameObj::Find_MCT()
 	{
 		if (it->Is_MCT())
 		{
-			return it.Get_Obj();
+			return it.Peek_Obj();
 		}
 	}
 	return 0;

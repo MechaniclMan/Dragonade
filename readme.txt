@@ -1,4 +1,4 @@
-Dragonade 1.8.1
+Dragonade 1.9
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -16,7 +16,7 @@ dblaney1, misc. code and fixes.
 Installation:
 
 1. Download and install the latest server version of TT from http://www.tiberiantechnologies.org/downloads. 
-   Note that DA was designed to work with TT 4.2. It probably won't work with other versions.
+   Note that DA was designed to work with TT 4.3. It probably won't work with other versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
@@ -25,6 +25,27 @@ Installation:
 
 
 Update History:
+
+Version 1.9:
+  Additions:
+   - Updated to TT 4.3.
+   - Updated to Visual Studio 2015.
+   - Added DA log message for building revival.
+   - Added HUD message console commands and functions that display a message in the middle of the HUD.
+   - Crates and loot now display a HUD message when picked up.
+   - New game feature "Chat Sounds" which allows you to setup sounds to play for certain chat messages.
+   - New game feature "Purchasable Weapons" which allows players to purchase weapons with chat commands.
+
+  Changes:
+   - Changed maximum squad size from (current players/3) to ((current_players/6)+1).
+
+  Bug Fixes:
+   - Fixed rare crash when deleting a DAGameObjObserverClass.
+   - Fixed blank game title when enabling GameSpy midgame.
+   - Mutants can once again heal themselves with splash damage.
+   - Fixed invisible vehicle death explosions for 4.3 clients.
+   - Fixed some bugs caused by C4/beacons with no owner.
+
 
 
 Version 1.8.1:

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,7 +17,6 @@
 #include "VehicleGameObjDef.h"
 #include "ScriptableGameObj.h"
 #include "GameData.h"
-#include "PhysicalGameObj.h"
 
 /******************************
 Initialise static pointer lists to null

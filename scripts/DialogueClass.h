@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -31,6 +31,7 @@ public:
 	int Get_Conversation_ID() const {return Conversation_ID;}
 	float Get_Weight() const {return Weight;}
 	void Set_Conversation_ID(int id) {Conversation_ID = id;}
+	void Set_Weight(float weight) {Weight = weight;}
 };
 class DialogueClass
 {
@@ -47,6 +48,9 @@ public:
 	void Load_Variables(ChunkLoadClass& cload);
 	void Free_Options();
 	int Get_Conversation();
+	DynamicVectorClass<DialogueOptionClass*> &Get_Option_List() {return DialogueOptions;}
+	float Get_Silence_Weight() {return SilenceWeight;}
+	void Set_Silence_Weight(float weight) {SilenceWeight = weight;}
 }; // size: 32
 enum DialogueTypes
 {

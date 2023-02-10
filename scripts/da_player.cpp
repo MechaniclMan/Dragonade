@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -447,30 +447,6 @@ bool DAPlayerClass::Is_Stock_Client() {
 	return (Get_Version() < 4.0f);
 }
 
-void DAPlayerClass::Increment_Flood_Counter() {
-	FloodProtection.Add(GetTickCount());
-}
-
-void DAPlayerClass::Decrement_Flood_Counter() {
-	FloodProtection.Delete(0);
-}
-
-bool DAPlayerClass::Is_Flooding() {
-	for (int i = FloodProtection.Count();i-- > 0;) {
-		if (GetTickCount()-FloodProtection[i] >= 10000) {
-			FloodProtection.Delete(i);
-		}
-	}
-	
-	Increment_Flood_Counter();
-
-	if (FloodProtection.Count() >= 7) {
-		Send_Announcement_Player(Get_ID(),"IDS_FLOOD_MSG");
-		return true;
-	}
-	return false;
-}
-
 void DAPlayerClass::Set_Server_Damage(bool Damage) {
 	ServerDamage = Damage;
 }
@@ -578,9 +554,6 @@ bool DAPlayerClass::Chat(TextMessageEnum Type,const wchar_t *Message,int Receive
 		Text->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION);
 		return false;
 	}
-	else if (Is_Flooding()) {
-		return false;
-	}
 	return true;
 }
 
@@ -591,9 +564,6 @@ bool DAPlayerClass::Radio(int PlayerType,int AnnouncementID,int IconID,Announcem
 	else if (Is_Muted()) {
 		SCAnnouncement *Radio = Send_Client_Announcement(PlayerType,Get_ID(),AnnouncementID,AnnouncementType,IconID,false,false);
 		Radio->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION);
-		return false;
-	}
-	else if (Is_Flooding()) {
 		return false;
 	}
 	return true;
@@ -1149,7 +1119,7 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 	}
 	else if (cPlayer *Player = Find_Player(Request.clientName)) {
 		if (Request.clientAddress.sin_addr.s_addr == (unsigned int)Player->Get_Ip_Address() && Request.clientSerialHash == Player->Get_DA_Player()->Get_Serial()) { //Client reconnecting before their ghost has timed out.
-			Evict_Client(Player->Get_ID(),L"Ghost");
+			Evict_Client(Player->Get_Id(),L"Ghost");
 		}
 		else {
 			RefusalMessage = L"Name already in use.";
@@ -1213,12 +1183,12 @@ void DAPlayerManager::Player_Join_Event(cPlayer *Player) {
 	cTeam *Nod = Find_Team(0);
 	cTeam *GDI = Find_Team(1);
 	if (Nod) {
-		Nod->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-		Nod->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_OCCASIONAL,true);
+		Nod->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_RARE,true);
+		Nod->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_OCCASIONAL,true);
 	}
 	if (GDI) {
-		GDI->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-		GDI->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_OCCASIONAL,true);
+		GDI->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_RARE,true);
+		GDI->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_OCCASIONAL,true);
 	}
 }
 
@@ -1423,7 +1393,7 @@ void DAPlayerManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,
 					Player->Increment_Kills();
 				}
 				if (!DisableKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
-					Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
+					Send_Player_Kill_Message(Player->Get_Id(),((SoldierGameObj*)Victim)->Get_Player()->Get_Id());
 				}
 			}
 		}
@@ -1440,7 +1410,7 @@ void cPlayer::Increment_Score(float Score) {
 	if (Is_Gameplay_Permitted()) {
 		this->Score += Score;
 		if (!DAPlayerManager::Get_Disable_Team_Score_Counter()) {
-			cTeam *Team = Find_Team(Get_Team());
+			cTeam *Team = Find_Team(Get_Player_Type());
 			if (Team) {
 				Team->Increment_Score(Score);
 			}
@@ -1456,7 +1426,7 @@ void cPlayer::Increment_Kills() {
 	if (Is_Gameplay_Permitted()) {
 		Kills++;
 		if (!DAPlayerManager::Get_Disable_Team_Kill_Counter()) {
-			cTeam *Team = Find_Team(Get_Team());
+			cTeam *Team = Find_Team(Get_Player_Type());
 			if (Team) {
 				Team->Increment_Kills();
 			}
@@ -1469,7 +1439,7 @@ void cPlayer::Decrement_Kills() {
 	if (Is_Gameplay_Permitted()) {
 		Kills--;
 		if (!DAPlayerManager::Get_Disable_Team_Kill_Counter()) {
-			cTeam *Team = Find_Team(Get_Team());
+			cTeam *Team = Find_Team(Get_Player_Type());
 			if (Team) {
 				Team->Decrement_Kills();
 			}
@@ -1482,7 +1452,7 @@ void cPlayer::Increment_Deaths() {
 	if (Is_Gameplay_Permitted()) {
 		Deaths++;
 		if (!DAPlayerManager::Get_Disable_Team_Death_Counter()) {
-			cTeam *Team = Find_Team(Get_Team());
+			cTeam *Team = Find_Team(Get_Player_Type());
 			if (Team) {
 				Team->Increment_Deaths();
 			}
@@ -1495,7 +1465,7 @@ void cPlayer::Decrement_Deaths() {
 	if (Is_Gameplay_Permitted()) {
 		Deaths--;
 		if (!DAPlayerManager::Get_Disable_Team_Death_Counter()) {
-			cTeam *Team = Find_Team(Get_Team());
+			cTeam *Team = Find_Team(Get_Player_Type());
 			if (Team) {
 				Team->Decrement_Deaths();
 			}
@@ -1761,8 +1731,8 @@ class DAVoteYesKeyHookClass : public DAKeyHookClass {
 	void Activate(cPlayer *Player) {
 		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote yes",-1)) {
 			Console_Output("%ls: !vote yes\n",Player->Get_Name());
-			Player->Get_DA_Player()->Increment_Flood_Counter();
-			Player->Get_DA_Player()->Increment_Flood_Counter();
+			Player->Increment_Flood_Counter();
+			Player->Increment_Flood_Counter();
 		}
 	}
 };
@@ -1772,8 +1742,8 @@ class DAVoteNoKeyHookClass : public DAKeyHookClass {
 	void Activate(cPlayer *Player) {
 		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote no",-1)) {
 			Console_Output("%ls: !vote no\n",Player->Get_Name());
-			Player->Get_DA_Player()->Increment_Flood_Counter();
-			Player->Get_DA_Player()->Increment_Flood_Counter();
+			Player->Increment_Flood_Counter();
+			Player->Increment_Flood_Counter();
 		}
 	}
 };

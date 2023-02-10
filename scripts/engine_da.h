@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -82,7 +82,6 @@ DA_API StringClass Get_String_Player_Name(GameObject *obj);
 DA_API StringClass Get_String_Player_Name_By_ID(int ID);
 DA_API const wchar_t *Get_Wide_Player_Name_By_ID(int ID);
 DA_API StringClass Get_IP_Address_String(int PlayerID);
-DA_API const wchar_t *Get_Wide_Team_Name(int Team);
 DA_API int Find_Empty_Vehicle_Seat(VehicleGameObj *obj,bool AllowDriver = true);
 DA_API void Change_Team_3(cPlayer *Player,int Team);
 DA_API void Change_Team_4(cPlayer *Player,int Team);
@@ -91,6 +90,8 @@ DA_API cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOn
 DA_API void Damage_Objects_Half_No_Kill();
 DA_API void Attach_Script_To_Definition(const char *Preset,const char *Script,const char *Params);
 DA_API void Attach_Script_To_Definitions(unsigned long CID,const char *Script,const char *Params);
+DA_API void Remove_Script_From_Definition(const char *Preset, const char *Script);
+DA_API void Remove_Script_From_Definitions(unsigned long CID, const char *Script);
 DA_API void Set_Object_Type_Preset(const char *Preset,int Team);
 DA_API cTeam *Find_Team(int team);
 DA_API void Give_Credits_Team(int Team,float Credits);
@@ -105,61 +106,61 @@ inline bool Is_Simple(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return ((PhysicalGameObj*)obj)->As_SimpleGameObj();
+	return !!((PhysicalGameObj*)obj)->As_SimpleGameObj();
 }
 inline bool Is_Powerup(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return ((PhysicalGameObj*)obj)->As_PowerUpGameObj();
+	return !!((PhysicalGameObj*)obj)->As_PowerUpGameObj();
 }
 inline bool Is_C4(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return ((PhysicalGameObj*)obj)->As_C4GameObj();
+	return !!((PhysicalGameObj*)obj)->As_C4GameObj();
 }
 inline bool Is_Beacon(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return ((PhysicalGameObj*)obj)->As_BeaconGameObj();
+	return !!((PhysicalGameObj*)obj)->As_BeaconGameObj();
 }
 inline bool Is_Armed(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return ((PhysicalGameObj*)obj)->As_ArmedGameObj();
+	return !!((PhysicalGameObj*)obj)->As_ArmedGameObj();
 }
 inline bool Is_PowerPlant(GameObject *obj) {
 	if (!obj || !obj->As_BuildingGameObj()) {
 		return false;
 	}
-	return ((BuildingGameObj*)obj)->As_PowerPlantGameObj();
+	return !!((BuildingGameObj*)obj)->As_PowerPlantGameObj();
 }
 inline bool Is_VehicleFactory(GameObject *obj) {
 	if (!obj || !obj->As_BuildingGameObj()) {
 		return false;
 	}
-	return ((BuildingGameObj*)obj)->As_VehicleFactoryGameObj();
+	return !!((BuildingGameObj*)obj)->As_VehicleFactoryGameObj();
 }
 inline bool Is_Refinery(GameObject *obj) {
 	if (!obj || !obj->As_BuildingGameObj()) {
 		return false;
 	}
-	return ((BuildingGameObj*)obj)->As_RefineryGameObj();
+	return !!((BuildingGameObj*)obj)->As_RefineryGameObj();
 }
 inline bool Is_SoldierFactory(GameObject *obj) {
 	if (!obj || !obj->As_BuildingGameObj()) {
 		return false;
 	}
-	return ((BuildingGameObj*)obj)->As_SoldierFactoryGameObj();
+	return !!((BuildingGameObj*)obj)->As_SoldierFactoryGameObj();
 }
 inline bool Is_DecorationPhys(GameObject *obj) {
 	if (!obj || !obj->As_PhysicalGameObj()) {
 		return false;
 	}
-	return (((PhysicalGameObj*)obj)->Peek_Physical_Object()->Get_Definition()->Get_Class_ID() == 0x9000);
+	return !!(((PhysicalGameObj*)obj)->Peek_Physical_Object()->Get_Definition()->Get_Class_ID() == 0x9000);
 }
 inline bool Is_Player(GameObject *obj) {
 	return (obj && obj->As_SoldierGameObj() && ((SoldierGameObj*)obj)->Get_Player_Data());
@@ -212,8 +213,6 @@ DA_API bool Is_Starting_Weapon(SoldierGameObj *Soldier,const PowerUpGameObjDef *
 DA_API void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool DestroyUnfixable = true);
 DA_API bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range);
 
-DA_API void Send_Purchase_Response(int ID,int Type);
-
 DA_API StringClass Clean_Model_Name(StringClass Model);
 DA_API StringClass Get_Weapon_PowerUp_Model(const WeaponDefinitionClass *Weapon);
 
@@ -227,12 +226,12 @@ DA_API void Enable_HUD_Player_By_ID(int ID,bool Enable);
 DA_API void Set_Fog_Enable_Player_By_ID(int ID,bool Enable);
 DA_API void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDistance,float Transition);
 
-DA_API void Send_Player_Kill_Message(int Killer,int Victim);
-
 DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
 
 DA_API void Reverse_Damage(GameObject *obj,float Amount);
 
 DA_API void Set_Emot_Icon(int ID,const char *Model,int Team);
+class SpawnerClass;
+extern REF_DECL(DynamicVectorClass<SpawnerClass*>,SpawnerList);
 
 #endif

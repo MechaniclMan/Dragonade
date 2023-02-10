@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -474,6 +474,13 @@ class JFW_NavalFactory_Disable : public ScriptImpClass {
 	unsigned int count;
 };
 
+class JFW_SoldierFactory_Disable : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Killed(GameObject *obj,GameObject *killer);
+	unsigned int count;
+};
+
 class JFW_Engineer_Hack : public ScriptImpClass {
 	unsigned int Warhead;
 	int IndcatorID;
@@ -567,6 +574,11 @@ class JFW_Ion_Storm_2 : public ScriptImpClass {
 	void Timer_Expired(GameObject *obj,int number);
 };
 
+class JFW_Ion_Storm_3 : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
 class JFW_Ion_Storm_Weather : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
@@ -623,6 +635,7 @@ class JFW_Custom_Create_Object_At_Bone : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Timer_Expired(GameObject *obj,int number);
 	void Killed(GameObject *obj,GameObject *killer);
+	void Destroyed(GameObject *obj);
 	int id;
 };
 
@@ -679,5 +692,13 @@ class JFW_Spy_Disguise_Target : public ScriptImpClass {
 
 class JFW_Spawner_Delay : public ScriptImpClass {
 	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
+class JFW_EMP_Indicator : public ScriptImpClass {
+	unsigned int Warhead;
+	unsigned int id;
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float amount);
 	void Timer_Expired(GameObject *obj,int number);
 };

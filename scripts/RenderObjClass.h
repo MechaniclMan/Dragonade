@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -261,8 +261,8 @@ public:
    void							Set_Sub_Objects_Match_LOD(int onoff)									{ if (onoff) { Bits |= SUBOBJS_MATCH_LOD; } else { Bits &= ~SUBOBJS_MATCH_LOD; } }
    int							Is_Sub_Objects_Match_LOD_Enabled(void)									{ return Bits & SUBOBJS_MATCH_LOD; }
    void							Set_Sub_Object_Transforms_Dirty(bool onoff)							{ if (onoff) { Bits |= SUBOBJ_TRANSFORMS_DIRTY; } else { Bits &= ~SUBOBJ_TRANSFORMS_DIRTY; } }
-   bool							Are_Sub_Object_Transforms_Dirty(void)									{ return (Bits & SUBOBJ_TRANSFORMS_DIRTY) != 0; }
-   bool							Bounding_Volumes_Valid(void) const										{ return (Bits & BOUNDING_VOLUMES_VALID) != 0; }
+   bool							Are_Sub_Object_Transforms_Dirty(void);
+   bool							Bounding_Volumes_Valid(void) const;
    void							Invalidate_Cached_Bounding_Volumes(void) const						{ Bits &= ~BOUNDING_VOLUMES_VALID; }
    void							Validate_Cached_Bounding_Volumes(void)	const							{ Bits |= BOUNDING_VOLUMES_VALID; }
    void							Save_Sub_Object_User_Lighting(ChunkSaveClass & csave,RenderObjClass * sub_obj,int bone_index);
@@ -275,14 +275,14 @@ public:
 
 TT_INLINE const SphereClass & RenderObjClass::Get_Bounding_Sphere(void) const
 {
-	if (!(Bits & BOUNDING_VOLUMES_VALID)) {
+	if (!Bounding_Volumes_Valid()) {
 		Update_Cached_Bounding_Volumes();
 	} 
 	return CachedBoundingSphere;
 }
 TT_INLINE const AABoxClass & RenderObjClass::Get_Bounding_Box(void) const
 {
-	if (!(Bits & BOUNDING_VOLUMES_VALID)) {
+	if (!Bounding_Volumes_Valid()) {
 		Update_Cached_Bounding_Volumes();
 	}
 	return CachedBoundingBox;

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -40,6 +40,10 @@ class JFW_Vehicle_Regen : public ScriptImpClass {
 };
 
 class JFW_Disable_Transition : public ScriptImpClass {
+	void Created(GameObject *obj);
+};
+
+class JFW_Enable_Transition : public ScriptImpClass {
 	void Created(GameObject *obj);
 };
 

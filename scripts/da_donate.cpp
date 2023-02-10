@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Donate Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -50,24 +50,24 @@ bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DAToken
 		if (Amount < 1.0f) {
 			return true;
 		}
-		int Count = Get_Team_Player_Count(Player->Get_Team())-1;
+		int Count = Get_Team_Player_Count(Player->Get_Player_Type())-1;
 		float Amount2 = floor(Amount/Count);
 		Amount = Amount2*Count;
 		if (Count < 1) {
 			DA::Page_Player(Player,"There are not enough players on your team to distribute your credits among.");
 		}
 		else if (Amount2 < 10.0f || !Player->Purchase_Item(Amount)) {
-			if (Player->Get_Team() == 0) {
-				Send_Announcement_Player(Player->Get_ID(),"IDS_M00EVAN_DSGN0024I1EVAN_TXT");
+			if (Player->Get_Player_Type() == 0) {
+				Send_Announcement_Player(Player->Get_Id(),"IDS_M00EVAN_DSGN0024I1EVAN_TXT");
 			}
 			else {
-				Send_Announcement_Player(Player->Get_ID(),"IDS_M00EVAG_DSGN0028I1EVAG_TXT");
+				Send_Announcement_Player(Player->Get_Id(),"IDS_M00EVAG_DSGN0028I1EVAG_TXT");
 			}
 		}
 		else {
 			DA::Page_Player(Player,"You have donated %.0f credit(s) to each of your teammates, %.0f in total.",Amount2,Amount);
-			DA::Page_Team_Except(Player->Get_Team(),Player,"%ls has donated %.0f credit(s) to you.",Player->Get_Name(),Amount2);
-			Give_Credits_Team(Player->Get_Team(),Amount2);
+			DA::Page_Team_Except(Player->Get_Player_Type(),Player,"%ls has donated %.0f credit(s) to you.",Player->Get_Name(),Amount2);
+			Give_Credits_Team(Player->Get_Player_Type(),Amount2);
 			Player->Increment_Money(Amount2*-1.0f);
 		}
 	}
@@ -83,11 +83,11 @@ bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DAToken
 		cPlayer *Receiver = Match_Player(Player,Text[1],true);
 		if (Receiver) {
 			if (!Player->Purchase_Item(Amount)) {
-				if (Player->Get_Team() == 0) {
-					Send_Announcement_Player(Player->Get_ID(),"IDS_M00EVAN_DSGN0024I1EVAN_TXT");
+				if (Player->Get_Player_Type() == 0) {
+					Send_Announcement_Player(Player->Get_Id(),"IDS_M00EVAN_DSGN0024I1EVAN_TXT");
 				}
 				else {
-					Send_Announcement_Player(Player->Get_ID(),"IDS_M00EVAG_DSGN0028I1EVAG_TXT");
+					Send_Announcement_Player(Player->Get_Id(),"IDS_M00EVAG_DSGN0028I1EVAG_TXT");
 				}
 			}
 			else {

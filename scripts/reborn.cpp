@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -461,13 +461,13 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		sprintf(text,"%s_dd",model);
 		obj->As_PhysicalGameObj()->Clear_Animation();
 		Commands->Set_Model(obj,text);
-		Commands->Clear_Weapons(obj);
-		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
-		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 		Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Engine(obj,false);
 		Commands->Enable_Hibernation(obj,true);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
+		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 		return;
 	}
 	//mech redeployed -> set standard model
@@ -816,16 +816,16 @@ void Reborn_IsDeployableTank::Animation_Complete(GameObject *obj,const char *ani
 	if (!_stricmp(animation_name,deployanim) && (mode == 1))
 	{
 		mode = 2;
-		Commands->Clear_Weapons(obj);
 		Commands->Set_Model(obj,deployedmodel);
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
-		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 		Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Engine(obj,false);
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Innate_Conversations(obj,true);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
+		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 		return;
 	}
 	//tank redeploy
@@ -1266,15 +1266,15 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 				obj->As_VehicleGameObj()->Set_Immovable(true);
 				mode = 1;
 				Commands->Set_Model(obj,dmodel);
-				Commands->Clear_Weapons(obj);
-				Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
-				Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 				Commands->Set_Shield_Type(obj,Get_Parameter("Armor"));
 				Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
 				Commands->Control_Enable(sender,false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
 				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 				Commands->Enable_Vehicle_Transitions(obj,false);
+				Commands->Clear_Weapons(obj);
+				Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name"),false);
+				Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name"));
 			}
 		}
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
@@ -1321,9 +1321,6 @@ void Reborn_IsDeployableTank_3::Animation_Complete(GameObject *obj,const char *a
 		mode = 0;
 		Commands->Set_Model(obj,model);
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Clear_Weapons(obj);
-		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name2"),false);
-		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name2"));
 		Commands->Set_Shield_Type(obj,Get_Parameter("Armor2"));
 		Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
@@ -1331,6 +1328,9 @@ void Reborn_IsDeployableTank_3::Animation_Complete(GameObject *obj,const char *a
 		Commands->Enable_Innate_Conversations(obj,true);
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Engine(obj,true);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name2"),false);
+		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name2"));
 		return;
 	}
 }
@@ -1439,14 +1439,14 @@ void Reborn_IsDeployableTank_4::Timer_Expired(GameObject *obj, int number)
 	mode = 1;
 	Commands->Set_Model(obj, dmodel);
 	Commands->Set_Animation(obj, deployanim, false, 0, 0, -1, 0);
-	Commands->Clear_Weapons(obj);
-	Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
-	Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
 	Commands->Set_Shield_Type(obj, Get_Parameter("Armor"));
 	Commands->Control_Enable(Commands->Find_Object(number), false);
 	obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
 	Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 	Commands->Enable_Vehicle_Transitions(obj, false);
+	Commands->Clear_Weapons(obj);
+	Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
+	Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
 }
 
 void Reborn_IsDeployableTank_4::Animation_Complete(GameObject *obj, const char *animation_name)
@@ -1462,16 +1462,16 @@ void Reborn_IsDeployableTank_4::Animation_Complete(GameObject *obj, const char *
 	if (!_stricmp(animation_name, deployanim) && (mode == 1))
 	{
 		mode = 2;
-		Commands->Clear_Weapons(obj);
 		Commands->Set_Model(obj, deployedmodel);
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
-		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
 		Commands->Control_Enable(Commands->Find_Object(PilotID), true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Engine(obj, false);
 		Commands->Enable_Vehicle_Transitions(obj, true);
 		Commands->Enable_Innate_Conversations(obj, true);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
+		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
 		return;
 	}
 	//tank redeploy
@@ -1481,9 +1481,6 @@ void Reborn_IsDeployableTank_4::Animation_Complete(GameObject *obj, const char *
 		obj->As_VehicleGameObj()->Set_Immovable(false);
 		mode = 0;
 		Commands->Set_Model(obj, model);
-		Commands->Clear_Weapons(obj);
-		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name2"), false);
-		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name2"));
 		Commands->Set_Shield_Type(obj, Get_Parameter("Armor2"));
 		obj->As_PhysicalGameObj()->Clear_Animation();
 		Commands->Control_Enable(Commands->Find_Object(PilotID), true);
@@ -1492,6 +1489,9 @@ void Reborn_IsDeployableTank_4::Animation_Complete(GameObject *obj, const char *
 		Commands->Enable_Innate_Conversations(obj, true);
 		Commands->Enable_Vehicle_Transitions(obj, true);
 		Commands->Enable_Engine(obj, true);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name2"), false);
+		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name2"));
 		return;
 	}
 }

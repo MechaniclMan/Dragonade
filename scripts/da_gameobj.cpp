@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Object Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -25,9 +25,9 @@ DynamicVectorClass<GameObject*> DAGameObjManager::GameObjsDeletePending;
 DynamicVectorClass<GameObject*> DAGameObjManager::TTGameObjs;
 DynamicVectorClass<GameObject*> DAGameObjManager::StockGameObjs;
 DynamicVectorClass<GameObject*> DAGameObjManager::InvisibleGameObjs;
+REF_DEF2(sint32, NextID, 0x00813944, 0x00812B1C);
 
 void DAGameObjObserverClass::Attach(GameObject *obj) {
-	int &NextID = *(int*)0x00812B1C;
 	Set_ID(NextID);
 	NextID++;
 	_Owner = obj;
@@ -47,15 +47,15 @@ GameObject _declspec(naked) *DAGameObjObserverClass::Owner() {
 }
 
 void DAGameObjObserverClass::Start_Timer(int Number,float Duration) {
-	Get_Owner()->Start_Observer_Timer(Get_ID(),Duration,Number);
+	Commands->Start_Timer(Get_Owner(),(ScriptClass *)this,Duration,Number);
 }
 
 void DAGameObjObserverClass::Stop_Timer(int Number) {
-	Get_Owner()->Stop_Observer_Timer(Get_ID(),Number);
+	Stop_Timer2(Get_Owner(),(ScriptClass *)this,Number);
 }
 
 bool DAGameObjObserverClass::Is_Timer(int Number) {
-	return Get_Owner()->Is_Observer_Timer(Get_ID(),Number);
+	return Has_Timer(Get_Owner(),(ScriptClass *)this,Number);
 }
 
 void DAGameObjObserverClass::Set_Delete_Pending() {
@@ -76,10 +76,10 @@ void Enable_Stealth(GameObject *obj,bool Enable) {
 					for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
 						cPlayer *Player = z->Data();
 						if (Player->Is_Alive_And_Kicking() && !Player->Get_DA_Player()->Is_TT_Client()) {
-							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-							Update_Network_Object_Player(obj,Player->Get_ID());
-							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-							Update_Network_Object_Player(obj,Player->Get_ID());
+							obj->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_RARE,true);
+							Update_Network_Object_Player(obj,Player->Get_Id());
+							obj->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_RARE,true);
+							Update_Network_Object_Player(obj,Player->Get_Id());
 						}
 					}
 					obj->Definition = DefSave;
@@ -129,7 +129,7 @@ False:
 }
 
 void DAGameObjManager::Set_Observer_Delete_Pending(DAGameObjObserverClass *Observer) {
-	if (ObserversDeletePending.ID(Observer) == -1 && !Observer->Get_Owner()->Is_Delete_Pending()) {
+	if (Observer->Get_Owner() && ObserversDeletePending.ID(Observer) == -1 && !Observer->Get_Owner()->Is_Delete_Pending()) {
 		ObserversDeletePending.Add(Observer);
 	}
 }
@@ -150,7 +150,7 @@ void DAGameObjManager::Set_GameObj_TT_Only(GameObject *obj) {
 		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_Stock_Client()) {
-				Update_Network_Object_Player(obj,Player->Get_ID());
+				Update_Network_Object_Player(obj,Player->Get_Id());
 			}
 		}
 		obj->Set_Is_Delete_Pending(PendingSave);
@@ -166,7 +166,7 @@ void DAGameObjManager::Set_GameObj_Stock_Only(GameObject *obj) {
 		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_TT_Client()) {
-				Update_Network_Object_Player(obj,Player->Get_ID());
+				Update_Network_Object_Player(obj,Player->Get_Id());
 			}
 		}
 		obj->Set_Is_Delete_Pending(PendingSave);
@@ -197,23 +197,25 @@ void DAGameObjManager::Think() {
 		Temp->Set_Delete_Pending();
 	}
 	for (int i = 0;i < ObserversDeletePending.Count();i++) {
-		ObserversDeletePending[i]->Get_Owner()->Remove_Observer(ObserversDeletePending[i]);
+		if (ObserversDeletePending[i]->Get_Owner()) {
+			ObserversDeletePending[i]->Get_Owner()->Remove_Observer(ObserversDeletePending[i]);
+		}
 	}
 	ObserversDeletePending.Delete_All();
 }
 
 void DAGameObjManager::Player_Loaded_Event(cPlayer *Player) {
 	for (int i = 0;i < InvisibleGameObjs.Count();i++) {
-		InvisibleGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+		InvisibleGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_CREATION,false);
 	}
 	if (Player->Get_DA_Player()->Is_TT_Client()) {
 		for (int i = 0;i < StockGameObjs.Count();i++) {
-			StockGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+			StockGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_CREATION,false);
 		}
 	}
 	else {
 		for (int i = 0;i < TTGameObjs.Count();i++) {
-			TTGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+			TTGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_Id(),NetworkObjectClass::BIT_CREATION,false);
 		}
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { 
 			SoldierGameObj *Soldier = x->Data();
@@ -222,7 +224,7 @@ void DAGameObjManager::Player_Loaded_Event(cPlayer *Player) {
 				if (Stealth) {
 					const BaseGameObjDef *DefSave = Soldier->Definition;
 					Soldier->Definition = Stealth;
-					Update_Network_Object_Player(Soldier,Player->Get_ID());
+					Update_Network_Object_Player(Soldier,Player->Get_Id());
 					Soldier->Definition = DefSave;
 				}
 			}

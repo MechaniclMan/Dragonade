@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -65,7 +65,7 @@ public:
 		return Owner;
 	}
 	inline int Get_ID() {
-		return Get_Owner()->Get_ID();
+		return Get_Owner()->Get_Id();
 	}
 	inline const WideStringClass &Get_Name() {
 		return Get_Owner()->Get_Name();
@@ -74,7 +74,7 @@ public:
 		return Get_Owner()->Get_GameObj();
 	}
 	inline int Get_Team() {
-		return Get_Owner()->Get_Team();
+		return Get_Owner()->Get_Player_Type();
 	}
 	void Add_Observer(DAPlayerObserverClass *Observer);
 	void Remove_Observer(const char *Name);
@@ -113,9 +113,6 @@ public:
 	bool Is_TT_Client();
 	bool Is_Scripts_Client();
 	bool Is_Stock_Client();
-	void Increment_Flood_Counter();
-	void Decrement_Flood_Counter();
-	bool Is_Flooding();
 	void Set_Server_Damage(bool Damage);
 	bool Use_Server_Damage();
 	bool Is_Spawning();
@@ -193,7 +190,6 @@ private:
 	float VehicleDiscount;
 	float PowerUpDiscount;
 	unsigned long LastTibDamageTime;
-	DynamicVectorClass<unsigned long> FloodProtection;
 	bool Loaded;
 	bool ServerDamage;
 	unsigned long CreationTime;
@@ -222,7 +218,7 @@ struct DAPlayerObserverKeyHookStruct {
 	DynamicVectorClass<StringClass> Triggers;
 };
 
-class DAPlayerObserverClass abstract {
+class DA_API DAPlayerObserverClass abstract {
 public:
 	DAPlayerObserverClass() {
 		Set_Flags((DAPlayerFlags::Flag)0);
@@ -250,7 +246,7 @@ public:
 		return (Flags & Flag) == Flag;
 	}
 	inline int Get_ID() {
-		return Get_Owner()->Get_ID();
+		return Get_Owner()->Get_Id();
 	}
 	inline const WideStringClass &Get_Name() {
 		return Get_Owner()->Get_Name();
@@ -259,27 +255,27 @@ public:
 		return Get_Owner()->Get_GameObj();
 	}
 	inline int Get_Team() {
-		return Get_Owner()->Get_Team();
+		return Get_Owner()->Get_Player_Type();
 	}
 	
 	inline DynamicVectorClass<DAPlayerObserverTimerStruct*> &Get_Timers() { 
 		return Timers;
 	}
-	DA_API void Start_Timer(int Number,float Duration,bool Repeat = false,unsigned int Data = 0);
-	DA_API void Stop_Timer(int Number,unsigned int Data = 0);
-	DA_API bool Is_Timer(int Number,unsigned int Data = 0);
-	DA_API void Clear_Timers();
+	void Start_Timer(int Number,float Duration,bool Repeat = false,unsigned int Data = 0);
+	void Stop_Timer(int Number,unsigned int Data = 0);
+	bool Is_Timer(int Number,unsigned int Data = 0);
+	void Clear_Timers();
 	
-	DA_API void Register_Chat_Command(DAPOCC FuncPtr,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
-	DA_API void Unregister_Chat_Command(const char *Trigger);
-	DA_API void Clear_Chat_Commands();
+	void Register_Chat_Command(DAPOCC FuncPtr,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	void Unregister_Chat_Command(const char *Trigger);
+	void Clear_Chat_Commands();
 	inline const DynamicVectorClass<DAPlayerObserverChatCommandStruct*> &Get_Chat_Commands() {
 		return ChatCommands;
 	}
 
-	DA_API void Register_Key_Hook(DAPOKH FuncPtr,const char *Triggers);
-	DA_API void Unregister_Key_Hook(const char *Trigger);
-	DA_API void Clear_Key_Hooks();
+	void Register_Key_Hook(DAPOKH FuncPtr,const char *Triggers);
+	void Unregister_Key_Hook(const char *Trigger);
+	void Clear_Key_Hooks();
 	inline const DynamicVectorClass<DAPlayerObserverKeyHookStruct*> &Get_Key_Hooks() {
 		return KeyHooks;
 	}
@@ -356,7 +352,7 @@ public:
 	virtual DAPlayerDataClass *Create_Data() = 0;
 };
 
-class DAPlayerDataClass abstract {
+class DA_API DAPlayerDataClass abstract {
 public:
 	inline cPlayer *Get_Owner() {
 		return Owner;
@@ -371,7 +367,7 @@ public:
 		Factory = Fac;
 	}
 	inline int Get_ID() {
-		return Get_Owner()->Get_ID();
+		return Get_Owner()->Get_Id();
 	}
 	inline const WideStringClass &Get_Name() {
 		return Get_Owner()->Get_Name();
@@ -380,7 +376,7 @@ public:
 		return Get_Owner()->Get_GameObj();
 	}
 	inline int Get_Team() {
-		return Get_Owner()->Get_Team();
+		return Get_Owner()->Get_Player_Type();
 	}
 	virtual void Init() { };
 	virtual void Clear_Level() { };

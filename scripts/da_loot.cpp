@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Loot Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -105,7 +105,7 @@ bool DALootPowerUpClass::PowerUp_Grant_Request(cPlayer *Player) {
 				Damagers.Delete(i);
 			}
 		}
-		if (!Dropper || !Damagers.Count() || Damagers.ID(Player) != -1 || Player->Get_Team() == Dropper->Get_Team()) {
+		if (!Dropper || !Damagers.Count() || Damagers.ID(Player) != -1 || Player->Get_Player_Type() == Dropper->Get_Player_Type()) {
 			return true;
 		}
 	}
@@ -114,8 +114,33 @@ bool DALootPowerUpClass::PowerUp_Grant_Request(cPlayer *Player) {
 
 //Play sound and destroy powerup.
 void DALootPowerUpClass::PowerUp_Grant(cPlayer *Player) {
-	Create_2D_WAV_Sound_Player(Player->Get_GameObj(),"powerup_ammo.wav");
+	const PowerUpGameObjDef *Pow = &((PowerUpGameObj*)Get_Owner())->Get_Definition();
+	if (!Pow->Get_Grant_Sound()) {
+		Create_2D_WAV_Sound_Player(Player->Get_GameObj(), "powerup_ammo.wav");
+	}
 	Get_Owner()->Set_Delete_Pending();
+	StringClass HUD;
+	if (Pow->GrantHealthMax) {
+		HUD = "Augmented Health";
+	}
+	else if (Pow->GrantShieldStrengthMax) {
+		HUD = "Augmented Armor";
+	}
+	else if (Pow->GrantHealth) {
+		HUD = "Health";
+	}
+	else if (Pow->GrantShieldStrength) {
+		HUD = "Armor";
+	}
+	else if (Pow->GrantWeaponClips) {
+		HUD = "Ammo";
+	}
+	else if (Pow->GrantWeapon && Pow->GrantWeaponID) {
+		HUD = DATranslationManager::Translate(Pow->GrantWeaponID);
+	}
+	if (!HUD.Is_Empty()) {
+		DA::Private_HUD_Message(Player, COLORGREEN, "%s", HUD);
+	}
 }
 
 //Timeout and clear damagers list.
@@ -199,6 +224,9 @@ void DALootBackpackClass::PowerUp_Grant(cPlayer *Player) {
 	bool CycleIcon = false;
 	for (int i = Weapons.Count()-1;i >= 0;i--) {
 		if (Bag->Add_Weapon(Weapons[i].Weapon,Weapons[i].Rounds,true)) { //Make sure they need and can receive the weapon before we remove it from the backpack.
+			if (!PickedUp) {
+				DA::Private_HUD_Message(Player, COLORGREEN, "%s",DATranslationManager::Translate(Weapons[i].Weapon));
+			}
 			Weapons.Delete(i);
 			PickedUp = true;
 			if (i == IconIndex) {
@@ -276,6 +304,7 @@ void DALootDNAClass::PowerUp_Grant(cPlayer *Player) {
 	Soldier->Re_Init(*Character);
 	Soldier->Post_Re_Init();
 	Get_Owner()->Set_Delete_Pending();
+	DA::Private_HUD_Message(Player, COLORLIGHTBLUE, "%s",DATranslationManager::Translate(Character));
 }
 
 void DALootDNAClass::Timer_Expired(GameObject *obj,int Number) {
@@ -366,7 +395,6 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(SoldierGameObj *Sol
 	PhysicalGameObj *BackpackObj = Create_Object(BasePowerUpDef,Soldier->Get_Transform());
 	BackpackObj->Add_Observer(Backpack);
 	Commands->Set_Model(BackpackObj,WeaponModel);
-	//Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
 	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
@@ -377,7 +405,6 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(const Vector3 &Posi
 	PhysicalGameObj *BackpackObj = Create_Object(BasePowerUpDef,Position);
 	BackpackObj->Add_Observer(Backpack);
 	Commands->Set_Model(BackpackObj,WeaponModel);
-	//Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
 	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
@@ -388,7 +415,6 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(SoldierGameObj *Soldier) {
 	PhysicalGameObj *DNAObj = Create_Object(BasePowerUpDef,Soldier->Get_Transform());
 	DNAObj->Add_Observer(DNA);
 	Commands->Set_Model(DNAObj,DNAModel);
-	//Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
 	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;
@@ -399,7 +425,6 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(const Vector3 &Position,const
 	PhysicalGameObj *DNAObj = Create_Object(BasePowerUpDef,Position);
 	DNAObj->Add_Observer(DNA);
 	Commands->Set_Model(DNAObj,DNAModel);
-	//Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
 	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;
@@ -576,7 +601,7 @@ void DALootGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
 				Odds.Total -= Odds.DNA;
 				Odds.DNA = 0;
 			}
-	Reselect:
+		Reselect:
 			int Rand = Get_Random_Int(1,Odds.Total+1);
 			int Total = 0;
 			if (Odds.PowerUp && Rand <= (Total+=Odds.PowerUp)) { //Drop powerup

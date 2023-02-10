@@ -1,5 +1,5 @@
 /*  Renegade Scripts.dll
-    Copyright 2013 Tiberian Technologies
+    Copyright 2017 Tiberian Technologies
 
     This file is part of the Renegade scripts.dll
     The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -53,6 +53,8 @@ public:
     bool                        Is_Post_Think_Allowed() { return IsPostThinkAllowed; }
     void                        Enable_Cinematic_Freeze(bool enable) { EnableCinematicFreeze = enable; }
     bool                        Is_Cinematic_Freeze_Enabled() { return EnableCinematicFreeze; }
+
+//private: //DA
 
     const BaseGameObjDef*       Definition;             // 06BC
     bool                        IsPostThinkAllowed;     // 06C0

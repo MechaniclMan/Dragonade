@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -64,6 +64,7 @@ public:
 	int Get_Purchase_Report(int team) const;
 	bool Can_Repair() const { return CanRepair; }
 	int Get_Engine_Sound(int type) const { return EngineSound[type]; }
+//protected: //DA
 	VehicleType									Type;
 	StringClass									TypeName;
 	StringClass									Fire0Anim;

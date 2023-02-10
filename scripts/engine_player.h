@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -57,4 +57,5 @@ SCRIPTS_API bool Is_Active(int ID); //Is a player active
 SCRIPTS_API void Set_Kills(int ID,int kills); //Set kills for a player
 SCRIPTS_API void Set_Deaths(int ID,int deaths); //Set deaths for a player
 SCRIPTS_API void Set_Team_Score(int ID,float score); //Set score for a team
+SCRIPTS_API void ChangeTeamDeaths(int teamId,int amount);
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -544,6 +544,16 @@ void JFW_Visible_Person_Settings::Custom(GameObject *obj,int type,int param,Game
 			firstframe = Get_Animation_Frame(obj);
 		}
 		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
+	}
+}
+
+void JFW_Visible_Person_Settings_2::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Message"))
+	{
+		GameObject *object = Commands->Find_Object(param);
+		Commands->Set_Model(object, Get_Parameter("ModelName"));
+		Commands->Set_Animation_Frame(object, Get_Parameter("Animation"), Get_Int_Parameter("Frame"));
 	}
 }
 
@@ -1295,7 +1305,88 @@ void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle::Timer_Expired(GameObject
 				GameObject *o = Commands->Find_Object(SoldierObjects[i].ModelID);
 				if (o)
 				{
-					Commands->Set_Is_Rendered(o, stealth);
+					Commands->Set_Is_Rendered(o, !stealth);
+				}
+			}
+		}
+	}
+	Commands->Start_Timer(obj, this, 1, 1);
+}
+
+void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2::Created(GameObject *obj)
+{
+	SoldierObjects.Resize(Get_Vehicle_Seat_Count(obj));
+	stealth = false;
+	Commands->Start_Timer(obj, this, 1, 1);
+}
+
+void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		int seat = Get_Occupant_Seat(obj,sender);
+		if ((seat >= Get_Int_Parameter("FirstSeat")) && (seat <= Get_Int_Parameter("LastSeat")))
+		{
+			StringClass bone;
+			bone.Format("SEAT%d",seat);
+			Vector3 position = Commands->Get_Bone_Position(obj,bone);
+			GameObject *object = Commands->Create_Object("Invisible_Object",position);
+			Commands->Attach_To_Object_Bone(object,obj,bone);
+			Commands->Send_Custom_Event(obj,sender,Get_Int_Parameter("Message"),Commands->Get_ID(object),0);
+			SoldierObjects[seat].ModelID = Commands->Get_ID(object);
+			Commands->Set_Is_Rendered(object, !stealth);
+			SoldierObjects[seat].SoldierID = Commands->Get_ID(sender);
+		}
+	}
+	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		for (int i = Get_Int_Parameter("FirstSeat");i <= Get_Int_Parameter("LastSeat");i++)
+		{
+			int senderid = Commands->Get_ID(sender);
+			if (senderid == SoldierObjects[i].SoldierID)
+			{
+				if (SoldierObjects[i].ModelID)
+				{
+					GameObject *o = Commands->Find_Object(SoldierObjects[i].ModelID);
+					if (o)
+					{
+						Commands->Destroy_Object(o);
+					}
+				}
+			}
+		}
+	}
+}
+
+void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2::Killed(GameObject *obj,GameObject *killer)
+{
+	for (int i = Get_Int_Parameter("FirstSeat");i <= Get_Int_Parameter("LastSeat");i++)
+	{
+		if (SoldierObjects[i].ModelID)
+		{
+			GameObject *o = Commands->Find_Object(SoldierObjects[i].ModelID);
+			if (o)
+			{
+				Commands->Destroy_Object(o);
+			}
+		}
+	}
+}
+
+void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2::Timer_Expired(GameObject *obj, int number)
+{
+	bool b = Is_Stealth(obj);
+	if (stealth != b)
+	{
+		stealth = b;
+		for (int i = Get_Int_Parameter("FirstSeat");i <= Get_Int_Parameter("LastSeat");i++)
+		{
+			if (SoldierObjects[i].ModelID)
+			{
+				GameObject *o = Commands->Find_Object(SoldierObjects[i].ModelID);
+				if (o)
+				{
+					Commands->Set_Is_Rendered(o, !stealth);
 				}
 			}
 		}
@@ -1317,7 +1408,8 @@ ScriptRegistrant<JFW_Visible_People_In_Vechicle> JFW_Visible_People_In_Vechicle_
 ScriptRegistrant<JFW_Per_Preset_Visible_Person_In_Vechicle> JFW_Per_Preset_Visible_Person_In_Vechicle_Registrant("JFW_Per_Preset_Visible_Person_In_Vechicle","BoneName:string,Message:int");
 ScriptRegistrant<JFW_Per_Preset_Visible_People_In_Vechicle> JFW_Per_Preset_Visible_People_In_Vechicle_Registrant("JFW_Per_Preset_Visible_People_In_Vechicle","BoneName1:string,BoneName2:string,Message1:int,Message2:int");
 ScriptRegistrant<JFW_Visible_Person_Settings> JFW_Visible_Person_Settings_Registrant("JFW_Visible_Person_Settings","Message:int,ModelName:string,Animation:string,SubObject:string,FirstFrame:float,LastFrame:float,Blended:int");
-ScriptRegistrant<JFW_Aircraft_Fuel> JFW_Aircraft_Fuel_Registrant("JFW_Aircraft_Fuel","Time:float,TimerNum:int,Explosion:string,Refuel_Message:int");
+ScriptRegistrant<JFW_Visible_Person_Settings_2> JFW_Visible_Person_Settings_Registrant_2("JFW_Visible_Person_Settings_2", "Message:int,ModelName:string,Animation:string,Frame:float");
+ScriptRegistrant<JFW_Aircraft_Fuel> JFW_Aircraft_Fuel_Registrant("JFW_Aircraft_Fuel", "Time:float,TimerNum:int,Explosion:string,Refuel_Message:int");
 ScriptRegistrant<JFW_Vehicle_Block_Preset> JFW_Vehicle_Block_Preset_Registrant("JFW_Vehicle_Block_Preset","Preset:string");
 ScriptRegistrant<JFW_Vehicle_Extra> JFW_Vehicle_Extra_Registrant("JFW_Vehicle_Extra","Extra_Preset:string,Bone_Name:string");
 ScriptRegistrant<JFW_Vehicle_Extra_2> JFW_Vehicle_Extra_2_Registrant("JFW_Vehicle_Extra_2","Extra_Preset:string,Bone_Name:string");
@@ -1332,3 +1424,4 @@ ScriptRegistrant<JFW_Vehicle_Reinforcement> JFW_Vehicle_Reinforcement_Registrant
 ScriptRegistrant<JFW_Empty_Vehicle_Timer> JFW_Empty_Vehicle_Timer_Registrant("JFW_Empty_Vehicle_Timer","Time:float,TimerNum:int");
 ScriptRegistrant<JFW_Vehicle_Visible_Weapon> JFW_Vehicle_Visible_Weapon_Registrant("JFW_Vehicle_Visible_Weapon","Animation:string");
 ScriptRegistrant<JFW_Per_Preset_Visible_Multiple_People_In_Vehicle> JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_Registrant("JFW_Per_Preset_Visible_Multiple_People_In_Vehicle","Message:int");
+ScriptRegistrant<JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2> JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2_Registrant("JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2","Message:int,FirstSeat:int,LastSeat:int");

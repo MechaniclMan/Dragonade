@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Translation Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -44,7 +44,7 @@ void DATranslationManager::Settings_Loaded_Event() {
 		if (PowerUpDef->GrantWeapon) {
 			WeaponDefinitionClass *WeapDef = (WeaponDefinitionClass*)Find_Definition(PowerUpDef->GrantWeaponID);
 			if (WeapDef) {
-				*(int*)((unsigned long)PowerUpDef+0x70) = WeapDef->IconNameID; //Map the translated name of the weapon to the powerup that grants it. This way we don't have to manually define the translation for each powerup.
+				PowerUpDef->Set_Translated_Name_ID(WeapDef->IconNameID); //Map the translated name of the weapon to the powerup that grants it. This way we don't have to manually define the translation for each powerup.
 			}
 		}
 	}

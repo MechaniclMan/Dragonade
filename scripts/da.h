@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -83,6 +83,12 @@ public:
 	static void Create_2D_Sound_Player(cPlayer *Player,const char *Sound);  //Plays a WAV sound file for the given player, even if they aren't running scripts. There must be a string associated with the sound file for stock clients to hear it.
 	static void Create_2D_Sound_Player(int Player,const char *Sound);
 	static void Create_2D_Sound_Player(GameObject *Player,const char *Sound);
+	
+	static void HUD_Message(unsigned int Red,int unsigned Green, int unsigned Blue, const char *Format, ...); //Sends a HUD message to all players.
+	static void Team_HUD_Message(int Team,unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...); //Sends a HUD message to a team.
+	static void Private_HUD_Message(cPlayer *Player,unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...); //Sends a HUD message to a single player.
+	static void Private_HUD_Message(int Player,unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...);
+	static void Private_HUD_Message(GameObject *Player,unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...);
 
 	static const StringClass &Get_Message_Prefix() {
 		return MessagePrefix;

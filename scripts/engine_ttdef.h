@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added TEXT_MESSAGE_KEYHOOK.
 #ifndef SCRIPTS_INCLUDE__ENGINE_TTDEF_H
 #define SCRIPTS_INCLUDE__ENGINE_TTDEF_H
 #include "scripts.h"
@@ -24,8 +22,8 @@ enum TextMessageEnum
 	TEXT_MESSAGE_PUBLIC,
 	TEXT_MESSAGE_TEAM,
 	TEXT_MESSAGE_PRIVATE,
-	TEXT_MESSAGE_TMSG, //Special extra value for the TMSG console command.
-	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks.
+	TEXT_MESSAGE_TMSG, //special extra value for the TMSG console command
+	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks. //DA
 };
 enum AnnouncementEnum
 {

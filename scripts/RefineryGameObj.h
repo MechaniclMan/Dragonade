@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,10 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Exported Destroy_Harvester and Get_Harvester_Vehicle
-//Added Get_Allow_Harvester_Spawn
-//Changed Block_Harvester_Spawn to not destroy harvester
 #ifndef TT_INCLUDE__REFINERYGAMEOBJ_H
 #define TT_INCLUDE__REFINERYGAMEOBJ_H
 
@@ -43,7 +39,7 @@ public:
 	int					Get_Harvester_Def_ID (void) const	{ return Get_Definition ().HarvesterDefID; }
 	void					Set_Is_Harvester_Docked(bool flag);
 	bool					Get_Is_Harvester_Docked(void)			{ return IsHarvesterDocked; }
-	SCRIPTS_API VehicleGameObj *	Get_Harvester_Vehicle (void);
+	SCRIPTS_API VehicleGameObj *	Get_Harvester_Vehicle (void); //DA
 	void					Set_Harvester_Vehicle (VehicleGameObj *harvester);
 	HarvesterClass *	Get_Harvester (void)								{ return Harvester; }
 	void					Set_Harvester (HarvesterClass *harvester)	{ Harvester = harvester; }
@@ -55,16 +51,17 @@ public:
 	void					Set_Dock_TM (const Matrix3D &tm)	{ DockTM = tm; }
 	virtual	void		Export_Rare (BitStreamClass &packet);
 	virtual	void		Import_Rare (BitStreamClass &packet);
-	void SCRIPTS_API Destroy_Harvester();
+	void SCRIPTS_API Destroy_Harvester(); //DA
 	void					Block_Harvester_Spawn()
 	{
+		//Destroy_Harvester(); //DA
 		AllowHarvesterSpawn = false;
 	}
 	void					Allow_Harvester_Spawn()
 	{
 		AllowHarvesterSpawn = true;
 	}
-	bool Get_Allow_Harvester_Spawn() {
+	bool Get_Allow_Harvester_Spawn() { //DA
 		return AllowHarvesterSpawn;
 	}
 private:

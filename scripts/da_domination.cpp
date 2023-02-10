@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Domination Game Mode
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -252,7 +252,7 @@ void DADominationManagerClass::Settings_Loaded_Event() {
 }
 
 void DADominationManagerClass::Player_Loaded_Event(cPlayer *Player) {
-	Send_Info_Message(Player->Get_ID());
+	Send_Info_Message(Player->Get_Id());
 }
 
 void DADominationManagerClass::Object_Created_Event(GameObject *obj) {
@@ -382,7 +382,7 @@ bool DADominationManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenC
 			}
 		}
 	}
-	int ID = Player->Get_ID();
+	int ID = Player->Get_Id();
 	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[2];it;++it) {
 		DA::Private_Color_Message(ID,COLORWHITE,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
 	}

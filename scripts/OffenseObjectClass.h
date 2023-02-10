@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Scale_Damage.
 #ifndef TT_INCLUDE_OFFENSEOBJECTCLASS_H
 #define TT_INCLUDE_OFFENSEOBJECTCLASS_H
 class ArmedGameObj;
@@ -23,7 +21,7 @@ public:
 	bool				Save( ChunkSaveClass & csave );
 	bool				Load( ChunkLoadClass & cload );
 	void	Set_Damage( float damage )	{ Damage = damage;	}
-	void	Scale_Damage(float Scale) { Damage *= Scale; }
+	void	Scale_Damage(float Scale) { Damage *= Scale; } //DA
 	float	Get_Damage( void ) const 			{ return Damage;	}
 	void	Set_Warhead( unsigned int warhead )	{ Warhead = warhead;	}
 	unsigned int Get_Warhead( void ) const 				{ return Warhead;	}

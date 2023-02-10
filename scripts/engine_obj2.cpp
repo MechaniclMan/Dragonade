@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -598,6 +598,15 @@ bool SCRIPTS_API Is_Spy(GameObject *obj)
 		return obj->As_SoldierGameObj()->Get_Definition().Is_Spy();
 	}
 	return false;
+}
+
+bool SCRIPTS_API Is_Unsquishable(GameObject *obj)
+{
+	if (obj && obj->As_SoldierGameObj())
+	{
+		return obj->As_SoldierGameObj()->Get_Definition().Is_Unsquishable();
+	}
+	return true;
 }
 
 SCRIPTS_API bool Is_Stealth_Enabled(GameObject *obj)

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Ownership Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -147,7 +147,7 @@ void DAVehicleOwnershipObserverClass::Set_State(DAVehicleOwnershipState::State s
 
 void DAVehicleOwnershipObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
 	if (Seat == 0 && Get_Vehicle_Owner()) {
-		if (Get_Team() == Player->Get_Team()) {
+		if (Get_Team() == Player->Get_Player_Type()) {
 			if (Get_Vehicle_Owner() != Player) {
 				DA::Page_Player(Player,"This vehicle belongs to %ls.",Get_Vehicle_Owner()->Get_Name());
 				DA::Page_Player(Get_Vehicle_Owner(),"%ls has entered your vehicle. You can remove them by using the \"!lock\" or \"!vkick\" command.",Player->Get_Name());
@@ -165,7 +165,7 @@ void DAVehicleOwnershipObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
 }
 
 bool DAVehicleOwnershipObserverClass::Vehicle_Entry_Request(cPlayer *Player,int &Seat) {
-	if (Get_Team() == Player->Get_Team()) {
+	if (Get_Team() == Player->Get_Player_Type()) {
 		if (Is_Selling()) { //Other players are never allowed in sold vehicles.
 			if (Get_Vehicle_Owner() != Player) {
 				DA::Page_Player(Player,"This vehicle is waiting to be sold. You may not enter it.");
@@ -587,7 +587,7 @@ void DAVehicleOwnershipGameFeatureClass::Vehicle_Enter_Event(VehicleGameObj *Veh
 	if (Seat == 0) {
 		DAVehicleObserverClass *VehicleData = DAVehicleManager::Get_Vehicle_Data(Vehicle);
 		DAVehicleOwnershipObserverClass *VehicleOwnershipData = Get_Vehicle_Data(Vehicle);
-		if (VehicleData && (VehicleData->Get_Vehicle_Owner() == Player || VehicleData->Get_Team() != Player->Get_Team() || (VehicleOwnershipData && VehicleOwnershipData->Is_Free())) && !Get_Vehicle_Data(Player) && Bind_Vehicle(Vehicle,Player)) { //Automatically bind the vehicle if they bought it, stole it, or it's free.
+		if (VehicleData && (VehicleData->Get_Vehicle_Owner() == Player || VehicleData->Get_Team() != Player->Get_Player_Type() || (VehicleOwnershipData && VehicleOwnershipData->Is_Free())) && !Get_Vehicle_Data(Player) && Bind_Vehicle(Vehicle,Player)) { //Automatically bind the vehicle if they bought it, stole it, or it's free.
 			DA::Page_Player(Player,"This vehicle has been automatically bound to you. Use \"!lock\" to lock it, or \"!unbind\"/\"!free\" to relinquish ownership.");
 		}
 	}

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Made class public.
 #ifndef TT_INCLUDE__COMBATMANAGER_H
 #define TT_INCLUDE__COMBATMANAGER_H
 #include "engine_string.h"
@@ -103,7 +101,7 @@ public:
 	static float Get_Damage_Factor(ArmedGameObj*, PhysicalGameObj*);
 	static void On_Soldier_Kill(SoldierGameObj *attacker, SoldierGameObj *victim);
 	static void On_Soldier_Death(SoldierGameObj*);
-	static bool Is_Gameplay_Permitted();
+	SCRIPTS_API static bool Is_Gameplay_Permitted(); //DA
 	static void Set_Combat_Misc_Handler( CombatMiscHandlerClass * handler ) { MiscHandler = handler; }
 	static void Mission_Complete(bool);
 	static void Star_Killed();
@@ -156,6 +154,7 @@ public:
 	static void Inc_Load_Progress( void ) { LoadProgress++; };
 	static void Set_Load_Progress( int set ) { LoadProgress = set; };
 #endif
+//private: //DA
 #ifndef TTLE_EXPORTS
 	static const ReferencerClass& getTheStarReference() { return TheStar; }
 #endif

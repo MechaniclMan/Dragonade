@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -31,7 +31,6 @@ DynamicVectorClass<DAGameFeatureFactoryClass*> DAGameManager::GameFeatures;
 bool DAGameManager::FirstMap = true;
 bool DAGameManager::ShutdownPending = false;
 StringClass DAGameManager::Map = "";
-int DAGameManager::MapIndexShift = 0;
 
 void DAGameManager::Init() {
 	static DAGameManager Instance;
@@ -44,36 +43,6 @@ void DAGameManager::Init() {
 	Console_Output("Created by Black-Cell.net\n\n");
 
 	DASettingsManager::Add_Settings("da.ini"); //Add da.ini to the settings chain. Gamemode.ini will be added/removed at the start of each map after the game mode is selected.
-
-	/*RawFileClass MapIndex;
-	if (MapIndex.Open("mapindex",0)) {
-		int Index = -1;
-		MapIndex.Read(&Index,4);
-		Console_Output("map index %d\n",Index);
-		if (Index != -1) {
-			if (::Get_Map(Index+1)) { //If we're already at the end of the rotation we don't need to do anything.
-				MapIndexShift = Index+1;
-				DynamicVectorClass<StringClass> Rotation;
-				for (int i = MapIndexShift;::Get_Map(i);i++) {
-					Rotation.Add(::Get_Map(i));
-				}
-				for (int i = 0;i <= Index && ::Get_Map(i);i++) {
-					Rotation.Add(::Get_Map(i));
-				}
-				Console_Output("old rotation:\n");
-				for (int i = 0;::Get_Map(i);i++) {
-					Console_Output("%s\n",::Get_Map(i));
-				}
-				for (int i = 0;i < Rotation.Count();i++) {
-					Set_Map(Rotation[i],i);
-				}
-				Console_Output("new rotation:\n");
-				for (int i = 0;::Get_Map(i);i++) {
-					Console_Output("%s\n",::Get_Map(i));
-				}
-			}
-		}
-	}*/
 }
 
 void DAGameManager::Shutdown() {
@@ -201,14 +170,6 @@ void DAGameManager::Level_Loaded_Event() {
 	BasePowerUpDef->GrantWeapon = false;
 	BasePowerUpDef->AlwaysAllowGrant = true;
 	BasePowerUpDef->IdleAnimationName = "";
-
-
-	/*RawFileClass MapIndex;
-	if (MapIndex.Open("mapindex",2)) {
-		int Index = Get_Current_Map_Index() + MapIndexShift;
-		MapIndex.Write(&Index,4);
-		MapIndex.Close();
-	}*/
 }
 
 void DAGameManager::Settings_Loaded_Event() {
@@ -268,7 +229,7 @@ void DAGameManager::Settings_Loaded_Event() {
 }
 
 void DAGameManager::Player_Loaded_Event(cPlayer *Player) {
-	Update_Game_Options(Player->Get_ID());
+	Update_Game_Options(Player->Get_Id());
 }
 
 DAGameModeFactoryClass *DAGameManager::Get_Game_Mode() {
@@ -423,3 +384,11 @@ public:
 	}
 };
 Register_Console_Function(DATimeoutConsoleFunctionClass);
+
+class DATimeChatCommandClass : public DAChatCommandClass {
+	bool Activate(cPlayer *Player, const DATokenClass &Text, TextMessageEnum ChatType) {
+		DA::Host_Message("Time Elapsed: %s", Format_Time((unsigned long)The_Game()->Get_Game_Duration_S()));
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DATimeChatCommandClass, "!time|!timeleft");

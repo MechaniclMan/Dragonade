@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -167,7 +167,7 @@ public:
 
 	bool StartsWithI(const char* string)
 	{
-		return strncmp(m_Buffer, string, strlen(string)) == 0;
+		return _strnicmp(m_Buffer, string, strlen(string)) == 0;
 	}
 
 	uint GetHash() const
@@ -399,12 +399,12 @@ inline StringClass::operator const char * (void) const
 
 inline bool StringClass::operator== (const char *rvalue) const
 {
-	return (Compare_No_Case (rvalue) == 0);
+	return (Compare_No_Case(rvalue) == 0);
 }
 
 inline bool StringClass::operator!= (const char *rvalue) const
 {
-	return (Compare_No_Case (rvalue) != 0);
+	return (Compare_No_Case(rvalue) != 0);
 }
 
 inline bool StringClass::operator < (const char *string) const
@@ -1066,6 +1066,45 @@ inline bool WideStringClass::Convert_To (StringClass &string) const
 {
 	return (string.Copy_Wide (m_Buffer));
 }
+
+struct hash_istring: public std::unary_function<const char*, size_t>
+{
+    size_t operator()(const char* str) const
+    {
+        // djb2
+        unsigned long hash = 5381;
+        while (int c = tolower(*str++)) hash = hash * 33 + c;
+        return hash;
+    }
+
+    size_t operator()(const StringClass& str) const
+    {
+        return (*this)(str.Peek_Buffer());
+    }
+};
+
+struct equals_istring: public std::binary_function<const char*, const char*, bool>
+{
+    bool operator()(const char* a, const char* b) const
+    {
+        return _stricmp(a, b) == 0;
+    }
+
+    size_t operator()(const StringClass& a, const StringClass& b) const
+    {
+        return _stricmp(a.Peek_Buffer(), b.Peek_Buffer()) == 0;
+    }
+
+    size_t operator()(const StringClass& a, const char* b) const
+    {
+        return _stricmp(a.Peek_Buffer(), b) == 0;
+    }
+
+    size_t operator()(const char* a, const StringClass& b) const
+    {
+        return _stricmp(a, b.Peek_Buffer()) == 0;
+    }
+};
 
 SCRIPTS_API const wchar_t *CharToWideChar(const char *str); //convert a char to a wide char
 SCRIPTS_API const char *WideCharToChar(const wchar_t *wcs); //convert a wide char to a char

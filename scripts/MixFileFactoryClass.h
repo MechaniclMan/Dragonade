@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -119,5 +119,5 @@ class MixClass {
 	static int File_Info_Compare(const void *v1, const void *v2);
 	void Create_Mix(const char *name);
 };
-
+void BuildMixFile(const char *path,DynamicVectorClass<StringClass> filenames,DynamicVectorClass<FileFactoryClass *> filefactories);
 #endif

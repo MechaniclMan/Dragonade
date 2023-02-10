@@ -13,19 +13,16 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9B549C98-0BF4-4092-AE2A-AD7F780F8405}</ProjectGuid>
     <RootNamespace>scripts</RootNamespace>
-    <ProjectName>scripts</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <PlatformToolset>v110_xp</PlatformToolset>
@@ -74,7 +71,7 @@
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
       <AdditionalIncludeDirectories>.;..\MemoryManager;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>MEMORY_MANAGER;NDEBUG;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_SECURE_SCL=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRAGONADE;MEMORY_MANAGER;NDEBUG;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_SECURE_SCL=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -85,7 +82,6 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>General.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).$(Configuration).pch</PrecompiledHeaderOutputFile>
-      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -99,12 +95,10 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
-      <MapExports>false</MapExports>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -113,6 +107,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>..\bin\release</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -132,9 +127,8 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <AdditionalIncludeDirectories>.;..\MemoryManager;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>D3D_DEBUG_INFO;DEBUG;MEMORY_MANAGER;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>DRAGONADE;D3D_DEBUG_INFO;DEBUG;MEMORY_MANAGER;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>
@@ -142,9 +136,10 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Precise</FloatingPointModel>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>
+      </RuntimeTypeInfo>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>General.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).$(Configuration).pch</PrecompiledHeaderOutputFile>
@@ -160,8 +155,6 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <GenerateMapFile>true</GenerateMapFile>
       <MapFileName>$(TargetDir)$(TargetName).map</MapFileName>
@@ -171,6 +164,8 @@
       <BaseAddress>0x11000000</BaseAddress>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>..\bin\debug</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
     <PostBuildEvent>
       <Command>if defined RenPath (
@@ -208,6 +203,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_c4beacon.cpp" />
     <ClCompile Include="da_characterrefunds.cpp" />
     <ClCompile Include="da_chatcommand.cpp" />
+    <ClCompile Include="da_chatsounds.cpp" />
     <ClCompile Include="da_coop.cpp" />
     <ClCompile Include="da_cratemodifiers.cpp" />
     <ClCompile Include="da_crate.cpp" />
@@ -240,6 +236,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_rtc.cpp" />
     <ClCompile Include="da_settings.cpp" />
     <ClCompile Include="da_levelcleaner.cpp" />
+    <ClCompile Include="da_shotgun.cpp" />
     <ClCompile Include="da_sniping.cpp" />
     <ClCompile Include="da_soldier.cpp" />
     <ClCompile Include="da_spawnprotection.cpp" />
@@ -256,6 +253,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_vehicleshells.cpp" />
     <ClCompile Include="da_vehiclespawn.cpp" />
     <ClCompile Include="da_vehiclequeue.cpp" />
+    <ClCompile Include="da_weapons.cpp" />
+    <ClCompile Include="DBIKScripts.cpp" />
+    <ClCompile Include="DB_Research_Terminals.cpp" />
     <ClCompile Include="DefinitionFactoryClass.cpp" />
     <ClCompile Include="DefinitionFactoryMgrClass.cpp" />
     <ClCompile Include="dllmain.cpp" />
@@ -303,7 +303,11 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="jfwweap.cpp" />
     <ClCompile Include="jfwws.cpp" />
     <ClCompile Include="jfwzone.cpp" />
+    <ClCompile Include="jmgBearHunter.cpp" />
+    <ClCompile Include="JmgDeathMatch.cpp" />
+    <ClCompile Include="jmgMetroid.cpp" />
     <ClCompile Include="JMGRenetBusters.cpp" />
+    <ClCompile Include="jmgUtility.cpp" />
     <ClCompile Include="kak.cpp" />
     <ClCompile Include="kamuix.cpp" />
     <ClCompile Include="LoopedAnimationController.cpp" />
@@ -330,6 +334,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="scripts.cpp" />
     <ClCompile Include="scud.cpp" />
     <ClCompile Include="sh_blocker.cpp" />
+    <ClCompile Include="sh_factory.cpp" />
     <ClCompile Include="sh_underground.cpp" />
     <ClCompile Include="shawk.cpp" />
     <ClCompile Include="SimpleFileFactoryClass.cpp" />
@@ -359,6 +364,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="ReferencerClass.cpp" />
     <ClCompile Include="SysTimeClass.cpp" />
     <ClCompile Include="wwmath.cpp" />
+    <ClCompile Include="xpert.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="scripts.rc" />
@@ -375,10 +381,12 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="ArmorWarheadManager.h" />
     <ClInclude Include="AudibleSoundClass.h" />
     <ClInclude Include="AudibleSoundDefinitionClass.h" />
+    <ClInclude Include="audiocallback.h" />
     <ClInclude Include="AudioCallbackListClass.h" />
+    <ClInclude Include="boxrenderobjclass.h" />
+    <ClInclude Include="BuildingAggregateDefClass.h" />
     <ClInclude Include="cNetEvent.h" />
-    <ClInclude Include="cPlayerKill.h" />
-    <ClInclude Include="cPurchaseResponseEvent.h" />
+    <ClInclude Include="ConversationClass.h" />
     <ClInclude Include="cScTextObj.h" />
     <ClInclude Include="cTeam.h" />
     <ClInclude Include="BaseControllerClass.h" />
@@ -392,7 +400,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="cAMpaScripts.h" />
     <ClInclude Include="CinematicGameObj.h" />
     <ClInclude Include="CinematicGameObjDef.h" />
-    <ClInclude Include="CollisionMath.h" />
     <ClInclude Include="coltest.h" />
     <ClInclude Include="coltype.h" />
     <ClInclude Include="CombatManager.h" />
@@ -401,7 +408,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="CommandLineParser.h" />
     <ClInclude Include="ConnectionAcceptanceFilter.h" />
     <ClInclude Include="ConnectionRequest.h" />
-    <ClInclude Include="ConPublic.h" />
     <ClInclude Include="cPlayer.h" />
     <ClInclude Include="Crc32.h" />
     <ClInclude Include="CullSystemClass.h" />
@@ -444,7 +450,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_rtc.h" />
     <ClInclude Include="da_settings.h" />
     <ClInclude Include="da_levelcleaner.h" />
+    <ClInclude Include="da_shotgun.h" />
     <ClInclude Include="da_soldier.h" />
+    <ClInclude Include="da_chatsounds.h" />
     <ClInclude Include="da_spawnprotection.h" />
     <ClInclude Include="da_spawnsystem.h" />
     <ClInclude Include="da_ssgm.h" />
@@ -460,6 +468,10 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_vehicleshells.h" />
     <ClInclude Include="da_vehiclespawn.h" />
     <ClInclude Include="da_vehiclequeue.h" />
+    <ClInclude Include="da_weapons.h" />
+    <ClInclude Include="DBIKScripts.h" />
+    <ClInclude Include="DB_General.h" />
+    <ClInclude Include="DB_Research_Terminals.h" />
     <ClInclude Include="DefenseObjectDefClass.h" />
     <ClInclude Include="Definition.h" />
     <ClInclude Include="DefinitionFactoryClass.h" />
@@ -524,7 +536,11 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="jfwweap.h" />
     <ClInclude Include="jfwws.h" />
     <ClInclude Include="jfwzone.h" />
+    <ClInclude Include="jmgBearHunter.h" />
+    <ClInclude Include="JmgDeathMatch.h" />
+    <ClInclude Include="jmgMetroid.h" />
     <ClInclude Include="JMGRenetBuster.h" />
+    <ClInclude Include="jmgUtility.h" />
     <ClInclude Include="kak.h" />
     <ClInclude Include="kamuix.h" />
     <ClInclude Include="LoopedAnimationController.h" />
@@ -580,7 +596,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="SceneClass.h" />
     <ClInclude Include="ScriptableGameObj.h" />
     <ClInclude Include="ScriptableGameObjDef.h" />
-    <ClInclude Include="ScriptManager.h" />
     <ClInclude Include="scripts.h" />
     <ClInclude Include="ScriptZoneGameObj.h" />
     <ClInclude Include="ScriptZoneGameObjDef.h" />
@@ -597,10 +612,15 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="SoundBufferClass.h" />
     <ClInclude Include="SoundSceneObjClass.h" />
     <ClInclude Include="SpawnerClass.h" />
+    <ClInclude Include="SpawnerDefClass.h" />
     <ClInclude Include="SpecialEffectsGameObj.h" />
     <ClInclude Include="SpecialEffectsGameObjDef.h" />
+    <ClInclude Include="StaticAnimPhysDefClass.h" />
     <ClInclude Include="StaticPhysClass.h" />
+    <ClInclude Include="StaticPhysDefClass.h" />
     <ClInclude Include="straw.h" />
+    <ClInclude Include="SuperweaponGameObj.h" />
+    <ClInclude Include="SuperweaponGameObjDef.h" />
     <ClInclude Include="survival.h" />
     <ClInclude Include="SysTimeClass.h" />
     <ClInclude Include="tda.h" />
@@ -612,6 +632,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="Observee.h" />
     <ClInclude Include="TwiddlerClass.h" />
     <ClInclude Include="Vector3i.h" />
+    <ClInclude Include="VisTableClass.h" />
     <ClInclude Include="VisTableMgrClass.h" />
     <ClInclude Include="w3d.h" />
     <ClInclude Include="WarFactoryGameObj.h" />
@@ -697,6 +718,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="VehicleGameObj.h" />
     <ClInclude Include="VehicleGameObjDef.h" />
     <ClInclude Include="wwmath.h" />
+    <ClInclude Include="xpert.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MemoryManager\MemoryManager.vcxproj">

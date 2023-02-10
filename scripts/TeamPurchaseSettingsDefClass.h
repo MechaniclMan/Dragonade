@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -140,13 +140,13 @@ public:
 		Busy[index] = b;
 		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 	}
-	void Set_Beacon_Definition(int preset) {
+	void Set_Beacon_Definition(int preset) { //DA
 		beaconpresetid = preset;
 	}
-	void Set_Beacon_Cost(int cost) {
+	void Set_Beacon_Cost(int cost) { //DA
 		beaconcost = cost;
 	}
-	void Set_Enlisted_Definition(int index,int preset) {
+	void Set_Enlisted_Definition(int index, int preset) { //DA
 		presetids[index] = preset;
 	}
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Stop_Observer_Timer, Stop_Custom_Timer, Is_Observer_Timer, and Is_Custom_Timer.
 #ifndef TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 #define TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 class ScriptableGameObj;
@@ -26,22 +24,8 @@ class DamageableGameObj;
 class BuildingGameObj;
 class SoldierGameObj;
 class ScriptZoneGameObj;
-
-class GameObjObserverTimerClass {
-public:
-	int ObserverID;
-	float Duration;
-	int Number;
-};
-
-class GameObjCustomTimerClass {
-public:
-	float Delay;
-	ReferencerClass Sender;
-	int Message;
-	int Param;
-};
-
+class GameObjObserverTimerClass;
+class GameObjCustomTimerClass;
 class ScriptableGameObjDef;
 class ScriptableGameObj : public BaseGameObj, public ReferenceableGameObj, public AudioCallbackClass
 {
@@ -60,20 +44,19 @@ public:
 	virtual	void	Think();
 	virtual	void	Post_Think();
 	virtual	void		Get_Position(Vector3 * set_pos) const		= 0;
-	SCRIPTS_API void Add_Observer( GameObjObserverClass * observer );
-	SCRIPTS_API void Remove_Observer( GameObjObserverClass * observer );
-	SCRIPTS_API void Remove_Observer(const char *Name);
+	void SCRIPTS_API Add_Observer( GameObjObserverClass * observer );
+	void SCRIPTS_API Remove_Observer( GameObjObserverClass * observer );
+	SCRIPTS_API void Remove_Observer(const char *Name); //DA 
 	SCRIPTS_API GameObjObserverClass *Find_Observer(const char *Name);
 	void Remove_All_Observers(void);
 	void Start_Observers( void );
 	const SimpleDynVecClass<GameObjObserverClass *> & Get_Observers( void )	{ return Observers; }
-	SCRIPTS_API void Insert_Observer( GameObjObserverClass * observer );
-	SCRIPTS_API void Start_Observer_Timer(int ObserverID,float Duration,int Number);
-	SCRIPTS_API void Start_Custom_Timer(ScriptableGameObj *Sender,float Delay,int Message,int Param);
-	SCRIPTS_API void Stop_Observer_Timer(int ObserverID,int Number);
-	SCRIPTS_API void Stop_Custom_Timer(ScriptableGameObj *Sender,int Message);
-	SCRIPTS_API bool Is_Observer_Timer(int ObserverID,int Number);
-	SCRIPTS_API bool Is_Custom_Timer(ScriptableGameObj *Sender,int Message);
+	void SCRIPTS_API Insert_Observer( GameObjObserverClass * observer );
+	void	Start_Observer_Timer( int observer_id, float duration, int timer_id );
+	void    Stop_Observer_Timer( int timer_id );
+	void    Stop_Observer_Timer( int observer_id, int timer_id );
+	bool    Has_Observer_Timer( int observer_id, int timer_id );
+	void	Start_Custom_Timer( ScriptableGameObj * from, float delay, int type, int param );
 	virtual	ScriptableGameObj	*As_ScriptableGameObj( void )	{ return this; };
 	virtual	DamageableGameObj	*As_DamageableGameObj( void )	{ return NULL; };
 	virtual	BuildingGameObj	*As_BuildingGameObj( void )	{ return NULL; };

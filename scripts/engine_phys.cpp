@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -63,6 +63,31 @@ float SCRIPTS_API Get_Animation_Frame(GameObject *obj)
 		return 0;
 	}
 	float a = c->Get_Current_Frame();
+	return a;
+}
+
+//doesnt work for CinematicGameObjs
+float SCRIPTS_API Get_Animation_Target_Frame(GameObject *obj)
+{
+	if (!obj)
+	{
+		return 0;
+	}
+	PhysicalGameObj *o = obj->As_PhysicalGameObj();
+	if (!o)
+	{
+		return 0;
+	}
+	if (o->As_CinematicGameObj())
+	{
+		return 0;
+	}
+	AnimControlClass *c = o->Get_Anim_Control();
+	if (!c)
+	{
+		return 0;
+	}
+	float a = c->Get_Target_Frame();
 	return a;
 }
 
@@ -138,7 +163,7 @@ void SCRIPTS_API Create_Effect_All_Stealthed_Objects_Area(const Vector3 &Positio
 			if ((Get_Object_Type(obj) == team) || (team == 2))
 			{
 				bool stealth = Is_Stealth(obj);
-				bool underground = obj->As_VehicleGameObj()->Is_Underground();
+				bool underground = obj->As_VehicleGameObj() && obj->As_VehicleGameObj()->Is_Underground();
 				if (stealth || underground)
 				{
 					ObjPosition = Commands->Get_Position(obj);

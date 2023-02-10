@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -151,7 +151,7 @@ void Obelisk_Weapon_CnC::FireAt(GameObject* WeaponObj, GameObject* EnemyObj)
 	}
 	else
 	{
-		pos = Commands->Get_Position(EnemyObj);
+		pos = Commands->Get_Bone_Position(EnemyObj,"target");
 	}
 
 	
@@ -424,7 +424,7 @@ void Obelisk_Weapon_CnC_Ground::FireAt(GameObject* WeaponObj, GameObject* EnemyO
 	}
 	else
 	{
-		pos = Commands->Get_Position(EnemyObj);
+		pos = Commands->Get_Bone_Position(EnemyObj,"target");
 	}
 
 	ActionParamsStruct AttackParams;

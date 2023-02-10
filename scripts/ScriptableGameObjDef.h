@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,6 +24,7 @@ public:
 	DECLARE_EDITABLE( ScriptableGameObjDef, BaseGameObjDef );
 	DynamicVectorClass<StringClass>		ScriptNameList; // 001C
 	DynamicVectorClass<StringClass>		ScriptParameterList; // 0034
+protected:
 	friend class ScriptableGameObj;
 	friend class PresetDump;
 }; // 004C

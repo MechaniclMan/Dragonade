@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -50,6 +50,7 @@ SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team); //Get the pl
 SCRIPTS_API int Get_Object_Count_In_Zone(GameObject *obj,int Team); //Get the object count in a zone
 SCRIPTS_API bool Is_Stealth_Enabled(GameObject *obj); //Is stealth enabled
 int SCRIPTS_API Get_Occupant_Seat(GameObject *vehicle,GameObject *occupant); //returns the seat that the occupant is sitting in or -1 if they aren't in the vehicle
+bool SCRIPTS_API Is_Unsquishable(GameObject *obj); //Is this soldier unsquishable
 
 /*!
 * \brief Create an object and attach it to a bone

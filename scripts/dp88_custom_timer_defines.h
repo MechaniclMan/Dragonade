@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -44,6 +44,8 @@
 #define CUSTOM_TRANSITION_VTOL_LAND_ZONE          (DP88_CUSTOM|MISC|0x01)             //!< Sent by dp88_Aircraft_LandingZone to any GameObjects entering (param=1) or exiting (param=0) the zone
 #define CUSTOM_UNITSOUNDS_HEALDECREMENT           (DP88_CUSTOM|MISC|0x02)             //!< Used by dp88_unitSounds to track the amount of healing a unit has recieved over a time period
 #define CUSTOM_ROCKETEER_VEHICLEKILLED            (DP88_CUSTOM|MISC|0x03)             //!< Used by dp88_AR_Rocketeer to notify itself when the flight vehicle dies (via JFW_Death_Send_Custom)
+#define CUSTOM_VEHICLE_DEPLOY                     (DP88_CUSTOM|MISC|0x04)             //!< Used by deployable vehicle scripts to notify other scripts of a change in the deployment state, 0 = undeployed, 1 = deploying, 2 = deployed, 3 = undeploying
+#define CUSTOM_RADAR_JAM                          (DP88_CUSTOM|MISC|0x05)             //!< Used by new Radar Jammer scripts to switch radar off and on and also play jamming sounds, 0 = radar off, 1 = radar on
 
 #define TIMER_MISC_TICK                           (DP88_TIMER|MISC|0x01)              //!< Miscellaneous tick timer for generic use by scripts that implement on-tick events
 #define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x02)              //!< Used by dp88_randomWeather to do a weather update

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Object Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,7 +16,7 @@
 
 #include "da_event.h"
 
-class DAGameObjObserverClass : public GameObjObserverClass {
+class DA_API DAGameObjObserverClass : public GameObjObserverClass {
 public:
 	//Stock
 	virtual ~DAGameObjObserverClass() { }
@@ -58,19 +58,19 @@ public:
 	inline GameObject *Get_Owner() {
 		return _Owner;
 	}
-	DA_API void Start_Timer(int Number,float Duration);
-	DA_API void Stop_Timer(int Number);
-	DA_API bool Is_Timer(int Number);
-	DA_API void Set_Delete_Pending();
+	void Start_Timer(int Number,float Duration);
+	void Stop_Timer(int Number);
+	bool Is_Timer(int Number);
+	void Set_Delete_Pending();
 
 private:
 	__declspec(deprecated("Replaced by Kill_Received.")) virtual void Killed(GameObject *obj,GameObject *Killer) { }
 	__declspec(deprecated("Replaced by Damage_Received.")) virtual void Damaged(GameObject *obj,GameObject *Damager,float Damage) { }
 	__declspec(deprecated("Replaced by Init.")) virtual void Created(GameObject *obj) { }
-	DA_API __declspec(deprecated("Replaced by Get_Owner")) virtual GameObject *Owner();
-	DA_API __declspec(deprecated("Reserved for internal use. Use Init instead.")) virtual void Attach(GameObject *obj);
-	DA_API __declspec(deprecated("Reserved for internal use. Use destructor instead.")) virtual void Detach(GameObject *obj);
-	GameObject *_Owner;
+	__declspec(deprecated("Replaced by Get_Owner")) virtual GameObject *Owner();
+	__declspec(deprecated("Reserved for internal use. Use Init instead.")) virtual void Attach(GameObject *obj);
+	__declspec(deprecated("Reserved for internal use. Use destructor instead.")) virtual void Detach(GameObject *obj);
+	ReferencerClass _Owner;
 };
 
 class DAGameObjManager : public DAEventClass {

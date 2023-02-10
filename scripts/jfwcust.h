@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -470,6 +470,11 @@ class JFW_Kill_All_Buildings_Customs : public ScriptImpClass {
 };
 
 class JFW_Send_Self_Custom_On_Key : public JFW_Key_Hook_Base {
+	void Created(GameObject *obj);
+	void KeyHook();
+};
+
+class JFW_Send_Message_On_Key : public JFW_Key_Hook_Base {
 	void Created(GameObject *obj);
 	void KeyHook();
 };

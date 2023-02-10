@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Damage Log
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -55,7 +55,7 @@ void DADamageLogObserverClass::Timer_Expired(GameObject *obj,int Number) {
 }
 
 void DADamageLogObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
-	if (Player->Get_Team() != DAVehicleManager::Get_Team(Get_Owner())) {
+	if (Player->Get_Player_Type() != DAVehicleManager::Get_Team(Get_Owner())) {
 		Clear_Damage();
 	}
 }
@@ -95,9 +95,9 @@ float DADamageLogObserverClass::Compile_Damage_Table_Team(DADamageTableStruct *D
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage > 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() == Team || Team == 2) {
-					DamageTable[Player->Get_ID()].Player = Player;
-					DamageTable[Player->Get_ID()].Damage += z->Data()->Damage;
+				if (Player->Get_Player_Type() == Team || Team == 2) {
+					DamageTable[Player->Get_Id()].Player = Player;
+					DamageTable[Player->Get_Id()].Damage += z->Data()->Damage;
 				}
 			}
 			else {
@@ -115,9 +115,9 @@ float DADamageLogObserverClass::Compile_Damage_Table_Other_Team(DADamageTableStr
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage > 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() != Team) {
-					DamageTable[Player->Get_ID()].Player = Player;
-					DamageTable[Player->Get_ID()].Damage += z->Data()->Damage;
+				if (Player->Get_Player_Type() != Team) {
+					DamageTable[Player->Get_Id()].Player = Player;
+					DamageTable[Player->Get_Id()].Damage += z->Data()->Damage;
 				}
 			}
 			else {
@@ -184,7 +184,7 @@ cPlayer *DADamageLogObserverClass::Get_Highest_Damager_Team(int Team) {
 	float HighestDamage = 0.0f;
 	for (int i = 1;i < 127;i++) {
 		if (DamageTable[i].Damage > HighestDamage) {
-			if (DamageTable[i].Player->Get_Team() == Team || Team == 2) {
+			if (DamageTable[i].Player->Get_Player_Type() == Team || Team == 2) {
 				HighestDamager = DamageTable[i].Player;
 				HighestDamage = DamageTable[i].Damage;
 			}
@@ -200,7 +200,7 @@ cPlayer *DADamageLogObserverClass::Get_Highest_Damager_Other_Team(int Team) {
 	float HighestDamage = 0.0f;
 	for (int i = 1;i < 127;i++) {
 		if (DamageTable[i].Damage > HighestDamage) {
-			if (DamageTable[i].Player->Get_Team() != Team) {
+			if (DamageTable[i].Player->Get_Player_Type() != Team) {
 				HighestDamager = DamageTable[i].Player;
 				HighestDamage = DamageTable[i].Damage;
 			}
@@ -216,7 +216,7 @@ float DADamageLogObserverClass::Get_Percent_Team_Damage(int Team) {
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage > 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() == Team || Team == 2) {
+				if (Player->Get_Player_Type() == Team || Team == 2) {
 					TeamDamage += z->Data()->Damage;
 				}
 			}
@@ -235,7 +235,7 @@ float DADamageLogObserverClass::Get_Percent_Other_Team_Damage(int Team) {
 	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;z = z->Next()) {
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage > 0.0f) {
 			cPlayer *Player = z->Data()->Player;
-			if (!Player || Player->Get_Team() != Team) {
+			if (!Player || Player->Get_Player_Type() != Team) {
 				TeamDamage += z->Data()->Damage;
 			}
 			TotalDamage += z->Data()->Damage;
@@ -280,9 +280,9 @@ float DADamageLogObserverClass::Compile_Repair_Table_Team(DADamageTableStruct *D
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage < 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() == Team || Team == 2) {
-					DamageTable[Player->Get_ID()].Player = Player;
-					DamageTable[Player->Get_ID()].Damage -= z->Data()->Damage;
+				if (Player->Get_Player_Type() == Team || Team == 2) {
+					DamageTable[Player->Get_Id()].Player = Player;
+					DamageTable[Player->Get_Id()].Damage -= z->Data()->Damage;
 				}
 			}
 			else {
@@ -300,9 +300,9 @@ float DADamageLogObserverClass::Compile_Repair_Table_Other_Team(DADamageTableStr
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage < 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() != Team) {
-					DamageTable[Player->Get_ID()].Player = Player;
-					DamageTable[Player->Get_ID()].Damage -= z->Data()->Damage;
+				if (Player->Get_Player_Type() != Team) {
+					DamageTable[Player->Get_Id()].Player = Player;
+					DamageTable[Player->Get_Id()].Damage -= z->Data()->Damage;
 				}
 			}
 			else {
@@ -369,7 +369,7 @@ cPlayer *DADamageLogObserverClass::Get_Highest_Repairer_Team(int Team) {
 	float HighestDamage = 0.0f;
 	for (int i = 1;i < 127;i++) {
 		if (DamageTable[i].Damage > HighestDamage) {
-			if (DamageTable[i].Player->Get_Team() == Team || Team == 2) {
+			if (DamageTable[i].Player->Get_Player_Type() == Team || Team == 2) {
 				HighestDamager = DamageTable[i].Player;
 				HighestDamage = DamageTable[i].Damage;
 			}
@@ -385,7 +385,7 @@ cPlayer *DADamageLogObserverClass::Get_Highest_Repairer_Other_Team(int Team) {
 	float HighestDamage = 0.0f;
 	for (int i = 1;i < 127;i++) {
 		if (DamageTable[i].Damage > HighestDamage) {
-			if (DamageTable[i].Player->Get_Team() != Team) {
+			if (DamageTable[i].Player->Get_Player_Type() != Team) {
 				HighestDamager = DamageTable[i].Player;
 				HighestDamage = DamageTable[i].Damage;
 			}
@@ -401,7 +401,7 @@ float DADamageLogObserverClass::Get_Percent_Team_Repairs(int Team) {
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage < 0.0f) {
 			cPlayer *Player = z->Data()->Player;
 			if (Player) {
-				if (Player->Get_Team() == Team || Team == 2) {
+				if (Player->Get_Player_Type() == Team || Team == 2) {
 					TeamDamage -= z->Data()->Damage;
 				}
 			}
@@ -420,7 +420,7 @@ float DADamageLogObserverClass::Get_Percent_Other_Team_Repairs(int Team) {
 	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;z = z->Next()) {
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time <= 30 && z->Data()->Damage < 0.0f) {
 			cPlayer *Player = z->Data()->Player;
-			if (!Player || Player->Get_Team() != Team) {
+			if (!Player || Player->Get_Player_Type() != Team) {
 				TeamDamage -= z->Data()->Damage;
 			}
 			TotalDamage -= z->Data()->Damage;

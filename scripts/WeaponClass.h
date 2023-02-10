@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -89,6 +89,7 @@ public:
 	const char *	Get_Model_Name( void ) 		{ return Definition->Model; }
 	const char *	Get_Back_Model_Name( void ){ return Definition->BackModel; }
 	const char *	Get_Anim_Name( void )  		{ return (NextAnimState != WEAPON_ANIM_NOT_FIRING) ? Definition->FireAnim : Definition->IdleAnim; }
+	const char *	Get_First_Person_Anim_Name( void ) const { return Definition->FirstPersonAnim; }
 	int				Get_Style( void )		  		{ return Definition->Style; }
 	float			Get_Key_Number( void )		{ return Definition->KeyNumber; }
 	bool				Get_Can_Snipe( void )		{ return Definition->CanSnipe; }
@@ -153,10 +154,15 @@ public:
 
 	//new
 	SCRIPTS_API float	Get_Targeting_Range(void);
+	bool				Tilt_Gun_While_Reloading(){return tiltGunWhileReloading && Definition->DoTiltWhileReloading;}
 private:
 	void				Fire_C4( const AmmoDefinitionClass *ammo_def );
 	bool				Fire_Beacon( const AmmoDefinitionClass *ammo_def );
 	void				Fire_Bullet( const AmmoDefinitionClass *ammo_def, bool primary );
+	void				clientReloadingSync();
+	void				cleintReloadAmmoSync();
+	void				sendReloadNetworkCall(int reloadingObjectId,int originatingClientId);
+	void				sendClientAmmoAcrossNetwork(int originalPlayerId,int reloadingObjectId,int weaponId,int clipRounds,int backpackRounds);
 
 	const WeaponDefinitionClass* Definition; // 0000
 	ReferencerClass Owner; // 0004
@@ -201,6 +207,9 @@ private:
 	void				Ignore_Owner( void );
 	void				Unignore_Owner( void );
 	AudibleSoundClass *GlobalFiringSound;
+	bool				tiltGunWhileReloading;
+public:
+	static void			Set_Ammo_By_WeaponId_No_Networking(GameObject *obj,int weaponId,int clipBullets,int inventoryRounds);
 }; // 00AC
 
 #endif

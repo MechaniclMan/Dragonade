@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Disable List
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -363,7 +363,7 @@ bool DADisableListManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,c
 	}
 	else {
 		int Team = DAVehicleManager::Get_Team(Vehicle);
-		if (Team != -2 && Team != Player->Get_Team() && !Can_Character_Steal_Vehicles(&Player->Get_GameObj()->Get_Definition())) {
+		if (Team != -2 && Team != Player->Get_Player_Type() && !Can_Character_Steal_Vehicles(&Player->Get_GameObj()->Get_Definition())) {
 			DA::Page_Player(Player,"Your current character cannot steal vehicles.");
 			return false;
 		}

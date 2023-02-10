@@ -1,5 +1,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Express 2012 for Windows Desktop
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scripts", "scripts\scripts.vcxproj", "{9B549C98-0BF4-4092-AE2A-AD7F780F8405}"
 	ProjectSection(ProjectDependencies) = postProject
 		{6636E311-E860-4F52-9D23-FE38E38D6020} = {6636E311-E860-4F52-9D23-FE38E38D6020}
@@ -13,42 +15,24 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcx
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug SSGM|Win32 = Debug SSGM|Win32
 		Debug|Win32 = Debug|Win32
-		Release SSGM|Win32 = Release SSGM|Win32
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug SSGM|Win32.ActiveCfg = Debug|Win32
-		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug SSGM|Win32.Build.0 = Debug|Win32
 		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug|Win32.ActiveCfg = Debug|Win32
 		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Debug|Win32.Build.0 = Debug|Win32
-		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release SSGM|Win32.ActiveCfg = Release|Win32
-		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release SSGM|Win32.Build.0 = Release|Win32
 		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release|Win32.ActiveCfg = Release|Win32
 		{9B549C98-0BF4-4092-AE2A-AD7F780F8405}.Release|Win32.Build.0 = Release|Win32
-		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug SSGM|Win32.ActiveCfg = Debug|Win32
-		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug SSGM|Win32.Build.0 = Debug|Win32
 		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Debug|Win32.Build.0 = Debug|Win32
-		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release SSGM|Win32.ActiveCfg = Release|Win32
-		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release SSGM|Win32.Build.0 = Release|Win32
 		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release|Win32.ActiveCfg = Release|Win32
 		{2FEF1C76-9E4A-4921-B2D3-E536DA918810}.Release|Win32.Build.0 = Release|Win32
-		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug SSGM|Win32.ActiveCfg = Debug|Win32
-		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug SSGM|Win32.Build.0 = Debug|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug|Win32.ActiveCfg = Debug|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug|Win32.Build.0 = Debug|Win32
-		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release SSGM|Win32.ActiveCfg = Release|Win32
-		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release SSGM|Win32.Build.0 = Release|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.ActiveCfg = Release|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.Build.0 = Release|Win32
-		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug SSGM|Win32.ActiveCfg = Debug|Win32
-		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug SSGM|Win32.Build.0 = Debug|Win32
 		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.ActiveCfg = Debug|Win32
 		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.Build.0 = Debug|Win32
-		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release SSGM|Win32.ActiveCfg = Release|Win32
-		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release SSGM|Win32.Build.0 = Release|Win32
 		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.ActiveCfg = Release|Win32
 		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection

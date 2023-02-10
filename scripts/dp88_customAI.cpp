@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -108,6 +108,14 @@ void dp88_customAI::Init(GameObject *obj)
   Commands->Innate_Enable(obj);
   Commands->Enable_Enemy_Seen(obj, true);
   Commands->Enable_Vehicle_Transitions(obj, false);
+
+  //Make Turret Face default direction
+  if(obj->As_VehicleGameObj())
+  {
+	  Vector3 pos = Commands->Get_Position(obj);
+	  Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
+	  obj->As_VehicleGameObj()->Set_Targeting(pos + target_direction * 100);
+  }
 
   // Start timer which runs for the lifetime of this object
   Commands->Start_Timer ( obj, this, 1.0, TIMER_AI_THINK );
@@ -867,6 +875,7 @@ void dp88_AI_Turret::attackLocation ( GameObject* obj, Vector3 location, bool pr
 		// be implemented in a derived class)
 		dp88_AI_Turret::stopAttacking(obj);
 
+		params.AttackObject = 0;
 		params.Set_Basic( this, 100.0f, 8951 );
 		params.Set_Attack( location, (primary)?(float)primary_maxRange:(float)secondary_maxRange, 0.0, primary);
 		params.AttackCheckBlocked = false;

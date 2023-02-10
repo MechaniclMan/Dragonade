@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -57,8 +57,8 @@ public:
 	
 	static T& getInstance()
 	{
-		static T instance;
-		return instance;
+		static T instancex;
+		return instancex;
 	}
 
 };

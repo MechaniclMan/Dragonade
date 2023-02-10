@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Example Plugin
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,7 +38,7 @@ class DAExampleCrateClass : public DACrateClass { //Inherit from DACrateClass. Y
 		if (Player->Get_GameObj()->Is_Stealth_Enabled()) { //Check if the player is something you don't want to get this crate.
 			return false;
 		}
-		if (!Find_Base_Defense(!Player->Get_Team())) { //Or check for any other scenario you wouldn't want the crate to trigger in.
+		if (!Find_Base_Defense(!Player->Get_Player_Type())) { //Or check for any other scenario you wouldn't want the crate to trigger in.
 			return false;
 		}
 		return true;

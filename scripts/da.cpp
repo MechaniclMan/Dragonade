@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -65,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.8.1";
+	return "1.9";
 }
 
 void DA::Init() {
@@ -130,7 +130,7 @@ float Get_Random_Float(float Min,float Max) {
 }
 
 bool Get_Random_Bool() {
-	return RNG() % 2;
+	return !!(RNG() % 2);
 }
 
 void DA::Host_Message(const char *Format,...) {
@@ -156,12 +156,12 @@ void DA::Private_Host_Message(cPlayer *Player,const char *Format,...) {
 	Format_String_Prefix(Message);
 	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 		cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-		Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+		Text->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 	}
 	else {
-		Send_Message_Player_By_ID(Player->Get_ID(),COLORLIGHTBLUE,StringFormat("Host: %s",Message));
+		Send_Message_Player_By_ID(Player->Get_Id(),COLORLIGHTBLUE,StringFormat("Host: %s",Message));
 	}
-	Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"public_message.wav");
+	Create_2D_WAV_Sound_Player_By_ID(Player->Get_Id(),"public_message.wav");
 }
 
 void DA::Private_Host_Message(int Player,const char *Format,...) {
@@ -201,7 +201,7 @@ void DA::Private_Admin_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
 	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,false,false);
-	Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+	Text->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 }
 
 void DA::Private_Admin_Message(int Player,const char *Format,...) {
@@ -225,7 +225,7 @@ void DA::Private_Admin_Message(GameObject *Player,const char *Format,...) {
 void DA::Player_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player->Get_ID(),-1,true,false);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player->Get_Id(),-1,true,false);
 }
 
 void DA::Player_Message(int Player,const char *Format,...) {
@@ -247,7 +247,7 @@ void DA::Player_Message(GameObject *Player,const char *Format,...) {
 void DA::Team_Player_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player->Get_ID(),-1,true,false);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player->Get_Id(),-1,true,false);
 }
 
 void DA::Team_Player_Message(int Player,const char *Format,...) {
@@ -271,7 +271,7 @@ void DA::Page_Team(int Team,const char *Format,...) {
 	Format_String(Message);
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && Player->Get_Team() == Team) {
+		if (Player->Is_Active() && Player->Get_Player_Type() == Team) {
 			Page_Player(Player->Get_Id(),"%s",Message);
 		}
 	}
@@ -282,14 +282,14 @@ void DA::Page_Team_Except(int Team,cPlayer *Except,const char *Format,...) {
 	Format_String(Message);
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && Player->Get_Team() == Team && Player != Except) {
+		if (Player->Is_Active() && Player->Get_Player_Type() == Team && Player != Except) {
 			Page_Player(Player,"%s",Message);
 		}
 	}
 }
 
 void DA::Page_Player(cPlayer *Player,const char *Format,...) {
-	int ID = Player->Get_ID();
+	int ID = Player->Get_Id();
 	char Message[256];
 	Format_String_Prefix(Message);
 	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
@@ -330,7 +330,7 @@ void DA::Color_Message(unsigned int Red,int unsigned Green,int unsigned Blue,con
 			if (!ChatEvent) {
 				ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message),-1,false,false);
 			}
-			ChatEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+			ChatEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 		}
 	}
 	if (ChatEvent) {
@@ -365,7 +365,7 @@ void DA::Color_Message_With_Team_Color(int Team,const char *Format,...) {
 						ChatEvent->type = TEXT_MESSAGE_PUBLIC;
 					}
 				}
-				ChatEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+				ChatEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 			}
 		}
 		if (ChatEvent) {
@@ -386,7 +386,7 @@ void DA::Team_Color_Message(int Team,unsigned int Red,int unsigned Green,int uns
 			if (!ChatEvent) {
 				ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message),-1,false,false);
 			}
-			ChatEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+			ChatEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 		}
 	}
 	if (ChatEvent) {
@@ -417,10 +417,10 @@ void DA::Team_Color_Message_With_Team_Color(int Team,const char *Format,...) {
 						ChatEvent->type = TEXT_MESSAGE_PUBLIC;
 					}
 				}
-				ChatEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+				ChatEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 			}
 			else {
-				Send_Message_Player_By_ID(Player->Get_ID(),Red,Green,Blue,Message);
+				Send_Message_Player_By_ID(Player->Get_Id(),Red,Green,Blue,Message);
 			}
 		}
 	}
@@ -431,7 +431,7 @@ void DA::Team_Color_Message_With_Team_Color(int Team,const char *Format,...) {
 }
 
 void DA::Private_Color_Message(cPlayer *Player,unsigned int Red,unsigned int Green,unsigned int Blue,const char *Format,...) {
-	int ID = Player->Get_ID();
+	int ID = Player->Get_Id();
 	char Message[256];
 	Format_String(Message);
 	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
@@ -464,7 +464,7 @@ void DA::Private_Color_Message(GameObject *Player,unsigned int Red,unsigned int 
 }
 
 void DA::Private_Color_Message_With_Team_Color(cPlayer *Player,int Team,const char *Format,...) {
-	int ID = Player->Get_ID();
+	int ID = Player->Get_Id();
 	char Message[256];
 	Format_String(Message);
 	if (Team != 0 && Team != 1) {
@@ -527,10 +527,10 @@ void DA::Create_2D_Sound_Team(int Team,const char *Sound) {
 }
 
 void DA::Create_2D_Sound_Player(cPlayer *Player,const char *Sound) {
-	Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),Sound);
+	Create_2D_WAV_Sound_Player_By_ID(Player->Get_Id(),Sound);
 	StringClass String(Sound);
 	String.TruncateRight(8);
-	Send_Announcement_Player_Version_Less_Than(Player->Get_ID(),StringFormat("IDS_%s_TXT",String),2.6f);
+	Send_Announcement_Player_Version_Less_Than(Player->Get_Id(),StringFormat("IDS_%s_TXT",String),2.6f);
 }
 
 void DA::Create_2D_Sound_Player(int Player,const char *Sound) {
@@ -550,6 +550,51 @@ void DA::Create_2D_Sound_Player(GameObject *Player,const char *Sound) {
 	}
 }
 
+void DA::HUD_Message(unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...) {
+	char Message[256];
+	Format_String(Message);
+	WideStringClass Send;
+	Send.Format(L"j\n90\n8269\n%hs\n%f\n%f\n%f\n,", Message, Red/255.0f, Green/255.0f, Blue/255.0f);
+	Send_Client_Text(Send, TEXT_MESSAGE_PUBLIC, false, -2, -1, true, true);
+}
+
+void DA::Team_HUD_Message(int Team, unsigned int Red, int unsigned Green, int unsigned Blue, const char *Format, ...) {
+	char Message[256];
+	Format_String(Message);
+	WideStringClass Send;
+	Send.Format(L"j\n90\n8269\n%hs\n%f\n%f\n%f\n,", Message, Red/255.0f, Green/255.0f, Blue/255.0f);
+	cScTextObj *Text = Send_Client_Text(Send, TEXT_MESSAGE_PUBLIC, false, -2, -1,false,false);
+	Text->Set_Dirty_Bit_For_Team(NetworkObjectClass::BIT_CREATION, Team);
+}
+
+void DA::Private_HUD_Message(cPlayer *Player, unsigned int Red, unsigned int Green, unsigned int Blue, const char *Format, ...) {
+	char Message[256];
+	Format_String(Message);
+	WideStringClass Send;
+	Send.Format(L"j\n90\n8269\n%hs\n%f\n%f\n%f\n,", Message, Red/255.0f, Green/255.0f, Blue/255.0f);
+	Send_Client_Text(Send, TEXT_MESSAGE_PRIVATE, false, -2, Player->Get_Id(), true,true);
+}
+
+void DA::Private_HUD_Message(int Player, unsigned int Red, unsigned int Green, unsigned int Blue, const char *Format, ...) {
+	cPlayer *P = Find_Player(Player);
+	if (P) {
+		char Message[256];
+		Format_String(Message);
+		Private_HUD_Message(P, Red, Green, Blue, "%s", Message);
+	}
+}
+
+void DA::Private_HUD_Message(GameObject *Player, unsigned int Red, unsigned int Green, unsigned int Blue, const char *Format, ...) {
+	if (Is_Player(Player)) {
+		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
+		char Message[256];
+		Format_String(Message);
+		Private_HUD_Message(P, Red, Green, Blue, "%s", Message);
+	}
+}
+
+
+
 void DebugMsg(const char *Format,...) {
 	char Buffer[526];
 	va_list arg_list;
@@ -560,6 +605,8 @@ void DebugMsg(const char *Format,...) {
 	fprintf(file,"%s\n",Buffer);
 	fclose(file);
 }
+
+
 
 class DAMsgConsoleFunctionClass : public ConsoleFunctionClass {
 public:
@@ -612,6 +659,8 @@ public:
 };
 Register_Console_Function(DAAMsgConsoleFunctionClass);
 
+
+
 class DAPPageConsoleFunctionClass : public ConsoleFunctionClass {
 public:
 	const char* Get_Name() { return "ppage"; }
@@ -644,13 +693,13 @@ public:
 		if (Text.Get_Int(Team) && Text.Get_Remaining_String()) {
 			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 				cPlayer *Player = z->Data();
-				if (Player->Is_Active() && Player->Get_Team() == Team) {
+				if (Player->Is_Active() && Player->Get_Player_Type() == Team) {
 					if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
-						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
+						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_Id(),true,true);
 					}
 					else {
 						DA::Private_Color_Message(Player,COLORLIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
-						Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"yo1.wav");
+						Create_2D_WAV_Sound_Player_By_ID(Player->Get_Id(),"yo1.wav");
 					}
 				}
 			}
@@ -658,6 +707,8 @@ public:
 	}
 };
 Register_Console_Function(DATPageConsoleFunctionClass);
+
+
 
 class DACMsgConsoleFunctionClass : public ConsoleFunctionClass {
 public:
@@ -753,3 +804,65 @@ public:
 };
 Register_Console_Function(DACMsgPConsoleFunctionClass);
 
+
+
+class DAHUDMsgConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "hudmsg"; }
+	const char* Get_Help() { return "HUDMST <red>,<green>,<blue> <message> - Displays a colored message on the HUD of all players. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString, ' ');
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red, Green, Blue;
+			DATokenParserClass ColorParser(Colors, ',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				DA::HUD_Message(Red, Green, Blue, "%s", Message);
+			}
+		}
+	}
+};
+Register_Console_Function(DAHUDMsgConsoleFunctionClass);
+
+class DAHUDMsgTConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "hudmsgt"; }
+	const char* Get_Help() { return "HUDMSGT <team> <red>,<green>,<blue> <message> - Displays a colored message on the HUD of a team. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString, ' ');
+		int Team;
+		Text.Get_Int(Team);
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red, Green, Blue;
+			DATokenParserClass ColorParser(Colors, ',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				DA::Team_HUD_Message(Team, Red, Green, Blue, "%s", Message);
+			}
+		}
+	}
+};
+Register_Console_Function(DAHUDMsgTConsoleFunctionClass);
+
+class DAHUDMsgPConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "hudmsgp"; }
+	const char* Get_Help() { return "HUDMSGP <player> <red>,<green>,<blue> <message> - Displays a colored message on the HUD of a player. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString, ' ');
+		int ID;
+		Text.Get_Int(ID);
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red, Green, Blue;
+			DATokenParserClass ColorParser(Colors, ',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				DA::Private_HUD_Message(ID, Red, Green, Blue, "%s", Message);
+			}
+		}
+	}
+};
+Register_Console_Function(DAHUDMsgPConsoleFunctionClass);

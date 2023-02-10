@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -32,6 +32,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (PowerUpGameObjDef, SimpleGameObjDef);
+public:
 	int											GrantShieldType;
 	float											GrantShieldStrength;
 	float											GrantShieldStrengthMax;
@@ -48,10 +49,10 @@ public:
 	StringClass									GrantAnimationName;
 	int											IdleSoundID;
 	StringClass									IdleAnimationName;
-	bool                    GrantShieldStrengthMaxIsScaled;
-	bool                    GrantHealthMaxIsScaled;
 	friend	class								PowerUpGameObj;
 	friend class PresetDump;
+  bool                    GrantShieldStrengthMaxIsScaled;
+  bool                    GrantHealthMaxIsScaled;
 };
 
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -426,6 +426,23 @@ protected:
   /*! @} */
 };
 
+class dp88_customPointsPercentage : public ScriptImpClass
+{
+protected:
+	void Created(GameObject* obj);
+	void Damaged(GameObject *obj, GameObject *damager, float amount);
+	void Killed(GameObject* obj, GameObject *killer);
+
+	void GivePointsAndMoney(GameObject* obj, float points, float money);
+
+	float m_killPoints;
+	float m_damagePoints;
+	float m_repairPoints;
+	float m_killMoney;
+	float m_damageMoney;
+	float m_repairMoney;
+};
+
 // -------------------------------------------------------------------------------------------------
 
 /*!
@@ -646,6 +663,7 @@ private:
 *    <tr><td>%%CAPTUREPOINTS%</td>          <td>The value of CapturePoints</td></tr>
 *    <tr><td>%%TICKPOINTS%</td>             <td>The value of TickPoints</td></tr>
 *    <tr><td>%%TICKINTERVAL%</td>           <td>The value of TickInterval</td></tr>
+*    <tr><td>%%ZONENAME%</td>               <td>The translated name of the object this script is attached to</td></tr>
 *   </table>
 */
 class dp88_conquestControlZone : public ScriptImpClass

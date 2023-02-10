@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Ownership Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -55,7 +55,7 @@ public:
 	}
 	inline int Get_Team() {
 		if (VehicleOwner) {
-			return VehicleOwner->Get_Team();
+			return VehicleOwner->Get_Player_Type();
 		}
 		return INT_MAX;
 	}

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,8 +24,6 @@
 #pragma warning(disable: 4201) // nonstandard extension used : nameless struct/union
 #pragma warning(disable: 4505) // unreferenced local function has been removed
 #pragma warning(disable: 6509) // warning c6509: Return used on precondition
-#pragma warning(disable: 4800) // forcing value to bool
-#pragma warning(disable: 4275) // non dll-interface class used as base for dll-interface class
 
 //class needs to have dll-interface to used by clients of class. Except that it doesn't. 
 //If it did, the linker would complain.
@@ -108,23 +106,24 @@ char ( &_ArraySizeHelper( T (&array)[N] ))[N];
 #ifndef EXTERNAL
 
 #ifdef SHARED_EXPORTS
-#define SHARED_API __declspec(dllexport)
-#define SCRIPTS_API
-#define DA_API
+#   define SHARED_API __declspec(dllexport)
 #else
-#define SHARED_API __declspec(dllimport)
-#if DAPLUGIN || SSGMPLUGIN
-#define SCRIPTS_API __declspec(dllimport)
-#define DA_API __declspec(dllimport)
-#else
-#define SCRIPTS_API __declspec(dllexport)
-#define DA_API __declspec(dllexport)
-#endif
+#   define SHARED_API __declspec(dllimport)
 #endif
 
-SCRIPTS_API void* HookupAT3(void* a, void* b, void* c, void* patch_start);
-#define RENEGADE_FUNCTION  __declspec(naked)
-#ifndef TTLE_EXPORTS
+#ifdef DRAGONADE //DA
+#   define SCRIPTS_API __declspec(dllexport)
+#else
+#   if SSGMPLUGIN || DAPLUGIN
+#   define SCRIPTS_API __declspec(dllimport)
+#   else
+#       define SCRIPTS_API
+#   endif
+#endif
+
+SCRIPTS_API void* HookupAT3(void* a, void* b, void* c, void* patch_start); //DA
+#define RENEGADE_FUNCTION  __declspec(naked) //DA
+#ifndef TTLE_EXPORTS //DA
 #define AT2(client, server) AT3(client, server, 0)
 #endif
 #define AT3(client, server, leveledit)  \
@@ -142,8 +141,8 @@ SCRIPTS_API void* HookupAT3(void* a, void* b, void* c, void* patch_start);
     __asm pop ecx                       \
     __asm jmp eax                       \
 }
-SCRIPTS_API void InitEngine();
-SCRIPTS_API extern int Exe;  // used by Vx()/ATx() macros
+SCRIPTS_API void InitEngine(); //DA
+SCRIPTS_API extern int Exe;  // used by Vx()/ATx() macros //DA
 
 template <typename T> T& ResolveGameReference(const int client, const int server, const int leveledit)
 {
@@ -211,6 +210,7 @@ public:
 #define SCRIPTS_API
 #define SHARED_API
 #endif
+#define DA_API SCRIPTS_API //DA
 
 template<int stackBufferLength, typename Char> class FormattedString;
 

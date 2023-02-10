@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -958,7 +958,7 @@ void JFW_Create_Destroy_Object_On_Custom_Bone::Custom(GameObject *obj,int type,i
 	}
 	if (type == Get_Int_Parameter("DestroyMessage"))
 	{
-		if (!ObjectID)
+		if (ObjectID)
 		{
 			Commands->Destroy_Object(Commands->Find_Object(ObjectID));
 			ObjectID = 0;
@@ -1593,6 +1593,16 @@ void JFW_Send_Self_Custom_On_Key::KeyHook()
 	}
 }
 
+void JFW_Send_Message_On_Key::Created(GameObject *obj)
+{
+	InstallHook(Get_Parameter("Key"), obj);
+}
+
+void JFW_Send_Message_On_Key::KeyHook()
+{
+	Send_Message_Player(Owner(),Get_Int_Parameter("Red"), Get_Int_Parameter("Green"), Get_Int_Parameter("Blue"), Get_Parameter("Message"));
+}
+
 void JFW_Startup_Custom_Self::Created(GameObject *obj)
 {
 	int msg = Get_Int_Parameter("Message");
@@ -1711,7 +1721,8 @@ ScriptRegistrant<JFW_Shader_Custom_Create> JFW_Shader_Custom_Create_Registrant("
 ScriptRegistrant<JFW_Shader_Custom_Poke> JFW_Shader_Custom_Poke_Registrant("JFW_Shader_Custom_Poke","Number:int,Number2:float");
 ScriptRegistrant<JFW_Kill_All_Buildings_Customs> JFW_Kill_All_Buildings_Customs_Registrant("JFW_Kill_All_Buildings_Customs","Message:int,Count:int,Player_Type:int");
 ScriptRegistrant<JFW_Send_Self_Custom_On_Key> JFW_Send_Self_Custom_On_Key_Registrant("JFW_Send_Self_Custom_On_Key","Key=Key:string,Message=0:int,Once=1:int");
-ScriptRegistrant<JFW_Custom_Send_Random_Custom> JFW_Custom_Send_Random_Custom_Registrant("JFW_Custom_Send_Random_Custom","RecieveMessage:int,SendMessage:int,SendParam:int,SendID:int,Percentage:int");
+ScriptRegistrant<JFW_Send_Message_On_Key> JFW_Send_Message_On_Key_Registrant("JFW_Send_Message_On_Key", "Key:string,Message:string,Red:int,Green:int,Blue:int");
+ScriptRegistrant<JFW_Custom_Send_Random_Custom> JFW_Custom_Send_Random_Custom_Registrant("JFW_Custom_Send_Random_Custom", "RecieveMessage:int,SendMessage:int,SendParam:int,SendID:int,Percentage:int");
 ScriptRegistrant<JFW_Startup_Custom_Self> JFW_Startup_Custom_Self_Registrant("JFW_Startup_Custom_Self","Message:int,Param=0:int,Delay=0:int");
 ScriptRegistrant<JFW_Set_Skin_Custom> JFW_Set_Skin_Custom_Registrant("JFW_Set_Skin_Custom","Message:int,Armour:string");
 ScriptRegistrant<JFW_Set_Armor_Custom> JFW_Set_Armor_Custom_Registrant("JFW_Set_Armor_Custom","Message:int,Armour:string");

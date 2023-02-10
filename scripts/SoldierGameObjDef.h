@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,6 +38,7 @@ public:
 	float Get_Skeleton_Width() const {return SkeletonWidth;};
 	bool Is_Spy() const {return IsSpy;}
 	bool Can_Refill() const { return CanRefill; }
+	bool Is_Unsquishable() const { return IsUnsquishable; }
 protected:
 	float											TurnRate;
 	float											JumpVelocity;

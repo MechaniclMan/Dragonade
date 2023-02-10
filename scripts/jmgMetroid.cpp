@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
 	Renegade Role Play 2 Scripts
-	Copyright 2012 Jerad Gray
+	Copyright 2017 Jerad Gray
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under			
@@ -205,6 +205,7 @@ void JMG_Metroid_Game_Control::Created(GameObject *obj)
 	lastPlayerCount = 0;
 	AddPerkTypes();
 	Commands->Attach_Script(obj,"JMG_Metroid_Game_Initilization","");
+	Attach_Script_Once(obj,"JMG_Utility_Sync_System_Controller","1.0");
 	GameObject *ShieldWall = Commands->Create_Object("Simple_Sydney_SandM_Wall",Vector3(344.817f,-435.808f,-0.887f));
 	MetroidGameControl.FinalCheckpointShieldWallID = Commands->Get_ID(ShieldWall);
 	Commands->Start_Timer(obj,this,0.25f,42352355);
@@ -1587,7 +1588,7 @@ void JMG_Metroid_Boss_Turret::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 10)
 	{
-		if (ClearTarget)
+ 		if (ClearTarget)
 		{
 			ClearTarget--;
 			if (!ClearTarget)
@@ -1722,15 +1723,15 @@ void JMG_Metroid_Crate_Random_Powerup::Killed(GameObject *obj, GameObject *damag
 	}
 	float Random = Commands->Get_Random(0.0f,1.0f);
 	const char *PowerupName;
-	if (Random < 0.45)//.3
+	if (Random < 0.2)//.3
 		PowerupName = "POW_Imperialist";
-	else if (Random < 0.75)//.55
+	else if (Random < 0.4)//.55
 		PowerupName = "POW_Machinegun";
 	//else if (Random < 0.75)
 	//	PowerupName = "POW_Lazershotgun";
-	else if (Random < 0.9)
+	else if (Random < 0.6)
 		PowerupName = "POW_Shock_coil";
-	else if (Random < 0.975)
+	else if (Random < 0.8)
 		PowerupName = "POW_Flame_Upgrade";
 	else
 		PowerupName = "POW_Supergrenade";
@@ -2662,7 +2663,8 @@ void JMG_Metroid_Sabotaged_Crate::Created(GameObject *obj)
 }
 void JMG_Metroid_Enable_Spawners_On_Death::Killed(GameObject *obj, GameObject *damager)
 {
-	for (int x = Get_Int_Parameter("StartID");x <= Get_Int_Parameter("EndID");x++)
+	int end = Get_Int_Parameter("EndID");
+	for (int x = Get_Int_Parameter("StartID");x <= end;x++)
 		Commands->Enable_Spawner(x,true);
 }
 void JMG_Metroid_Lockdown_Controller::Created(GameObject *obj)
@@ -3594,6 +3596,12 @@ void JMG_Metroid_Base_Defense::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 2)
 	{
+		if (enemyID)
+		{
+			GameObject *enemy = Commands->Find_Object(enemyID);
+			if (!enemy || !Commands->Get_Health(enemy))
+				enemyID = 0;
+		}
 		if (resetTime)
 		{
 			resetTime -= 0.1f;
@@ -5093,6 +5101,198 @@ void JMG_Metroid_SpawnRoom_Objective_Update_On_Enter::Timer_Expired(GameObject *
 		}
 	}
 }
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::Created(GameObject *obj)
+{
+	reloadComplete = true;
+	Commands->Disable_All_Collisions(obj);
+	Commands->Start_Timer(obj,this,1.0f,1);
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (Get_Int_Parameter("TargetCustom") == message && reloadComplete)
+	{
+		GameObject *seen = Commands->Find_Object(param);
+		if (!seen)
+			seen = sender;
+		if (Get_Vehicle_Driver(seen))
+			seen = Get_Vehicle_Driver(seen);
+		Vector3 myPos = Commands->Get_Position(obj),enemyPos = Commands->Get_Position(seen);
+		float MissAmount = Get_Float_Parameter("MissAmount");
+		if (MissAmount)
+		{
+			myPos.X += Commands->Get_Random(-MissAmount,MissAmount);
+			myPos.Y += Commands->Get_Random(-MissAmount,MissAmount);
+			myPos.Z += Commands->Get_Random(-MissAmount,MissAmount);
+		}
+		float targetDist = JmgUtility::SimpleDistance(myPos,enemyPos),targetFlatDistance = JmgUtility::SimpleFlatDistance(myPos,enemyPos),minDistanceSquared = Get_Float_Parameter("MinDistance")*Get_Float_Parameter("MinDistance");
+		if (targetDist < minDistanceSquared)
+			return;
+		bool useHighAngle = true;
+		if (targetDist <= Get_Float_Parameter("UseLowAngleMaxDistance")*Get_Float_Parameter("UseLowAngleMaxDistance"))
+			useHighAngle = false;
+		else if (Get_Int_Parameter("UseLowAngleWhenAboveMinDistance") && targetFlatDistance <= minDistanceSquared)
+			useHighAngle = false;
+		else if (Get_Float_Parameter("UseLowAngleTargetAboveHeight") && Commands->Get_Position(obj).Z+Get_Float_Parameter("UseLowAngleTargetAboveHeight") < Commands->Get_Position(seen).Z)
+			useHighAngle = false;
+		double height = enemyPos.Z-myPos.Z,angle;
+		myPos.Z = enemyPos.Z = 0.0f;
+		if (!CalculateAngle(&angle,Commands->Get_Distance(enemyPos,myPos),height,useHighAngle))
+			return;
+		double zRotation = atan2(enemyPos.Y-myPos.Y,enemyPos.X-myPos.X);
+		FireProjectile(obj,zRotation,angle);
+		reloadComplete = false;
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("ReloadTime"),1);
+	}
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+		reloadComplete = true;
+}
+bool JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::CalculateAngle(double *returnAngle,double distance,double height,bool highAngle)
+{
+	double velocitySquared = Get_Float_Parameter("FireVelocity")*Get_Float_Parameter("FireVelocity");
+	double calculatedGravity = Get_Float_Parameter("GravityScale")*9.8;
+	if (distance <= 0.0)
+		return false;
+	double x = velocitySquared*velocitySquared-calculatedGravity*(calculatedGravity*(distance*distance)+2*height*velocitySquared);
+	if (x < 0)
+		return false;
+	*returnAngle = atan((velocitySquared+(highAngle ? 1 : -1)*sqrt(x))/(calculatedGravity*distance));
+	if (*returnAngle*180.0/PI < Get_Float_Parameter("MinAngle") || *returnAngle*180.0/PI > Get_Float_Parameter("MaxAngle"))
+		return false;
+	return true;
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom::FireProjectile(GameObject *obj,double zAngle,double aimAngle)
+{
+	Commands->Create_3D_Sound_At_Bone(Get_Parameter("FireSound"),obj,"MuzzleA0");
+	GameObject *projectile = Commands->Create_Object(Get_Parameter("VehicleProjectilePreset"),Commands->Get_Bone_Position(obj,"muzzleA0"));
+	Commands->Create_Explosion(Get_Parameter("MuzzleFlashExplosion"),Commands->Get_Bone_Position(obj,"muzzleA0"),obj);
+	char params[220];
+	sprintf(params,"%d,%s",Commands->Get_ID(obj),Get_Parameter("ProjectileExplosion"));
+	Commands->Attach_Script(projectile,"JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach",params);
+	Commands->Attach_Script(projectile,"JMG_Utility_Sync_Object_Periodically","0.1");
+	Vector3 normalizedVector = Vector3((float)cos(zAngle),(float)sin(zAngle),(float)tan(aimAngle));
+	normalizedVector.Normalize();
+	normalizedVector.X *= Get_Float_Parameter("FireVelocity");
+	normalizedVector.Y *= Get_Float_Parameter("FireVelocity");
+	normalizedVector.Z *= Get_Float_Parameter("FireVelocity");
+	Set_Velocity(projectile,normalizedVector);
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.025f,1);
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Force_Position_Update(obj);
+		Commands->Start_Timer(obj,this,0.025f,1);
+	}
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach::Destroyed(GameObject *obj)
+{
+	GameObject *launcher = Commands->Find_Object(Get_Int_Parameter("LauncherId"));
+	if (launcher)
+		Commands->Create_Explosion(Get_Parameter("ExplosionPreset"),Commands->Get_Position(obj),launcher);
+	else
+		Commands->Create_Explosion(Get_Parameter("ExplosionPreset"),Commands->Get_Position(obj),obj);
+}
+void JMG_Metroid_Miniboss_Turret::Created(GameObject *obj)
+{
+	Commands->Enable_Spawner(603561,true);
+	Commands->Enable_Spawner(603567,true);
+}
+void JMG_Metroid_Miniboss_Turret::Destroyed(GameObject *obj)
+{
+	Commands->Enable_Spawner(603561,false);
+	Commands->Enable_Spawner(603567,false);
+	for (SLNode<SmartGameObj> *current = GameObjManager::SmartGameObjList.Head();current;current = current->Next())
+	{
+		SmartGameObj* o = current->Data();
+		if (o && Commands->Get_Preset_ID(o) == 82080178)
+			Commands->Apply_Damage(o,1000.0f,"None",o);
+	}
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player::Created(GameObject *obj)
+{
+	reloadComplete = true;
+	Commands->Disable_All_Collisions(obj);
+	Commands->Start_Timer(obj,this,1.0f,1);
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (Get_Int_Parameter("TargetCustom") == message && reloadComplete)
+	{
+		GameObject *seen = Commands->Find_Object(param);
+		if (!seen)
+			seen = sender;
+		if (Get_Vehicle_Driver(seen))
+			seen = Get_Vehicle_Driver(seen);
+		Vector3 myPos = Commands->Get_Position(obj),enemyPos = Commands->Get_Position(seen);
+		float MissAmount = Get_Float_Parameter("MissAmount");
+		if (MissAmount)
+		{
+			myPos.X += Commands->Get_Random(-MissAmount,MissAmount);
+			myPos.Y += Commands->Get_Random(-MissAmount,MissAmount);
+			myPos.Z += Commands->Get_Random(-MissAmount,MissAmount);
+		}
+		float targetDist = JmgUtility::SimpleDistance(myPos,enemyPos),targetFlatDistance = JmgUtility::SimpleFlatDistance(myPos,enemyPos),minDistanceSquared = Get_Float_Parameter("MinDistance")*Get_Float_Parameter("MinDistance");
+		if (targetDist < minDistanceSquared)
+			return;
+		bool useHighAngle = true;
+		if (targetDist <= Get_Float_Parameter("UseLowAngleMaxDistance")*Get_Float_Parameter("UseLowAngleMaxDistance"))
+			useHighAngle = false;
+		else if (Get_Int_Parameter("UseLowAngleWhenAboveMinDistance") && targetFlatDistance <= minDistanceSquared)
+			useHighAngle = false;
+		else if (Get_Float_Parameter("UseLowAngleTargetAboveHeight") && Commands->Get_Position(obj).Z+Get_Float_Parameter("UseLowAngleTargetAboveHeight") < Commands->Get_Position(seen).Z)
+			useHighAngle = false;
+		double height = enemyPos.Z-myPos.Z,angle;
+		myPos.Z = enemyPos.Z = 0.0f;
+		if (!CalculateAngle(&angle,Commands->Get_Distance(enemyPos,myPos),height,useHighAngle))
+			return;
+		double zRotation = atan2(enemyPos.Y-myPos.Y,enemyPos.X-myPos.X);
+		FireProjectile(obj,zRotation,angle);
+		reloadComplete = false;
+		Commands->Start_Timer(obj,this,max(Get_Float_Parameter("ReloadTime")-(Get_Float_Parameter("SubtractReloadPerPlayer")*Get_Player_Count()),Get_Float_Parameter("MinReloadTime")),1);
+	}
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+		reloadComplete = true;
+}
+bool JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player::CalculateAngle(double *returnAngle,double distance,double height,bool highAngle)
+{
+	double velocitySquared = Get_Float_Parameter("FireVelocity")*Get_Float_Parameter("FireVelocity");
+	double calculatedGravity = Get_Float_Parameter("GravityScale")*9.8;
+	if (distance <= 0.0)
+		return false;
+	double x = velocitySquared*velocitySquared-calculatedGravity*(calculatedGravity*(distance*distance)+2*height*velocitySquared);
+	if (x < 0)
+		return false;
+	*returnAngle = atan((velocitySquared+(highAngle ? 1 : -1)*sqrt(x))/(calculatedGravity*distance));
+	if (*returnAngle*180.0/PI < Get_Float_Parameter("MinAngle") || *returnAngle*180.0/PI > Get_Float_Parameter("MaxAngle"))
+		return false;
+	return true;
+}
+void JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player::FireProjectile(GameObject *obj,double zAngle,double aimAngle)
+{
+	Commands->Create_3D_Sound_At_Bone(Get_Parameter("FireSound"),obj,"MuzzleA0");
+	GameObject *projectile = Commands->Create_Object(Get_Parameter("VehicleProjectilePreset"),Commands->Get_Bone_Position(obj,"muzzleA0"));
+	Commands->Create_Explosion(Get_Parameter("MuzzleFlashExplosion"),Commands->Get_Bone_Position(obj,"muzzleA0"),obj);
+	char params[220];
+	sprintf(params,"%d,%s",Commands->Get_ID(obj),Get_Parameter("ProjectileExplosion"));
+	Commands->Attach_Script(projectile,"JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach",params);
+	Commands->Attach_Script(projectile,"JMG_Utility_Sync_Object_Periodically","0.1");
+	Vector3 normalizedVector = Vector3((float)cos(zAngle),(float)sin(zAngle),(float)tan(aimAngle));
+	normalizedVector.Normalize();
+	normalizedVector.X *= Get_Float_Parameter("FireVelocity");
+	normalizedVector.Y *= Get_Float_Parameter("FireVelocity");
+	normalizedVector.Z *= Get_Float_Parameter("FireVelocity");
+	Set_Velocity(projectile,normalizedVector);
+}
 ScriptRegistrant<JMG_Metroid_Hide_On_Enter> JMG_Metroid_Hide_On_Enter_Registrant("JMG_Metroid_Hide_On_Enter","");
 ScriptRegistrant<JMG_Metroid_Gibs_On_Enter> JMG_Metroid_Gibs_On_Enter_Registrant("JMG_Metroid_Gibs_On_Enter","DeathMessage=falling into a spiky pit:string,PerkID=0:int");
 ScriptRegistrant<JMG_Metroid_Increase_Perk_Unlock_On_Enter> JMG_Metroid_Increase_Perk_Unlock_On_Enter_Registrant("JMG_Metroid_Increase_Perk_Unlock_On_Enter","PerkID:int");
@@ -5208,6 +5408,10 @@ ScriptRegistrant<JMG_Metroid_Objective_Update_On_Custom> JMG_Metroid_Objective_U
 ScriptRegistrant<JMG_AI_Artillery_Targeting_Fire_At_Custom> JMG_AI_Artillery_Targeting_Fire_At_Custom_Registrant("JMG_AI_Artillery_Targeting_Fire_At_Custom","TargetCustom:int,MinDistance=0.0:float,MaxDistance=999999.0:float,MinAngle=-90.0:float,MaxAngle=90.0:float,UseLowAngleMaxDistance=0.0:float,UseLowAngleWhenAboveMinDistance=1:int,UseLowAngleTargetAboveHeight=9999.9:float");
 ScriptRegistrant<JMG_Metroid_AI_Forest_Mini_Boss> JMG_Metroid_AI_Forest_Mini_Boss_Registrant("JMG_Metroid_AI_Forest_Mini_Boss","");
 ScriptRegistrant<JMG_Metroid_SpawnRoom_Objective_Update_On_Enter> JMG_Metroid_SpawnRoom_Objective_Update_On_Enter_Registrant("JMG_Metroid_SpawnRoom_Objective_Update_On_Enter","NewObjectiveID:int,NewObjectiveStringID:int,ObjectiveMarkerObjectID:int,CompleteObjectiveID:int,Delay:float,NewObjectivePriority=1:int");
+ScriptRegistrant<JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom> JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom_Registrant("JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom","TargetCustom:int,MinDistance=0.0:float,MaxDistance=999999.0:float,MinAngle=-90.0:float,MaxAngle=90.0:float,UseLowAngleMaxDistance=0.0:float,UseLowAngleWhenAboveMinDistance=1:int,UseLowAngleTargetAboveHeight=9999.9:float,VehicleProjectilePreset:string,FireVelocity=1.0:float,GravityScale=1.0:float,FireSound=null:string,ProjectileExplosion=null:string,ReloadTime=1.0:float,MuzzleFlashExplosion=null:string,MissAmount=0.0:float");
+ScriptRegistrant<JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach> JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach_Registrant("JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach","LauncherId:int,ExplosionPreset:string");
+ScriptRegistrant<JMG_Metroid_Miniboss_Turret> JMG_Metroid_Miniboss_Turret_Registrant("JMG_Metroid_Miniboss_Turret","");
+ScriptRegistrant<JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player> JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player_Registrant("JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player","TargetCustom:int,MinDistance=0.0:float,MaxDistance=999999.0:float,MinAngle=-90.0:float,MaxAngle=90.0:float,UseLowAngleMaxDistance=0.0:float,UseLowAngleWhenAboveMinDistance=1:int,UseLowAngleTargetAboveHeight=9999.9:float,VehicleProjectilePreset:string,FireVelocity=1.0:float,GravityScale=1.0:float,FireSound=null:string,ProjectileExplosion=null:string,ReloadTime=1.0:float,MuzzleFlashExplosion=null:string,MissAmount=0.0:float,SubtractReloadPerPlayer=0.0:float,MinReloadTime=0.0:float");
 
 
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -182,6 +182,7 @@ public:
 	Sound3DClass *		Create_3D_Sound (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes, int classid_hint = CLASSID_3D);
 	void						Set_Background_Music (const char *filename);
 	void						Fade_Background_Music (const char *filename, int fade_out_time, int fade_in_time);
+	void						Set_Background_Music_Offset (const char *filename, float startoffset);
 	const char *			Get_Background_Music_Name (void)						{ return m_BackgroundMusicName; }
 	AudibleSoundClass *	Peek_Background_Music (void)							{ return m_BackgroundMusic; }
 	LogicalSoundClass *		Create_Logical_Sound (void);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -33,6 +33,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (AirStripGameObjDef, VehicleFactoryGameObjDef);
+//private: //DA
 	void					Load_Variables (ChunkLoadClass &cload);
 	int DropCinematicDefId; // 00A8
 	int CinematicSlotIndex; // 00AC

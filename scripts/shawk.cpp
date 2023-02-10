@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -227,6 +227,12 @@ public:
 	void Custom(GameObject* obj, int type, int param, GameObject* sender)
 	{
 		if (type == 0xAAAAAAAA && param == 0xEEEEEEEE) enabled = false;
+	}
+	
+	void Destroyed(GameObject *obj)
+	{
+		enabled = false;
+		Set_Screen_Fade_Opacity_Player(obj,0.0f,0.0f);
 	}
 
 	void Register_Auto_Save_Variables()

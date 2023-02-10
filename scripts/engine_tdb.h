@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -76,6 +76,24 @@ SCRIPTS_API const wchar_t *Get_Current_Wide_Translated_Weapon(GameObject *obj);
 * \param[in] Team ID of the team to get the translated name of
 */
 SCRIPTS_API const char *Get_Team_Name(int Team);
+
+/*!
+* \ingroup api_translations
+*
+* Get the first 3 characters of the translated name of the specified team
+*
+* \param[in] Team ID of the team to get the translated name of
+*/
+SCRIPTS_API StringClass Get_Short_Team_Name(int Team);
+
+/*!
+* \ingroup api_translations
+*
+* Get the translated name of the specified team
+*
+* \param[in] Team ID of the team to get the translated name of
+*/
+SCRIPTS_API const wchar_t *Get_Wide_Team_Name(int Team);
 
 /*!
 * \ingroup api_translations

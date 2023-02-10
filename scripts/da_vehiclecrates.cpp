@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Only Crates
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -370,7 +370,7 @@ class DARenJackCrateObserverClass : public DAGameObjObserverClass {
 	}
 
 	virtual bool Vehicle_Entry_Request(cPlayer *Player,int &Seat) {
-		if (Player->Get_Team() != Team) {
+		if (Player->Get_Player_Type() != Team) {
 			DA::Page_Player(Player,"This vehicle is protected by a RenJack(TM) Unit. You may not enter it.");
 			return false;
 		}

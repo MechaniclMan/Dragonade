@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -56,18 +56,18 @@ public:
 	void Delete()
 	{
 	}
-	SCRIPTS_API static BaseControllerClass *Find_Base(int Team);
-	SCRIPTS_API VehicleGameObj *Get_Harvester_Vehicle();
-	SCRIPTS_API BuildingGameObj *Find_Building(unsigned int Type);
-	SCRIPTS_API void Power_Base(bool Power);
-	SCRIPTS_API void Set_Can_Generate_Soldiers(bool CanGenerate);
-	SCRIPTS_API void Set_Can_Generate_Vehicles(bool CanGenerate);
-	SCRIPTS_API void Set_Base_Destroyed(bool BaseDesrtoyed);
-	SCRIPTS_API void Destroy_Base();
-	SCRIPTS_API void Set_Beacon_Destroyed_Base(bool BeaconDestroyed);
-	SCRIPTS_API void Enable_Radar(bool Enable);
-	SCRIPTS_API void Distribute_Funds_To_Each_Teammate(int Amount);
-	SCRIPTS_API void Distribute_Funds_To_Each_Teammate(float Amount);
+	SCRIPTS_API static BaseControllerClass *Find_Base(int Team); //DA
+	SCRIPTS_API VehicleGameObj *Get_Harvester_Vehicle(); //DA
+	SCRIPTS_API BuildingGameObj *Find_Building(unsigned int Type); //DA
+	SCRIPTS_API void Power_Base(bool Power); //DA
+	SCRIPTS_API void Set_Can_Generate_Soldiers(bool CanGenerate); //DA
+	SCRIPTS_API void Set_Can_Generate_Vehicles(bool CanGenerate); //DA
+	SCRIPTS_API void Set_Base_Destroyed(bool BaseDesrtoyed); //DA
+	SCRIPTS_API void Destroy_Base(); //DA
+	SCRIPTS_API void Set_Beacon_Destroyed_Base(bool BeaconDestroyed); //DA
+	SCRIPTS_API void Enable_Radar(bool Enable); //DA
+	SCRIPTS_API void Distribute_Funds_To_Each_Teammate(int Amount); //DA
+	SCRIPTS_API void Distribute_Funds_To_Each_Teammate(float Amount); //DA
 	void On_Vehicle_Generated(VehicleGameObj *);
 	void On_Beacon_Warning(BeaconGameObj* beacon);
 	void Request_Harvester(int harvesterDefinitionId);
@@ -85,9 +85,9 @@ public:
 	void Check_Base_Power();
 	void Check_Vehicle_Factory();
 	void Play_Announcement(int announcement);
-	SCRIPTS_API bool Can_Build_Air();
-	SCRIPTS_API bool Can_Build_Ground();
-	SCRIPTS_API bool Can_Build_Naval();
+	SCRIPTS_API bool Can_Build_Air(); //DA
+	SCRIPTS_API bool Can_Build_Ground(); //DA
+	SCRIPTS_API bool Can_Build_Naval(); //DA
 	void Check_Prerequisites();
 
 	bool Is_Base_Powered() const

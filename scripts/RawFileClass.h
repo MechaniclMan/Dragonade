@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -156,8 +156,8 @@ public:
 		Rights = mode;
 		switch (Rights)
 		{
-		case 3:
-			Handle = CreateFileA(Filename,GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
+		case 3: //DA
+			Handle = CreateFileA(Filename, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 			break;
 		case 2:
 			Handle = CreateFileA(Filename,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
@@ -372,7 +372,7 @@ public:
 			}
 		}
 	}
-	void Attach(HANDLE handle,int rights)
+	virtual void Attach(HANDLE handle,int rights)
 	{
 		Reset();
 		Handle = handle;
@@ -382,7 +382,7 @@ public:
 		Date = 0;
 		Time = 0;
 	}
-	void Detach()
+	virtual void Detach()
 	{
 		Rights = 0;
 		Handle = INVALID_HANDLE_VALUE;
@@ -404,16 +404,29 @@ public:
 	bool Read_Line(StringClass &str)
 	{
 		str = "";
-		char Buffer;
-		while (Read(&Buffer,1)) {
-			if (Buffer == '\n') {
-				break;
+		char buf[64];
+		memset(buf, 0, sizeof(buf));
+		bool b = false;
+		do
+		{
+			int sz = Read(buf, 63);
+			b = (sz == 63);
+			if (sz > 0)
+			{
+				for (int i = 0; i < sz; i++)
+				{
+					if (buf[i] == '\n')
+					{
+						buf[i + 1] = 0;
+						Seek(i - sz + 1, 1);
+						b = false;
+					}
+				}
+				str += buf;
 			}
-			else if (Buffer != '\r') {
-				str += Buffer;
-			}
-		}
-		return str != "";
+		} while (b);
+		strtrim(str.Peek_Buffer());
+		return false;
 	}
 	bool Write_Line(StringClass const &str)
 	{

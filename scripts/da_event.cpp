@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,6 @@
 #include "da_event.h"
 #include "da_gamemode.h"
 #include "da_chatcommand.h"
-#include "da_hook.h"
 #include "da_player.h"
 #include "da_log.h"
 #include "TransitionInstanceClass.h"
@@ -644,7 +643,7 @@ void DAEventManager::Object_Created_Event(void *Data,GameObject *obj) {
 	if (obj->As_SoldierGameObj()) {
 		cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
 		if (Player) {
-			if (obj->Get_Object_Dirty_Bit_2(Player->Get_ID(),NetworkObjectClass::BIT_CREATION)) { //If the object was just created.
+			if (obj->Get_Object_Dirty_Bit_2(Player->Get_Id(),NetworkObjectClass::BIT_CREATION)) { //If the object was just created.
 				if (!Player->Get_DA_Player()->Is_Loaded()) {
 					Player->Get_DA_Player()->Set_Loaded(true);
 					for (int i = 0;i < Events[DAEvent::PLAYERLOADED].Count();i++) {
@@ -896,20 +895,6 @@ void DAEventManager::Init() {
 
 	static DAEventConnectionAcceptanceFilterClass ConnFilter;
 	addConnectionAcceptanceFilter(&ConnFilter);
-
-	DAHookManager::Disable_Function((unsigned long)AddHostHook); //Prevent plugins from overwriting our TT hooks.
-	DAHookManager::Disable_Function((unsigned long)AddPlayerJoinHook);
-	DAHookManager::Disable_Function((unsigned long)AddPlayerLeaveHook);
-	DAHookManager::Disable_Function((unsigned long)AddPreLoadLevelHook);
-	DAHookManager::Disable_Function((unsigned long)AddLoadLevelHook);
-	DAHookManager::Disable_Function((unsigned long)AddGameOverHook);
-	DAHookManager::Disable_Function((unsigned long)AddConsoleOutputHook);
-	DAHookManager::Disable_Function((unsigned long)AddLogFileHook);
-	DAHookManager::Disable_Function((unsigned long)AddThinkHook);
-	DAHookManager::Disable_Function((unsigned long)AddRefillHook);
-	DAHookManager::Disable_Function((unsigned long)AddRadioHook);
-	DAHookManager::Disable_Function((unsigned long)AddStockDamageHook);
-	DAHookManager::Disable_Function((unsigned long)AddTtDamageHook);
 }
 
 

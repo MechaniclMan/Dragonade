@@ -505,6 +505,39 @@
     <ClCompile Include="engine_obj.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="DB_Research_Terminals.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="DBIKScripts.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="jmgBearHunter.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="JmgDeathMatch.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="jmgMetroid.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="jmgUtility.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="sh_factory.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="xpert.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="da_shotgun.cpp">
+      <Filter>DA Game Modes</Filter>
+    </ClCompile>
+    <ClCompile Include="da_weapons.cpp">
+      <Filter>DA Game Features</Filter>
+    </ClCompile>
+    <ClCompile Include="da_chatsounds.cpp">
+      <Filter>DA Game Features</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">
@@ -693,9 +726,6 @@
     <ClInclude Include="BufferedFileClass.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="CollisionMath.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="coltest.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -813,16 +843,10 @@
     <ClInclude Include="WWAudioClass.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="ConPublic.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="CommandLineParser.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="HarvesterClass.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="ScriptManager.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="da_domination.h">
@@ -1242,9 +1266,6 @@
     <ClInclude Include="TeamPurchaseSettingsDefClass.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-    <ClInclude Include="SpawnerClass.h">
-      <Filter>DA Engine</Filter>
-    </ClInclude>
     <ClInclude Include="cTeam.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
@@ -1377,9 +1398,6 @@
     <ClInclude Include="da_vehiclequeue.h">
       <Filter>DA Game Features</Filter>
     </ClInclude>
-    <ClInclude Include="cPurchaseResponseEvent.h">
-      <Filter>DA Engine</Filter>
-    </ClInclude>
     <ClInclude Include="ArmedGameObjDef.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
@@ -1420,9 +1438,6 @@
       <Filter>DA Engine</Filter>
     </ClInclude>
     <ClInclude Include="VehicleFactoryGameObj.h">
-      <Filter>DA Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="cPlayerKill.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
     <ClInclude Include="da_cratemanager.h">
@@ -1505,6 +1520,72 @@
     </ClInclude>
     <ClInclude Include="BeaconGameObj.h">
       <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="DB_General.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="DB_Research_Terminals.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="DBIKScripts.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="jmgBearHunter.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="JmgDeathMatch.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="jmgMetroid.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="jmgUtility.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="xpert.h">
+      <Filter>Scripts</Filter>
+    </ClInclude>
+    <ClInclude Include="audiocallback.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="boxrenderobjclass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="BuildingAggregateDefClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="ConversationClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticAnimPhysDefClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="StaticPhysDefClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperweaponGameObj.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="SuperweaponGameObjDef.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="VisTableClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="SpawnerDefClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="SpawnerClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="da_shotgun.h">
+      <Filter>DA Game Modes</Filter>
+    </ClInclude>
+    <ClInclude Include="da_weapons.h">
+      <Filter>DA Game Features</Filter>
+    </ClInclude>
+    <ClInclude Include="da_chatsounds.h">
+      <Filter>DA Game Features</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

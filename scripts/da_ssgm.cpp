@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Legacy SSGM Interface
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -23,8 +23,6 @@
 //These functions allow DA to load SSGM plugins.
 
 DynamicVectorClass<Plugin*>  DASSGMPluginManager::Events[EVENT_COUNT];
-DynamicVectorClass<ConsoleOutputHook> DASSGMPluginManager::ConsoleOutputHooks;
-DynamicVectorClass<HostHook> DASSGMPluginManager::HostHooks;
 
 void SSGMGameLog::Log_Message(const char *message,const char *category) {
 	DALogManager::Write_Log(category,"%s",message);
@@ -139,40 +137,10 @@ void DASSGMPluginManager::Init() {
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::ALL);
 	Instance.Register_Object_Event(DAObjectEvent::STOCKCLIENTDAMAGEREQUEST,DAObjectEvent::ALL);
 	Instance.Register_Object_Event(DAObjectEvent::TTCLIENTDAMAGEREQUEST,DAObjectEvent::ALL);
-	DAHookManager::Install_Jump_Hook((unsigned long)AddConsoleOutputHook,AddConsoleOutputHook_Hook);
-	DAHookManager::Install_Jump_Hook((unsigned long)AddHostHook,AddHostHook_Hook);
 }
-//The SSGM plugin interface doesn't include console output or host chat so some plugins use AddConsoleOutputHook and AddHostHook to add their own. We can't let them overwrite our hooks, so the following was added to allow for multiple of these hooks.
-void DASSGMPluginManager::AddConsoleOutputHook_Hook(ConsoleOutputHook Hook) {
-	if (ConsoleOutputHooks.ID(Hook) == -1) {
-		ConsoleOutputHooks.Add(Hook);
-	}
-}
-
-void DASSGMPluginManager::Console_Output_Event(const char *Output) {
-	for (int i = ConsoleOutputHooks.Count()-1;i >= 0;i--) {
-		ConsoleOutputHooks[i](Output);
-	}
-}
-
-void DASSGMPluginManager::AddHostHook_Hook(HostHook Hook) {
-	if (HostHooks.ID(Hook) == -1) {
-		HostHooks.Add(Hook);
-	}
-}
-
-bool DASSGMPluginManager::Host_Chat_Event(int ID,TextMessageEnum Type,const char *Message) {
-	for (int i = HostHooks.Count()-1;i >= 0;i--) {
-		if (!HostHooks[i](ID,Type,Message)) {
-			return false;
-		}
-	}
-	return true;
-}
-
 bool DASSGMPluginManager::Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID) {
 	for (int i = Events[EVENT_CHAT_HOOK].Count()-1;i >= 0;i--) {
-		if (!Events[EVENT_CHAT_HOOK][i]->OnChat(Player->Get_ID(),Type,Message,ReceiverID)) {
+		if (!Events[EVENT_CHAT_HOOK][i]->OnChat(Player->Get_Id(),Type,Message,ReceiverID)) {
 			return false;
 		}
 	}
@@ -181,7 +149,7 @@ bool DASSGMPluginManager::Chat_Event(cPlayer *Player,TextMessageEnum Type,const 
 
 bool DASSGMPluginManager::Radio_Event(cPlayer *Player,int PlayerType,int AnnouncementID,int IconID,AnnouncementEnum AnnouncementType) {
 	for (int i = Events[EVENT_RADIO_HOOK].Count()-1;i >= 0;i--) {
-		if (!Events[EVENT_RADIO_HOOK][i]->OnRadioCommand(PlayerType,Player->Get_ID(),AnnouncementID,IconID,AnnouncementType)) {
+		if (!Events[EVENT_RADIO_HOOK][i]->OnRadioCommand(PlayerType,Player->Get_Id(),AnnouncementID,IconID,AnnouncementType)) {
 			return false;
 		}
 	}
@@ -190,13 +158,13 @@ bool DASSGMPluginManager::Radio_Event(cPlayer *Player,int PlayerType,int Announc
 
 void DASSGMPluginManager::Player_Join_Event(cPlayer *Player) {
 	for (int i = Events[EVENT_PLAYER_JOIN_HOOK].Count()-1;i >= 0;i--) {
-		Events[EVENT_PLAYER_JOIN_HOOK][i]->OnPlayerJoin(Player->Get_ID(),StringClass(Player->Get_Name()));
+		Events[EVENT_PLAYER_JOIN_HOOK][i]->OnPlayerJoin(Player->Get_Id(),StringClass(Player->Get_Name()));
 	}
 }
 
 void DASSGMPluginManager::Player_Leave_Event(cPlayer *Player) {
 	for (int i = Events[EVENT_PLAYER_LEAVE_HOOK].Count()-1;i >= 0;i--) {
-		Events[EVENT_PLAYER_LEAVE_HOOK][i]->OnPlayerLeave(Player->Get_ID());
+		Events[EVENT_PLAYER_LEAVE_HOOK][i]->OnPlayerLeave(Player->Get_Id());
 	}
 }
 

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infantry Only Crates
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -172,10 +172,10 @@ class DARandomVehicleCrateClass : public DACrateClass {
 		const VehicleGameObjDef *Def = Vehs[Rand]; //Get random skin of that vehicle.
 		VehicleGameObj *Vehicle = (VehicleGameObj*)Create_Object(Def,Vector3());
 		Vehicle->Lock_Vehicle(Player->Get_GameObj(),44.0f);
-		DAVehicleManager::Air_Drop_Vehicle(Player->Get_Team(),Vehicle,Position[Player->Get_Team()],Facing[Player->Get_Team()]);
-		Player->Get_GameObj()->Set_Position(Position[Player->Get_Team()]);
-		Fix_Stuck_Objects(Position[Player->Get_Team()],10.0f,15.0f);
-		DA::Host_Message("Looks like %ls just got a random vehicle. Go them!",Get_Wide_Team_Name(Player->Get_Team()));
+		DAVehicleManager::Air_Drop_Vehicle(Player->Get_Player_Type(),Vehicle,Position[Player->Get_Player_Type()],Facing[Player->Get_Player_Type()]);
+		Player->Get_GameObj()->Set_Position(Position[Player->Get_Player_Type()]);
+		Fix_Stuck_Objects(Position[Player->Get_Player_Type()],10.0f,15.0f);
+		DA::Host_Message("Looks like %ls just got a random vehicle. Go them!",Get_Wide_Team_Name(Player->Get_Player_Type()));
 		DA::Page_Player(Player,"You have received %s from the Random Vehicle Crate. It will be dropped at your position momentarily.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
 	}
 
@@ -393,7 +393,7 @@ class DATiberiumMutantCrateClass : public DACrateClass {
 		Soldier->Set_Delete_Pending();
 		SoldierGameObj *Visceroid = Create_Commando(Player,"CnC_GDI_Mutant_2SF_Templar",Soldier->Get_Transform());
 		Visceroid->Add_Observer(new DATiberiumMutantCrateObserverClass);
-		DA::Host_Message("A %ls player has been mutated by the Tiberium Mutant Crate!",Get_Wide_Team_Name(Player->Get_Team()));
+		DA::Host_Message("A %ls player has been mutated by the Tiberium Mutant Crate!",Get_Wide_Team_Name(Player->Get_Player_Type()));
 	}
 };
 

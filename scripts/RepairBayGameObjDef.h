@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,6 +30,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (RepairBayGameObjDef, BuildingGameObjDef);
+//protected: //DA
 	void					Load_Variables (ChunkLoadClass &cload);
 	float					RepairPerSec;
 	int					RepairingStaticAnimDefID;

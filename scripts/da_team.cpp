@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Team Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -100,7 +100,7 @@ void DATeamManager::Player_Join_Event(cPlayer *Player) {
 
 void DATeamManager::Player_Leave_Event(cPlayer *Player) {
 	if (The_Game()->Get_Game_Duration_S() <= RebalanceTime) {
-		int Team = Player->Get_Team();
+		int Team = Player->Get_Player_Type();
 		if (Team == 0 || Team == 1) {
 			int OtherTeam = Team?0:1;
 			int TeamCount[2] = {0,0};
@@ -121,7 +121,7 @@ bool DATeamManager::Team_Change_Request_Event(cPlayer *Player) {
 		return false;
 	}
 	else if (Is_Free_Team_Changing_Enabled()) {
-		Change_Team_3(Player,Player->Get_Team()?0:1);
+		Change_Team_3(Player,Player->Get_Player_Type()?0:1);
 		DA::Host_Message("%ls changed teams.",Player->Get_Name());
 		return false;
 	}
@@ -165,7 +165,7 @@ void DATeamManager::Remix() {
 
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //First pass
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) { 
+		if (Player->Is_Active() && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1)) { 
 			if (Get_Random_Bool()) {
 				if (Player->Get_Player_Type() == Winner) {
 					Winners.Add(Player);
@@ -182,7 +182,7 @@ void DATeamManager::Remix() {
 	}
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //Second pass
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && (Player->Get_Team() == 0 || Player->Get_Team() == 1) && !Player->Get_DA_Player()->Get_Needs_Team()) {
+		if (Player->Is_Active() && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1) && !Player->Get_DA_Player()->Get_Needs_Team()) {
 			if (Player->Get_Player_Type() == Winner) {
 				Winners.Add(Player);
 			}
@@ -290,7 +290,7 @@ void DATeamManager::Swap() {
 	
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) {
+		if (Player->Is_Active() && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1)) {
 			Player->Get_DA_Player()->Set_Needs_Team(true);
 		}
 	}
@@ -299,8 +299,8 @@ void DATeamManager::Swap() {
 
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && (Player->Get_Team() == 0 || Player->Get_Team() == 1) && Player->Get_DA_Player()->Get_Needs_Team()) { //Only swap if some other event hasn't handled this player already.
-			Change_Team_4(Player,Player->Get_Team()?0:1);
+		if (Player->Is_Active() && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1) && Player->Get_DA_Player()->Get_Needs_Team()) { //Only swap if some other event hasn't handled this player already.
+			Change_Team_4(Player,Player->Get_Player_Type()?0:1);
 			Player->Get_DA_Player()->Set_Needs_Team(false);
 		}
 	}

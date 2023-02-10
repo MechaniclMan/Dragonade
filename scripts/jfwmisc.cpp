@@ -1,5 +1,5 @@
 /*  Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -751,10 +751,36 @@ void JFW_Change_Spawn_Character::Created(GameObject *obj)
 {
 	if (Get_Int_Parameter("Player_Type") == 0)
 	{
+		if(!The_Game()-> Get_Game_Duration_S())
+		{
+			SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
+			while (x)
+			{
+				GameObject *o = x->Data();
+				if (o && Get_Object_Type(o)==0)
+				{
+					Change_Character(o,Get_Parameter("Character"));
+				}
+				x = x->Next();
+			}
+		}
 		Set_Nod_Soldier_Name(Get_Parameter("Character"));
 	}
 	else
 	{
+		if(!The_Game()-> Get_Game_Duration_S())
+		{
+			SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
+			while (x)
+			{
+				GameObject *o = x->Data();
+				if (o && Get_Object_Type(o)==1)
+				{
+					Change_Character(o,Get_Parameter("Character"));
+				}
+				x = x->Next();
+			}
+		}
 		Set_GDI_Soldier_Name(Get_Parameter("Character"));
 	}
 	Destroy_Script();
@@ -1291,6 +1317,39 @@ void JFW_NavalFactory_Disable::Killed(GameObject *obj,GameObject *killer)
 	Destroy_Script();
 }
 
+void JFW_SoldierFactory_Disable::Created(GameObject *obj)
+{
+	count = 0;
+}
+
+void JFW_SoldierFactory_Disable::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_SoldierFactoryGameObj())
+	{
+		if (type == Get_Int_Parameter("Disable_Custom"))
+		{
+			if (count == 0)
+			{
+				Set_Can_Generate_Soldiers(Commands->Get_Player_Type(obj),false);
+			}
+			count++;
+		}
+		if (type == Get_Int_Parameter("Enable_Custom"))
+		{
+			count--;
+			if (count == 0)
+			{
+				Set_Can_Generate_Soldiers(Commands->Get_Player_Type(obj),true);
+			}
+		}
+	}
+}
+
+void JFW_SoldierFactory_Disable::Killed(GameObject *obj,GameObject *killer)
+{
+	Destroy_Script();
+}
+
 void JFW_Engineer_Hack::Created(GameObject *obj)
 {
 	Warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Hack_Warhead"));
@@ -1446,7 +1505,7 @@ void JFW_EMP_Mine::Created(GameObject *obj)
 
 void JFW_EMP_Mine::Enemy_Seen(GameObject *obj, GameObject *enemy)
 {
-	if (Is_Script_Attached(enemy,"JFW_EMP") && !DisableEmp)
+	if ((Is_Script_Attached(enemy,"JFW_EMP") || Is_Script_Attached(enemy,"JFW_EMP_Indicator")) && !DisableEmp)
 	{
 		bool fire = false;
 		VehicleGameObj *o = enemy->As_VehicleGameObj();
@@ -2122,6 +2181,75 @@ void JFW_Ion_Storm_2::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
+void JFW_Ion_Storm_3::Created(GameObject *obj)
+{
+	DisableEmp = false;
+	if (Get_Int_Parameter("DisableEmp"))
+	{
+		DisableEmp = true;
+	}
+	if (Get_Int_Parameter("DisableStealth"))
+	{
+		Set_Global_Stealth_Disable(true);
+	}
+	Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Weather_Custom"),0,0);
+	if (Get_Int_Parameter("DisableRadar"))
+	{
+		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
+		{
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
+		}
+		if (Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER))
+		{
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
+		}
+	}
+	if (Get_Int_Parameter("DisablePower"))
+	{
+		if (Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT))
+		{
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
+		}
+		if (Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT))
+		{
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
+		}
+	}
+	SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+	while (x)
+	{
+		VehicleGameObj *o = x->Data();
+		if (Get_Int_Parameter("DisableBaseDefenses"))
+		{
+			if (o && o->Get_Definition().Get_Encyclopedia_Type() == 3)
+			{
+				Commands->Send_Custom_Event(obj,0,CUSTOM_AI_DISABLEAI,0,0);
+			}
+		}
+		if (Is_Script_Attached(obj,"JFW_EMP_Mine") && Get_Int_Parameter("DestroyMines"))
+		{
+			Commands->Destroy_Object(obj);
+		}
+		x = x->Next();
+	}
+	Timer_Expired(obj,3);
+	Create_2D_Sound_Team(Get_Parameter("Announcement_Sound_Nod"),0);
+	Create_2D_Sound_Team(Get_Parameter("Announcement_Sound_GDI"),1);
+	const char *string = Get_Parameter("Announcement_String");
+	int red = Get_Int_Parameter("Red");
+	int green = Get_Int_Parameter("Green");
+	int blue = Get_Int_Parameter("Blue");
+	Send_Message(red,green,blue,string);
+}
+void JFW_Ion_Storm_3::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 3)
+	{
+		Commands->Create_2D_Sound(Get_Parameter("Ion_Effect_Sound"));
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Ion_Effect_Time"),3);
+	}
+}
+
 void JFW_Ion_Storm_Weather::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	if (type == Get_Int_Parameter("Message"))
@@ -2354,6 +2482,15 @@ void JFW_Custom_Create_Object_At_Bone::Killed(GameObject *obj,GameObject *killer
 	{
 		Commands->Destroy_Object(Commands->Find_Object(id));
 		id = 0;
+	}
+}
+
+void JFW_Custom_Create_Object_At_Bone::Destroyed(GameObject *obj)
+{
+	if (id)
+	{
+		if(Commands->Find_Object(id))
+			Commands->Destroy_Object(Commands->Find_Object(id));
 	}
 }
 
@@ -2659,6 +2796,62 @@ void JFW_Spawner_Delay::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
+void JFW_EMP_Indicator::Created(GameObject *obj)
+{
+	id = 0;
+	Warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+}
+
+void JFW_EMP_Indicator::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	if (Warhead == Get_Damage_Warhead() && !DisableEmp)
+	{
+		VehicleGameObj *o = obj->As_VehicleGameObj();
+		if (o && o->Get_Is_Scripts_Visible() && o->Get_Scripts_Can_Fire() && o->Can_Drive())
+		{
+			Commands->Enable_Engine(obj,false);
+			o->Set_Can_Drive(false);
+			o->Set_Scripts_Can_Fire(false);
+			o->Set_Stealth_Active(false);
+			Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+			GameObject *indicator = Commands->Create_Object_At_Bone(obj,Get_Parameter("Preset"),Get_Parameter("Bone"));
+			Commands->Attach_To_Object_Bone(indicator,obj,Get_Parameter("Bone"));
+			id = Commands->Get_ID(indicator);
+			obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+		}
+		SoldierGameObj *s = obj->As_SoldierGameObj();
+		if (s && !s->Is_Frozen() && s->Is_Visible())
+		{
+			s->Set_Freeze(true);
+			Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+		}
+	}
+}
+
+void JFW_EMP_Indicator::Timer_Expired(GameObject *obj,int number)
+{
+	VehicleGameObj *o = obj->As_VehicleGameObj();
+	if (o)
+	{
+		o->Clear_Animation();
+		obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+		o->Set_Can_Drive(true);
+		o->Set_Stealth_Active(true);
+		Commands->Enable_Engine(obj,true);
+		o->Set_Scripts_Can_Fire(true);
+		GameObject *indicator = Commands->Find_Object(id);
+		if (indicator)
+		{
+			Commands->Destroy_Object(indicator);
+		}
+	}
+	SoldierGameObj *s = obj->As_SoldierGameObj();
+	if (s)
+	{
+		s->Set_Freeze(false);
+	}
+}
+
 ScriptRegistrant<JFW_Tech_Level_Timer> JFW_Tech_Level_Timer_Registrant("JFW_Tech_Level_Timer", "Display_Message:string,Red:int,Blue:int,Green:int,Sound:string,Time:float,Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Startup> JFW_Tech_Level_Startup_Registrant("JFW_Tech_Level_Startup","Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Custom> JFW_Tech_Level_Custom_Registrant("JFW_Tech_Level_Custom","Message:int,Tech_Level:int");
@@ -2728,7 +2921,8 @@ ScriptRegistrant<JFW_Refinery_Disable> JFW_Refinery_Disable_Registrant("JFW_Refi
 ScriptRegistrant<JFW_VehicleFactory_Disable> JFW_VehicleFactory_Disable_Registrant("JFW_VehicleFactory_Disable","Disable_Custom:int,Enable_Custom:int");
 ScriptRegistrant<JFW_AirFactory_Disable> JFW_AirFactory_Disable_Registrant("JFW_AirFactory_Disable","Disable_Custom:int,Enable_Custom:int");
 ScriptRegistrant<JFW_NavalFactory_Disable> JFW_NavalFactory_Disable_Registrant("JFW_NavalFactory_Disable","Disable_Custom:int,Enable_Custom:int");
-ScriptRegistrant<JFW_EMP> JFW_EMP_Registrant("JFW_EMP","Warhead:string,Time:fload,Animation:string");
+ScriptRegistrant<JFW_SoldierFactory_Disable> JFW_SoldierFactory_Disable_Registrant("JFW_SoldierFactory_Disable","Disable_Custom:int,Enable_Custom:int");
+ScriptRegistrant<JFW_EMP> JFW_EMP_Registrant("JFW_EMP","Warhead:string,Time:float,Animation:string");
 ScriptRegistrant<JFW_EMP_Mine> JFW_EMP_Mine_Registrant("JFW_EMP_Mine","Mine_Manager_ID:int,Explosion:string,Time:float");
 ScriptRegistrant<JFW_EMP_Mine_Manager> JFW_EMP_Mine_Manager_Registrant("JFW_EMP_Mine_Manager","Mine_Preset:string,Mine_Limit:int,Mine_Reload:string,Mine_Z_Offset:float,Mine_Distance:float");
 ScriptRegistrant<JFW_EMP_Mine_Manager_2> JFW_EMP_Mine_Manager_2_Registrant("JFW_EMP_Mine_Manager_2","Mine_Preset:string,Mine_Limit:int,Mine_Reload:string,Throw_Velocity:float");
@@ -2742,6 +2936,7 @@ ScriptRegistrant<JFW_Death_Send_Custom_Self> JFW_Death_Send_Custom_Self_Registra
 ScriptRegistrant<JFW_Hunter_Seeker> JFW_Hunter_Seeker_Registrant("JFW_Hunter_Seeker","Key:string,Explosion:string");
 ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int");
 ScriptRegistrant<JFW_Ion_Storm_2> JFW_Ion_Storm_2_Registrant("JFW_Ion_Storm_2","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int,DisableStealth:int,DisableRadar:int,DisablePower:int,DisableBaseDefenses:int");
+ScriptRegistrant<JFW_Ion_Storm_3> JFW_Ion_Storm_3_Registrant("JFW_Ion_Storm_3","Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,Weather_Custom:int,DestroyMines:int,DisableEmp:int,DisableStealth:int,DisableRadar:int,DisablePower:int,DisableBaseDefenses:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather> JFW_Ion_Storm_Weather_Registrant("JFW_Ion_Storm_Weather","Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Message:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather_2> JFW_Ion_Storm_Weather_2_Registrant("JFW_Ion_Storm_Weather_2", "Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Enable_Message:int,Disable_Message:int");
 ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created", "Character:string");
@@ -2760,3 +2955,4 @@ ScriptRegistrant<JFW_Vehicle_Crate> JFW_Vehicle_Crate_Registrant("JFW_Vehicle_Cr
 ScriptRegistrant<JFW_Airstrike_Cinematic> JFW_Airstrike_Cinematic_Registrant("JFW_Airstrike_Cinematic", "Script_Name:string,Message:int");
 ScriptRegistrant<JFW_Spy_Disguise_Target> JFW_Spy_Disguise_Target_Registrant("JFW_Spy_Disguise_Target", "Model:string,Warhead:string");
 ScriptRegistrant<JFW_Spawner_Delay> JFW_Spawner_Delay_Registrant("JFW_Spawner_Delay", "ID:int,time:float");
+ScriptRegistrant<JFW_EMP_Indicator> JFW_EMP_Indicator_Registrant("JFW_EMP_Indicator","Warhead:string,Time:float,Preset:string,Bone:string");

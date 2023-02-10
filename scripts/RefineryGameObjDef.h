@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Get_Harvester_ID, Set_Funds_Gathered, and Set_Funds_Distributed_Per_Sec.
 #ifndef TT_INCLUDE__REFINERYGAMEOBJDEF_H
 #define TT_INCLUDE__REFINERYGAMEOBJDEF_H
 
@@ -31,6 +29,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (RefineryGameObjDef, BuildingGameObjDef);
+//protected: //DA
 	void					Load_Variables (ChunkLoadClass &cload);
 	float			UnloadTime;
 	float			FundsGathered;	

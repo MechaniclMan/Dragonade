@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,11 +19,12 @@
 #include "HashTemplateClass.h"
 #include "SList.h"
 #include "cPlayer.h"
-#include "PhysDefClass.h"
 class ConnectionAcceptanceFilter;
 class WideStringClass;
 class cScTextObj;
 class SCAnnouncement;
+class cPlayerKill;
+class cPurchaseResponseEvent;
 //start per-player script commands stuff
 typedef void (*_Enable_Stealth_Player) (GameObject *obj,GameObject *obj2,bool enable);
 typedef void (*_Set_Fog_Enable_Player) (GameObject *obj,bool enable);
@@ -48,6 +49,8 @@ typedef void (*roch) (int pos);
 typedef int (*akh) (KeyHookStruct *h);
 typedef void (*rkh) (int pos);
 typedef void (*ss) (GameObject *obj,int scope);
+typedef void (*ss2) (GameObject *obj,ScriptClass *script,int number);
+typedef bool (*htm) (GameObject *obj,ScriptClass *script,int number);
 typedef void (*ach) (ChatHook h);
 typedef void (*ahh) (HostHook h);
 typedef void (*arh) (RefillHook h);
@@ -138,6 +141,8 @@ typedef void (*uno) (NetworkObjectClass *obj);
 typedef void (*unop) (NetworkObjectClass *Object,int ID);
 typedef cScTextObj *(*sct) (const WideStringClass& message, TextMessageEnum type, bool popup, int senderId, int receiverId, bool dodirtybit, bool doact);
 typedef SCAnnouncement *(*sca) (int _receiptientId, int _senderId, int _translationId, AnnouncementEnum _type, int _emoticonId, bool dodirtybit, bool doact);
+typedef cPlayerKill *(*spkm) (int Killer, int Victim);
+typedef cPurchaseResponseEvent *(*spr) (int ID, int Type);
 typedef bool (*iwu) (wchar_t *WideName);
 typedef void (*cee) (const char *Explosion, Vector3 &Pos, GameObject *Creator);
 typedef void (*rwpa) (DynamicVectorClass<int> &WaypathIDs);
@@ -161,6 +166,13 @@ typedef void (*sovfp) (GameObject *player,int objectId,bool visible);
 typedef void (*sov) (int objectId,bool visible);
 typedef void (*lscg) (GameObject *obj,Collision_Group_Type collisionGroupType);
 typedef void (*ulscg) (GameObject *obj);
+typedef int (*cwsdp) (GameObject *obj,const char *soundname);
+typedef void (*fpup) (GameObject *player,GameObject *obj);
+typedef bool (*iea) (GameObject *obj);
+typedef void (*sbgmo) (GameObject *obj,const char *music,float startoffset);
+typedef void (*setcam) (GameObject *obj,const char *camera);
+typedef void (*settran) (GameObject *obj,int defid,int stringid);
+typedef void (*setnur) (GameObject *obj,int rate);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -265,6 +277,8 @@ SCRIPTS_API extern uno Update_Network_Object;
 SCRIPTS_API extern unop Update_Network_Object_Player;
 SCRIPTS_API extern sct Send_Client_Text;
 SCRIPTS_API extern sca Send_Client_Announcement;
+SCRIPTS_API extern spkm Send_Player_Kill_Message;
+SCRIPTS_API extern spr Send_Purchase_Response;
 SCRIPTS_API extern dod Do_Objectives_Dlg;
 SCRIPTS_API extern sl Set_Player_Limit;
 SCRIPTS_API extern gl Get_Player_Limit;
@@ -323,6 +337,16 @@ SCRIPTS_API extern sovfp Set_Object_Visibility_For_Player;
 SCRIPTS_API extern sov Set_Object_Visibility;
 SCRIPTS_API extern lscg Lock_Soldier_Collision_Group;
 SCRIPTS_API extern ulscg Unlock_Soldier_Collision_Group;
+SCRIPTS_API extern iea Is_Engine_Enabled;
+SCRIPTS_API extern ss Stop_Timer;
+SCRIPTS_API extern cwsdp Create_2D_Wave_Sound_Dialog_Player;
+SCRIPTS_API extern fpup Force_Position_Update_Player;
+SCRIPTS_API extern ss2 Stop_Timer2;
+SCRIPTS_API extern htm Has_Timer;
+SCRIPTS_API extern sbgmo Set_Background_Music_Player_Offset;
+SCRIPTS_API extern setcam Set_Camera_Player;
+SCRIPTS_API extern settran Set_Definition_TranslationID_Player;
+SCRIPTS_API extern setnur Set_Net_Update_Rate_Player;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:
@@ -429,6 +453,7 @@ SCRIPTS_API void Enable_Team_Radar(int Team,bool Enable); //enable radar for a g
 SCRIPTS_API void Create_Sound_Team(const char *soundname,const Vector3 & position,GameObject *obj,int team); //play a 3D sound for a team
 SCRIPTS_API void Create_2D_Sound_Team(const char *soundname,int team); //play a 2D sound for a team
 SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team); //play a 2D WAV sound for a team
+SCRIPTS_API void Create_2D_WAV_Sound_Team_Dialog(const char *soundname,int team); //play a 2D WAV Dialogue sound for a team
 SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D WAV sound at a bone for a team
 SCRIPTS_API void Create_3D_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D sound at a bone for a team
 SCRIPTS_API void Send_Message_Team(int team,unsigned int red,unsigned int green,unsigned int blue,const char *msg); //send a message to a team

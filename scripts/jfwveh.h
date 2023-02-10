@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -120,6 +120,10 @@ class JFW_Per_Preset_Visible_People_In_Vechicle : public ScriptImpClass {
 
 class JFW_Visible_Person_Settings : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+};
+
+class JFW_Visible_Person_Settings_2 : public ScriptImpClass {
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 };
 
 class JFW_Vechicle_Animation_2 : public ScriptImpClass {
@@ -249,6 +253,15 @@ public:
 };
 
 class JFW_Per_Preset_Visible_Multiple_People_In_Vehicle : public ScriptImpClass {
+	VectorClass<SoldierObject> SoldierObjects;
+	bool stealth;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Killed(GameObject *obj,GameObject *killer);
+	void Timer_Expired(GameObject *obj, int number);
+};
+
+class JFW_Per_Preset_Visible_Multiple_People_In_Vehicle_2 : public ScriptImpClass {
 	VectorClass<SoldierObject> SoldierObjects;
 	bool stealth;
 	void Created(GameObject *obj);

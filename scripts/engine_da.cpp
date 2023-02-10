@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -33,7 +33,6 @@
 #include "SoldierGameObjDef.h"
 #include "RefineryGameObj.h"
 #include "RefineryGameObjDef.h"
-#include "CollisionMath.h"
 #include "PowerupGameObj.h"
 #include "PowerupGameObjDef.h"
 #include "DefinitionMgrClass.h"
@@ -57,10 +56,10 @@
 #include "TransitionInstanceClass.h"
 #include "cScTextObj.h"
 #include "SCAnnouncement.h"
+#include "AirFactoryGameObj.h"
+#include "NavalFactoryGameObj.h"
 #include "SpawnerClass.h"
-#include "cPurchaseResponseEvent.h"
 #include "CombatManager.h"
-#include "cPlayerKill.h"
 #include "cPlayer.h"
 
 RENEGADE_FUNCTION
@@ -77,7 +76,7 @@ void WeaponBagClass::Remove_Weapon(int)
 AT2(0,0x006F2EF0);
 RENEGADE_FUNCTION
 void WeaponBagClass::Clear_Weapons() 
-AT2(0,0x6F2F50);
+AT2(0,0x006F2F50);
 RENEGADE_FUNCTION
 void WeaponBagClass::Select_Index(int)
 AT2(0,0x006F36C0);
@@ -91,10 +90,6 @@ AT2(0,0x006F32F0);
 RENEGADE_FUNCTION
 void PhysicalGameObj::Attach_To_Object_Bone(PhysicalGameObj *,const char *)
 AT2(0,0x006A5270);
-
-RENEGADE_FUNCTION
-void BuildingGameObj::Find_Closest_Poly(const Vector3&,float*) 
-AT2(0,0x00684ED0);
 
 REF_DEF2(bool,CombatManager::FriendlyFirePermitted,0,0x008550E4);
 REF_DEF2(bool,CombatManager::BeaconPlacementEndsGame,0,0x008550E5);
@@ -321,15 +316,6 @@ StringClass Get_IP_Address_String(int PlayerID) {
 	return StringFormat("%d.%d.%d.%d",ip1,ip2,ip3,ip4);
 }
 
-const wchar_t *Get_Wide_Team_Name(int Team) {
-	if (!Team) {
-		return Get_Wide_Translated_String(7198);
-	}
-	else if (Team == 1) {
-		return Get_Wide_Translated_String(7199);
-	}
-	return L"Neutral";
-}
 
 int Find_Empty_Vehicle_Seat(VehicleGameObj *obj,bool AllowDriver) {
 	int x = obj->Get_Definition().Get_Seat_Count();
@@ -356,17 +342,17 @@ ScriptImpClass *Get_Script_By_Name(GameObject *obj,const char *Script) {
 
 void Change_Team_3(cPlayer *Player,int Team) {
 	if (Player->Get_Money() > (float)The_Cnc_Game()->StartingCredits) { //Allow players to keep their starting credits when switching teams.
-		Give_Credits_Team(Player->Get_Player_Type(),(Player->Get_Money()-(float)The_Cnc_Game()->StartingCredits)/(Get_Team_Player_Count(Player->Get_Team())-1)); //Distribute anything above the starting credits to their teammates.
+		Give_Credits_Team(Player->Get_Player_Type(),(Player->Get_Money()-(float)The_Cnc_Game()->StartingCredits)/(Get_Team_Player_Count(Player->Get_Player_Type())-1)); //Distribute anything above the starting credits to their teammates.
 	}
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
-	Disarm_All_C4_Beacons(Player->Get_ID());
+	Disarm_All_C4_Beacons(Player->Get_Id());
 	Player->Set_Player_Type(Team);
 	Player->Destroy_GameObj();
 }
 
 void Change_Team_4(cPlayer *Player,int Team) {
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
-	Disarm_All_C4_Beacons(Player->Get_ID());
+	Disarm_All_C4_Beacons(Player->Get_Id());
 	Player->Set_Player_Type(Team);
 	Player->Destroy_GameObj();
 }
@@ -375,7 +361,7 @@ void Change_Team_5(cPlayer *Player,int Team) {
 	Player->Set_Score(0);
 	Player->Set_Kills(0);
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
-	Disarm_All_C4_Beacons(Player->Get_ID());
+	Disarm_All_C4_Beacons(Player->Get_Id());
 	Player->Set_Player_Type(Team);
 	Player->Destroy_GameObj();
 	Player->Set_Deaths(0);
@@ -383,7 +369,7 @@ void Change_Team_5(cPlayer *Player,int Team) {
 
 cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOnly,bool AllowSelf) {
 	cPlayer *Return = 0;
-	int Team = Player?Player->Get_Team():2;
+	int Team = Player?Player->Get_Player_Type():2;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Is_Active() && (AllowSelf || Player != z->Data())) {
 			if (!TeamOnly || Team == z->Data()->Get_Player_Type() || Team == 2) {
@@ -441,6 +427,30 @@ void Attach_Script_To_Definitions(unsigned long CID,const char *Script,const cha
 		Def->ScriptParameterList.Add(Params);
 	}
 }
+
+void Remove_Script_From_Definition(const char *Preset, const char *Script) {
+	ScriptableGameObjDef *Def = (ScriptableGameObjDef*)Find_Named_Definition(Preset);
+	if (Def) {
+		for (int i = Def->ScriptNameList.Count() - 1; i >= 0; i--) {
+			if (!_stricmp(Def->ScriptNameList[i], Script)) {
+				Def->ScriptNameList.Delete(i);
+				Def->ScriptParameterList.Delete(i);
+			}
+		}
+	}
+}
+
+void Remove_Script_From_Definitions(unsigned long CID, const char *Script) {
+	for (ScriptableGameObjDef *Def = (ScriptableGameObjDef*)DefinitionMgrClass::Get_First(CID, DefinitionMgrClass::ID_CLASS); Def; Def = (ScriptableGameObjDef*)DefinitionMgrClass::Get_Next(Def, CID, DefinitionMgrClass::ID_CLASS)) {
+		for (int i = Def->ScriptNameList.Count() - 1; i >= 0; i--) {
+			if (!_stricmp(Def->ScriptNameList[i], Script)) {
+				Def->ScriptNameList.Delete(i);
+				Def->ScriptParameterList.Delete(i);
+			}
+		}
+	}
+}
+
 
 void TDBObjClass::Set_English_String (const char *string) {
 	EnglishString = string;
@@ -576,59 +586,10 @@ bool Is_Stealth_Unit(GameObject *obj) {
 	return obj->As_SmartGameObj()->Get_Definition().Is_Stealthed();
 }
 
-//The client VehicleFactoryGameObj::Get_Team_Vehicle_Count is bugged and counts the harvester towards the vehicle limit.
-//The server VehicleFactoryGameObj::Get_Team_Vehicle_Count doesn't suffer from this bug, thus the following function is used instead so that the server and client vehicle counts match up.
-unsigned int Get_Ground_Vehicle_Count(int Team) {
-	int Count = 0;
-	if (Find_Building_By_Type(Team,BuildingConstants::TYPE_HELIPAD)) {
-		for (SLNode<VehicleGameObj> *z = GameObjManager::VehicleGameObjList.Head();z;z = z->Next()) {
-			VehicleGameObj *Vehicle = z->Data();
-			const VehicleGameObjDef *VehicleDef = &Vehicle->Get_Definition();
-			if (VehicleDef->Get_Type() != VEHICLE_TYPE_TURRET && Vehicle->Peek_Physical_Object()->As_MoveablePhysClass() && VehicleDef->Get_Build_At_Ground() && VehicleDef->Get_Default_Player_Type() == Team) {
-				Count++;
-			}
-		}
-	}
-	else {
-		for (SLNode<VehicleGameObj> *z = GameObjManager::VehicleGameObjList.Head();z;z = z->Next()) {
-			VehicleGameObj *Vehicle = z->Data();
-			const VehicleGameObjDef *VehicleDef = &Vehicle->Get_Definition();
-			if (VehicleDef->Get_Type() != VEHICLE_TYPE_TURRET && Vehicle->Peek_Physical_Object()->As_MoveablePhysClass() && VehicleDef->Get_Default_Player_Type() == Team) {
-				Count++;
-			}
-		}
-	}
-	return Count;
-}
-
-unsigned int Get_Air_Vehicle_Count(int Team) {
-	int Count = 0;
-	for (SLNode<VehicleGameObj> *z = GameObjManager::VehicleGameObjList.Head();z;z = z->Next()) {
-		VehicleGameObj *Vehicle = z->Data();
-		const VehicleGameObjDef *VehicleDef = &Vehicle->Get_Definition();
-		if (!VehicleDef->Get_Build_At_Ground() && VehicleDef->Get_Type() == VEHICLE_TYPE_FLYING && VehicleDef->Get_Default_Player_Type() == Team) {
-			Count++;
-		}
-	} 
-	return Count;
-}
-
-unsigned int Get_Naval_Vehicle_Count(int Team) {
-	int Count = 0;
-	for (SLNode<VehicleGameObj> *z = GameObjManager::VehicleGameObjList.Head();z;z = z->Next()) {
-		VehicleGameObj *Vehicle = z->Data();
-		const VehicleGameObjDef *VehicleDef = &Vehicle->Get_Definition();
-		if (!VehicleDef->Get_Build_At_Ground() && (VehicleDef->Get_Type() == VEHICLE_TYPE_BOAT || VehicleDef->Get_Type() == VEHICLE_TYPE_SUB) && VehicleDef->Get_Default_Player_Type() == Team) {
-			Count++;
-		}
-	} 
-	return Count;
-}
-
 void Set_Object_Dirty_Bit_For_Version_Greater_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Get_DA_Player()->Get_Version() >= Version) {
-			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_Id(),Bit,OnOff);
 		}
 	}
 }
@@ -636,23 +597,23 @@ void Set_Object_Dirty_Bit_For_Version_Greater_Than(NetworkObjectClass *obj,float
 void Set_Object_Dirty_Bit_For_Version_Less_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Get_DA_Player()->Get_Version() < Version) {
-			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_Id(),Bit,OnOff);
 		}
 	}
 }
 
 void Set_Object_Dirty_Bit_For_Team_Version_Greater_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-		if (z->Data()->Get_DA_Player()->Get_Version() >= Version && z->Data()->Get_Team() == Team) {
-			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+		if (z->Data()->Get_DA_Player()->Get_Version() >= Version && z->Data()->Get_Player_Type() == Team) {
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_Id(),Bit,OnOff);
 		}
 	}
 }
 
 void Set_Object_Dirty_Bit_For_Team_Version_Less_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-		if (z->Data()->Get_DA_Player()->Get_Version() < Version && z->Data()->Get_Team() == Team) {
-			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+		if (z->Data()->Get_DA_Player()->Get_Version() < Version && z->Data()->Get_Player_Type() == Team) {
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_Id(),Bit,OnOff);
 		}
 	}
 }
@@ -677,7 +638,7 @@ int Setup_Send_Message_Fake(const char *NewNick,int ID) {
 				Set_Object_Dirty_Bit_For_Version_Less_Than(Player,2.6f,NetworkObjectClass::BIT_CREATION,true);
 				Update_Network_Object(Player);
 			}
-			return Player->Get_ID();
+			return Player->Get_Id();
 		}
 	}
 	return 0;
@@ -686,7 +647,7 @@ int Setup_Send_Message_Fake(const char *NewNick,int ID) {
 int Setup_Send_Message_Team_Fake(const char *NewNick,int Team,int ID) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && Player->Get_Team() == Team) {
+		if (Player->Is_Active() && Player->Get_Player_Type() == Team) {
 			NickSave = Player->Get_Name();
 			NickSavePlayer = Player;
 			Player->PlayerName = NewNick;
@@ -700,7 +661,7 @@ int Setup_Send_Message_Team_Fake(const char *NewNick,int Team,int ID) {
 				Set_Object_Dirty_Bit_For_Version_Less_Than(Player,2.6f,NetworkObjectClass::BIT_CREATION,true);
 				Update_Network_Object(Player);
 			}
-			return Player->Get_ID();
+			return Player->Get_Id();
 		}
 	}
 	return 0;
@@ -731,7 +692,7 @@ void Send_Announcement_Version_Less_Than(const char *StringID,float Version) {
 		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Active() && Player->Get_DA_Player()->Get_Version() < Version) {
-				RadioEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+				RadioEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 			}
 		}
 	}
@@ -762,7 +723,7 @@ void Send_Announcement_Team(int Team,const char *StringID) {
 		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Active() && Player->Get_Player_Type() == Team) {
-				RadioEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+				RadioEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 			}
 		}
 	}
@@ -775,7 +736,7 @@ void Send_Announcement_Team_Version_Less_Than(int Team,const char *StringID,floa
 		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Active() && Player->Get_Player_Type() == Team && Player->Get_DA_Player()->Get_Version() < Version) {
-				RadioEvent->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+				RadioEvent->Set_Object_Dirty_Bits(Player->Get_Id(),NetworkObjectClass::BIT_CREATION);
 			}
 		}
 	}
@@ -895,7 +856,7 @@ SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const
 	}
 	SoldierGameObj *obj = (SoldierGameObj*)Def->Create();
 	Player->Owner = obj;
-	obj->Set_Control_Owner(Player->Get_ID());
+	obj->Set_Control_Owner(Player->Get_Id());
 	obj->Set_Player_Data(Player);
 	obj->Set_Player_Type(Player->Get_Player_Type());
 	obj->Set_Position(Position);
@@ -909,7 +870,7 @@ SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const
 	}
 	SoldierGameObj *obj = (SoldierGameObj*)Def->Create();
 	Player->Owner = obj;
-	obj->Set_Control_Owner(Player->Get_ID());
+	obj->Set_Control_Owner(Player->Get_Id());
 	obj->Set_Player_Data(Player);
 	obj->Set_Player_Type(Player->Get_Player_Type());
 	obj->Set_Transform(Transform);
@@ -1092,59 +1053,6 @@ int WeaponBagClass::Get_Weapon_Position(WeaponClass *Weapon) {
 	return 0;
 }
 
-void ScriptableGameObj::Start_Observer_Timer(int ObserverID,float Duration,int Number) {
-	GameObjObserverTimerClass *Timer = new GameObjObserverTimerClass;
-	Timer->ObserverID = ObserverID;
-	Timer->Duration = Duration;
-	Timer->Number = Number;
-	ObserverTimerList.Add(Timer);
-}
-
-void ScriptableGameObj::Start_Custom_Timer(ScriptableGameObj *Sender,float Delay,int Message,int Param) {
-	GameObjCustomTimerClass *Timer = new GameObjCustomTimerClass;
-	Timer->Sender = Sender;
-	Timer->Delay = Delay;
-	Timer->Message = Message;
-	Timer->Param = Param;
-	CustomTimerList.Add(Timer);
-}
-
-void ScriptableGameObj::Stop_Observer_Timer(int ObserverID,int Number) {
-	for (int i = ObserverTimerList.Count()-1;i >= 0;i--) {
-		if (ObserverTimerList[i]->ObserverID == ObserverID && (!Number || ObserverTimerList[i]->Number == Number)) {
-			ObserverTimerList[i]->ObserverID = -1;
-			ObserverTimerList[i]->Number = -1;
-		}
-	}
-}
-
-void ScriptableGameObj::Stop_Custom_Timer(ScriptableGameObj *Sender,int Message) {
-	for (int i = CustomTimerList.Count()-1;i >= 0;i--) {
-		if (CustomTimerList[i]->Sender == Sender && (!Message || CustomTimerList[i]->Message == Message)) {
-			delete CustomTimerList[i];
-			CustomTimerList.Delete(i);
-		}
-	}
-}
-
-bool ScriptableGameObj::Is_Observer_Timer(int ObserverID,int Number) {
-	for (int i = ObserverTimerList.Count()-1;i >= 0;i--) {
-		if (ObserverTimerList[i]->ObserverID == ObserverID && (!Number || ObserverTimerList[i]->Number == Number)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-bool ScriptableGameObj::Is_Custom_Timer(ScriptableGameObj *Sender,int Message) {
-	for (int i = CustomTimerList.Count()-1;i >= 0;i--) {
-		if (CustomTimerList[i]->Sender == Sender && (!Message || CustomTimerList[i]->Message == Message)) {
-			return true;
-		}
-	}
-	return false;
-}
-
 void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool DestroyUnfixable) {
 	for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) {
 		PhysicalGameObj *obj = x->Data();
@@ -1213,23 +1121,6 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 		return true;
 	}
 }
-
-PUSH_MEMORY_MACROS
-#undef new
-
-void Send_Purchase_Response(int ID,int Type) {
-	cPurchaseResponseEvent *Event = (cPurchaseResponseEvent*)operator new(sizeof(cPurchaseResponseEvent));
-	Event->Constructor();
-	Event->Init(Type,ID);
-}
-
-void Send_Player_Kill_Message(int Killer,int Victim) {
-	cPlayerKill *Event = (cPlayerKill*)operator new(sizeof(cPlayerKill));
-	Event->Constructor();
-	Event->Init(Killer,Victim);
-}
-
-POP_MEMORY_MACROS
 
 StringClass Clean_Model_Name(StringClass Model) {
 	Model.cropTo(Model.Get_Length()-4);
@@ -1447,8 +1338,53 @@ void Set_Emot_Icon(int ID,const char *Model,int Team) {
 	WideStringClass Send;
 	Send.Format(L"j\n36\n%d\n%hs\n",ID,Model);
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-		if (z->Data()->Is_Active() && (Team == 2 || Team == z->Data()->Get_Team())) {
-			Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,z->Data()->Get_ID(),true,true);
+		if (z->Data()->Is_Active() && (Team == 2 || Team == z->Data()->Get_Player_Type())) {
+			Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,z->Data()->Get_Id(),true,true);
 		}
 	}
 }
+
+unsigned int Get_Ground_Vehicle_Count(int Team) {
+	GameObject *factory = Find_Vehicle_Factory(Team);
+	if (factory && factory->As_BuildingGameObj() && factory->As_BuildingGameObj()->As_VehicleFactoryGameObj())
+	{
+		return factory->As_BuildingGameObj()->As_VehicleFactoryGameObj()->Get_Team_Vehicle_Count();
+	}
+	return 0;
+};
+unsigned int Get_Air_Vehicle_Count(int Team) {
+	GameObject *factory = Find_Helipad(Team);
+	if (factory && factory->As_BuildingGameObj() && factory->As_BuildingGameObj()->As_AirFactoryGameObj())
+	{
+		return factory->As_BuildingGameObj()->As_AirFactoryGameObj()->Get_Team_Vehicle_Count();
+	}
+	return 0;
+};
+unsigned int Get_Naval_Vehicle_Count(int Team) {
+	GameObject *factory = Find_Naval_Factory(Team);
+	if (factory && factory->As_BuildingGameObj() && factory->As_BuildingGameObj()->As_NavalFactoryGameObj())
+	{
+		return factory->As_BuildingGameObj()->As_NavalFactoryGameObj()->Get_Team_Vehicle_Count();
+	}
+	return 0;
+};
+
+const SpawnerDefClass* SpawnerClass::Get_Definition() const
+{
+	return this->definition;
+}
+
+Matrix3D SpawnerClass::Get_TM() const
+{
+	return this->transform;
+}
+
+bool CombatManager::Is_Gameplay_Permitted()
+{
+	if (NetworkHandler)
+		return IsGameplayPermitted;
+	else
+		return true;
+}
+REF_DEF2(CombatNetworkHandlerClass*, CombatManager::NetworkHandler, 0x00855ED4, 0x008550BC);
+REF_DEF2(bool, CombatManager::IsGameplayPermitted, 0x00855EFE, 0x008550E6);

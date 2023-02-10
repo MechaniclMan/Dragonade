@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Removed case sensitivity from Get_Section
 #include "general.h"
 #pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
 #pragma init_seg(lib) // Move this files static initializers up a level
@@ -435,13 +433,13 @@ INISection *INIClass::Find_Section(const char* section) const
 {
 	if (section)
 	{
-		/*int crc = CRC_String(section,0);
+		/*int crc = CRC_String(section,0); //DA
 		if (SectionIndex->Is_Present(crc))
 		{
 			return (*SectionIndex)[crc];
 		}*/
-		for (INISection *i = SectionList->First();i && i->Is_Valid();i = i->Next()) {
-			if (!_stricmp(section,i->Section)) {
+		for (INISection *i = SectionList->First(); i && i->Is_Valid(); i = i->Next()) { //DA
+			if (!_stricmp(section, i->Section)) {
 				return i;
 			}
 		}

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infantry and Vehicle Crates
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,8 +30,8 @@ class DAMoneyCrateClass : public DACrateClass {
 	virtual void Activate(cPlayer *Player) {
 		int Min = 200;
 		int Max = 400;
-		BuildingGameObj *PP = (BuildingGameObj*)Find_Power_Plant(Player->Get_Team());
-		BuildingGameObj *Ref = (BuildingGameObj*)Find_Refinery(Player->Get_Team());
+		BuildingGameObj *PP = (BuildingGameObj*)Find_Power_Plant(Player->Get_Player_Type());
+		BuildingGameObj *Ref = (BuildingGameObj*)Find_Refinery(Player->Get_Player_Type());
 		if (PP && PP->Is_Destroyed()) {
 			Min += 100;
 			Max += 100;
@@ -60,7 +60,7 @@ class DADeathCrateClass : public DACrateClass {
 			Commands->Apply_Damage(Player->Get_GameObj(),99999.0f,"None",0);
 			Commands->Create_Explosion("Explosion_Mine_Remote_01",Player->Get_GameObj()->Get_Position(),0);
 		}
-		DA::Host_Message("Some poor %ls player just got pwned by the fearsome Death Crate!",Get_Wide_Team_Name(Player->Get_Team()));
+		DA::Host_Message("Some poor %ls player just got pwned by the fearsome Death Crate!",Get_Wide_Team_Name(Player->Get_Player_Type()));
 	}
 };
 
@@ -138,12 +138,12 @@ class DAPowerCrateClass : public DACrateClass, public DAEventClass {
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		Timer_Expired(1,Player->Get_Team()?0:1); //Stagger each team so the sounds don't overlap.
+		Timer_Expired(1,Player->Get_Player_Type()?0:1); //Stagger each team so the sounds don't overlap.
 		if (Is_Timer(2)) {
-			Start_Timer(1,2.0f,false,Player->Get_Team());
+			Start_Timer(1,2.0f,false,Player->Get_Player_Type());
 		}
 		else {
-			Timer_Expired(1,Player->Get_Team());
+			Timer_Expired(1,Player->Get_Player_Type());
 		}
 	}
 	
@@ -370,15 +370,15 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 	}
 
 	virtual void Player_Join_Event(cPlayer *Player) { //Disable HUD for players that joined after the start.
-		Send_Message_Player_By_ID(Player->Get_ID(),COLORWHITE,"Detecting interference from approaching Ion Storm.");
-		Send_Message_Player_By_ID(Player->Get_ID(),COLORWHITE,"Uplink signal to global EVANet lost. Searching...");
-		Enable_HUD_Player_By_ID(Player->Get_ID(),false);
-		Set_Fog_Enable_Player_By_ID(Player->Get_ID(),true);
-		Set_Fog_Range_Player_By_ID(Player->Get_ID(),75.0f,100.0f,10.0f);
+		Send_Message_Player_By_ID(Player->Get_Id(),COLORWHITE,"Detecting interference from approaching Ion Storm.");
+		Send_Message_Player_By_ID(Player->Get_Id(),COLORWHITE,"Uplink signal to global EVANet lost. Searching...");
+		Enable_HUD_Player_By_ID(Player->Get_Id(),false);
+		Set_Fog_Enable_Player_By_ID(Player->Get_Id(),true);
+		Set_Fog_Range_Player_By_ID(Player->Get_Id(),75.0f,100.0f,10.0f);
 	}
 
 	virtual void Object_Created_Event(GameObject *obj) {
-		Enable_HUD_Player_By_ID(((SoldierGameObj*)obj)->Get_Player()->Get_ID(),false);
+		Enable_HUD_Player_By_ID(((SoldierGameObj*)obj)->Get_Player()->Get_Id(),false);
 	}
 	
 	virtual void Game_Over_Event() { //Don't want stuff to carry over to the next game.
@@ -475,12 +475,12 @@ class DASpyCrateSoldierObserverClass : public DAGameObjObserverClass {
 
 class DASpyCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if enemy base defense is dead or powered down.
-		BuildingGameObj *Defense = (BuildingGameObj*)Find_Base_Defense(!Player->Get_Team());
+		BuildingGameObj *Defense = (BuildingGameObj*)Find_Base_Defense(!Player->Get_Player_Type());
 		return (Defense && !Defense->Is_Destroyed() && Defense->Is_Power_Enabled() && (Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Get_Is_Scripts_Visible():Player->Get_GameObj()->Is_Visible()));
 	}
 	
 	virtual void Activate(cPlayer *Player) {
-		DA::Host_Message("A %ls player just got the Spy Crate. Better watch your base %ls!",Get_Wide_Team_Name(Player->Get_Team()),Get_Wide_Team_Name(!Player->Get_Team()));
+		DA::Host_Message("A %ls player just got the Spy Crate. Better watch your base %ls!",Get_Wide_Team_Name(Player->Get_Player_Type()),Get_Wide_Team_Name(!Player->Get_Player_Type()));
 		SoldierGameObj *Soldier = Player->Get_GameObj();
 		if (Soldier->Get_Vehicle()) {
 			Soldier->Get_Vehicle()->Add_Observer(new DASpyCrateVehicleObserverClass);
@@ -603,11 +603,11 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 	}
 
 	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already active or radar is disabled.
-		return (!Active[Player->Get_Team()] && The_Game()->Get_Radar_Mode() == 1);
+		return (!Active[Player->Get_Player_Type()] && The_Game()->Get_Radar_Mode() == 1);
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		int Team = Player->Get_Team();
+		int Team = Player->Get_Player_Type();
 		Active[Team] = true;
 		DA::Host_Message("A %ls player just picked up the UAV Crate. All enemy units are now marked on radar.",Get_Wide_Team_Name(Team));
 		Start_Timer(1,Get_Random_Float(60.0f,90.0f),false,Team); //End timer.
@@ -714,7 +714,7 @@ class DAKamikazeCrateClass : public DACrateClass {
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		DA::Host_Message("Some crazy ass %ls player just picked up the Kamikaze Crate. Watch yourself %ls.",Get_Wide_Team_Name(Player->Get_Team()),Get_Wide_Team_Name(!Player->Get_Team()));
+		DA::Host_Message("Some crazy ass %ls player just picked up the Kamikaze Crate. Watch yourself %ls.",Get_Wide_Team_Name(Player->Get_Player_Type()),Get_Wide_Team_Name(!Player->Get_Player_Type()));
 		if (Player->Get_GameObj()->Get_Vehicle()) {
 			DA::Page_Player(Player,"You picked up the Kamikaze Crate. Your vehicle will explode when it dies, damaging nearby enemy units.");
 			Player->Get_GameObj()->Get_Vehicle()->Add_Observer(new DAKamikazeCrateObserverClass);
@@ -750,7 +750,7 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 				}
 			}
 			if (Soldier && Soldier->Get_Player()) {
-				int ID = Soldier->Get_Player()->Get_ID();
+				int ID = Soldier->Get_Player()->Get_Id();
 				if (Soldier->Get_Player_Type() == 0) {
 					Create_2D_WAV_Sound_Player_By_ID(ID,"M00EVAN_DSGN0022I1EVAN_SND.wav");
 				}

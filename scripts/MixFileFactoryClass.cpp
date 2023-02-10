@@ -15,6 +15,7 @@
 #include "SimpleFileFactoryClass.h"
 #include "Crc32.h"
 #include <algorithm>
+#include "RawFileClass.h"
 
 MixFileFactoryClass::MixFileFactoryClass
    (const char* filePath, FileFactoryClass *parentFileFactory) : FileFactoryClass(), Factory(0), UnkOffset(0), FileCount(0), MixFilenameOffset(0), IsValid(false), FileAdded(false)
@@ -284,4 +285,89 @@ void MixFileCreator::Add_File(char  const *name, char  const *name2)
 			}
 		}
 	}
+}
+
+class IndexEntry : public NoEqualsClass<IndexEntry>
+{
+public:
+	StringClass name;
+	FileFactoryClass *factory;
+	unsigned int id;
+	unsigned int size;
+	unsigned int offset;
+};
+
+int Compare_Entry(const void *v1, const void *v2)
+{
+	int ret = -1;
+	if (((IndexEntry *)v1)->id >= ((IndexEntry *)v2)->id)
+	{
+		ret = ((IndexEntry *)v1)->id > ((IndexEntry *)v2)->id;
+	}
+	return ret;
+}
+void CopyTo(FileClass &out,FileClass &in)
+{
+	char buffer[10240];
+	int remaining = in.Size();
+	while (0 != remaining)
+	{
+		int nBytes = (remaining > sizeof(buffer)) ? sizeof(buffer) : remaining;
+		in.Read(buffer,nBytes);
+		out.Write(buffer,nBytes);
+		remaining -= nBytes;
+	}
+}
+void BuildMixFile(const char *path,DynamicVectorClass<StringClass> filenames,DynamicVectorClass<FileFactoryClass *> filefactories)
+{
+	DynamicVectorClass<IndexEntry> entries;
+	for (int i = 0;i < filenames.Count();i++)
+	{
+		IndexEntry entry;
+		StringClass fname = filenames[i];
+		NormalizeFilename(fname.Peek_Buffer());
+		entry.name = fname.Peek_Buffer();
+		entry.id = CRC_Stringi(entry.name.Peek_Buffer());
+		entry.factory = filefactories[i];
+		entries.Add(entry);
+	}
+	qsort(&entries[0],entries.Count(),sizeof(IndexEntry),Compare_Entry);
+	RawFileClass out(path);
+	out.Open(0);
+	int m = 0x3158494D;
+	out.Write(&m,sizeof(m));
+	out.Seek(16,SEEK_SET);
+	for (int i = 0;i < entries.Count();i++)
+	{
+		FileClass *in = entries[i].factory->Get_File(entries[i].name);
+		in->Open(1);
+		entries[i].size = in->Size();
+		entries[i].offset = out.Tell();
+		CopyTo(out,*in);
+		int pos = out.Tell();
+		pos += -pos & 7;
+		out.Seek(pos,SEEK_SET);
+		entries[i].factory->Return_File(in);
+	}
+	int index_offset = out.Tell();
+	int count = entries.Count();
+	out.Write(&count,sizeof(count));
+	for (int i = 0;i < entries.Count();i++)
+	{
+		out.Write(&entries[i].id,sizeof(entries[i].id));
+		out.Write(&entries[i].offset,sizeof(entries[i].offset));
+		out.Write(&entries[i].size,sizeof(entries[i].size));
+	}
+	int filename_offset = out.Tell();
+	out.Write(&count,sizeof(count));
+	for (int i = 0;i < entries.Count();i++)
+	{
+		char length = (char)(entries[i].name.Get_Length() + 1);
+		out.Write(&length,sizeof(length));
+		out.Write(entries[i].name.Peek_Buffer(),length);
+	}
+	out.Seek(4,SEEK_SET);
+	out.Write(&index_offset,sizeof(index_offset));
+	out.Write(&filename_offset,sizeof(filename_offset));
+	out.Close();
 }

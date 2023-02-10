@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,7 @@
 #include "VehicleGameObj.h"
 #include "SimpleGameObj.h"
 #include "GameObjManager.h"
+#include "dp88_custom_timer_defines.h"
 struct TimerParams {
 	int number;
 	float time;
@@ -2076,7 +2077,7 @@ class JFW_Poke_Send_Custom_Self : public ScriptImpClass
 {
 	void Poked(GameObject *obj,GameObject *poker)
 	{
-		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Message"),Get_Int_Parameter("Param"),0);
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Message"),Get_Int_Parameter("Type"),0);
 	}
 };
 
@@ -2086,7 +2087,7 @@ class JFW_Poke_Send_Custom_Poker : public ScriptImpClass
 {
 	void Poked(GameObject *obj,GameObject *poker)
 	{
-		Commands->Send_Custom_Event(obj,poker,Get_Int_Parameter("Message"),Get_Int_Parameter("Param"),0);
+		Commands->Send_Custom_Event(obj,poker,Get_Int_Parameter("Message"),Get_Int_Parameter("Type"),0);
 	}
 };
 
@@ -2158,6 +2159,18 @@ class JFW_Set_HUD_Help_Text_Player : public ScriptImpClass
 	}
 };
 REGISTER_SCRIPT(JFW_Set_HUD_Help_Text_Player, "Message:int,String:int,Color:vector3,OnceOnly:int");
+
+class JFW_Set_HUD_Help_Text_Zone : public ScriptImpClass
+{
+	void Entered(GameObject *obj,GameObject *enterer)
+	{
+		if (enterer->As_SoldierGameObj())
+		{
+			Set_HUD_Help_Text_Player(enterer,Get_Int_Parameter("String"),Get_Vector3_Parameter("Color"));
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Set_HUD_Help_Text_Zone, "String:int,Color:vector3");
 
 class JFW_Spawn_Projectile_Death : public ScriptImpClass
 {
@@ -2501,7 +2514,1684 @@ class M10_Turret : public ScriptImpClass
 };
 REGISTER_SCRIPT(M10_Turret, "");
 
-ScriptRegistrant<JFW_Add_Objective> JFW_Add_Objective_Registrant("JFW_Add_Objective","Type:int,TypeVal:int,Objective_Num:int,Objective_Type:int,Title_ID:int,Unknown:int,Sound_Name:string,Description_ID:int,Timer_Custom:int,Trigger:int");
+class JFW_Deployable_Vehicle : public ScriptImpClass
+{
+	int PilotID,mode,VeterancyLevel;
+	void Created(GameObject *obj)
+	{
+		mode = 0;
+		PilotID = 0;
+		VeterancyLevel = 0;
+		Commands->Send_Custom_Event(obj,obj,CUSTOM_VEHICLE_DEPLOY,0,1);
+	}
+	const char *Get_Model_Base()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Model_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Model_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Model_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			VeterancyLevel = param;
+			if (mode == 0)
+			{
+				Commands->Set_Model(obj,Get_Model_Base());
+			}
+			else if (mode == 2)
+			{
+				const char *model = Get_Model_Base();
+				char deployedmodel[512];
+				sprintf(deployedmodel,"%s_dd",model);
+				Commands->Set_Model(obj,deployedmodel);
+			}
+		}
+		else if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+		{
+			if (!PilotID)
+			{
+				PilotID = Commands->Get_ID(sender);
+				char params[50];
+				sprintf(params,"Deploy,%d,923572385",Commands->Get_ID(obj));
+				Commands->Attach_Script(sender,"Reborn_Deployable_Vehicle_Player",params);
+			}
+		}
+		else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+		{
+			if (PilotID == Commands->Get_ID(sender))
+			{
+				PilotID = 0;
+				Remove_Script(sender,"Reborn_Deployable_Vehicle_Player");
+			}
+		}
+		else if (type == 923572385)
+		{
+			if (!obj->As_VehicleGameObj()->Can_Drive())
+			{
+				return;
+			}
+			const char *model = Get_Model_Base();
+			char deployanim[512];
+			char dmodel[512];
+			sprintf(deployanim,"%s_d.%s_d",model,model);
+			sprintf(dmodel,"%s_d",model);
+			if (mode == 0)
+			{
+				if (!obj->As_VehicleGameObj()->Is_Immovable())
+				{
+					obj->As_VehicleGameObj()->Set_Immovable(true);
+					mode = 1;
+					Commands->Set_Model(obj,dmodel);
+					Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
+					Commands->Control_Enable(sender,false);
+					obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+					Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
+					Commands->Enable_Vehicle_Transitions(obj,false);
+					Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 1, 0);
+				}
+			}
+			else if (mode == 2)
+			{
+				mode = 3;
+				Commands->Set_Model(obj,dmodel);
+				Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
+				Commands->Control_Enable(sender,false);
+				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
+				Commands->Enable_Vehicle_Transitions(obj,false);
+				Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 3, 0);
+			}
+		}
+	}
+	void Animation_Complete(GameObject *obj,const char *animation_name)
+	{
+		const char *model = Get_Model_Base();
+		char deployedmodel[512];
+		sprintf(deployedmodel,"%s_dd",model);
+		char deployanim[512];
+		sprintf(deployanim,"%s_d.%s_d",model,model);
+		if (!_stricmp(animation_name,deployanim) && (mode == 1))
+		{
+			mode = 2;
+			Commands->Set_Model(obj,deployedmodel);
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+			Commands->Enable_Engine(obj,false);
+			Commands->Enable_Vehicle_Transitions(obj,true);
+			Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 2, 0);
+			return;
+		}
+		if (!_stricmp(animation_name,deployanim) && (mode == 3))
+		{
+			obj->As_VehicleGameObj()->Set_Immovable(false);
+			mode = 0;
+			Commands->Set_Model(obj,model);
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+			Commands->Enable_Engine(obj,true);
+			Commands->Enable_Vehicle_Transitions(obj,true);
+			Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 0, 0);
+			return;
+		}
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (PilotID && Commands->Find_Object(PilotID))
+		{
+			Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Deployable_Vehicle,"Model_Rookie:string,Model_Veteran:string,Model_Elite:string,Last_Deploy_Frame:float,DeploySound:string,UndeploySound:string");
+class JFW_Veteran_Weapon : public ScriptImpClass
+{
+	int VeterancyLevel;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	const char *Get_Weapon()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Weapon_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Weapon_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Weapon_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			Remove_Weapon(obj,Get_Weapon());
+			VeterancyLevel = param;
+			Grant_Weapon(obj,Get_Weapon(),true,999999,false);
+			Commands->Select_Weapon(obj,Get_Weapon());
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Weapon,"Weapon_Rookie:string,Weapon_Veteran:string,Weapon_Elite:string");
+class JFW_Veteran_Weapon_Deploy : public ScriptImpClass
+{
+	int VeterancyLevel;
+	int DeployState;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		DeployState = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	const char *Get_Weapon()
+	{
+		if ((DeployState == 0) || (DeployState == 1))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Weapon_Rookie");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Weapon_Veteran");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Weapon_Elite");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		} 
+		else if ((DeployState == 2) || (DeployState == 3))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Weapon_Rookie_Deployed");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Weapon_Veteran_Deployed");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Weapon_Elite_Deployed");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			Remove_Weapon(obj,Get_Weapon());
+			VeterancyLevel = param;
+			Grant_Weapon(obj,Get_Weapon(),true,999999,false);
+			Commands->Select_Weapon(obj,Get_Weapon());
+		}
+		else if (type == CUSTOM_VEHICLE_DEPLOY)
+		{
+			Remove_Weapon(obj,Get_Weapon());
+			DeployState = param;
+			Grant_Weapon(obj,Get_Weapon(),true,999999,false);
+			Commands->Select_Weapon(obj,Get_Weapon());
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Weapon_Deploy,"Weapon_Rookie:string,Weapon_Veteran:string,Weapon_Elite:string,Weapon_Rookie_Deployed:string,Weapon_Veteran_Deployed:string,Weapon_Elite_Deployed:string");
+class JFW_Veteran_Armor : public ScriptImpClass
+{
+	int VeterancyLevel;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	const char *Get_Shield()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Shield_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Shield_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Shield_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	const char *Get_Skin()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Skin_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Skin_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Skin_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			VeterancyLevel = param;
+			Commands->Set_Shield_Type(obj,Get_Shield());
+			Set_Skin(obj,Get_Skin());
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Armor,"Shield_Rookie:string,Shield_Veteran:string,Shield_Elite:string,Skin_Rookie:string,Skin_Veteran:string,Skin_Elite:string");
+class JFW_Veteran_Armor_Deploy : public ScriptImpClass
+{
+	int VeterancyLevel;
+	int DeployState;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		DeployState = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	const char *Get_Shield()
+	{
+		if ((DeployState == 0) || (DeployState == 1))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Shield_Rookie");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Shield_Veteran");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Shield_Elite");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		} 
+		else if ((DeployState == 2) || (DeployState == 3))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Shield_Rookie_Deployed");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Shield_Veteran_Deployed");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Shield_Elite_Deployed");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	const char *Get_Skin()
+	{
+		if ((DeployState == 0) || (DeployState == 1))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Skin_Rookie");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Skin_Veteran");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Skin_Elite");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		} 
+		else if ((DeployState == 2) || (DeployState == 3))
+		{
+			if (VeterancyLevel == 0)
+			{
+				return Get_Parameter("Skin_Rookie_Deployed");
+			}
+			else if (VeterancyLevel == 1)
+			{
+				return Get_Parameter("Skin_Veteran_Deployed");
+			}
+			else if (VeterancyLevel == 2)
+			{
+				return Get_Parameter("Skin_Elite_Deployed");
+			}
+			else
+			{
+				TT_UNREACHABLE
+			}
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			VeterancyLevel = param;
+			Commands->Set_Shield_Type(obj,Get_Shield());
+			Set_Skin(obj,Get_Skin());
+		}
+		else if (type == CUSTOM_VEHICLE_DEPLOY)
+		{
+			DeployState = param;
+			Commands->Set_Shield_Type(obj,Get_Shield());
+			Set_Skin(obj,Get_Skin());
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Armor_Deploy,"Shield_Rookie:string,Shield_Veteran:string,Shield_Elite:string,Shield_Rookie_Deployed:string,Shield_Veteran_Deployed:string,Shield_Elite_Deployed:string,Skin_Rookie:string,Skin_Veteran:string,Skin_Elite:string,Skin_Rookie_Deployed:string,Skin_Veteran_Deployed:string,Skin_Elite_Deployed:string");
+class JFW_Mech : public ScriptImpClass {
+	bool enabled,forward,backward;
+	float xpos;
+	float ypos;
+	float zpos;
+	int Mode,LastDir;
+	int VeterancyLevel;
+	int state;
+	const char *Get_Model()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Model_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Model_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Model_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Created(GameObject *obj)
+	{
+		if (Mode != 1)
+		{
+			Vector3 pos = Commands->Get_Position(obj);
+			xpos = pos.X;
+			ypos = pos.Y;
+			zpos = pos.Z;
+			enabled = false;
+			Mode = 1;
+			backward = false;
+			forward = false;
+			state = -1;
+			VeterancyLevel = 0;
+			Commands->Start_Timer(obj,this,(float)0.5,1);
+			Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+		}
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		if (number == 4)
+		{
+			enabled = false;
+		}
+		else if (number == 3)
+		{
+			Vector3 pos = Commands->Get_Bone_Position(obj,"Origin");
+			xpos = pos.X;
+			ypos = pos.Y;
+			zpos = pos.Z;
+			Commands->Start_Timer(obj,this,(float)0.1,1);
+			return;
+		}
+		else if (number == 1)
+		{
+			char moveanim[512];
+			sprintf(moveanim,"%s.%s_m",Get_Model(),Get_Model());
+			char movebanim[512];
+			sprintf(movebanim,"%s.%s_b",Get_Model(),Get_Model());
+			Commands->Start_Timer(obj,this,(float)0.1,1);
+			if (obj->As_PhysicalGameObj() && obj->As_PhysicalGameObj()->Is_Attached_To_An_Object())
+			{	
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				return;
+			}
+			Vector3 position = Commands->Get_Bone_Position(obj,"Origin");
+			Vector3 pos;
+			if (Mode == 1)
+			{
+				xpos = position.X;
+				ypos = position.Y;
+				zpos = position.Z;
+				Mode = 2;
+			}
+			pos.X = xpos;
+			pos.Y = ypos;
+			pos.Z = zpos;
+			float dist = Commands->Get_Distance(pos,position);
+			if (dist > 0.1)
+			{
+				float xdist = position.X - xpos;
+				float ydist = position.Y - ypos;
+				float rotation = Commands->Get_Facing(obj);
+				if (rotation > -45 && rotation < 45)
+				{
+					if (xdist > ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist > xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < -45 && rotation > -135)
+				{
+					if (xdist > ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist > xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < -135 || rotation > 135)
+				{
+					if (xdist < ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist < xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < 135 && rotation > 45)
+				{
+					if (xdist < ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist < xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				xpos = position.X;
+				ypos = position.Y;
+				zpos = position.Z;
+				if (!enabled && forward)
+				{
+					enabled = true;
+					if (Mode == 2)
+					{
+						Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
+						state = 1;
+						LastDir = 1;
+					}
+					else if (LastDir == 2) 
+					{
+						Commands->Set_Animation(obj,movebanim,false,0,Get_Animation_Frame(obj),0,0);
+						state = 4;
+						LastDir = 3;
+					}
+					else 
+					{
+						Commands->Set_Animation(obj,moveanim,true,0,Get_Animation_Frame(obj),-1,0);
+						state = 1;
+						LastDir = 1;
+					}
+				}
+				if (!enabled && backward) 
+				{
+					enabled = true;
+					if (Mode == 2) 
+					{
+						Commands->Set_Animation(obj,movebanim,true,0,0,-1,0);
+						state = 3;
+						LastDir = 2;
+					}
+					else if (LastDir == 1) 
+					{
+						Commands->Set_Animation(obj,moveanim,false,0,Get_Animation_Frame(obj),0,0);
+						state = 2;
+						LastDir = 4;
+					}
+					else 
+					{
+						Commands->Set_Animation(obj,movebanim,true,0,Get_Animation_Frame(obj),-1,0);
+						state = 3;
+						LastDir = 2;
+					}
+				}
+				Mode = 3;
+			}
+			else if (Mode == 3) 
+			{
+				if (Get_Animation_Frame(obj)) 
+				{
+					if (forward) 
+					{
+						LastDir = 1;
+						Commands->Set_Animation(obj,moveanim,true,0,Get_Animation_Frame(obj),Get_Animation_Frame(obj),0);
+						state = 1;
+					}
+					if (backward) 
+					{
+						LastDir = 2;
+						Commands->Set_Animation(obj,movebanim,true,0,Get_Animation_Frame(obj),Get_Animation_Frame(obj),0);
+						state = 3;
+					}
+					enabled = true;
+					Commands->Start_Timer(obj,this,(float)0.1,4);
+					return;
+				}
+			}
+		}
+	}
+	void Animation_Complete(GameObject *obj,const char *animation_name)
+	{
+		if (LastDir == 3)
+		{
+			char moveanim[512];
+			sprintf(moveanim,"%s.%s_m",Get_Model(),Get_Model());
+			Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
+			state = 1;
+			LastDir = 1;
+		}
+		else if (LastDir == 4)
+		{
+			char moveanim[512];
+			sprintf(moveanim,"%s.%s_b",Get_Model(),Get_Model());
+			Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
+			state = 3;
+			LastDir = 2;
+		}
+		else
+		{
+			enabled = false;
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			VeterancyLevel = param;
+			float currentframe = Get_Animation_Frame(obj);
+			float targetframe = Get_Animation_Target_Frame(obj);
+			Commands->Set_Model(obj,Get_Model());
+			if (state == -1)
+			{
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				return;
+			}
+			char moveanim[512];
+			if (state == 1 || state == 2)
+			{
+				sprintf(moveanim,"%s.%s_m",Get_Model(),Get_Model());
+			}
+			else if (state == 3 || state == 4)
+			{
+				sprintf(moveanim,"%s.%s_b",Get_Model(),Get_Model());
+			}
+			else
+			{
+				TT_UNREACHABLE;
+			}
+			bool loop;
+			if (state == 1 || state == 3)
+			{
+				loop = true;
+			}
+			else if (state == 2 || state == 4)
+			{
+				loop = false;
+			}
+			else
+			{
+				TT_UNREACHABLE;
+			}
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Set_Animation(obj,moveanim,loop,0,currentframe,targetframe,false);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Mech,"Model_Rookie:string,Model_Veteran:string,Model_Elite:string");
+class JFW_Deployable_Mech : public ScriptImpClass {
+	int PilotID,mode,Mode,LastDir;
+	bool enabled,forward,backward;
+	float xpos;
+	float ypos;
+	float zpos;
+	void Created(GameObject *obj)
+	{
+		mode = 0;
+		PilotID = 0;
+		Vector3 pos = Commands->Get_Position(obj);
+		xpos = pos.X;
+		ypos = pos.Y;
+		zpos = pos.Z;
+		enabled = false;
+		Mode = 1;
+		Commands->Send_Custom_Event(obj,obj,CUSTOM_VEHICLE_DEPLOY,0,1);
+		Commands->Start_Timer(obj,this,(float)0.1,1);
+	}
+	void Animation_Complete(GameObject *obj,const char *animation_name)
+	{
+		const char *model = Get_Parameter("Model_Name");
+		char deployedmodel[512];
+		sprintf(deployedmodel,"%s_dd",model);
+		char deployanim[512];
+		sprintf(deployanim,"%s_d.%s_d",model,model);
+		if (!_stricmp(animation_name,deployanim) && (mode == 1))
+		{
+			mode = 2;
+			Commands->Set_Model(obj,deployedmodel);
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+			Commands->Enable_Engine(obj,false);
+			Commands->Enable_Vehicle_Transitions(obj,true);
+			Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 2, 0);
+			return;
+		}
+		if (!_stricmp(animation_name,deployanim) && (mode == 3))
+		{
+			obj->As_VehicleGameObj()->Set_Immovable(false);
+			mode = 0;
+			Commands->Set_Model(obj,model);
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+			Commands->Enable_Engine(obj,true);
+			Commands->Enable_Vehicle_Transitions(obj,true);
+			Commands->Start_Timer(obj,this,(float)0.1,1);
+			Mode = 1;
+			xpos = 0;
+			ypos = 0;
+			zpos = 0;
+			enabled = false;
+			Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 0, 0);
+			return;
+		}
+		char text[512];
+		sprintf(text,"%s.%s_m",model,model);
+		if (!_stricmp(animation_name,text))
+		{
+			if (LastDir == 3)
+			{
+				char moveanim[512];
+				sprintf(moveanim,"%s.%s_m",Get_Model(obj),Get_Model(obj));
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
+				LastDir = 1;
+			}
+			else if (LastDir == 4) 
+			{
+				char moveanim[512];
+				sprintf(moveanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
+				LastDir = 2;
+			}
+			else 
+			{
+				enabled = false;
+			}
+		}
+		sprintf(text,"%s.%s_b",model,model);
+		if (!_stricmp(animation_name,text))
+		{
+			if (LastDir == 3)
+			{
+				char moveanim[512];
+				sprintf(moveanim,"%s.%s_m",Get_Model(obj),Get_Model(obj));
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
+				LastDir = 1;
+			}
+			else if (LastDir == 4) 
+			{
+				char moveanim[512];
+				sprintf(moveanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
+				LastDir = 2;
+			}
+			else 
+			{
+				enabled = false;
+			}
+		}
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		const char *model;
+		model = Get_Parameter("Model_Name");
+		char anim[512];
+		sprintf(anim,"%s.%s_m",model,model);
+		if ((number == 1) && !mode)
+		{
+			Commands->Start_Timer(obj,this,(float)0.1,1);
+			char moveanim[512];
+			sprintf(moveanim,"%s.%s_m",Get_Model(obj),Get_Model(obj));
+			char movebanim[512];
+			sprintf(movebanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
+			Vector3 position = Commands->Get_Bone_Position(obj,"Origin");
+			Vector3 pos;
+			if (Mode == 1) 
+			{
+				xpos = position.X;
+				ypos = position.Y;
+				zpos = position.Z;
+				Mode = 2;
+			}
+			pos.X = xpos;
+			pos.Y = ypos;
+			pos.Z = zpos;
+			float dist = Commands->Get_Distance(pos,position);
+			if (dist > 0.1) 
+			{
+				float xdist = position.X - xpos;
+				float ydist = position.Y - ypos;
+				float rotation = Commands->Get_Facing(obj);
+				if (rotation > -45 && rotation < 45)
+				{
+					if (xdist > ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist > xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < -45 && rotation > -135)
+				{
+					if (xdist > ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist > xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < -135 || rotation > 135)
+				{
+					if (xdist < ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist < xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				if (rotation < 135 && rotation > 45)
+				{
+					if (xdist < ydist)
+					{
+						forward = true;
+						backward = false;
+					}
+					else if (ydist < xdist)
+					{
+						backward = true;
+						forward = false;
+					}
+				}
+				xpos = position.X;
+				ypos = position.Y;
+				zpos = position.Z;
+				if (!enabled && forward)
+				{
+					enabled = true;
+					if (Mode == 2)
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
+						LastDir = 1;
+					}
+					else if (LastDir == 2)
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,movebanim,false,0,Get_Animation_Frame(obj),0,0);
+						LastDir = 3;
+					}
+					else
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,moveanim,false,0,Get_Animation_Frame(obj),-1,0);
+						LastDir = 1;
+					}
+				}
+				if (!enabled && backward)
+				{
+					enabled = true;
+					if (Mode == 2)
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,movebanim,false,0,0,-1,0);
+						LastDir = 2;
+					}
+					else if (LastDir == 1)
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,moveanim,false,0,Get_Animation_Frame(obj),0,0);
+						LastDir = 4;
+					}
+					else
+					{
+						obj->As_PhysicalGameObj()->Clear_Animation();
+						Commands->Set_Animation(obj,movebanim,false,0,Get_Animation_Frame(obj),-1,0);
+						LastDir = 2;
+					}
+				}
+			}
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+		{
+			if (!PilotID)
+			{
+				PilotID = Commands->Get_ID(sender);
+				char params[50];
+				sprintf(params,"Deploy,%d,923572385",Commands->Get_ID(obj));
+				Commands->Attach_Script(sender,"Reborn_Deployable_Vehicle_Player",params);
+			}
+		}
+		else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+		{
+			if (PilotID == Commands->Get_ID(sender))
+			{
+				PilotID = 0;
+				Remove_Script(sender,"Reborn_Deployable_Vehicle_Player");
+			}
+		}
+		else if (type == 923572385)
+		{
+			if (!obj->As_VehicleGameObj()->Can_Drive())
+			{
+				return;
+			}
+			const char *model = Get_Parameter("Model_Name");
+			char deployanim[512];
+			char dmodel[512];
+			sprintf(deployanim,"%s_d.%s_d",model,model);
+			sprintf(dmodel,"%s_d",model);
+			if (mode == 0)
+			{
+				if (!obj->As_VehicleGameObj()->Is_Immovable())
+				{
+					obj->As_VehicleGameObj()->Set_Immovable(true);
+					Mode = 2;
+					mode = 1;
+					Commands->Set_Model(obj,dmodel);
+					obj->As_PhysicalGameObj()->Clear_Animation();
+					Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
+					Commands->Control_Enable(sender,false);
+					obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+					Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
+					Commands->Enable_Vehicle_Transitions(obj,false);
+					Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 1, 0);
+				}
+			}
+			else if (mode == 2)
+			{
+				mode = 3;
+				Commands->Set_Model(obj,dmodel);
+				obj->As_PhysicalGameObj()->Clear_Animation();
+				Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
+				Commands->Control_Enable(sender,false);
+				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
+				Commands->Enable_Vehicle_Transitions(obj,false);
+				Commands->Send_Custom_Event(obj, obj, CUSTOM_VEHICLE_DEPLOY, 3, 0);
+			}
+		}
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (PilotID && Commands->Find_Object(PilotID))
+		{
+			Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Deployable_Mech,"Model_Name=none:string,Last_Deploy_Frame=0.00:float,DeploySound:string,UndeploySound:string");
+
+class JFW_Sabotage_Beacon_Layer : public ScriptImpClass
+{
+	bool enabled;
+	void Created(GameObject *obj)
+	{
+		enabled = false;
+	}
+	void Damaged(GameObject *obj, GameObject *damager, float amount)
+	{
+		unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+		if (warhead == Get_Damage_Warhead() && damager == obj)
+		{
+			if (enabled)
+			{
+				SoldierGameObj *s = damager->As_SoldierGameObj();
+				if (s)
+				{
+					Vector3 v = Commands->Get_Position(damager);
+					GameObject *mine = Commands->Create_Object(Get_Parameter("Beacon_Preset"),v);
+					Commands->Set_Player_Type(mine,Commands->Get_Player_Type(damager));
+					PhysicalGameObj *p = mine->As_PhysicalGameObj();
+					p->Peek_Physical_Object()->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
+					ArmedGameObj *a = p->As_ArmedGameObj();
+					Matrix3D muzzle = a->Get_Muzzle();
+					Matrix3D transform(true);
+					transform.Rotate_Z(muzzle.Get_Z_Rotation());
+					transform.Set_Translation(muzzle.Get_Translation());
+					p->Peek_Physical_Object()->Set_Transform(transform);
+					MoveablePhysClass *m = p->Peek_Physical_Object()->As_MoveablePhysClass();
+					Vector3 velocity = muzzle.Get_X_Vector() * Get_Float_Parameter("Throw_Velocity");
+					m->Set_Velocity(velocity);
+					p->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+				}
+			}
+		}
+		else
+		{
+			Grant_Weapon(obj,Get_Current_Weapon(obj),true,999999,false);
+		}
+	}
+	void Custom(GameObject *obj, int type, int param, GameObject *sender)
+	{
+		if (type == Get_Int_Parameter("Enable_Custom"))
+		{
+			enabled = true;
+		}
+		if (type == Get_Int_Parameter("Disable_Custom"))
+		{
+			enabled = false;
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Sabotage_Beacon_Layer, "Enable_Custom:int,Disable_Custom:int,Beacon_Preset:string,Throw_Velocity:float,Warhead:string");
+class JFW_Sabotage_Beacon_Zone : public ScriptImpClass
+{
+	void Entered(GameObject *obj,GameObject *enterer)
+	{
+		Commands->Send_Custom_Event(obj,enterer,Get_Int_Parameter("Enable_Custom"),0,0);
+	}
+	void Exited(GameObject *obj,GameObject *exiter)
+	{
+		Commands->Send_Custom_Event(obj,exiter,Get_Int_Parameter("Disable_Custom"),0,0);
+	}
+};
+REGISTER_SCRIPT(JFW_Sabotage_Beacon_Zone, "Enable_Custom:int,Disable_Custom:int");
+class JFW_Sabotage_Beacon : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *target = Find_Nearest_Preset(pos,Get_Parameter("Target_Preset"));
+		Commands->Send_Custom_Event(obj,target,Get_Int_Parameter("Sabotage_On_Custom"),0,0);
+	}
+	void Destroyed(GameObject *obj)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *target = Find_Nearest_Preset(pos,Get_Parameter("Target_Preset"));
+		Commands->Send_Custom_Event(obj,target,Get_Int_Parameter("Sabotage_Off_Custom"),0,0);
+	}
+};
+REGISTER_SCRIPT(JFW_Sabotage_Beacon, "Target_Preset:string,Sabotage_On_Custom:int,Sabotage_Off_Custom:int");
+
+class JFW_Sabotage_Beacon_2 : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *target = Find_Closest_Building(pos);
+		Commands->Send_Custom_Event(obj,target,Get_Int_Parameter("Sabotage_On_Custom"),0,0);
+	}
+	void Destroyed(GameObject *obj)
+	{
+		Vector3 pos = Commands->Get_Position(obj);
+		GameObject *target = Find_Closest_Building(pos);
+		Commands->Send_Custom_Event(obj,target,Get_Int_Parameter("Sabotage_Off_Custom"),0,0);
+	}
+};
+REGISTER_SCRIPT(JFW_Sabotage_Beacon_2, "Sabotage_On_Custom:int,Sabotage_Off_Custom:int");
+
+class JFW_Veteran_Help_Text : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Commands->Send_Custom_Event(obj,obj,CUSTOM_VETERANCY_PROMOTED,0,0);
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			GameObject *o = 0;
+			if (obj->As_SoldierGameObj())
+			{
+				o = obj;
+			}
+			else if (obj->As_VehicleGameObj())
+			{
+				o = Get_Vehicle_Driver(obj);
+			}
+			if (!o)
+			{
+				return;
+			}
+			int red = Get_Int_Parameter("Red");
+			int green = Get_Int_Parameter("Green");
+			int blue = Get_Int_Parameter("Blue");
+			Vector3 color((float)red / 255.0f,(float)green / 255.0f,(float)blue / 255.0f);
+			if (param == 0)
+			{
+				Set_HUD_Help_Text_Player(o,Get_Int_Parameter("StringID_Rookie"),color);
+			}
+			else if (param == 1)
+			{
+				Set_HUD_Help_Text_Player(o,Get_Int_Parameter("StringID_Veteran"),color);
+			}
+			else if (param == 2)
+			{
+				Set_HUD_Help_Text_Player(o,Get_Int_Parameter("StringID_Elite"),color);
+			}
+			else
+			{
+				TT_UNREACHABLE;
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Help_Text,"StringID_Rookie:int,StringID_Veteran:int,StringID_Elite:int,Red:int,Green:int,Blue:int");
+class JFW_Veteran_Model : public ScriptImpClass
+{
+	int VeterancyLevel;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	const char *Get_Model()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Parameter("Model_Rookie");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Parameter("Model_Veteran");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Parameter("Model_Elite");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			VeterancyLevel = param;
+			Commands->Set_Model(obj,Get_Model());
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Model,"Model_Rookie:string,Model_Veteran:string,Model_Elite:string");
+class JFW_Veteran_Custom : public ScriptImpClass
+{
+	int VeterancyLevel;
+	void Created(GameObject *obj)
+	{
+		VeterancyLevel = 0;
+		Custom(obj,CUSTOM_VETERANCY_PROMOTED,0,obj);
+	}
+	int Get_In_Custom()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Int_Parameter("Custom_Rookie_In");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Int_Parameter("Custom_Veteran_In");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Int_Parameter("Custom_Elite_In");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	int Get_Out_Custom()
+	{
+		if (VeterancyLevel == 0)
+		{
+			return Get_Int_Parameter("Custom_Rookie_Out");
+		}
+		else if (VeterancyLevel == 1)
+		{
+			return Get_Int_Parameter("Custom_Veteran_Out");
+		}
+		else if (VeterancyLevel == 2)
+		{
+			return Get_Int_Parameter("Custom_Elite_Out");
+		}
+		else
+		{
+			TT_UNREACHABLE
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			Commands->Send_Custom_Event(obj,obj,Get_Out_Custom(),0,0);
+			VeterancyLevel = param;
+			Commands->Send_Custom_Event(obj,obj,Get_In_Custom(),0,0);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Custom,"Custom_Rookie_In:string,Custom_Veteran_In:string,Custom_Elite_In:string,Custom_Rookie_Out:string,Custom_Veteran_Out:string,Custom_Elite_Out:string");
+class JFW_Veteran_Weapon_NoSwitch : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Grant_Weapon(obj,Get_Parameter("Weapon"),true,999999,false);
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if ((type == CUSTOM_VETERANCY_PROMOTED) && (param == Get_Int_Parameter("VeteranLevel")))
+		{
+			Commands->Select_Weapon(obj,Get_Parameter("Weapon"));
+			Commands->Set_Model(obj,Get_Parameter("Model"));
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Weapon_NoSwitch,"Weapon:string,Model:string,VeteranLevel:int");
+class JFW_Veteran_Weapon_Switch : public JFW_Key_Hook_Base {
+public:
+	bool switching;
+	bool secondweap;
+	int pilotID;
+	int veterancylevel;
+	void Created(GameObject *obj)
+	{
+		veterancylevel = 0;
+		switching = false;
+		secondweap = false;
+		pilotID = 0;
+		hookid = 0;
+		k = 0;
+		Grant_Weapon(obj,Get_Parameter("Weapon1"),true,999999,false);
+		Grant_Weapon(obj,Get_Parameter("Weapon2"),true,999999,false);
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+		{
+			if (!pilotID)
+			{
+				InstallHook(Get_Parameter("Keyhook"),sender);
+				pilotID = Commands->Get_ID(sender);
+				if (switching || veterancylevel != Get_Int_Parameter("VeteranLevel"))
+				{
+					return;
+				}
+				if (secondweap)
+				{
+					Commands->Select_Weapon(obj, Get_Parameter("Weapon2"));
+					Commands->Set_Model(obj, Get_Parameter("Model2"));
+				}
+				else
+				{
+					Commands->Select_Weapon(obj, Get_Parameter("Weapon1"));
+					Commands->Set_Model(obj, Get_Parameter("Model1"));
+				}
+			}
+		}
+		if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+		{
+			if (pilotID == Commands->Get_ID(sender))
+			{
+				RemoveHook();
+				pilotID = 0;
+			}
+		}
+		if (type == CUSTOM_VETERANCY_PROMOTED)
+		{
+			veterancylevel = param;
+			if (switching || veterancylevel != Get_Int_Parameter("VeteranLevel"))
+			{
+				return;
+			}
+			if (secondweap)
+			{
+				Commands->Select_Weapon(obj, Get_Parameter("Weapon2"));
+				Commands->Set_Model(obj, Get_Parameter("Model2"));
+			}
+			else
+			{
+				Commands->Select_Weapon(obj, Get_Parameter("Weapon1"));
+				Commands->Set_Model(obj, Get_Parameter("Model1"));
+			}
+		}
+	}
+	void Killed(GameObject *obj,GameObject *killer)
+	{
+		RemoveHook();
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		switching = false;
+		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+		if (secondweap)
+		{
+			Commands->Select_Weapon(obj,Get_Parameter("Weapon2"));
+			Commands->Set_Model(obj,Get_Parameter("Model2"));
+		}
+		else
+		{
+			Commands->Select_Weapon(obj,Get_Parameter("Weapon1"));
+			Commands->Set_Model(obj,Get_Parameter("Model1"));
+		}
+	}
+	void KeyHook()
+	{
+		if (switching || veterancylevel != Get_Int_Parameter("VeteranLevel"))
+		{
+			return;
+		}
+		VehicleGameObj *obj = Owner()->As_VehicleGameObj();
+		obj->Set_Scripts_Can_Fire(false);
+		switching = true;
+		if (secondweap)
+		{
+			secondweap = false;
+			Commands->Create_Sound(Get_Parameter("Sound1"),Commands->Get_Position(obj),obj);
+		}
+		else
+		{
+			secondweap = true;
+			Commands->Create_Sound(Get_Parameter("Sound2"),Commands->Get_Position(obj),obj);
+		}
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("SwitchTime"),1);
+	}
+};
+REGISTER_SCRIPT(JFW_Veteran_Weapon_Switch,"Weapon1:string,Weapon2:string,Keyhook:string,Model1:string,Model2:string,VeteranLevel:int,Sound1:string,Sound2:string,SwitchTime:float");
+class JFW_Object_Spawn : public ScriptImpClass {
+public:
+	int id;
+	void Created(GameObject *obj)
+	{
+		id = 0;
+		GameObject *o = Commands->Create_Object(Get_Parameter("Object"),Commands->Get_Position(obj));
+		if (o)
+		{
+			id = Commands->Get_ID(o);
+		}
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (id)
+		{
+			GameObject *o = Commands->Find_Object(id);
+			if (o)
+			{
+				Commands->Destroy_Object(o);
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Object_Spawn,"Object:string");
+class JFW_Object_Spawn_At_Bone : public ScriptImpClass {
+public:
+	int id;
+	void Created(GameObject *obj)
+	{
+		id = 0;
+		GameObject *o = Commands->Create_Object_At_Bone(obj,Get_Parameter("Object"),Get_Parameter("Bone"));
+		if (o)
+		{
+			Commands->Attach_To_Object_Bone(o,obj,Get_Parameter("Bone"));
+			id = Commands->Get_ID(o);
+		}
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (id)
+		{
+			GameObject *o = Commands->Find_Object(id);
+			if (o)
+			{
+				Commands->Destroy_Object(o);
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Object_Spawn_At_Bone,"Object:string,Bone:String");
+#define PTTEAM(t) (t?0:1) //Convert a normal team into a PT team
+class JFW_Deployable_Jammer : public ScriptImpClass
+{
+	int DeployState;
+	int Jamming;
+	int PlayerType;
+	void Created(GameObject *obj)
+	{
+		DeployState = 0;
+		Jamming = false;
+		PlayerType = -2;
+		Commands->Start_Timer(obj, this, Get_Float_Parameter("Time"), 1);
+	}
+	void Custom(GameObject *obj, int type, int param, GameObject *sender)
+	{
+		if (type == CUSTOM_VEHICLE_DEPLOY)
+		{
+			if (DeployState == 3 || DeployState == 1)
+			{
+				StringClass str;
+				const char *c = Get_Model(obj);
+				str.Format("%s.%s", c, c);
+				Commands->Set_Animation(obj, str, true, 0, 0, -1, false);
+			}
+			DeployState = param;
+		}
+		if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+		{
+			if (DeployState == 0)
+			{
+				StringClass str;
+				const char *c = Get_Model(obj);
+				str.Format("%s.%s", c, c);
+				Commands->Set_Animation(obj, str, true, 0, 0, -1, false);
+			}
+			if (PlayerType != Commands->Get_Player_Type(sender) && DeployState == 2)
+			{
+				if (Jamming)
+				{
+					Jamming = false;
+					GameObject *o = Find_Com_Center(PTTEAM(PlayerType));
+					if (o)
+					{
+						Commands->Send_Custom_Event(obj, o, CUSTOM_RADAR_JAM, 0, 0);
+					}
+				}
+				Commands->Set_Player_Type(obj, Commands->Get_Player_Type(sender));
+			}
+			PlayerType = Commands->Get_Player_Type(sender);
+		}
+		if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+		{
+			if (DeployState == 0)
+			{
+				PlayerType = Commands->Get_Player_Type(sender);
+				obj->As_PhysicalGameObj()->Clear_Animation();
+			}
+			else if (DeployState == 2)
+			{
+				Update_Network_Object(obj);
+				Commands->Set_Player_Type(obj, Commands->Get_Player_Type(sender));
+				PlayerType = Commands->Get_Player_Type(sender);
+			}
+		}
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (Jamming)
+		{
+			Jamming = false;
+			GameObject *o = Find_Com_Center(PTTEAM(PlayerType));
+			if (o)
+			{
+				Commands->Send_Custom_Event(obj, o, CUSTOM_RADAR_JAM, 0, 0);
+			}
+		}
+	}
+	void Timer_Expired(GameObject *obj, int number)
+	{
+		if (number == 1)
+		{
+			GameObject *o = Find_Com_Center(PTTEAM(PlayerType));
+			if (o)
+			{
+				bool active = false;
+				if (DeployState == 2)
+				{
+					active = true;
+				}
+				if (DeployState == 0 && Get_Vehicle_Occupant_Count(obj))
+				{
+					active = true;
+				}
+				int param = 0;
+				if (active && (Commands->Get_Distance(Commands->Get_Position(o), Commands->Get_Position(obj)) < Get_Float_Parameter("Range")))
+				{
+					param = 1;
+				}
+				if (Jamming != param || param == 1)
+				{
+					Jamming = param;
+					Commands->Send_Custom_Event(obj, o, CUSTOM_RADAR_JAM, param, 0);
+				}
+			}
+			Commands->Start_Timer(obj, this, Get_Float_Parameter("Time"), 1);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Deployable_Jammer, "Time:float,Range:float");
+
+class JFW_Jammer : public ScriptImpClass
+{
+	int Jamming;
+	int PlayerType;
+	void Created(GameObject *obj)
+	{
+		Jamming = false;
+		PlayerType = -2;
+		Commands->Start_Timer(obj, this, Get_Float_Parameter("Time"), 1);
+	}
+	void Destroyed(GameObject *obj)
+	{
+		if (Jamming)
+		{
+			Jamming = false;
+			GameObject *o = Find_Com_Center(PTTEAM(PlayerType));
+			if (o)
+			{
+				Commands->Send_Custom_Event(obj, o, CUSTOM_RADAR_JAM, 0, 0);
+			}
+		}
+	}
+	void Custom(GameObject *obj, int type, int param, GameObject *sender)
+	{
+		if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+		{
+			PlayerType = Commands->Get_Player_Type(sender);
+		}
+		if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+		{
+			PlayerType = Commands->Get_Player_Type(sender);
+		}
+	}
+	void Timer_Expired(GameObject *obj, int number)
+	{
+		if (number == 1)
+		{
+			GameObject *o = Find_Com_Center(PTTEAM(PlayerType));
+			if (o)
+			{
+				int param = 0;
+				if (Get_Vehicle_Occupant_Count(obj) && (Commands->Get_Distance(Commands->Get_Position(o), Commands->Get_Position(obj)) < Get_Float_Parameter("Range")))
+				{
+					param = 1;
+				}
+				if (Jamming != param || param == 1)
+				{
+					Jamming = param;
+					Commands->Send_Custom_Event(obj, o, CUSTOM_RADAR_JAM, param, 0);
+				}
+			}
+			Commands->Start_Timer(obj, this, Get_Float_Parameter("Time"), 1);
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Jammer, "Time:float,Range:float");
+
+class JFW_Jammer_Building : public ScriptImpClass
+{
+	bool radaron;
+	void Created(GameObject *obj)
+	{
+		radaron = true;
+	}
+	void Killed(GameObject *obj, GameObject *killer)
+	{
+		Destroy_Script();
+	}
+	void Custom(GameObject *obj, int type, int param, GameObject *sender)
+	{
+		if (type == CUSTOM_RADAR_JAM)
+		{
+			if (Is_Base_Powered(Get_Object_Type(obj)))
+			{
+				if (param)
+				{
+					if (radaron)
+					{
+						Create_2D_Sound_Team(Get_Parameter("StartSound1"), Get_Object_Type(obj));
+						Create_2D_Sound_Team(Get_Parameter("StartSound2"), PTTEAM(Get_Object_Type(obj)));
+						radaron = false;
+						Enable_Base_Radar(Get_Object_Type(obj), false);
+					}
+				}
+				else
+				{
+					if (!radaron)
+					{
+						Create_2D_Sound_Team(Get_Parameter("StopSound1"), Get_Object_Type(obj));
+						Create_2D_Sound_Team(Get_Parameter("StopSound2"), PTTEAM(Get_Object_Type(obj)));
+						radaron = true;
+						Enable_Base_Radar(Get_Object_Type(obj), true);
+					}
+				}
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Jammer_Building, "StartSound1:string,StopSound1:string,StartSound2:string,StopSound2:string");
+class JFW_Disable_Engine : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Commands->Enable_Engine(obj,false);
+		Destroy_Script();
+	}
+};
+REGISTER_SCRIPT(JFW_Disable_Engine,"");
+class JFW_Hide_Object : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Commands->Set_Is_Rendered(obj,false);
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+	}
+	void Timer_Expired(GameObject *obj, int number)
+	{
+		Commands->Set_Is_Rendered(obj,true);
+		Destroy_Script();
+	}
+};
+REGISTER_SCRIPT(JFW_Hide_Object,"Time:float");
+ScriptRegistrant<JFW_Add_Objective> JFW_Add_Objective_Registrant("JFW_Add_Objective", "Type:int,TypeVal:int,Objective_Num:int,Objective_Type:int,Title_ID:int,Unknown:int,Sound_Name:string,Description_ID:int,Timer_Custom:int,Trigger:int");
 ScriptRegistrant<JFW_Remove_Objective> JFW_Remove_Objective_Registrant("JFW_Remove_Objective","Type:int,TypeVal:int,Objective_Num:int,Timer_Custom:int");
 ScriptRegistrant<JFW_Set_Objective_Status> JFW_Set_Objective_Status_Registrant("JFW_Set_Objective_Status","Type:int,TypeVal:int,Objective_Num:int,Status:int,Timer_Custom:int");
 ScriptRegistrant<JFW_Change_Objective_Type> JFW_Change_Objective_Type_Registrant("JFW_Change_Objective_Type","Type:int,TypeVal:int,Objective_Num:int,Objective_Type:int,Timer_Custom:int");

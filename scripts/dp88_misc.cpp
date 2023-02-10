@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1702,6 +1702,8 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
   if ( m_captureState == targetState && Get_Object_Type(pObj) != team )
   {
     // Send control taken message
+    ChangeOwner(pObj, team);
+
     int stringId = Get_String_ID_By_Desc(Get_Parameter("CapturedString"));
     if ( stringId != 0 )
     {
@@ -1711,8 +1713,6 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
     {
       DisplayMessage(pObj, StringClass("A conquest zone has been captured by %OWNINGTEAM%"));
     }
-    
-    ChangeOwner(pObj, team);
 
     // \todo Give capture points
 
@@ -1726,6 +1726,8 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
     && Get_Object_Type(pObj) != 2 )
   {
     // Send neutral message
+    ChangeOwner(pObj, 2);
+
     int stringId = Get_String_ID_By_Desc(Get_Parameter("NeutralString"));
     if ( stringId != 0 )
     {
@@ -1735,8 +1737,6 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
     {
       DisplayMessage(pObj, StringClass("A conquest zone has become neutral"));
     }
-
-    ChangeOwner(pObj, 2);
   }
 
 
@@ -1817,7 +1817,9 @@ void dp88_conquestControlZone::DisplayMessage(GameObject* pObj, StringClass mess
   message.Replace("%TICKPOINTS%", StringClass::getFormattedString("%d",Get_Int_Parameter("TickPoints")), false);
   message.Replace("%TICKINTERVAL%", StringClass::getFormattedString("%d",Get_Int_Parameter("TickInterval")), false);
 
-  if ( 2 == sendtoteam )
+  message.Replace("%ZONENAME%", Get_Translated_Preset_Name(pObj), false);
+
+  if (2 == sendtoteam)
     Send_Message(50,200,50,message);
   else
     Send_Message_Team(team, 50,200,50,message);
@@ -2600,6 +2602,12 @@ void dp88_RegenerateHitpoints::RegenObject(GameObject* obj, bool bHealth, bool b
       {
         ApplyNonWarheadRepairs(obj, amount, bHealth, bArmour);
       }
+
+      // Trigger update for built-in engine damage bones
+      if (obj->As_VehicleGameObj())
+      {
+        obj->As_VehicleGameObj()->Damage_Meshes_Update();
+      }
     }
   }
 }
@@ -2774,4 +2782,97 @@ ScriptRegistrant<dp88_CreateAttachedObject> dp88_CreateAttachedObject_Registrant
   "VisibleToAI=0:int,"
   "DriverEnterCustom=0:int,"
   "DriverExitCustom=0:int"
+);
+
+/*------------------------
+Custom Points Percentage script
+--------------------------*/
+
+void dp88_customPointsPercentage::Created ( GameObject* obj )
+{
+  // Preload values since converting strings to floats every time we take
+  // damage is very inefficient
+  m_killPoints		= Get_Float_Parameter("killPoints") / 100;
+  m_damagePoints	= Get_Float_Parameter("damagePoints") / 100;
+  m_repairPoints	= Get_Float_Parameter("repairPoints") / 100;
+  m_killMoney		= Get_Float_Parameter("killMoney") / 100;
+  m_damageMoney		= Get_Float_Parameter("damageMoney") / 100;
+  m_repairMoney		= Get_Float_Parameter("repairMoney") / 100;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customPointsPercentage::Damaged ( GameObject *obj, GameObject *damager, float amount )
+{
+  // Abort if there is no damager, or the unit damaged itself, or the damager is not
+  // a star
+  if ( !damager || damager == obj || !Commands->Is_A_Star(damager) )
+    return;
+
+  /* Damaged or repaired? Then convert amount into it's absolute value for
+  calculating points granted */
+  bool bRepair = (amount < 0);
+  float points = ((bRepair) ? m_repairPoints : m_damagePoints) * amount;
+  float money = ((bRepair) ? m_repairMoney : m_damageMoney) * amount;
+
+  // Give the damager their points and money
+  GivePointsAndMoney ( damager, points, money );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customPointsPercentage::Killed ( GameObject* obj, GameObject *killer )
+{
+  // Abort if there is no killer, or the unit killed itself, or the killer is not
+  // a star
+  if ( !killer || killer == obj || !Commands->Is_A_Star(killer) )
+    return;
+
+   // Give the killer their points and money
+   GivePointsAndMoney ( killer, m_killPoints, m_killMoney );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customPointsPercentage::GivePointsAndMoney ( GameObject* obj, float points, float money )
+{
+  float pointsMultiplier = 1.f;
+  SmartGameObj *smart = obj->As_SmartGameObj();
+  if (smart->Is_Teammate(Owner()->As_DamageableGameObj()))
+  {
+	  pointsMultiplier = -pointsMultiplier;
+  }
+  else if (!smart->Is_Enemy(Owner()->As_DamageableGameObj()))
+  {
+	  pointsMultiplier = 0.f;
+  }
+  points *= pointsMultiplier;
+  money *= pointsMultiplier;
+  int playerId = Get_Player_ID(obj);
+  if ( playerId >= 0 )
+  {
+    if ( cPlayer* player = Find_Player(playerId) )
+    {
+      player->Set_Score(player->Get_Score()+points);
+      if (money > 0)
+      {
+        player->Increment_Money(money);
+      }
+    }
+  }
+
+  int team = Get_Object_Type(obj);
+  Set_Team_Score(team, Get_Team_Score(team) + points);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_customPointsPercentage> dp88_customPointsPercentage_Registrant(
+  "dp88_customPointsPercentage",
+  "killPoints:float,"
+  "damagePoints:float,"
+  "repairPoints:float,"
+  "killMoney:float,"
+  "damageMoney:float,"
+  "repairMoney:float"
 );

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Example Plugin
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -57,7 +57,7 @@ void DAExampleGameObjObserverClass::Timer_Expired(GameObject *obj,int Number) {
 
 //This allows you to block players from getting in the vehicle the observer is attached to, or change their seat.
 bool DAExampleGameObjObserverClass::Vehicle_Entry_Request(cPlayer *Player,int &Seat) {
-	if (Player->Get_Team() != DAVehicleManager::Get_Team(Get_Owner())) { //Prevent the enemy from stealing this vehicle.
+	if (Player->Get_Player_Type() != DAVehicleManager::Get_Team(Get_Owner())) { //Prevent the enemy from stealing this vehicle.
 		return false;
 	}
 	return true;

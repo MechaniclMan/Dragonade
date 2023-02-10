@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -35,9 +35,11 @@ public:
 	int											Get_Encyclopedia_ID (void) const		{ return EncyclopediaID; }
 	const StringClass &						Get_Icon_Filename (void) const		{ return InfoIconTextureFilename; }
 	int											Get_Translated_Name_ID (void) const	{ return TranslatedNameID; }
+	void											Set_Translated_Name_ID (int TransID) {TranslatedNameID = TransID; }
 	const DefenseObjectDefClass &			Get_DefenseObjectDef( void ) const	{ return DefenseObjectDef; }
 	int											Get_Default_Player_Type(void) const { return DefaultPlayerType; }
 	void Set_Name_ID(int id) {TranslatedNameID = id;}
+//protected: //DA
 	DefenseObjectDefClass						DefenseObjectDef; // 004C
 	StringClass									InfoIconTextureFilename; // 006C
 	int											TranslatedNameID; // 0070

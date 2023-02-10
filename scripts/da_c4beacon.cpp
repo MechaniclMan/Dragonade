@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade C4 and Beacon Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -96,19 +96,28 @@ void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
 				}
 			}
 		}
-		DALogManager::Write_Log("_BEACON","%ls deployed %s.",((cPlayer*)Beacon->Get_Player_Data())->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+		DALogManager::Write_Log("_BEACON","%ls deployed %s.",Beacon->Get_Owner()->Get_Player()->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+	}
+	else {
+		DALogManager::Write_Log("_BEACON", "%s was deployed",A_Or_An_Prepend(DATranslationManager::Translate(Beacon)));
 	}
 }
 
 void DAC4BeaconManager::Beacon_Detonate_Event(BeaconGameObj *Beacon) {
 	if (Beacon->Get_Owner()) {
-		DALogManager::Write_Log("_BEACON","%ls %s has detonated.",Make_Possessive(((cPlayer*)Beacon->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(Beacon));
+		DALogManager::Write_Log("_BEACON","%ls %s has detonated.",Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
+	}
+	else {
+		DALogManager::Write_Log("_BEACON", "%s has detonated.",A_Or_An_Prepend(DATranslationManager::Translate(Beacon)));
 	}
 }
 
 void DAC4BeaconManager::C4_Detonate_Event(C4GameObj *C4) {
 	if (C4->Get_Owner()) {
-		DALogManager::Write_Log("_C4","%ls %s has detonated (Attached to: %s)",Make_Possessive(((cPlayer*)C4->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+		DALogManager::Write_Log("_C4","%ls %s has detonated (Attached to: %s)",Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+	}
+	else {
+		DALogManager::Write_Log("_C4", "%s has detonated (Attached to: %s)",A_Or_An_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
 	}
 }
 
@@ -136,10 +145,18 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 		BeaconGameObj *Beacon = (BeaconGameObj*)Victim;
 		if (Beacon->Get_Owner()) {
 			if (Is_Player(Killer)) {
-				DALogManager::Write_Log("_BEACON","%ls disarmed %ls %s.",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(((cPlayer*)Beacon->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(Beacon));
+				DALogManager::Write_Log("_BEACON","%ls disarmed %ls %s.",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
 			}
 			else {
-				DALogManager::Write_Log("_BEACON","%ls %s was disarmed.",Make_Possessive(((cPlayer*)Beacon->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(Beacon));
+				DALogManager::Write_Log("_BEACON","%ls %s was disarmed.",Make_Possessive(Beacon->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(Beacon));
+			}
+		}
+		else {
+			if (Is_Player(Killer)) {
+				DALogManager::Write_Log("_BEACON", "%ls disarmed %s.", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
+			}
+			else {
+				DALogManager::Write_Log("_BEACON", "%s was disarmed.",A_Or_An_Prepend(DATranslationManager::Translate(Beacon)));
 			}
 		}
 	}
@@ -147,10 +164,18 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 		C4GameObj *C4 = (C4GameObj*)Victim;
 		if (C4->Get_Owner()) {
 			if (Is_Player(Killer)) {
-				DALogManager::Write_Log("_C4","%ls disarmed %ls %s (Attached to: %s)",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(((cPlayer*)C4->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+				DALogManager::Write_Log("_C4","%ls disarmed %ls %s (Attached to: %s)",((SoldierGameObj*)Killer)->Get_Player()->Get_Name(),Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
 			}
 			else {
-				DALogManager::Write_Log("_C4","%ls %s was disarmed (Attached to: %s)",Make_Possessive(((cPlayer*)C4->Get_Player_Data())->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+				DALogManager::Write_Log("_C4","%ls %s was disarmed (Attached to: %s)",Make_Possessive(C4->Get_Owner()->Get_Player()->Get_Name()),DATranslationManager::Translate(C4),C4->Get_Stuck_Object()?DATranslationManager::Translate(C4->Get_Stuck_Object()):"None");
+			}
+		}
+		else {
+			if (Is_Player(Killer)) {
+				DALogManager::Write_Log("_C4", "%ls disarmed %s (Attached to: %s)", ((SoldierGameObj*)Killer)->Get_Player()->Get_Name(), a_or_an_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
+			}
+			else {
+				DALogManager::Write_Log("_C4", "%s was disarmed (Attached to: %s)", A_Or_An_Prepend(DATranslationManager::Translate(C4)), C4->Get_Stuck_Object() ? DATranslationManager::Translate(C4->Get_Stuck_Object()) : "None");
 			}
 		}
 	}
@@ -175,7 +200,7 @@ int DAC4BeaconManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,
 class DAC4ChatCommandClass: public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 		int Remote = 0,Prox = 0;
-		int Team = Player->Get_Team();
+		int Team = Player->Get_Player_Type();
 		for (SLNode<C4GameObj> *x = GameObjManager::C4GameObjList.Head();x;x = x->Next()) {
 			if (x->Data()->Get_Player_Type() == Team) {
 				if (x->Data()->Get_Ammo_Def()->AmmoType == 3) {
@@ -186,7 +211,7 @@ class DAC4ChatCommandClass: public DAChatCommandClass {
 				}
 			}
 		}
-		DA::Page_Player(Player,"Remote: %d  - Proximity: %d - Total: %d - Limit: %d",Remote,Prox,Remote+Prox,Get_Mine_Limit());
+		DA::Page_Player(Player,"Remote: %d - Proximity: %d - Total: %d - Limit: %d",Remote,Prox,Remote+Prox,Get_Mine_Limit());
 		return false;
 	}
 };

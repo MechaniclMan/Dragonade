@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Set_Player_Data, Set_Owner, and Get_Detonation_Mode
 #ifndef TT_INCLUDE_C4GAMEOBJ_H
 #define TT_INCLUDE_C4GAMEOBJ_H
 #include "SimpleGameObj.h"
@@ -62,9 +60,9 @@ public:
 	SoldierGameObj *Get_Owner() const {return (SoldierGameObj*)Owner.Get_Ptr();}
 	const AmmoDefinitionClass *Get_Ammo_Def() {return AmmoDef;}
 	PlayerDataClass *Get_Player_Data() {return Player;}
-	void Set_Player_Data(PlayerDataClass *player) { Player = player; }
-	int Get_Detonation_Mode() { return DetonationMode; }
-	void Set_Owner(ScriptableGameObj *obj) { Owner = obj; }
+	void Set_Player_Data(PlayerDataClass *player) { Player = player; } //DA
+	int Get_Detonation_Mode() { return DetonationMode; } //DA
+	void Set_Owner(ScriptableGameObj *obj) { Owner = obj; } //DA
 };
 
 #endif

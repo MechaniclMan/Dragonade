@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Crate Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,6 +24,7 @@
 #include "da_game.h"
 #include "da_gameobj.h"
 #include "SpawnerClass.h"
+#include "SpawnerDefClass.h"
 #include "GameObjManager.h"
 
 #pragma warning(disable: 4073)
@@ -249,28 +250,28 @@ void DACrateManager::Settings_Loaded_Event() {
 	}
 	if (DASettingsManager::Get_Bool("EnableOldCrateSpawners",true) || !Spawners.Count()) { //Get old crate spawners from level if enabled or if no new spawners could be loaded.
 		for (int i = 0;i < SpawnerList.Count();i++) {
-			SpawnerDefClass *Def = SpawnerList[i]->Definition;
-			if (Def->SpawnDefinitionIDList.Count() && stristr(Get_Definition_Name(Def->SpawnDefinitionIDList[0]),"Crate")) {
+			const SpawnerDefClass *Def = SpawnerList[i]->Get_Definition();
+			if (Def->Get_Spawn_Definition_ID_List().Count() && stristr(Get_Definition_Name(Def->Get_Spawn_Definition_ID_List()[0]),"Crate")) {
 				Vector3 Buffer;
-				for (int x = 0;x < SpawnerList[i]->AlternateTransforms.Count();x++) { //Alternate positions.
-					SpawnerList[i]->AlternateTransforms[x].Get_Translation(&Buffer);
+				for (int x = 0;x < SpawnerList[i]->Get_Spawn_Point_List().Count();x++) { //Alternate positions.
+					SpawnerList[i]->Get_Spawn_Point_List()[x].Get_Translation(&Buffer);
 					if (Spawners.ID(Buffer) == -1 && (Buffer.X || Buffer.Y || Buffer.Z)) {
 						Spawners.Add(Buffer);
 					}
 				}
-				SpawnerList[i]->Transform.Get_Translation(&Buffer); //Default position.
+				SpawnerList[i]->Get_TM().Get_Translation(&Buffer); //Default position.
 				if (Spawners.ID(Buffer) == -1 && (Buffer.X || Buffer.Y || Buffer.Z)) {
 					Spawners.Add(Buffer);
 				}
-				SpawnerList[i]->Enable = false; //Disable default crate spawner.
+				SpawnerList[i]->Enable(false); //Disable default crate spawner.
 			}
 		}
 	}
 	else {
 		for (int i = 0;i < SpawnerList.Count();i++) {
-			SpawnerDefClass *Def = SpawnerList[i]->Definition;
-			if (Def->SpawnDefinitionIDList.Count() && stristr(Get_Definition_Name(Def->SpawnDefinitionIDList[0]),"Crate")) {
-				SpawnerList[i]->Enable = false; //Disable default crate spawner.
+			const SpawnerDefClass *Def = SpawnerList[i]->Get_Definition();
+			if (Def->Get_Spawn_Definition_ID_List().Count() && stristr(Get_Definition_Name(Def->Get_Spawn_Definition_ID_List()[0]),"Crate")) {
+				SpawnerList[i]->Enable(false); //Disable default crate spawner.
 			}
 		}
 	}
@@ -351,7 +352,7 @@ void DACrateManager::Timer_Expired(int Number,unsigned int Data) {
 }
 
 void DACrateManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	if (PowerUpObj && CrateObjs.ID(PowerUpObj) != -1 && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) {
+	if (PowerUpObj && CrateObjs.ID(PowerUpObj) != -1 && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1)) {
 		DACrateClass *Crate = DACrateManager::Select_Crate(Player);
 		if (Crate) {
 			SoldierGameObj *Soldier = Player->Get_GameObj();
@@ -361,6 +362,7 @@ void DACrateManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef
 			Crate->Activate(Player);
 			PowerUpObj->Set_Delete_Pending();
 			Start_Timer(1,Get_Random_Float(SpawnTimeMin,SpawnTimeMax));
+			DA::Private_HUD_Message(Player,COLORGRAY, "%s Crate", Crate->Get_Name());
 		}
 	}
 }
@@ -379,7 +381,7 @@ bool DACrateManager::Crate_Chat_Command(cPlayer *Player,const DATokenClass &Text
 			DA::Page_Player(Player,"A crate could not be selected.");
 		}
 	}
-	else if (Player->Get_DA_Player()->Get_Access_Level() >= DAAccessLevel::ADMINISTRATOR && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) {
+	else if (Player->Get_DA_Player()->Get_Access_Level() >= DAAccessLevel::ADMINISTRATOR && (Player->Get_Player_Type() == 0 || Player->Get_Player_Type() == 1)) {
 		DACrateClass *Crate = Get_Crate(Text[0]);
 		if (Crate) {
 			if (!Crate->Check_Type(Player) || !Crate->Can_Activate(Player)) {

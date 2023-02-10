@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,6 +22,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE(ArmedGameObjDef,PhysicalGameObjDef);
+//protected: //DA
 	//All of these floats are in radians (although leveledit shows degrees)
 	float WeaponTiltRate; // 00A8
 	float WeaponTiltMin; // 00AC

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,9 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added Get_Player and Get_DA_Player
-//Exported Toggle_Fly_Mode
 #ifndef TT_INCLUDE__SOLDIERGAMEOBJ_H
 #define TT_INCLUDE__SOLDIERGAMEOBJ_H
 
@@ -21,8 +18,8 @@
 #include "PhysClass.h"
 #include "ArmorWarheadManager.h"
 #include "TransitionGameObjDef.h"
-#include "SoldierGameObjDef.h"
-#include "cPlayer.h"
+#include "SoldierGameObjDef.h" //DA
+#include "cPlayer.h" //DA
 class TransitionInstanceClass;
 class RenderObjClass;
 class SimpleAnimControlClass;
@@ -118,7 +115,7 @@ public:
 	void				Reset_Loiter_Delay( void )				{ HumanState.Reset_Loiter_Delay(); }
 	virtual	void	Get_Information( StringClass & string );
 	virtual void	Get_Description(StringClass & description);
-	SCRIPTS_API void		Toggle_Fly_Mode( void );
+	SCRIPTS_API void		Toggle_Fly_Mode( void ); //DA
 	virtual float		Get_Max_Speed( void );
 	virtual void 		Set_Max_Speed( float speed );
 	virtual float		Get_Turn_Rate( void );
@@ -155,7 +152,7 @@ public:
 	void					Prepare_Speech_Framework( void );
 	void					Enable_Ghost_Collision( bool onoff );
 	bool					Is_Soldier_Blocked( const Vector3 &curr_pos );
-	bool					Is_Safe_To_Disable_Ghost_Collision() const;
+	bool					Disable_Ghost_Collision();
 	DynamicSpeechAnimClass *Get_Facial_Anim (void) { return SpeechAnim; }
 	void							Set_Emot_Icon (const char *model_name, float duration );
 	SoldierObserverClass	*	Get_Innate_Controller( void );
@@ -196,11 +193,23 @@ public:
 	bool Block_Action_Key() { return BlockActionKey; }
 	void Set_Freeze(bool onoff) {Freeze = onoff; Set_Object_Dirty_Bit(BIT_RARE, true);}
 	bool Is_Frozen() {return Freeze;}
+	void Lock_Collision_Mode(bool lockCollisionGroup,Collision_Group_Type lock);
+	Collision_Group_Type *Get_Locked_Collision_Mode();
+	void Set_Can_Play_Damage_Animations(bool onoff) {CanPlayDamageAnimations = onoff;Set_Object_Dirty_Bit(BIT_RARE, true);}
+	bool Can_Play_Damage_Animations() {return CanPlayDamageAnimations;}
+	void Set_Scale_Across_Network(float scale){NetworkRescale = scale;Set_Object_Dirty_Bit(BIT_RARE, true);}
+	float Get_Scale_Across_Network(){return NetworkRescale;}
+	void Set_Movement_Loiters_Allowed(bool allowed){movementLoitersAllowed = allowed;};
+	bool Get_Movement_Loiter_Allowed(){return movementLoitersAllowed;};
+	bool Get_Use_Stock_Ghost_Behavior(){return useStockGhostBehavior;}
+	void Set_Override_Muzzle_Direction(bool override){OverrideMuzzleDirection = override; Set_Object_Dirty_Bit(BIT_RARE, true);};
+	bool Get_Override_Muzzle_Direction(){return OverrideMuzzleDirection;};
+	virtual int Get_Contact_Surface_Type();
 
-	cPlayer *Get_Player() {
+	cPlayer *Get_Player() { //DA
 		return (cPlayer*)Get_Player_Data();
 	}
-	DAPlayerClass *Get_DA_Player() {
+	DAPlayerClass *Get_DA_Player() { //DA
 		return Get_Player()->Get_DA_Player();
 	}
 
@@ -267,6 +276,14 @@ protected:
 	void						Update_Healing_Effect( void );
 	int head_bone;
 	int neck_bone;
+	bool                        CanPlayDamageAnimations;
+	float						NetworkRescale;
+	float						LastScale;
+	bool						movementLoitersAllowed;
+	bool						useStockGhostBehavior;
+	bool						OverrideMuzzleDirection;
+	bool						UpdatedTarget;
+	bool						DoTilt;
 	TT_DEPRECATED("Do not use") int						Check(void);
 }; // size: 3404
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,7 @@ class Vector3;
 class OBBoxClass;
 const char SCRIPTS_API *Get_Model(GameObject *obj); //get the name of the 3d model used by an object,opposite of Set_Model
 float SCRIPTS_API Get_Animation_Frame(GameObject *obj); //gets the current animation frame for obj,may not work for all objects
+float SCRIPTS_API Get_Animation_Target_Frame(GameObject *obj); //gets the target animation frame for obj,may not work for all objects
 void SCRIPTS_API Copy_Transform(GameObject *in,GameObject *out); //copies the complete transform (including rotation) from one object to another
 float SCRIPTS_API Get_Mass(GameObject *obj); //returns the mass of an object
 const char SCRIPTS_API *Get_Htree_Name(GameObject *obj); //returns the Hierarchy Tree name for an object

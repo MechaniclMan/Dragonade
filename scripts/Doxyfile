@@ -32,7 +32,7 @@ PROJECT_NAME           = "TT Custom Scripts.dll"
 # This could be handy for archiving the generated documentation or
 # if some version control system is used.
 
-PROJECT_NUMBER         = 4.0
+PROJECT_NUMBER         = 4.3
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer
@@ -203,7 +203,7 @@ TAB_SIZE               = 4
 # will result in a user-defined paragraph with heading "Side Effects:".
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                =
+ALIASES                = "arscript=\ingroup scripts_apocrising\n\n\warning\nThis script is specifically designed for Apocalypse Rising and is subject to change without notice. It is therefore not recommended for use in other games."
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
@@ -665,7 +665,8 @@ WARN_LOGFILE           = ./documentation/warnings.log
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = ./
+INPUT                  = ./ \
+                         ./documentation
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is

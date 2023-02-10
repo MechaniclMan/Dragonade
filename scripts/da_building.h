@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Building Manager
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,6 +22,7 @@ class DABuildingObserverClass : public DAGameObjObserverClass {
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Custom(GameObject *obj, int Message, int Param, GameObject *Sender);
 	virtual const char *Get_Name() {
 		return "DABuildingObserverClass";
 	}

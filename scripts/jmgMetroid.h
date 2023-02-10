@@ -12,18 +12,19 @@
 */
 #pragma once
 #include "jmgUtility.h"
+#include "direct.h"
 #define PI 3.14159265f
 #define PI180 PI/180
 
 NewObjectiveSystem MetroidObjectiveSystemControl = NewObjectiveSystem(1,true,"mObjective","null","null");
 NewObjectiveSystem MetroidRoomObjectives = NewObjectiveSystem(1,false,"mObjective","null","null");
 
-bool PerkSystemIncreasePlayerPerkUnlockAmount(GameObject *obj,int PerkID,unsigned int IncreaseAmount){return true;};
-void AddPerkTypes(){};
+bool PerkSystemIncreasePlayerPerkUnlockAmount(GameObject *obj,int PerkID,unsigned int IncreaseAmount);
+void AddPerkTypes();
 void SavePlayerPerkData(){};
 void FindPlayerPerkList(GameObject *obj,bool Display){};
 void ClearPlayerSelectedPerks(GameObject *obj){};
-bool CheckIfPlayerHasPerk(GameObject *obj,int PerkID){return true;};
+bool CheckIfPlayerHasPerkUnlocked(GameObject *obj,int PerkID);
 void IncreasePlayerPerkSlotCount(GameObject *poker){};
 struct MetroidScoreSystem
 {
@@ -31,7 +32,7 @@ struct MetroidScoreSystem
 	int selectRandomMatchingScore;
 	bool saveInProgress;
 	#define MetroidHIGHSCORELISTCOUNT 155
-	char metroidSavePath[32];
+	char metroidSavePath[256];
 public:
 	struct MetroidHighScoresNode
 	{
@@ -415,7 +416,10 @@ public:
 	{
 		saveInProgress = false;
 		hasLoaded = false;
-		sprintf(metroidSavePath,"Data/save/");
+		if (Exe != EXE_LEVELEDIT)
+		{
+			sprintf(metroidSavePath, "%s\\Save\\", Get_File_Path());
+		}
 		MetroidHighScoresNodeList = NULL;
 		MetroidHighScoresNodeEmptyNode = NULL;
 		for (int x = 0;x < 128;x++)
@@ -486,12 +490,13 @@ public:
 		saveInProgress = true;
 		FILE *SaveScores;
 		FILE *SaveScores2;
-		char FileName[64];
-		char FileName2[64];
-		sprintf(FileName,"%sBetaMetroidPlayerRecords.tmp",metroidSavePath);
-		SaveScores = fopen(FileName,"w");
-		sprintf(FileName,"%sMetroidPlayerRecords.txt",metroidSavePath);
-		SaveScores2 = fopen(FileName,"w");
+		char tempFileName[256],finalFileName[256],textFileName[256];
+		_mkdir(metroidSavePath);
+		sprintf(finalFileName,"%sBetaMetroidPlayerRecords.Rp2",metroidSavePath);
+		sprintf(textFileName,"%sMetroidPlayerRecords.txt",metroidSavePath);
+		sprintf(tempFileName,"%sBetaMetroidPlayerRecords.tmp",metroidSavePath);
+		SaveScores = fopen(tempFileName,"w");
+		SaveScores2 = fopen(textFileName,"w");
 		MetroidHighScoresNode *Current = MetroidHighScoresNodeList;
 		while (Current)
 		{
@@ -510,11 +515,8 @@ public:
 		}
 		fclose(SaveScores);
 		fclose(SaveScores2);
-		sprintf(FileName,"%sBetaMetroidPlayerRecords.Rp2",metroidSavePath);
-		remove(FileName);
-		sprintf(FileName,"%sBetaMetroidPlayerRecords.tmp",metroidSavePath);
-		sprintf(FileName2,"%sBetaMetroidPlayerRecords.Rp2",metroidSavePath);
-		rename(FileName,FileName2);
+		remove(finalFileName);
+		rename(tempFileName,finalFileName);
 		saveInProgress = false;
 	}
 	void LoadData()
@@ -2490,7 +2492,7 @@ class MetroidPlayerSettingsSystem
 				JmgUtility::DisplayChatMessage(obj,220,220,220,chpmsg);
 				if (msNode->Chapter1Completed && msNode->Chapter2Completed && msNode->Chapter3Completed && msNode->Chapter4Completed && msNode->Chapter5Completed && msNode->Chapter6Completed && msNode->Chapter7Completed && msNode->Chapter8Completed && msNode->Chapter9Completed)
 				{
-					if (!CheckIfPlayerHasPerk(obj,79))
+					if (!CheckIfPlayerHasPerkUnlocked(obj,79))
 					{
 						PerkSystemIncreasePlayerPerkUnlockAmount(obj,79,1);
 						IncreasePlayerPerkSlotCount(obj);
@@ -4485,4 +4487,34 @@ public:
 	{
 		triggered = false;
 	}
+};
+
+class JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_At_Custom : public ScriptImpClass {
+	bool reloadComplete;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int message,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+	bool CalculateAngle(double *returnAngle,double distance,double height,bool highAngle);
+	void FireProjectile(GameObject *obj,double zAngle,double aimAngle);
+};
+
+
+class JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Attach : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Destroyed(GameObject *obj);
+};
+
+class JMG_Metroid_Miniboss_Turret : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Destroyed(GameObject *obj);
+};
+
+class JMG_AI_Artillery_Targeting_Fire_Vehicle_Projectile_Custom_Player : public ScriptImpClass {
+	bool reloadComplete;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int message,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+	bool CalculateAngle(double *returnAngle,double distance,double height,bool highAngle);
+	void FireProjectile(GameObject *obj,double zAngle,double aimAngle);
 };

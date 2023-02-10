@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 Tiberian Technologies
+	Copyright 2017 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -444,6 +444,88 @@ void JFW_Jetpack_Timer::Timer_Expired(GameObject *obj,int number)
 	time = true;
 }
 
+void JFW_Limited_Jetpack_Timer::Detach(GameObject *obj)
+{
+	if (Exe != 4)
+	{
+		if (Get_Fly_Mode(obj))
+		{
+			Toggle_Fly_Mode(obj);
+		}
+	}
+	JFW_Key_Hook_Base::Detach(obj);
+}
+
+void JFW_Limited_Jetpack_Timer::Created(GameObject *obj)
+{
+	enabled = true;
+	hookid = 0;
+	k = 0;
+	timeon = true;
+	timeoff = true;
+	InstallHook("Jetpack",obj);
+}
+
+void JFW_Limited_Jetpack_Timer::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("EnableMessage"))
+	{
+		enabled = true;
+	}
+	if (type == Get_Int_Parameter("DisableMessage"))
+	{
+		enabled = false;
+	}
+}
+
+void JFW_Limited_Jetpack_Timer::KeyHook()
+{
+	if (enabled && !Get_Vehicle(Owner()))
+	{
+		if ((!Get_Fly_Mode(Owner()) && timeon) || (Get_Fly_Mode(Owner()) && timeoff))
+		{
+			if(!Get_Fly_Mode(Owner()))
+			{
+				Commands->Set_Animation(Owner(), Get_Parameter("OnAnimation"), true, 0, 0, -1, true);
+				timeoff = false;
+				Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerOff"),1);
+				Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerUse"),3);
+			}
+			else
+			{
+				Owner()->As_PhysicalGameObj()->Clear_Animation();
+				timeon = false;
+				Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerOn"),2);
+			}
+			Toggle_Fly_Mode(Owner());
+		}
+		else
+		{
+			unsigned int red;
+			unsigned int green;
+			unsigned int blue;
+			Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+			Send_Message_Player(Owner(),red,green,blue,Get_Parameter("Message"));
+		}
+	}
+}
+
+void JFW_Limited_Jetpack_Timer::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		timeoff = true;
+	}
+	else if (number == 2)
+	{
+		timeon = true;
+	}
+	else if ((number == 3) && Get_Fly_Mode(Owner()))
+	{
+		KeyHook();
+	}
+}
+
 void JFW_Jetpack_Model::Detach(GameObject *obj)
 {
 	if (Exe != 4)
@@ -691,6 +773,213 @@ void JFW_Suicide_Bomber::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&enabled,1,1);
 }
 
+void JFW_Jetpack_Timer_No_Fly::Detach(GameObject *obj)
+{
+	if (Exe != 4)
+	{
+		if (Get_Fly_Mode(obj))
+		{
+			Toggle_Fly_Mode(obj);
+		}
+	}
+	JFW_Key_Hook_Base::Detach(obj);
+}
+
+void JFW_Jetpack_Timer_No_Fly::Created(GameObject *obj)
+{
+	enabled = true;
+	hookid = 0;
+	k = 0;
+	time = true;
+	nofly = false;
+	InstallHook("Jetpack",obj);
+}
+
+void JFW_Jetpack_Timer_No_Fly::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("EnableMessage"))
+	{
+		enabled = true;
+	}
+	if (type == Get_Int_Parameter("DisableMessage"))
+	{
+		enabled = false;
+	}
+	if (type == Get_Int_Parameter("NoFlyOn"))
+	{
+		nofly = true;
+		if (Get_Fly_Mode(obj))
+		{
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Toggle_Fly_Mode(obj);
+			time = false;
+			Stop_Timer(Owner(),1);
+			Commands->Start_Timer(Owner(),this,Get_Float_Parameter("Timer"),1);
+		}
+	}
+	if (type == Get_Int_Parameter("NoFlyOff"))
+	{
+		nofly = false;
+	}
+}
+
+void JFW_Jetpack_Timer_No_Fly::KeyHook()
+{
+	if (!nofly)
+	{
+		if (enabled && !Get_Vehicle(Owner()))
+		{
+			if (time)
+			{
+				if(!Get_Fly_Mode(Owner()))
+				{
+					Commands->Set_Animation(Owner(), Get_Parameter("OnAnimation"), true, 0, 0, -1, true);
+				}
+				else
+				{
+					Owner()->As_PhysicalGameObj()->Clear_Animation();
+				}
+				Toggle_Fly_Mode(Owner());
+				time = false;
+				Commands->Start_Timer(Owner(),this,Get_Float_Parameter("Timer"),1);
+			}
+			else
+			{
+				unsigned int red;
+				unsigned int green;
+				unsigned int blue;
+				Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+				Send_Message_Player(Owner(),red,green,blue,Get_Parameter("Message"));
+			}
+		}
+	}
+	else
+	{
+		unsigned int red;
+		unsigned int green;
+		unsigned int blue;
+		Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+		Send_Message_Player(Owner(),red,green,blue,Get_Parameter("NoFlyMessage"));
+	}
+}
+
+void JFW_Jetpack_Timer_No_Fly::Timer_Expired(GameObject *obj,int number)
+{
+	time = true;
+}
+
+void JFW_Limited_Jetpack_Timer_No_Fly::Detach(GameObject *obj)
+{
+	if (Exe != 4)
+	{
+		if (Get_Fly_Mode(obj))
+		{
+			Toggle_Fly_Mode(obj);
+		}
+	}
+	JFW_Key_Hook_Base::Detach(obj);
+}
+
+void JFW_Limited_Jetpack_Timer_No_Fly::Created(GameObject *obj)
+{
+	enabled = true;
+	hookid = 0;
+	k = 0;
+	timeon = true;
+	timeoff = true;
+	nofly = false;
+	InstallHook("Jetpack",obj);
+}
+
+void JFW_Limited_Jetpack_Timer_No_Fly::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("EnableMessage"))
+	{
+		enabled = true;
+	}
+	if (type == Get_Int_Parameter("DisableMessage"))
+	{
+		enabled = false;
+	}
+	if (type == Get_Int_Parameter("NoFlyOn"))
+	{
+		nofly = true;
+		if (Get_Fly_Mode(obj))
+		{
+			obj->As_PhysicalGameObj()->Clear_Animation();
+			Toggle_Fly_Mode(obj);
+			timeoff = true;
+			Stop_Timer(obj,1);
+			Stop_Timer(obj,3);
+			timeon = false;
+			Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerOn"),2);
+		}
+	}
+	if (type == Get_Int_Parameter("NoFlyOff"))
+	{
+		nofly = false;
+	}
+}
+
+void JFW_Limited_Jetpack_Timer_No_Fly::KeyHook()
+{
+	if (!nofly)
+	{
+		if (enabled && !Get_Vehicle(Owner()))
+		{
+			if ((!Get_Fly_Mode(Owner()) && timeon) || (Get_Fly_Mode(Owner()) && timeoff))
+			{
+				if(!Get_Fly_Mode(Owner()))
+				{
+					Commands->Set_Animation(Owner(), Get_Parameter("OnAnimation"), true, 0, 0, -1, true);
+					timeoff = false;
+					Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerOff"),1);
+					Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerUse"),3);
+				}
+				else
+				{
+					Owner()->As_PhysicalGameObj()->Clear_Animation();
+					timeon = false;
+					Commands->Start_Timer(Owner(),this,Get_Float_Parameter("TimerOn"),2);
+				}
+				Toggle_Fly_Mode(Owner());
+			}
+			else
+			{
+				unsigned int red;
+				unsigned int green;
+				unsigned int blue;
+				Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+				Send_Message_Player(Owner(),red,green,blue,Get_Parameter("Message"));
+			}
+		}
+	}
+	else
+	{
+		unsigned int red;
+		unsigned int green;
+		unsigned int blue;
+		Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+		Send_Message_Player(Owner(),red,green,blue,Get_Parameter("NoFlyMessage"));
+	}
+}
+
+void JFW_Limited_Jetpack_Timer_No_Fly::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		timeoff = true;
+	}
+	else if (number == 2)
+	{
+		timeon = true;
+	}
+	else if ((number == 3) && Get_Fly_Mode(Owner()))
+	{
+		KeyHook();
+	}
+}
+
 ScriptRegistrant<JFW_Attach_Script_Preset_Created> JFW_Attach_Script_Preset_Created_Registrant("JFW_Attach_Script_Preset_Created","Script:string,Params:string,Delim:string,Preset:string,Player_Type:int");
 ScriptRegistrant<JFW_Attach_Script_Type_Created> JFW_Attach_Script_Type_Created_Registrant("JFW_Attach_Script_Type_Created","Script:string,Params:string,Delim:string,Type:int,Player_Type:int");
 ScriptRegistrant<JFW_Attach_Script_Player_Created> JFW_Attach_Script_Player_Created_Registrant("JFW_Attach_Script_Player_Created","Script:string,Params:string,Delim:string,Player_Type:int");
@@ -699,6 +988,9 @@ ScriptRegistrant<JFW_Dplbl_Vhcls_Keyboard> JFW_Dplbl_Vhcls_Keyboard_Registrant("
 ScriptRegistrant<JFW_Underground_Logic> JFW_Underground_Logic_Registrant("JFW_Underground_Logic","UpZOffset:float,DownZOffset:float,DigEffectObj:string,SurfaceEffectObj:string,DisableMessage:int,EnableMessage:int,IndicatorMessage:int,IndicatorObject:string,IndicatorZOffset:float,DigRed:float,DigGreen:float,DigBlue:float,DigOpacity:float,DigSound:string");
 ScriptRegistrant<JFW_Jetpack> JFW_Jetpack_Registrant("JFW_Jetpack","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string");
 ScriptRegistrant<JFW_Jetpack_Timer> JFW_Jetpack_Timer_Registrant("JFW_Jetpack_Timer","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string,timer:float,Message:string");
+ScriptRegistrant<JFW_Limited_Jetpack_Timer> JFW_Limited_Jetpack_Timer_Registrant("JFW_Limited_Jetpack_Timer","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string,TimerOff:float,TimerOn:Float,TimerUse:float,Message:string");
 ScriptRegistrant<JFW_Jetpack_Model> JFW_Jetpack_Model_Registrant("JFW_Jetpack_Model","DisableMessage:int,EnableMessage:int,OnModel:string,OffModel:string,OnAnimation=null.null:string");
 ScriptRegistrant<JFW_Suicide_Bomber> JFW_Suicide_Bomber_Registrant("JFW_Suicide_Bomber","Explosion:string");
 ScriptRegistrant<JFW_Sidebar_Key_2> JFW_Sidebar_Key_2_Registrant("JFW_Sidebar_Key_2","Key=Sidebar:string,Enable_Custom=0:int,Disable_Custom=0:int,Sound:string");
+ScriptRegistrant<JFW_Jetpack_Timer_No_Fly> JFW_Jetpack_Timer_No_Fly_Registrant("JFW_Jetpack_Timer_No_Fly","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string,timer:float,Message:string,NoFlyOn:int,NoFlyOff:int,NoFlyMessage:string");
+ScriptRegistrant<JFW_Limited_Jetpack_Timer_No_Fly> JFW_Limited_Jetpack_Timer_No_Fly_Registrant("JFW_Limited_Jetpack_Timer_No_Fly","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string,TimerOff:float,TimerOn:Float,TimerUse:float,Message:string,NoFlyOn:int,NoFlyOff:int,NoFlyMessage:string");

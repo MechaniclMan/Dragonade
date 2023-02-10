@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Purchase Queue Game Feature
-	Copyright 2015 Whitedragon, Tiberian Technologies
+	Copyright 2017 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -195,7 +195,7 @@ void DAVehicleQueueGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedG
 }
 
 bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	int Team = Player->Get_Team();
+	int Team = Player->Get_Player_Type();
 	if (Team == 0 || Team == 1) {
 		if (!Text.Size()) {
 			DA::Private_Color_Message(Player,COLORGRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
@@ -231,7 +231,7 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 			}
 		}
 		else if (Text[1] == "cancel" || Text[1] == "halt" || Text[1] == "stop" || Text[1] == "leave" || Text[1] == "end") {
-			if (Remove(Player->Get_Team(),Player)) {
+			if (Remove(Player->Get_Player_Type(),Player)) {
 				DA::Private_Color_Message(Player,COLORGRAY,"You have left the vehicle queue.");
 			}
 		}
@@ -249,9 +249,9 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,DAVehicleQueueStruct
 		}
 		VF->Request_Vehicle(Q->Vehicle->Get_ID(),Delay,Q->Player?Q->Player->Get_GameObj():0);
 		if (Q->Player && Q->Player->Is_Alive_And_Kicking()) { //Gray out for the Player.
-			Update_Network_Object_Player(VF,Q->Player->Get_ID());
+			Update_Network_Object_Player(VF,Q->Player->Get_Id());
 			VF->Set_Busy(false); //Prevent from graying out for other players.
-			VF->Set_Object_Dirty_Bit(Q->Player->Get_ID(),NetworkObjectClass::BIT_RARE,false);
+			VF->Set_Object_Dirty_Bit(Q->Player->Get_Id(),NetworkObjectClass::BIT_RARE,false);
 		}
 		else {
 			VF->Set_Busy(false);
@@ -272,7 +272,7 @@ void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team)
 		if (Building[Team]->Player) {
 			if (Building[Team]->Player->Is_Alive_And_Kicking()) { //Ungray menu for purchasing player.
 				VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
-				VF->Set_Object_Dirty_Bit(Building[Team]->Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+				VF->Set_Object_Dirty_Bit(Building[Team]->Player->Get_Id(),NetworkObjectClass::BIT_RARE,true);
 			}
 		}
 		else if (Building[Team]->Cost == -1) { //Reallow refinery to request harvesters.
@@ -294,7 +294,7 @@ void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team)
 		else if (Q->Player->Purchase_Item(Q->Cost)) {
 			Spawn_Vehicle(Team,Q);
 			DAEventManager::Vehicle_Purchase_Event(Q->Player,Q->Cost,Q->Vehicle); //Trigger the proper events.
-			Send_Purchase_Response(Q->Player->Get_ID(),0);
+			Send_Purchase_Response(Q->Player->Get_Id(),0);
 		}
 		else {
 			Timer_Expired(Number,Team);
