@@ -19,6 +19,7 @@
 #include "HashTemplateClass.h"
 #include "SList.h"
 #include "cPlayer.h"
+#include "PhysDefClass.h"
 class ConnectionAcceptanceFilter;
 class WideStringClass;
 class cScTextObj;
@@ -155,6 +156,11 @@ typedef void (*csp) (GameObject *obj,int id,const char *string);
 typedef void (*fpu) (GameObject *obj);
 typedef bool (*grps) (const Vector3 &center, float range, Vector3 *returnPosition);
 typedef void (*htpt) (GameObject *obj, int replaceStringId,const char *replaceText, Vector3 color);
+typedef void (*grw) (GameObject *object,const char *GrantWeaponName,bool GrantWeapon, int GrantWeaponRounds, bool GrantWeaponClips);
+typedef void (*sovfp) (GameObject *player,int objectId,bool visible);
+typedef void (*sov) (int objectId,bool visible);
+typedef void (*lscg) (GameObject *obj,Collision_Group_Type collisionGroupType);
+typedef void (*ulscg) (GameObject *obj);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -312,6 +318,11 @@ SCRIPTS_API extern csp Change_String_Player;
 SCRIPTS_API extern fpu Force_Position_Update;
 SCRIPTS_API extern grps Get_Random_Pathfind_Spot;
 SCRIPTS_API extern htpt Set_HUD_Help_Text_Player_Text;
+SCRIPTS_API extern grw Grant_Weapon;
+SCRIPTS_API extern sovfp Set_Object_Visibility_For_Player;
+SCRIPTS_API extern sov Set_Object_Visibility;
+SCRIPTS_API extern lscg Lock_Soldier_Collision_Group;
+SCRIPTS_API extern ulscg Unlock_Soldier_Collision_Group;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:

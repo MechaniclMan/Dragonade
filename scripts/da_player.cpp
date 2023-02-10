@@ -1780,43 +1780,79 @@ class DAVoteNoKeyHookClass : public DAKeyHookClass {
 Register_Simple_Key_Hook(DAVoteNoKeyHookClass,"VoteNo");
 
 
+class DAUnstuckObserverClass : public DAGameObjObserverClass {
+	void Init() {
+		Get_Owner()->Get_Position(&Position);
+		Start_Timer(1,10.0f);
+	}
+	void Timer_Expired(GameObject *obj,int Number) {
+		if (Commands->Get_Distance(Commands->Get_Position(Get_Owner()),Position) < 0.5f) {
+			SoldierGameObj *Soldier = (SoldierGameObj*)Get_Owner();
+			if (Soldier) {
+				PhysicalGameObj *Phys = Soldier;
+				if (Soldier->Get_Vehicle()) { 
+					if (Soldier->Get_Vehicle()->Get_Driver() == Soldier) {
+						Phys = Soldier->Get_Vehicle();
+					}
+					else {
+						Set_Delete_Pending();
+						return;
+					}
+				}
+				if (!Phys->Is_Attached_To_An_Object() && Fix_Stuck_Object(Phys,10.0f)) {
+					DA::Page_Player(Soldier,"You have been unstuck.");
+				}
+				else {
+					DA::Page_Player(Soldier,"Unstuck failed. You can try again, or use the \"!killme\" command.");
+				}
+			}
+		}
+		Set_Delete_Pending();
+	}
+	const char *Get_Name() { return "DAUnstuckObserverClass"; }
+	Vector3 Position;
+};
 
-class DAUnStuckChatCommandClass: public DAChatCommandClass {
+class DAUnStuckChatCommandClass : public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		PhysicalGameObj *Phys = Player->Get_GameObj()->Get_Vehicle();
-		if (!Phys) {
-			Phys = Player->Get_GameObj();
-		}
-		if (Phys->Is_Attached_To_An_Object() || ((MoveablePhysClass*)Phys->Peek_Physical_Object())->Can_Teleport(Phys->Get_Transform())) {
-			DA::Page_Player(Player,"You are not stuck. Use the !killme command if this is incorrect.");
-		}
-		else if (Fix_Stuck_Object(Phys,10.0f)) {
-			DA::Page_Player(Player,"You have been unstuck.");
-		}
-		else {
-			DA::Page_Player(Player,"Unstuck failed. You can try again, or use the !killme command.");
+		if (ChatType != TEXT_MESSAGE_KEYHOOK && !Player->Get_GameObj()->Find_Observer("DAUnstuckObserverClass")) {
+			Player->Get_GameObj()->Add_Observer(new DAUnstuckObserverClass);
+			DA::Page_Player(Player,"You will be unstuck in 10 seconds. Moving will cancel this.");
 		}
 		return true;
 	}
 };
 Register_Simple_Chat_Command(DAUnStuckChatCommandClass,"!unstuck|!unstick|!stuck|!stick");
 
-class DAKillMeChatCommandClass: public DAChatCommandClass, public DAEventClass {
+
+
+class DAKillMeObserverClass : public DAGameObjObserverClass {
+	void Init() {
+		Get_Owner()->Get_Position(&Position);
+		Start_Timer(1,10.0f);
+	}
+	void Timer_Expired(GameObject *obj,int Number) {
+		if (Commands->Get_Distance(Commands->Get_Position(Get_Owner()),Position) < 0.5f) {
+			Get_Owner()->Set_Delete_Pending();
+		}
+		Set_Delete_Pending();
+	}
+	const char *Get_Name() { return "DAKillMeObserverClass"; }
+	Vector3 Position;
+};
+
+class DAKillMeChatCommandClass : public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		if (!Is_Timer(1,Player->Get_GameObj()->Get_ID())) {
-			Start_Timer(1,10.0f,false,Player->Get_GameObj()->Get_ID());
-			DA::Page_Player(Player,"You will be killed in 10 seconds.");
+		if (ChatType != TEXT_MESSAGE_KEYHOOK && !Player->Get_GameObj()->Find_Observer("DAKillMeObserverClass")) {
+			Player->Get_GameObj()->Add_Observer(new DAKillMeObserverClass);
+			DA::Page_Player(Player,"You will be killed in 10 seconds. Moving will cancel this.");
 		}
 		return true;
 	}
-	void Timer_Expired(int Number,unsigned int Data) {
-		GameObject *Soldier = GameObjManager::Find_SmartGameObj(Data);
-		if (Soldier) {
-			Commands->Apply_Damage(Soldier,99999.0f,"BlamoKiller",0);
-		}
-	}
 };
 Register_Simple_Chat_Command(DAKillMeChatCommandClass,"!killme|!suicide");
+
+
 
 class DADropChatCommandClass: public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {

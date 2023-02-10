@@ -183,7 +183,7 @@ void DADisableListManager::Settings_Loaded_Event() {
 			for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
 				if (!_stricmp(i->Value,"1") || !_stricmp(i->Value,"true")) {
 					DefinitionClass *Def = Find_Named_Definition(i->Entry);
-					if (Def->Get_Class_ID() == CID_PowerUp || Def->Get_Class_ID() == CID_Weapon) {
+					if (Def && (Def->Get_Class_ID() == CID_PowerUp || Def->Get_Class_ID() == CID_Weapon)) {
 						Disable.DisableList.Add(Def);
 					}
 				}

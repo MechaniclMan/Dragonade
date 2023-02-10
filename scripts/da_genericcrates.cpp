@@ -757,8 +757,7 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 				else if (Soldier->Get_Player_Type() == 1) {
 					Create_2D_WAV_Sound_Player_By_ID(ID,"M00EVAG_DSGN0026I1EVAG_SND.wav");
 				}
-				Console_InputF("icon %d o_em_cross.w3d",ID);
-				Console_InputF("icon2 %d o_em_cross.w3d",ID);
+				Set_Emot_Icon(ID,"o_em_cross.w3d",2);
 			}
 			Set_Delete_Pending();
 		}

@@ -336,6 +336,11 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Force_Position_Update = (fpu)Address(tt,"Force_Position_Update");
 	Get_Random_Pathfind_Spot = (grps)Address(tt,"Get_Random_Pathfind_Spot");
 	Set_HUD_Help_Text_Player_Text = (htpt)Address(tt,"Set_HUD_Help_Text_Player_Text");
+	Grant_Weapon = (grw)Address(tt,"Grant_Weapon");
+	Set_Object_Visibility_For_Player = (sovfp)Address(tt,"Set_Object_Visibility_For_Player");
+	Set_Object_Visibility = (sov)Address(tt,"Set_Object_Visibility");
+	Lock_Soldier_Collision_Group = (lscg)Address(tt,"Lock_Soldier_Collision_Group");
+	Unlock_Soldier_Collision_Group = (ulscg)Address(tt,"Unlock_Soldier_Collision_Group");
 	
 	DA::Init();
 

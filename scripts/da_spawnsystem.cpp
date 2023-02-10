@@ -259,7 +259,7 @@ void DASpawnManagerClass::Init(const INIClass *INI) {
 	DAPlayerDataManagerClass<DASpawnPlayerDataClass>::Init();
 
 	SpawnTime = (unsigned int)(INI->Get_Float(The_Game()->MapName,"SpawnTime",INI->Get_Float("General","SpawnTime",0.0f))*1000);
-	IntermissionTime = (unsigned int)INI->Get_Int(The_Game()->MapName,"IntermissionTime",INI->Get_Int("General","IntermissionTime",10));
+	IntermissionTime = (unsigned int)INI->Get_Int(The_Game()->MapName,"SpawnIntermissionTime",INI->Get_Int("General","SpawnIntermissionTime",10));
 	MinAllyDistance = INI->Get_Float(The_Game()->MapName,"SpawnMinAllyDistance",INI->Get_Float("General","SpawnMinAllyDistance",0.0f));
 	MaxAllyDistance = INI->Get_Float(The_Game()->MapName,"SpawnMaxAllyDistance",INI->Get_Float("General","SpawnMaxAllyDistance",0.0f));
 	if (!MaxAllyDistance) {

@@ -27,10 +27,10 @@ typedef enum {
 	TERRAIN_AND_BULLET_COLLISION_GROUP,			// collides with terrain and bullets
 	BULLET_ONLY_COLLISION_GROUP,				// collides only with bullets
 	SOLDIER_COLLISION_GROUP,					// collides with everything (but only soldiers use it)
-	SOLDIER_GHOST_COLLISION_GROUP,				// collides with everything but soldiers
+	SOLDIER_GHOST_COLLISION_GROUP,				// behaves like SOLDIER but doesn't collide with unit groups
 
 	// new collision groups here, 8 - 14
-	C4_COLLISION_GROUP,							// behaves like DEFAULT but doesn't collide with any custom collision groups besides itself
+	C4_COLLISION_GROUP,							// behaves like DEFAULT but collides with SOLDIER_GHOST and doesn't collide with WATER_EDGE or UNDERGROUND_TRANSITION
 	UNDERGROUND_COLLISION_GROUP,				// collides with TERRAIN and itself
 	SOLDIER_ONLY_COLLISION_GROUP, 				// collides only with SOLDIER and SOLDIER_GHOST
 	SOLDIER_BULLET_COLLISION_GROUP, 			// collides with C4, BULLET, SOLDIER and SOLDIER_GHOST
@@ -50,6 +50,11 @@ typedef enum {
 	UNDERGROUND_TRANSITION_COLLISION_GROUP,		// behaves like DEFAULT but collides with UNDERGROUND
 
     DEFAULT_AND_SOLDIER_ONLY_COLLISION_GROUP,   // collides with DEFAULT, SOLDIER, and SOLDIER_GHOST
+	
+	PLAYER_BUILDING_COLLISION_GROUP,			// behaves like a mix of TERRAIN/DEFAULT but doesn't collde with PLAYER_BUILDING_GHOST
+	PLAYER_BUILDING_GHOST_COLLISION_GROUP,		// behaves like DEFAULT but doesn't collde with PLAYER_BUILDING
+	TRAIN_COLLISION_GROUP,						// behaves like DEFAULT but collides with TRAIN_TRACK and doesn't collide with WATER_EDGE
+	TRAIN_TRACK_COLLISION_GROUP,				// collides only with TRAIN
 
 	COLLISION_GROUP_MAX = 32,					// not a collision group
 } Collision_Group_Type;

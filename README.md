@@ -1,4 +1,4 @@
-Dragonade 1.8
+Dragonade 1.8.1
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -27,6 +27,21 @@ Installation:
 Update History:
 
 
+Version 1.8.1:
+  Additions:
+   - Added setting "IntermissionTime" which sets how long the score screen is displayed at the end of a game.
+
+  Changes:
+   - Kill messages for players destroying their own vehicles now only display if an enemy has recently damaged the vehicle.
+
+  Bug Fixes:
+   - Added some missing functions from the final release of TT 4.2.
+   - The "!stuck" command should now work in more situations.
+   - Fixed the object event type "ARMED".
+   - The "!killme" command can now kill you while in a vehicle.
+
+
+
 Version 1.8:
   Additions:
    - Added a message when squads are created.
@@ -47,6 +62,7 @@ Version 1.8:
    - Fixed pages to the host being logged twice.
    - Fixed team rebalancing sometimes not occuring when it should have.
    - Fixed Get_Damage_Warhead.
+   - Fixed a crash in the disable list if an invalid preset was used.
 
 
 

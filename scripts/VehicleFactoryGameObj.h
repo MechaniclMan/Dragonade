@@ -34,7 +34,7 @@ public:
 	void					On_Destroyed (void);
 	void					On_Revived (void);
 	void					Think (void);
-	bool					Is_Available (void) const	{ return (IsBusy == false) && (IsDestroyed == false) && (IsDisabled == false); }
+	bool					Is_Available (void) const	{ return !IsBusy && !IsDestroyed && !IsDisabled && !GeneratingVehicleID && !Vehicle; }
 	bool					Is_Available_For_Purchase (void) const;
 	bool					Is_Busy (void) const			{ return IsBusy; }
 	bool					Is_Disabled (void) const			{ return IsDisabled != 0; }

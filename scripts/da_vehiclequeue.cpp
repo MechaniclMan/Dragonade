@@ -78,23 +78,28 @@ void DAVehicleQueueGameFeatureClass::Level_Loaded_Event() {
 int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	int Team = Base->Get_Player_Type();
 	if (Team == 0 || Team == 1) {
-		if ((unsigned int)Player->Get_Money() < Cost) {
-			return 2;
-		}
-		else if (!Is_Building(Team)) { //Build if VF is free.
-			Player->Purchase_Item(Cost);
-			Spawn_Vehicle(Team,Player,Item,Cost);
-			return 0;
-		}
-		else if (Building[Team]->Player == Player) {
-			return 3;
-		}
-		else { //Add to queue if VF is busy.
-			Add(Team,Player,Item,Cost);
-			return 1;
+		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
+		if (VF && !VF->Is_Destroyed() && !VF->Is_Disabled()) {
+			if (Player->Get_Money() < Cost) {
+				return 2;
+			}
+			else if (Is_Building(Team)) {
+				if (Building[Team]->Player == Player) {
+					return 3;
+				}
+				else { //Add to queue if VF is busy.
+					Add(Team,Player,Item,Cost);
+					return 1;
+				}
+			}
+			else if (VF->Is_Available()) { //Build if VF is free.
+				Player->Purchase_Item(Cost);
+				Spawn_Vehicle(Team,Player,Item,Cost);
+				return 0;
+			}
 		}
 	}
-	return -1;
+	return 3;
 }
 
 bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) {

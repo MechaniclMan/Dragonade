@@ -262,6 +262,7 @@ void DAGameManager::Settings_Loaded_Event() {
 	Game->BeaconPlacementEndsGame = DASettingsManager::Get_Bool("BeaconPlacementEndsGame",SvrCfg.Get_Bool("Settings","BeaconPlacementEndsGame",true));
 	CombatManager::BeaconPlacementEndsGame = Game->BeaconPlacementEndsGame;
 	Game->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
+	Game->Set_Intermission_Time_Seconds(DASettingsManager::Get_Int("IntermissionTime",5));
 
 	Update_Game_Options(-1);
 }

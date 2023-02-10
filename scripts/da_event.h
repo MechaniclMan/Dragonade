@@ -173,28 +173,15 @@ struct DAObjectEventStruct {
 		return (ObjectType & Flag) == Flag;
 	}
 	bool Check_Object_Type(GameObject *obj) {
-		if (Has_Flag(DAObjectEvent::ALL)) {
-			return true;
-		}
 		if (!obj) {
 			return false;
+		}
+		else if (Has_Flag(DAObjectEvent::ALL)) {
+			return true;
 		}
 		else if (obj->As_DamageableGameObj()) {
 			if (Has_Flag(DAObjectEvent::DAMAGEABLE)) {
 				return true;
-			}
-			else if (obj->As_SoldierGameObj()) {
-				if (Has_Flag(DAObjectEvent::SOLDIER)) {
-					return true;
-				}
-				else if (obj->As_SoldierGameObj()->Get_Player_Data() && Has_Flag(DAObjectEvent::PLAYER)) {
-					return true;
-				}
-			}
-			else if (obj->As_VehicleGameObj()) {
-				if (Has_Flag(DAObjectEvent::VEHICLE)) {
-					return true;
-				}
 			}
 			else if (obj->As_BuildingGameObj()) {
 				if (Has_Flag(DAObjectEvent::BUILDING)) {
@@ -205,6 +192,19 @@ struct DAObjectEventStruct {
 				if (Physical->As_ArmedGameObj()) {
 					if (Has_Flag(DAObjectEvent::ARMED)) {
 						return true;
+					}
+					else if (obj->As_SoldierGameObj()) {
+						if (Has_Flag(DAObjectEvent::SOLDIER)) {
+							return true;
+						}
+						else if (obj->As_SoldierGameObj()->Get_Player_Data() && Has_Flag(DAObjectEvent::PLAYER)) {
+							return true;
+						}
+					}
+					else if (obj->As_VehicleGameObj()) {
+						if (Has_Flag(DAObjectEvent::VEHICLE)) {
+							return true;
+						}
 					}
 				}
 				else if (SimpleGameObj *Simple = Physical->As_SimpleGameObj()) {

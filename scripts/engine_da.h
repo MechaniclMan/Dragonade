@@ -91,7 +91,6 @@ DA_API cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOn
 DA_API void Damage_Objects_Half_No_Kill();
 DA_API void Attach_Script_To_Definition(const char *Preset,const char *Script,const char *Params);
 DA_API void Attach_Script_To_Definitions(unsigned long CID,const char *Script,const char *Params);
-DA_API void Grant_Weapon(GameObject *obj,const char *Weapon,int Rounds = 0);
 DA_API void Set_Object_Type_Preset(const char *Preset,int Team);
 DA_API cTeam *Find_Team(int team);
 DA_API void Give_Credits_Team(int Team,float Credits);
@@ -233,5 +232,7 @@ DA_API void Send_Player_Kill_Message(int Killer,int Victim);
 DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
 
 DA_API void Reverse_Damage(GameObject *obj,float Amount);
+
+DA_API void Set_Emot_Icon(int ID,const char *Model,int Team);
 
 #endif

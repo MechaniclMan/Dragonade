@@ -271,10 +271,7 @@ int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,c
 	AirFactoryGameObj *AF = (AirFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_HELIPAD);
 	NavalFactoryGameObj *NF = (NavalFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_NAVAL_FACTORY);
 	if (AF && Item->Get_Type() == VEHICLE_TYPE_FLYING) { //Flying vehicle
-		if (!AF->Is_Available()) {
-			return 3;
-		}
-		else if ((unsigned int)Get_Air_Vehicle_Count(Base->Get_Player_Type()) >= Get_Air_Vehicle_Limit()) {
+		if ((unsigned int)Get_Air_Vehicle_Count(Base->Get_Player_Type()) >= Get_Air_Vehicle_Limit()) {
 			return 4;
 		}
 		else {
@@ -282,10 +279,7 @@ int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,c
 		}
 	}
 	else if (NF && Item->Get_Type() == VEHICLE_TYPE_BOAT || Item->Get_Type() == VEHICLE_TYPE_SUB) { //Naval vehicle
-		if (!NF || !NF->Is_Available() || !NF->Can_Spawn(Item->Get_ID())) {
-			return 3;
-		}
-		else if ((unsigned int)Get_Naval_Vehicle_Count(Base->Get_Player_Type()) >= Get_Naval_Vehicle_Limit()) {
+		if ((unsigned int)Get_Naval_Vehicle_Count(Base->Get_Player_Type()) >= Get_Naval_Vehicle_Limit()) {
 			return 4;
 		}
 		else {
@@ -293,10 +287,7 @@ int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,c
 		}
 	}
 	else if (VF) { //Ground vehicle
-		if (!VF->Is_Available()) {
-			return 3;
-		}
-		else if (!Check_Limit_For_Player(Player)) {
+		if (!Check_Limit_For_Player(Player)) {
 			return 4;
 		}
 		else {
@@ -313,21 +304,30 @@ int DAVehicleManager::DefaultPurchaseEvent::Vehicle_Purchase_Request_Event(BaseC
 	AirFactoryGameObj *AF = (AirFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_HELIPAD);
 	NavalFactoryGameObj *NF = (NavalFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_NAVAL_FACTORY);
 	if (AF && Item->Get_Type() == VEHICLE_TYPE_FLYING) { //Flying vehicle
-		if (Player->Purchase_Item((int)Cost)) {
+		if (!AF->Is_Available()) {
+			return 3;
+		}
+		else if (Player->Purchase_Item((int)Cost)) {
 			AF->Create_Vehicle(Item->Get_ID(),Player->Get_GameObj());
 			return 0;
 		}
 		return 2;
 	}
 	else if (NF && Item->Get_Type() == VEHICLE_TYPE_BOAT || Item->Get_Type() == VEHICLE_TYPE_SUB) { //Naval vehicle
-		if (Player->Purchase_Item((int)Cost)) {
+		if (!NF->Is_Available() || !NF->Can_Spawn(Item->Get_ID())) {
+			return 3;
+		}
+		else if (Player->Purchase_Item((int)Cost)) {
 			NF->Create_Vehicle(Item->Get_ID(),Player->Get_GameObj());
 			return 0;
 		}
 		return 2;
 	}
 	else if (VF) { //Ground vehicle
-		if (Player->Purchase_Item((int)Cost)) {
+		if (!VF->Is_Available()) {
+			return 3;
+		}
+		else if (Player->Purchase_Item((int)Cost)) {
 			float Delay = 5.0f;
 			if (!Base->Is_Base_Powered()) {
 				Delay *= Get_Build_Time_Multiplier(Base->Get_Player_Type());
@@ -418,6 +418,9 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 			StringClass VictimName;
 			if (Owner) {
 				if (Owner->Get_GameObj() == Killer) {
+					if (!DADamageLog::Get_Percent_Other_Team_Damage(Victim,DAVehicleManager::Get_Team(Victim))) {
+						return;
+					}
 					VictimName = "their own ";
 					VictimName += DATranslationManager::Translate(Victim);
 				}
@@ -461,7 +464,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 						VictimName[0] = (char)toupper(VictimName[0]);
 						DA::Color_Message(COLORWHITE,"2 %s destroyed itself.",VictimName);
 					}
-				else {
+					else {
 						Message.Format("%d %s destroyed itself.",Owner->Get_Player_Type(),VictimName);
 					}
 				}

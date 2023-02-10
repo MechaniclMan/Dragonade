@@ -199,6 +199,11 @@ SCRIPTS_API csp Change_String_Player;
 SCRIPTS_API fpu Force_Position_Update;
 SCRIPTS_API grps Get_Random_Pathfind_Spot;
 SCRIPTS_API htpt Set_HUD_Help_Text_Player_Text;
+SCRIPTS_API grw Grant_Weapon;
+SCRIPTS_API sovfp Set_Object_Visibility_For_Player;
+SCRIPTS_API sov Set_Object_Visibility;
+SCRIPTS_API lscg Lock_Soldier_Collision_Group;
+SCRIPTS_API ulscg Unlock_Soldier_Collision_Group;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {

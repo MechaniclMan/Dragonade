@@ -65,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.8";
+	return "1.8.1";
 }
 
 void DA::Init() {

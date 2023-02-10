@@ -446,12 +446,6 @@ void TDBObjClass::Set_English_String (const char *string) {
 	EnglishString = string;
 }
 
-void Grant_Weapon(GameObject *obj,const char *Weapon,int Rounds) {
-	if (obj && obj->As_PhysicalGameObj() && ((PhysicalGameObj*)obj)->As_ArmedGameObj()) {
-		((ArmedGameObj*)obj)->Get_Weapon_Bag()->Add_Weapon(Weapon,Rounds,true);
-	}
-}
-
 void Set_Object_Type_Preset(const char *Preset,int Team) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
 		if (!_stricmp(Commands->Get_Preset_Name(z->Data()->As_ScriptableGameObj()),Preset)) {
@@ -1442,5 +1436,19 @@ void Reverse_Damage(GameObject *obj,float Amount) {
 	}
 	else {
 		Commands->Set_Shield_Strength(obj,Armor+Amount);
+	}
+}
+
+void cGameData::Set_Intermission_Time_Seconds(int time) {
+	IntermissionTime_Seconds = time;
+}
+
+void Set_Emot_Icon(int ID,const char *Model,int Team) {
+	WideStringClass Send;
+	Send.Format(L"j\n36\n%d\n%hs\n",ID,Model);
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+		if (z->Data()->Is_Active() && (Team == 2 || Team == z->Data()->Get_Team())) {
+			Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,z->Data()->Get_ID(),true,true);
+		}
 	}
 }
