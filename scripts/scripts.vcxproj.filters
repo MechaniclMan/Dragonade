@@ -370,9 +370,6 @@
     <ClCompile Include="da_spawnprotection.cpp">
       <Filter>DA Game Features</Filter>
     </ClCompile>
-    <ClCompile Include="engine_obj.cpp">
-      <Filter>DA Engine</Filter>
-    </ClCompile>
     <ClCompile Include="scriptfactory.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -507,6 +504,9 @@
     </ClCompile>
     <ClCompile Include="engine_string.cpp">
       <Filter>DA Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="engine_obj.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -1299,9 +1299,6 @@
     <ClInclude Include="C4GameObj.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-    <ClInclude Include="PhysicalGameObj.h">
-      <Filter>DA Engine</Filter>
-    </ClInclude>
     <ClInclude Include="da_spawnprotection.h">
       <Filter>DA Game Features</Filter>
     </ClInclude>
@@ -1511,6 +1508,9 @@
     </ClInclude>
     <ClInclude Include="GameData.h">
       <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="PhysicalGameObj.h">
+      <Filter>Engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

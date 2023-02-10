@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,9 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Improved Get_Transform, Set_Transform, Get_Position, Set_Position, and Get_Facing
-//Added Get_Position and Set_Facing
 #ifndef TT_INCLUDE_PHYSICALGAMEOBJ_H
 #define TT_INCLUDE_PHYSICALGAMEOBJ_H
 #include "DamageableGameObj.h"
@@ -41,32 +38,15 @@ public:
 	virtual	void	On_Post_Load(void);
 	virtual	void	Startup( void )	{}	
 	inline PhysClass *	Peek_Physical_Object( void ) const { return PhysObj; }
-	SCRIPTS_API void		Attach_To_Object_Bone( PhysicalGameObj * host, const char * bone_name );
+	void					Attach_To_Object_Bone( PhysicalGameObj * host, const char * bone_name );
 	bool					Is_Attached_To_An_Object( void ) { return (HostGameObj.Get_Ptr () != NULL); }
 	void					Teleport_To_Host_Bone( void );
-	void Set_Transform(const Matrix3D & tm) {
-		Peek_Physical_Object()->Set_Transform(tm);
-	}
-	const Matrix3D &Get_Transform(void) const {
-		return Peek_Physical_Object()->Get_Transform();
-	}
-	virtual	void Get_Position(Vector3 * set_pos) const {
-		Peek_Physical_Object()->Get_Transform().Get_Translation(set_pos);
-	}
-	Vector3 Get_Position() {
-		Vector3 Return;
-		Peek_Physical_Object()->Get_Position(&Return);
-		return Return;
-	}
-	void Set_Position(const Vector3 & pos) {
-		Peek_Physical_Object()->Set_Position(pos);
-	}
-	float Get_Facing(void) const {
-		return Peek_Physical_Object()->Get_Facing();
-	}
-	void Set_Facing(float facing) {
-		Peek_Physical_Object()->Set_Facing(facing);
-	}
+	SCRIPTS_API void		Set_Transform(const Matrix3D & tm);
+	SCRIPTS_API const Matrix3D &	Get_Transform(void) const;
+	virtual	void		Get_Position(Vector3 * set_pos) const;
+	SCRIPTS_API Vector3 Get_Position() { Vector3 Return; Peek_Physical_Object()->Get_Position(&Return); return Return; }
+	SCRIPTS_API void	Set_Position(const Vector3 & pos);
+	SCRIPTS_API float	Get_Facing(void) const;
 	inline RenderObjClass	*	Peek_Model( void ) { return Peek_Physical_Object()->Peek_Model(); }
 	SCRIPTS_API AnimControlClass*	Get_Anim_Control( void );
 	void					Set_Anim_Control( AnimControlClass * anim_control );
@@ -131,6 +111,7 @@ public:
 	virtual void		Set_Player_Type(int type);
 	virtual void	Object_Shattered_Something(PhysClass * observed_obj, PhysClass * shattered_obj, int surface_type);
 	void                Clear_Animation() {if (AnimControl) {AnimControl->Set_Animation((const char*)NULL, 0, 0);AnimControl->Set_Mode(ANIM_MODE_STOP,0);ClearAnimation = true;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}}
+	void                Set_Team_Visibility(TeamVisibilitySetting setting) {TeamVisibility = (char)setting;Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
 protected:
 	ActiveConversationClass *ActiveConversation;
 private:

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -474,6 +474,7 @@ enum {
 	CUSTOM_EVENT_VHEICLE_DRIVER_ID,                                                     //!< Response to CUSTOM_EVENT_VEHICLE_DRIVER, passes the owner GameObjects ID as the param
 	CUSTOM_EVENT_BEACON_DEPLOYED,                                                       //!< Sent when a beacon is deployed
 	CUSTOM_EVENT_REFILL,                                                                //!< Sent on refill at a PT
+	CUSTOM_EVENT_BUILDING_REVIVED,														//!< Sent when building is revived
 };
 
 enum {
@@ -569,7 +570,7 @@ struct ScriptCommands {
 	void ( * Action_Dock )( GameObject * obj, const ActionParamsStruct & params );
 	void ( * Action_Follow_Input )( GameObject * obj, const ActionParamsStruct & params );
 	void ( * Modify_Action )( GameObject * obj, int ActionID, const ActionParamsStruct & params, bool modify_move, bool modify_attack);
-	int	( * Get_ActionID )( GameObject * obj );
+	int	( * Get_Action_ID )( GameObject * obj );
 	bool	( * Get_Action_Params )( GameObject * obj, ActionParamsStruct & params );
 	bool	( * Is_Performing_Pathfind_Action )( GameObject * obj );
 	void ( * Set_Position )( GameObject * obj, const Vector3 & position );

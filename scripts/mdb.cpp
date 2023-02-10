@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -77,53 +77,61 @@ void MDB_Change_Spawn_Char_Timer::Timer_Expired(GameObject *obj, int number)
 
 void MDB_ConYard::Created(GameObject *obj)
 {
-	if (created != 1337)
-	{
-		Time = Get_Float_Parameter("Interval");
-		Amount = Get_Float_Parameter("Heal_Amount");
-		Self = Get_Bool_Parameter("Repair_Self");
-		PMode = Get_Int_Parameter("Power_Mode");
-		Commands->Start_Timer(obj,this,Time,1);
-		created = 1337;
-	}
+	Time = Get_Float_Parameter("Interval");
+	Amount = Get_Float_Parameter("Heal_Amount");
+	Self = Get_Bool_Parameter("Repair_Self");
+	PMode = Get_Int_Parameter("Power_Mode");
+	Commands->Start_Timer(obj,this,Time,1);
 }
 
 void MDB_ConYard::Timer_Expired(GameObject *obj, int number)
 {
-	if (!Is_Base_Powered(Get_Object_Type(obj)) && PMode != 1)
-	{
-		if (!PMode)
-		{
-			Destroy_Script();
-			return;
-		}
-		else if (PMode == 2)
-		{
-			Amount = (Amount*Get_Float_Parameter("Power_Amount"));
-		}
-		else if (PMode == 3)
-		{
-			Time = (Time*Get_Float_Parameter("Power_Amount"));
-		}
-		PMode = 1;
-	}
 	Repair_All_Buildings_By_Team(Get_Object_Type(obj),Self?0:Commands->Get_ID(obj),Amount);
 	Commands->Start_Timer(obj,this,Time,1);
+}
+
+void MDB_ConYard::Custom(GameObject *obj, int type, int param, GameObject *sender) 
+{
+	if (type == CUSTOM_EVENT_BUILDING_POWER_CHANGED) 
+	{
+		if (!param)
+		{
+			if (PMode == 0) 
+			{
+				Amount = 0.0f;
+			}
+			else if (PMode == 2)
+			{
+				Amount = (Amount*Get_Float_Parameter("Power_Amount"));
+			}
+			else if (PMode == 3)
+			{
+				Time = (Time*Get_Float_Parameter("Power_Amount"));
+			}
+		}
+		else 
+		{
+			Time = Get_Float_Parameter("Interval");
+			Amount = Get_Float_Parameter("Heal_Amount");
+		}
+	}
+	else if (type == CUSTOM_EVENT_BUILDING_REVIVED)
+	{
+		Amount = Get_Float_Parameter("Heal_Amount");
+	}
 }
 
 void MDB_ConYard::Killed(GameObject *obj,GameObject *killer)
 {
 	Amount = 0.0f;
-	Destroy_Script();
 }
 
 void MDB_ConYard::Register_Auto_Save_Variables()
 {
 	Auto_Save_Variable(&PMode,4,1);
-	Auto_Save_Variable(&created,4,2);
-	Auto_Save_Variable(&Time,4,3);
-	Auto_Save_Variable(&Amount,4,4);
-	Auto_Save_Variable(&Self,1,5);
+	Auto_Save_Variable(&Time,4,2);
+	Auto_Save_Variable(&Amount,4,3);
+	Auto_Save_Variable(&Self,1,4);
 }
 
 void MDB_Send_Custom_Enemy_Seen::Created(GameObject *obj)
@@ -287,15 +295,6 @@ void MDB_Unit_Limit::ReEnable()
 void MDB_Unit_Limit::Destroyed(GameObject *obj)
 {
 	ReEnable();
-}
-
-void MDB_Unit_Limit::Detach(GameObject *obj)
-{
-	if (Exe != 4)
-	{
-		ReEnable();
-	}
-	ScriptImpClass::Detach(obj);
 }
 
 void MDB_Unit_Limit::Register_Auto_Save_Variables()

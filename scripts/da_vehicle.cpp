@@ -547,8 +547,20 @@ class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get ove
 		}
 		DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
 		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
-		if (VF && VF->Is_Busy() && VF->Get_Generating_Vehicle_ID() && VF->Get_Purchaser()) {
-			DA::Private_Color_Message(Player,GRAY,"Building: %ls - %s",VF->Get_Purchaser()->Get_Player()->Get_Name(),DATranslationManager::Translate(VF->Get_Generating_Vehicle_ID()));
+		if (VF && VF->Is_Busy() && VF->Get_Generating_Vehicle_ID()) {
+			StringClass Name;
+			if (VF->Get_Purchaser()) {
+				Name = VF->Get_Purchaser()->Get_Player()->Get_Name();
+				Name += " - ";
+			}
+			else {
+				RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
+				if (Ref && !Ref->Get_Harvester_Vehicle() && Ref->Get_Harvester_Def_ID() == VF->Get_Generating_Vehicle_ID()) {
+					Name = DATranslationManager::Translate(Ref);
+					Name += " - ";
+				}
+			}
+			DA::Private_Color_Message(Player,GRAY,"Building: %s%s",Name,DATranslationManager::Translate(VF->Get_Generating_Vehicle_ID()));
 		}
 		return true;
 	}

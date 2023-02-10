@@ -130,7 +130,7 @@ class DAPowerCrateClass : public DACrateClass, public DAEventClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if there are no base defenses or already in effect.
 		bool DefAlive[2] = {false,false};
 		for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
-			if ((z->Data()->Get_Player_Type() == 0 || z->Data()->Get_Player_Type() == 1) && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) {
+			if ((z->Data()->Get_Player_Type() == 0 || z->Data()->Get_Player_Type() == 1) && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Find_Observer("JFW_Power_Off")) {
 				DefAlive[z->Data()->Get_Player_Type()] = true;
 			}
 		}
@@ -157,7 +157,7 @@ class DAPowerCrateClass : public DACrateClass, public DAEventClass {
 			BuildingGameObj *Building = 0;
 			int Count = 0;
 			for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
-				if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) { //Don't affect defenses that have their own power logic.
+				if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Find_Observer("JFW_Power_Off")) { //Don't affect defenses that have their own power logic.
 					Building = z->Data();
 					Commands->Set_Building_Power(Building,!PowerState[Team]);
 					Count++;
@@ -196,7 +196,7 @@ class DAPowerCrateClass : public DACrateClass, public DAEventClass {
 				BuildingGameObj *Building = 0;
 				int Count = 0;
 				for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
-					if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) {
+					if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Find_Observer("JFW_Power_Off")) {
 						Building = z->Data();
 						Commands->Set_Building_Power(Building,PowerState[Team]);
 						Count++;
@@ -281,7 +281,7 @@ class DARegenerationCrateObserverClass : public DAGameObjObserverClass {
 
 class DARegenerationCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DARegenerationCrateObserverClass"):Player->Get_GameObj()->Has_Observer("DARegenerationCrateObserverClass"));
+		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DARegenerationCrateObserverClass"):Player->Get_GameObj()->Find_Observer("DARegenerationCrateObserverClass"));
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -710,7 +710,7 @@ private:
 
 class DAKamikazeCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DAKamikazeCrateObserverClass"):Player->Get_GameObj()->Has_Observer("DAKamikazeCrateObserverClass"));
+		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DAKamikazeCrateObserverClass"):Player->Get_GameObj()->Find_Observer("DAKamikazeCrateObserverClass"));
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -751,7 +751,7 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 
 class DASecondWindCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DASecondWindCrateObserverClass"):Player->Get_GameObj()->Has_Observer("DASecondWindCrateObserverClass"));
+		return !(Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DASecondWindCrateObserverClass"):Player->Get_GameObj()->Find_Observer("DASecondWindCrateObserverClass"));
 	}
 
 	virtual void Activate(cPlayer *Player) {

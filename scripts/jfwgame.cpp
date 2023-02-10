@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1137,6 +1137,10 @@ void JFW_Conyard::Custom(GameObject *obj,int type,int param,GameObject *sender)
 	{
 		disabled = true;
 	}
+	else if (type == CUSTOM_EVENT_BUILDING_REVIVED)
+	{
+		disabled = false;
+	}
 }
 
 void JFW_Conyard::Timer_Expired(GameObject *obj,int number)
@@ -1144,8 +1148,8 @@ void JFW_Conyard::Timer_Expired(GameObject *obj,int number)
 	if (!disabled)
 	{
 		Repair_All_Buildings_By_Team(Get_Object_Type(obj),Commands->Get_ID(obj),Get_Float_Parameter("Health"));
-		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("TimerNum"));
 	}
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("TimerNum"));
 }
 
 void JFW_Conyard::Register_Auto_Save_Variables()
@@ -2380,6 +2384,10 @@ void JFW_Conyard_Turrets::Custom(GameObject *obj,int type,int param,GameObject *
 	{
 		disabled = true;
 	}
+	else if (type == CUSTOM_EVENT_BUILDING_REVIVED)
+	{
+		disabled = false;
+	}
 }
 
 void JFW_Conyard_Turrets::Timer_Expired(GameObject *obj,int number)
@@ -2388,8 +2396,8 @@ void JFW_Conyard_Turrets::Timer_Expired(GameObject *obj,int number)
 	{
 		Repair_All_Buildings_By_Team(Get_Object_Type(obj),Commands->Get_ID(obj),Get_Float_Parameter("Health"));
 		Repair_All_Turrets_By_Team(Get_Object_Type(obj),Get_Float_Parameter("Health"));
-		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("TimerNum"));
 	}
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("TimerNum"));
 }
 
 void JFW_Conyard_Turrets::Register_Auto_Save_Variables()
@@ -2944,6 +2952,11 @@ void JFW_Message_Send_Zone_Team::Entered(GameObject *obj,GameObject *enterer)
 void JFW_Message_Send_Zone_Player::Entered(GameObject *obj,GameObject *enterer)
 {
 	int team = Get_Int_Parameter("Player_Type");
+	GameObject *driver = Get_Vehicle_Driver(enterer);
+	if (driver)
+	{
+		enterer = driver;
+	}
 	if (CheckPlayerType(enterer,team))
 	{
 		return;

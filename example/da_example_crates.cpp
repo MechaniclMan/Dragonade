@@ -32,7 +32,7 @@ class DAExampleCrateClass : public DACrateClass { //Inherit from DACrateClass. Y
 	}
 	virtual bool Can_Activate(cPlayer *Player) { //This is called whenever the crate odds are calculated to see if the player can pick up the crate.
 		//You can check if the player already has this crate's effect.
-		if (Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DAExampleGameObjObserverClass"):Player->Get_GameObj()->Has_Observer("DAExampleGameObjObserverClass")) {
+		if (Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DAExampleGameObjObserverClass"):Player->Get_GameObj()->Find_Observer("DAExampleGameObjObserverClass")) {
 			return false;
 		}
 		if (Player->Get_GameObj()->Is_Stealth_Enabled()) { //Check if the player is something you don't want to get this crate.

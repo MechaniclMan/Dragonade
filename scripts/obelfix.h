@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,8 +15,10 @@ class Nod_Obelisk_CnC : public ScriptImpClass {
 
 	void Created(GameObject* ObeliskObj);
 	void Killed(GameObject* ObeliskObj, GameObject* Killer);
-	
-	void Custom(GameObject* ObeliskObj, int type, int Param, GameObject* Sender);
+	void Custom(GameObject* ObeliskObj, int Type, int Param, GameObject* Sender);
+
+	void Create_Weapon(GameObject* ObeliskObj);
+	void Destroy_Weapon(GameObject* ObeliskObj);
 };
 
 class Obelisk_Weapon_CnC : public ScriptImpClass {

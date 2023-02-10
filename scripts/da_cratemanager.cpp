@@ -517,7 +517,7 @@ bool DACrateManager::ShowCrateSpawners_Chat_Command(cPlayer *Player,const DAToke
 
 bool DACrateManager::HideCrateSpawners_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	for (SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();x;x = x->Next()) {
-		if (x->Data()->As_ScriptableGameObj() && ((ScriptableGameObj*)x->Data())->Has_Observer("DAShowCrateSpawnersObserverClass")) {
+		if (x->Data()->As_ScriptableGameObj() && ((ScriptableGameObj*)x->Data())->Find_Observer("DAShowCrateSpawnersObserverClass")) {
 			x->Data()->Set_Delete_Pending();
 		}
 	}

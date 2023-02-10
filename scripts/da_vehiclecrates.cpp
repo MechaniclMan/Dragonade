@@ -56,7 +56,7 @@ class DAAblativeArmorCrateObserverClass : public DAGameObjObserverClass {
 
 class DAAblativeArmorCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DAAblativeArmorCrateObserverClass");
+		return !Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DAAblativeArmorCrateObserverClass");
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -179,7 +179,7 @@ class DATankDestroyerCrateVehicleObserverClass : public DAGameObjObserverClass {
 
 class DATankDestroyerCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Don't activate if the vehicle has no weapon or already in effect.
-		return (Player->Get_GameObj()->Get_Vehicle()->Get_Weapon_Bag()->Get_Weapon() && !Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DATankDestroyerCrateVehicleObserverClass"));
+		return (Player->Get_GameObj()->Get_Vehicle()->Get_Weapon_Bag()->Get_Weapon() && !Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DATankDestroyerCrateVehicleObserverClass"));
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -382,7 +382,7 @@ class DARenJackCrateObserverClass : public DAGameObjObserverClass {
 
 class DARenJackCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !Player->Get_GameObj()->Get_Vehicle()->Has_Observer("DARenJackCrateObserverClass");
+		return !Player->Get_GameObj()->Get_Vehicle()->Find_Observer("DARenJackCrateObserverClass");
 	}
 	
 	virtual void Activate(cPlayer *Player) {

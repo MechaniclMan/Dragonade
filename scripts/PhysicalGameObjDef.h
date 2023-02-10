@@ -12,6 +12,12 @@
 #ifndef TT_INCLUDE_PHYSICALGAMEOBJDEF_H
 #define TT_INCLUDE_PHYSICALGAMEOBJDEF_H
 #include "DamageableGameObjDef.h"
+typedef enum
+{
+	TEAM_VISIBILITY_ALL,
+	TEAM_VISIBILITY_FRIENDLY,
+	TEAM_VISIBILITY_ENEMY
+} TeamVisibilitySetting;
 class PhysicalGameObjDef : public DamageableGameObjDef
 {
 public:

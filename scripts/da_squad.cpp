@@ -379,6 +379,7 @@ void DASquadClass::Set_Leader(cPlayer *Player) {
 void DASquadClass::Set_Team(int Team) {
 	for (int i = 0;i < Members.Count();i++) {
 		Change_Team_4(Members[i]->Get_Owner(),Team);
+		Members[i]->Get_Owner()->Get_DA_Player()->Set_Needs_Team(false);
 	}
 }
 

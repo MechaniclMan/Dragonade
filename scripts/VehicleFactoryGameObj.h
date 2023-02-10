@@ -33,7 +33,7 @@ public:
 	void					CnC_Initialize (BaseControllerClass *base);
 	void					On_Destroyed (void);
 	void					Think (void);
-	bool					Is_Available (void) const	{ return (IsBusy == false) && (IsDestroyed == false); }
+	bool					Is_Available (void) const	{ return (IsBusy == false) && (IsDestroyed == false) && (IsDisabled == false); }
 	bool					Is_Available_For_Purchase (void) const;
 	bool					Is_Busy (void) const			{ return IsBusy; }
 	bool					Is_Disabled (void) const			{ return IsDisabled; }
@@ -48,14 +48,17 @@ public:
 	void					Export_Rare (BitStreamClass &packet);
 	static void			Set_Max_Vehicles_Per_Team(int max)		{ MaxVehiclesPerTeam = max; }
 	static int			Get_Max_Vehicles_Per_Team(void)			{ return MaxVehiclesPerTeam; }
-	void Set_Busy(bool busy) {
+	void Set_Busy(bool busy) 
+	{
 		IsBusy = busy;
 		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
 	}
-	int Get_Generating_Vehicle_ID() {
+	int Get_Generating_Vehicle_ID() 
+	{
 		return GeneratingVehicleID;
 	}
-	SoldierGameObj *Get_Purchaser() {
+	SoldierGameObj *Get_Purchaser() 
+	{
 		return (SoldierGameObj*)Purchaser.Get_Ptr();
 	}
 protected:
@@ -71,11 +74,11 @@ protected:
 	float					GenerationTime;
 	int					GeneratingVehicleID;
 	bool					IsBusy;
+	bool				IsDisabled;
 	ReferencerClass	Purchaser;
 	int					LastDeliveryPath;
 	int                 LastFlyingDeliveryPath;
 	float					EndTimer;
-	bool IsDisabled;
 	static int MaxVehiclesPerTeam;
 }; // 08CC
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,11 +13,49 @@
 #include "scripts.h"
 #include "agtfix.h"
 #include "engine_game.h"
+#include "BuildingGameObj.h"
+#include "BuildingAggregateClass.h"
 	
 void GDI_AGT::Created(GameObject* AGTObj)
 {
-	Commands->Enable_Hibernation(AGTObj, false);
+	Commands->Enable_Hibernation(AGTObj,false);
+	if (Commands->Get_Building_Power(AGTObj)) 
+	{
+		Create_Guns(AGTObj);
+	}
+}
 
+
+void GDI_AGT::Killed(GameObject* AGTObj, GameObject* KillerObj)
+{
+	Destroy_Guns(AGTObj);
+}
+
+void GDI_AGT::Custom(GameObject* AGTObj, int Type, int Param, GameObject* Sender) 
+{
+	if (Type == CUSTOM_EVENT_BUILDING_POWER_CHANGED)
+	{
+		if (!Param) 
+		{
+			Destroy_Guns(AGTObj);
+		}
+		else 
+		{
+			Create_Guns(AGTObj);
+		}
+	}
+	else if (Type == CUSTOM_EVENT_BUILDING_REVIVED)
+	{
+		if (Commands->Get_Building_Power(AGTObj)) 
+		{
+			Create_Guns(AGTObj);
+		}
+	}
+}
+
+void GDI_AGT::Create_Guns(GameObject* AGTObj) 
+{
+	Destroy_Guns(AGTObj);
 
 	Vector3 AGTPos;
 	Vector3 MissilePos;
@@ -25,104 +63,107 @@ void GDI_AGT::Created(GameObject* AGTObj)
 
 	AGTPos = Commands->Get_Position(AGTObj);
 
+	float AGTFacing=0;
+	float AGTHeight=0;
+	BuildingGameObj *AGTBuilding = AGTObj->As_BuildingGameObj();
+	BuildingAggregateClass *AGTMCT = 0;
+	if (AGTBuilding)
+	{
+		AGTMCT = AGTBuilding->Find_MCT();
+		if (AGTMCT)
+		{
+			Vector3 MCTPos;
+			AGTFacing = AGTMCT->Get_Facing();
+			AGTMCT->Get_Position(&MCTPos);
+			AGTHeight=MCTPos.Z+8.0f;
+		}
+		
+	}
+
+	//Calculations for setting coordinates at different angles.
+	float CosFacing = cos(AGTFacing);
+	float SinFacing = sin(AGTFacing);
+
+	//Check if single floor AGT, if not fall back to using building controller height.
+	if(AGTPos.Z - AGTHeight < 11 && AGTMCT)
+		AGTPos.Z=AGTHeight+9.2f;
+
+	//MissilePosition
 	MissilePos.X = AGTPos.X;
 	MissilePos.Y = AGTPos.Y;
-	MissilePos.Z = AGTPos.Z + 6.0f;
+	MissilePos.Z = AGTPos.Z + 4.0f;
 
-	GunPos[0].X = AGTPos.X + 5.1789999f;
-	GunPos[0].Y = AGTPos.Y - 4.2389998f;
+	//GunPosition 1
+	GunPos[0] = AGTPos;
+	//X Offsets
+	GunPos[0].X += 5.0189999f * CosFacing;
+	GunPos[0].Y += 5.0189999f * SinFacing;
+	//Y Offsets
+	GunPos[0].Y += -3.4089998f * CosFacing;
+	GunPos[0].X += 3.4089998f * SinFacing;
+	//Z offset
 	GunPos[0].Z = AGTPos.Z - 9.0f;
 
-	GunPos[1].X = AGTPos.X + 5.1609998f;
-	GunPos[1].Y = AGTPos.Y + 3.2720001f;
+	//GunPosition 2
+	GunPos[1] = AGTPos;
+	//X Offsets
+	GunPos[1].X += 5.0109998f * CosFacing;
+	GunPos[1].Y += 5.0109998f * SinFacing;
+	//Y Offsets
+	GunPos[1].Y += 3.6720001f * CosFacing;
+	GunPos[1].X += -3.6720001f * SinFacing;
+	//Z offset
 	GunPos[1].Z = AGTPos.Z - 9.0f;
 
-	GunPos[2].X = AGTPos.X - 4.4910002f;
-	GunPos[2].Y = AGTPos.Y + 3.257f;
+	//GunPosition 3
+	GunPos[2] = AGTPos;
+	//X Offsets
+	GunPos[2].X += -5.0110002f * CosFacing;
+	GunPos[2].Y += -5.0110002f * SinFacing;
+	//Y Offsets
+	GunPos[2].Y += 3.657f * CosFacing;
+	GunPos[2].X += -3.657f * SinFacing;
+	//Z offset
 	GunPos[2].Z = AGTPos.Z - 9.0f;
 
-	GunPos[3].X = AGTPos.X - 5.1329999f;
-	GunPos[3].Y = AGTPos.Y - 4.3660002f;
+	//GunPosition 4
+	GunPos[3] = AGTPos;
+	//X Offsets
+	GunPos[3].X += -5.0129999f * CosFacing;
+	GunPos[3].Y += -5.0129999f * SinFacing;
+	//Y Offsets
+	GunPos[3].Y += -3.4060002f * CosFacing;
+	GunPos[3].X += 3.4060002f * SinFacing;
+	//Z offset
 	GunPos[3].Z = AGTPos.Z - 9.0f;
 
 	GameObject* MissileObj = Commands->Create_Object("GDI_AGT", MissilePos);
-	if (MissileObj) {
+	if (MissileObj) 
+	{
 		Commands->Attach_Script(MissileObj, "GDI_AGT_Missile", "0");
 		MissileID = Commands->Get_ID(MissileObj);
 	}
 	
-	for (int I = 0; I < 4; I++) {
-		GameObject* GunObj = Commands->Create_Object("GDI_Ceiling_Gun_AGT", GunPos[I]);
-		if (GunObj) {
+	for (int i = 0;i < 4;i++) 
+	{
+		GameObject* GunObj = Commands->Create_Object("GDI_Ceiling_Gun_AGT", GunPos[i]);
+		if (GunObj) 
+		{
 			Commands->Attach_Script(GunObj, "GDI_AGT_Gun", "");
 			Commands->Send_Custom_Event(AGTObj, GunObj, 0, MissileID, 0);
-			GunID[I] = Commands->Get_ID(GunObj);
+			GunID[i] = Commands->Get_ID(GunObj);
 		}
 	}
 }
 
-
-void GDI_AGT::Killed(GameObject* AGTObj, GameObject* KillerObj)
+void GDI_AGT::Destroy_Guns(GameObject* AGTObj)
 {
-	for (int I = 0; I < 4; I++) {
-		Commands->Destroy_Object(Commands->Find_Object(GunID[I]));
+	for (int i = 0;i < 4;i++) 
+	{
+		Commands->Destroy_Object(Commands->Find_Object(GunID[i]));
 	}
 	Commands->Destroy_Object(Commands->Find_Object(MissileID));
 }
-
-void GDI_AGT::Custom(GameObject* AGTObj, int type, int Param, GameObject* Sender) {
-	if (type == CUSTOM_EVENT_BUILDING_POWER_CHANGED) {
-		if (Param != 0) {
-			Vector3 AGTPos;
-			Vector3 MissilePos;
-			Vector3 GunPos[4];
-
-			AGTPos = Commands->Get_Position(AGTObj);
-
-			MissilePos.X = AGTPos.X;
-			MissilePos.Y = AGTPos.Y;
-			MissilePos.Z = AGTPos.Z + 6.0f;
-
-			GunPos[0].X = AGTPos.X + 5.1789999f;
-			GunPos[0].Y = AGTPos.Y - 4.2389998f;
-			GunPos[0].Z = AGTPos.Z - 9.0f;
-
-			GunPos[1].X = AGTPos.X + 5.1609998f;
-			GunPos[1].Y = AGTPos.Y + 3.2720001f;
-			GunPos[1].Z = AGTPos.Z - 9.0f;
-
-			GunPos[2].X = AGTPos.X - 4.4910002f;
-			GunPos[2].Y = AGTPos.Y + 3.257f;
-			GunPos[2].Z = AGTPos.Z - 9.0f;
-
-			GunPos[3].X = AGTPos.X - 5.1329999f;
-			GunPos[3].Y = AGTPos.Y - 4.3660002f;
-			GunPos[3].Z = AGTPos.Z - 9.0f;
-
-			GameObject* MissileObj = Commands->Create_Object("GDI_AGT", MissilePos);
-			if (MissileObj) {
-				Commands->Attach_Script(MissileObj, "GDI_AGT_Missile", "0");
-				MissileID = Commands->Get_ID(MissileObj);
-			}
-			
-			for (int I = 0; I < 4; I++) {
-				GameObject* GunObj = Commands->Create_Object("GDI_Ceiling_Gun_AGT", GunPos[I]);
-				if (GunObj) {
-					Commands->Attach_Script(GunObj, "GDI_AGT_Gun", "");
-					Commands->Send_Custom_Event(AGTObj, GunObj, 0, MissileID, 0);
-					GunID[I] = Commands->Get_ID(GunObj);
-				}
-			}
-		} else {
-			// Kill the weapon object
-			for (int I = 0; I < 4; I++) {
-				Commands->Destroy_Object(Commands->Find_Object(GunID[I]));
-			}
-			Commands->Destroy_Object(Commands->Find_Object(MissileID));
-		}
-	}
-}
-
 
 
 void GDI_AGT_Gun::Created(GameObject* GunObj)
@@ -229,7 +270,6 @@ void GDI_AGT_Missile::Created(GameObject* MissileObj)
 	Commands->Enable_Hibernation(MissileObj, false);
 }
 
-
 void GDI_AGT_Missile::Destroyed(GameObject* MissileObj)
 {
 	Commands->Action_Reset(MissileObj, 100);
@@ -296,14 +336,15 @@ bool GDI_AGT_Missile::IsValidEnemy(GameObject* MissileObj, GameObject* EnemyObj)
 	
 	if (!Commands->Is_Object_Visible(MissileObj, EnemyObj))
 		return false;
+
+	if (Is_Harvester(EnemyObj))
+		return false;
 	
 	Vector3 MissileObjPos = Commands->Get_Position(MissileObj);
 	Vector3 EnemyObjPos = Commands->Get_Position(EnemyObj);
 
 	return Commands->Get_Distance(MissileObjPos, EnemyObjPos) > 30;
 }
-
-
 
 
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,7 +16,9 @@ class GDI_AGT : public ScriptImpClass {
 
 	void Created(GameObject* AGTObj);
 	void Killed(GameObject* AGTObj, GameObject* KillerObj);
-	void Custom(GameObject* AGTObj, int type, int Param, GameObject* Sender);
+	void Custom(GameObject* AGTObj, int Type, int Param, GameObject* Sender);
+	void Create_Guns(GameObject* AGTObj);
+	void Destroy_Guns(GameObject* AGTObj);
 };
 
 class GDI_AGT_Gun : public ScriptImpClass {

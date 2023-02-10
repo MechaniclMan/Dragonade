@@ -290,7 +290,7 @@ class DAAdrenalineCrateObserverClass : public DAGameObjObserverClass {
 
 class DAAdrenalineCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !Player->Get_GameObj()->Has_Observer("DAAdrenalineCrateObserverClass");
+		return !Player->Get_GameObj()->Find_Observer("DAAdrenalineCrateObserverClass");
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -384,7 +384,7 @@ class DATiberiumMutantCrateClass : public DACrateClass {
 	}
 
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return (!Player->Get_GameObj()->Has_Observer("DATiberiumMutantCrateObserverClass") && Find_Named_Definition("CnC_GDI_Mutant_2SF_Templar"));
+		return (!Player->Get_GameObj()->Find_Observer("DATiberiumMutantCrateObserverClass") && Find_Named_Definition("CnC_GDI_Mutant_2SF_Templar"));
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -426,7 +426,7 @@ class DAHumanSiloCrateObserverClass : public DAGameObjObserverClass {
 
 class DAHumanSiloCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !Player->Get_GameObj()->Has_Observer("DAHumanSiloCrateObserverClass");
+		return !Player->Get_GameObj()->Find_Observer("DAHumanSiloCrateObserverClass");
 	}
 	virtual void Activate(cPlayer *Player) {
 		Player->Get_GameObj()->Add_Observer(new DAHumanSiloCrateObserverClass);

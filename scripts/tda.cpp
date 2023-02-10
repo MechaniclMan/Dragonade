@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -73,10 +73,23 @@ void TDA_Send_Custom_Zone::Exited(GameObject *obj,GameObject *exiter)
 
 void TDA_Conyard_Controller::Killed(GameObject *obj,GameObject *killer)
 {
-	GameObject *object;
+	Enable_Repairs(obj,false);
+}
+
+void TDA_Conyard_Controller::Custom(GameObject *obj,int type,int param,GameObject *sender) 
+{
+	if (type == CUSTOM_EVENT_BUILDING_REVIVED)
+	{
+		Enable_Repairs(obj,true);
+	}
+}
+
+void TDA_Conyard_Controller::Enable_Repairs(GameObject *obj,bool Enable) 
+{
+	GameObject *object = 0;
 	int id = 0;
-	int type = 3000;
-	int param = 3000;
+	int type = Enable?3001:3000;
+	int param = type;
 	id = Get_Int_Parameter("Building1_ID");
 	if (id)
 	{
@@ -238,7 +251,13 @@ void TDA_Disable_Building_Zone::Custom(GameObject *obj,int type,int param,GameOb
 void TDA_Conyard_Repair::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	if (type == 3000)
+	{
 		Enabled = false;
+	}
+	else if (type == 3001)
+	{
+		Enabled = true;
+	}
 }
 
 void TDA_Conyard_Repair::Created(GameObject *obj)
@@ -250,14 +269,11 @@ void TDA_Conyard_Repair::Created(GameObject *obj)
 void TDA_Conyard_Repair::Timer_Expired(GameObject *obj,int number)
 {
 	float amount = Commands->Get_Health(obj);
-	if (amount>0) 
+	if (amount > 0 && Enabled)
 	{
 		Commands->Set_Health(obj,(amount+2));
-		if (Enabled)
-			Commands->Start_Timer(obj,this,Get_Float_Parameter("Repair_Frequency"),Get_Int_Parameter("Timer_ID"));
-		else
-			return;
 	}
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("Repair_Frequency"),Get_Int_Parameter("Timer_ID"));
 }
 
 void TDA_Conyard_Repair::Register_Auto_Save_Variables()

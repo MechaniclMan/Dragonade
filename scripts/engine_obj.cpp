@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,10 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Moved various DefenseObjectClass and PhysicalGameObj functions to their respective header files
-//Added dirty bit to Set_Collision_Group.
 #include "general.h"
+
 #include "PowerUpGameObjDef.h"
 #include "PowerUpGameObj.h"
 #include "scripts.h"
@@ -55,14 +53,22 @@
 #include "SamSiteGameObj.h"
 #include "SoldierFactoryGameObjDef.h"
 #include "SoldierFactoryGameObj.h"
+#include "SuperweaponGameObjDef.h"
+#include "SuperweaponGameObj.h"
 #include "SpecialEffectsGameObjDef.h"
 #include "SpecialEffectsGameObj.h"
 #include "TransitionGameObjDef.h"
 #include "TransitionGameObj.h"
 #include "WarFactoryGameObjDef.h"
 #include "WarFactoryGameObj.h"
-#include "SamSiteGameObj.h"
-#include "SamSiteGameObjDef.h"
+#include "Iterator.h"
+#include "BuildingAggregateClass.h"
+#include "BuildingAggregateDefClass.h"
+
+SCRIPTS_API bool BuildingAggregateClass::Is_MCT(void) 
+{
+	return Get_BuildingAggregateDef()->IsMCT;
+}
 
 SCRIPTS_API const AirFactoryGameObjDef &
 AirFactoryGameObj::Get_Definition (void) const
@@ -131,6 +137,11 @@ SoldierFactoryGameObj::Get_Definition (void) const
 {
 	return (const SoldierFactoryGameObjDef &)BaseGameObj::Get_Definition ();
 }
+SCRIPTS_API const SuperweaponGameObjDef &
+SuperweaponGameObj::Get_Definition (void) const
+{
+	return (const SuperweaponGameObjDef &)BaseGameObj::Get_Definition ();
+}
 SCRIPTS_API const SpecialEffectsGameObjDef & SpecialEffectsGameObj::Get_Definition( void ) const
 {
 	return (const SpecialEffectsGameObjDef &)BaseGameObj::Get_Definition();
@@ -156,11 +167,6 @@ SCRIPTS_API const ScriptZoneGameObjDef & ScriptZoneGameObj::Get_Definition( void
 	return (const ScriptZoneGameObjDef &)BaseGameObj::Get_Definition();
 }
 
-SCRIPTS_API const SmartGameObjDef & SmartGameObj::Get_Definition( void ) const
-{
-	return (const SmartGameObjDef &)BaseGameObj::Get_Definition();
-}
-
 unsigned char NetworkObjectClass::Get_Object_Dirty_Bits(int clientId)
 {
 	return ClientStatus[clientId];
@@ -169,24 +175,6 @@ unsigned char NetworkObjectClass::Get_Object_Dirty_Bits(int clientId)
 bool NetworkObjectClass::Get_Object_Dirty_Bit(int clientId, DIRTY_BIT level)
 {
 	return (ClientStatus[clientId] & level) == level;
-}
-
-void DefenseObjectClass::Set_Health(float health) {
-	if (health > HealthMax) {
-		Health = HealthMax;
-	}
-	else {
-		Health = health;
-	}
-	Mark_Owner_Dirty();
-}
-
-void DefenseObjectClass::Add_Health(float add_health) {
-	Health += add_health;
-	if (Health > HealthMax) {
-		Health = HealthMax;
-	}
-	Mark_Owner_Dirty();
 }
 
 void DefenseObjectClass::Set_Health_Max(float health)
@@ -199,7 +187,7 @@ void DefenseObjectClass::Set_Health_Max(float health)
 	Mark_Owner_Dirty();
 }
 
-void DefenseObjectClass::Set_Shield_Type( ArmorType type )	
+void	DefenseObjectClass::Set_Shield_Type( ArmorType type )	
 { 
 	ShieldType = type; 
 	Mark_Owner_Dirty();
@@ -210,33 +198,20 @@ float DefenseObjectClass::Get_Health() const
 	return this->Health;
 }
 
+
+
 float DefenseObjectClass::Get_Health_Max() const
 {
 	return this->HealthMax;
 }
 
-void DefenseObjectClass::Set_Shield_Strength(float str) {
-	if (str > ShieldStrengthMax) {
-		ShieldStrength = ShieldStrengthMax;
-	}
-	else {
-		ShieldStrength = str;
-	}
-	Mark_Owner_Dirty();
-}
-
-void DefenseObjectClass::Add_Shield_Strength(float str) {
-	ShieldStrength += str;
-	if (ShieldStrength > ShieldStrengthMax) {
-		ShieldStrength = ShieldStrengthMax;
-	}
-	Mark_Owner_Dirty();
-}
 
 float DefenseObjectClass::Get_Shield_Strength() const
 {
 	return this->ShieldStrength;
 }
+
+
 
 float DefenseObjectClass::Get_Shield_Strength_Max() const
 {
@@ -253,6 +228,8 @@ void DefenseObjectClass::Set_Shield_Strength_Max(float str)
 	Mark_Owner_Dirty();
 }
 
+
+
 void DefenseObjectClass::Mark_Owner_Dirty()
 {
 	if (Get_Owner())
@@ -265,14 +242,6 @@ SCRIPTS_API REF_DEF3(SList<BuildingGameObj>, GameObjManager::BuildingGameObjList
 SCRIPTS_API REF_DEF3(SList<BaseGameObj>, GameObjManager::GameObjList, 0x00856FF8, 0x008561E0, 0x0085BEE0);
 SCRIPTS_API REF_DEF3(SList<SoldierGameObj>, GameObjManager::StarGameObjList, 0x00856FC8, 0x008561B0, 0x0085BEB0);
 SCRIPTS_API REF_DEF3(SList<SmartGameObj>, GameObjManager::SmartGameObjList, 0x00856FD8, 0x008561C0, 0x0085BEC0);
-
-#ifdef SHARED_EXPORTS
-SHARED_API SList<C4GameObj> GameObjManager::C4GameObjList;
-SHARED_API SList<BeaconGameObj> GameObjManager::BeaconGameObjList;
-SHARED_API SList<SoldierGameObj> GameObjManager::SoldierGameObjList;
-SHARED_API SList<VehicleGameObj> GameObjManager::VehicleGameObjList;
-SHARED_API SList<ScriptZoneGameObj> GameObjManager::ScriptZoneGameObjList;
-#endif
 
 SCRIPTS_API const DamageableGameObjDef & DamageableGameObj::Get_Definition( void ) const 
 {
@@ -291,24 +260,16 @@ SCRIPTS_API void ScriptableGameObj::Remove_Observer( GameObjObserverClass * obse
 	observer->Detach( this );
 }
 
-SCRIPTS_API void ScriptableGameObj::Remove_Observer(const char *Name)
+SCRIPTS_API GameObjObserverClass *ScriptableGameObj::Find_Observer(const char *Name)
 {
-	for (int i = Observers.Count()-1;i >= 0;i--) {
-		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
-			Observers[i]->Detach(this);
-			Observers.Delete(i,true);
+	for (int i = 0;i < Observers.Count();i++)
+	{
+		if (!_stricmp(Observers[i]->Get_Name(),Name)) 
+		{
+			return Observers[i];
 		}
 	}
-}
-
-SCRIPTS_API bool ScriptableGameObj::Has_Observer(const char *Name)
-{
-	for (int i = 0;i < Observers.Count();i++) {
-		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
-			return true;
-		}
-	}
-	return false;
+	return 0;
 }
 
 SCRIPTS_API const ScriptableGameObjDef & ScriptableGameObj::Get_Definition( void ) const
@@ -325,8 +286,6 @@ SCRIPTS_API const RefineryGameObjDef & RefineryGameObj::Get_Definition( void ) c
 {
 	return (const RefineryGameObjDef &)BaseGameObj::Get_Definition();
 }
-
-#ifndef TTLE_EXPORTS
 
 int SCRIPTS_API Get_Object_Type(GameObject *obj)
 {
@@ -577,6 +536,23 @@ SimpleDynVecClass<GameObject*> SCRIPTS_API *Get_All_Objects_By_Preset(int Team,c
 		x = x->Next();
 	}
 	return ObjList;
+}
+
+GameObject SCRIPTS_API *Find_Closest_Building(const Vector3& position)
+{
+	GameObject* bestBuilding = 0;
+	float bestDistance = FLT_MAX;
+	TT_FOREACH(building, GameObjManager::BuildingGameObjList)
+	{
+		Vector3 offset = Commands->Get_Position(building) - position;
+		float distance = offset.Length2();
+		if (distance < bestDistance)
+		{
+			bestBuilding = building;
+			bestDistance = distance;
+		}
+	}
+	return bestBuilding;
 }
 
 GameObject SCRIPTS_API *Find_Nearest_Preset(Vector3 position, const char *preset)
@@ -963,9 +939,29 @@ GameObject SCRIPTS_API *Get_Closest_Armed_Object_To_Object( GameObject* obj, int
 	return closest;
 }
 
+void PhysicalGameObj::Set_Transform(const Matrix3D& mat)
+{
+	PhysObj->Set_Transform(mat);
+}
+
+const Matrix3D &PhysicalGameObj::Get_Transform() const
+{
+	return PhysObj->Get_Transform();
+}
+
+void PhysicalGameObj::Set_Position(const Vector3& position)
+{
+	PhysObj->Set_Position(position);
+}
+
+float PhysicalGameObj::Get_Facing() const
+{
+	return PhysObj->Get_Facing();
+}
+
 SCRIPTS_API bool DamageableGameObj::Is_Teammate(DamageableGameObj * p_obj)
 {
-	return ((p_obj == this) || (Is_Team_Player() && Get_Player_Type() == p_obj->Get_Player_Type()));
+	return (p_obj && ((p_obj == this) || (Is_Team_Player() && Get_Player_Type() == p_obj->Get_Player_Type())));
 }
 
 int SCRIPTS_API VehicleGameObj::Get_Occupant_Count(void)
@@ -1004,7 +1000,7 @@ SCRIPTS_API bool DamageableGameObj::Is_Team_Player(void)
 SCRIPTS_API bool DamageableGameObj::Is_Enemy(DamageableGameObj *obj)
 {
 	bool enemy = false;
-	if (obj != this)
+	if (obj != this && obj != NULL)
 	{
 		int sTeamID1 = this->Get_Player_Type();
 		int sTeamID2 = obj->Get_Player_Type();
@@ -1030,6 +1026,11 @@ SCRIPTS_API bool DamageableGameObj::Is_Enemy(DamageableGameObj *obj)
 SCRIPTS_API AnimControlClass *PhysicalGameObj::Get_Anim_Control()
 {
 	return AnimControl;
+}
+
+void PhysicalGameObj::Get_Position(Vector3 *Position) const
+{
+	*Position = Peek_Physical_Object()->Get_Transform().Get_Translation();
 }
 
 SCRIPTS_API  const PowerUpGameObjDef & PowerUpGameObj::Get_Definition( void ) const
@@ -1080,6 +1081,19 @@ void SCRIPTS_API Set_Powerup_Always_Allow_Grant(GameObject *obj,bool Grant)
 void SCRIPTS_API PhysicalGameObj::Set_Collision_Group(int group)
 {
 	PhysObj->Set_Collision_Group((Collision_Group_Type)group);
-	Set_Object_Dirty_Bit(BIT_RARE,true);
 }
-#endif
+
+void SCRIPTS_API VehicleGameObj::Set_Immovable(bool b)
+{
+	Peek_Physical_Object()->Set_Immovable(b);
+	Set_Object_Dirty_Bit(NetworkObjectClass::BIT_FREQUENT,true);
+	if (Peek_Physical_Object()->As_MoveablePhysClass())
+	{
+		Peek_Physical_Object()->As_MoveablePhysClass()->Set_Velocity(Vector3(0,0,0));
+	}
+}
+
+SCRIPTS_API const SmartGameObjDef & SmartGameObj::Get_Definition( void ) const
+{
+	return (const SmartGameObjDef &)BaseGameObj::Get_Definition();
+}

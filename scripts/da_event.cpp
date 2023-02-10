@@ -784,7 +784,7 @@ void DAEventManager::DAEventObserverClass::Custom(GameObject *obj,int Message,in
 		}
 	}
 	else if (Message == CUSTOM_EVENT_VEHICLE_EXITED) {
-		if (Is_Player(Sender)) {	
+		if (Is_Player(Sender)) {
 			for (int i = 0;i < Events[DAEvent::VEHICLEEXIT].Count();i++) {
 				Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event((VehicleGameObj*)obj,((SoldierGameObj*)Sender)->Get_Player(),Param);
 			}
@@ -821,7 +821,7 @@ void DAEventManager::DAEventObserverClass::Destroyed(GameObject *obj) {
 	if (Soldier) {
 		cPlayer *Player = Soldier->Get_Player();
 		if (Player) {
-			if ((Soldier->Get_Player_Type() == 0 && Player->Get_Player_Type() == 1) || (Soldier->Get_Player_Type() == 1 && Player->Get_Player_Type() == 0)) {
+			if (Soldier->Get_Player_Type() != Player->Get_Player_Type()) {
 				for (int i = 0;i < Events[DAEvent::TEAMCHANGE].Count();i++) {
 					Events[DAEvent::TEAMCHANGE][i]->Base->Team_Change_Event(Player);
 				}

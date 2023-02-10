@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -39,8 +39,9 @@ class MDB_ConYard : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj, int number);
 	void Killed(GameObject *obj,GameObject *killer);
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	public: void Register_Auto_Save_Variables();
-	int PMode,created;
+	int PMode;
 	float Time,Amount;
 	bool Self;
 };
@@ -73,7 +74,6 @@ class MDB_Unit_Limit : public ScriptImpClass {
 	PurchaseSettingsDefClass::TEAM Team;
 	unsigned int Definitions[4];
 	void Created(GameObject *obj);
-	void Detach(GameObject *obj);
 	void Destroyed(GameObject *obj);
 	public: void Register_Auto_Save_Variables();
 	void ReEnable();

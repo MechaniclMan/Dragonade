@@ -121,6 +121,8 @@ public:
 	bool Is_Spawning();
 	unsigned long Get_Creation_Time();
 	void Reset_Creation_Time();
+	void Set_Needs_Team(bool Needs);
+	bool Get_Needs_Team();
 	
 	void Join();
 	void Leave();
@@ -195,6 +197,7 @@ private:
 	bool Loaded;
 	bool ServerDamage;
 	unsigned long CreationTime;
+	bool NeedsTeam;
 	StringClass Serial;
 	float Version;
 	unsigned int Revision;

@@ -1311,3 +1311,48 @@ int	VehicleGameObj::Find_Seat(SoldierGameObj *Soldier) {
 	}
 	return -1;
 }
+
+void ScriptableGameObj::Remove_Observer(const char *Name) {
+	for (int i = Observers.Count()-1;i >= 0;i--) {
+		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
+			Observers[i]->Detach(this);
+			Observers.Delete(i,true);
+		}
+	}
+}
+
+void DefenseObjectClass::Set_Health(float health) {
+	if (health > HealthMax) {
+		Health = HealthMax;
+	}
+	else {
+		Health = health;
+	}
+	Mark_Owner_Dirty();
+}
+
+void DefenseObjectClass::Add_Health(float add_health) {
+	Health += add_health;
+	if (Health > HealthMax) {
+		Health = HealthMax;
+	}
+	Mark_Owner_Dirty();
+}
+
+void DefenseObjectClass::Set_Shield_Strength(float str) {
+	if (str > ShieldStrengthMax) {
+		ShieldStrength = ShieldStrengthMax;
+	}
+	else {
+		ShieldStrength = str;
+	}
+	Mark_Owner_Dirty();
+}
+
+void DefenseObjectClass::Add_Shield_Strength(float str) {
+	ShieldStrength += str;
+	if (ShieldStrength > ShieldStrengthMax) {
+		ShieldStrength = ShieldStrengthMax;
+	}
+	Mark_Owner_Dirty();
+}

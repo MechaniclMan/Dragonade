@@ -64,6 +64,7 @@ DAPlayerClass::DAPlayerClass(cPlayer *Player) {
 	LastTibDamageTime = 0;
 	ServerDamage = false;
 	CreationTime = 0;
+	NeedsTeam = false;
 }
 
 DAPlayerClass::~DAPlayerClass() {
@@ -488,6 +489,14 @@ unsigned long DAPlayerClass::Get_Creation_Time() {
 
 void DAPlayerClass::Reset_Creation_Time() {
 	CreationTime = The_Game()->FrameCount;
+}
+
+void DAPlayerClass::Set_Needs_Team(bool Needs) {
+	NeedsTeam = Needs;
+}
+
+bool DAPlayerClass::Get_Needs_Team() {
+	return NeedsTeam;
 }
 
 void DAPlayerClass::Join() {

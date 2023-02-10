@@ -82,7 +82,7 @@ public:
 	SCRIPTS_API void Add_Observer( GameObjObserverClass * observer );
 	SCRIPTS_API void Remove_Observer( GameObjObserverClass * observer );
 	SCRIPTS_API void Remove_Observer(const char *Name);
-	SCRIPTS_API bool Has_Observer(const char *Name);
+	SCRIPTS_API GameObjObserverClass *Find_Observer(const char *Name);
 	void Remove_All_Observers(void);
 	void Start_Observers( void );
 	const SimpleDynVecClass<GameObjObserverClass *> & Get_Observers( void )	{ return Observers; }

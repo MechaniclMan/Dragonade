@@ -55,18 +55,22 @@ public:
 	inline cPlayer *Get_Dropper() {
 		return Dropper;
 	}
-	virtual ~DALootPowerUpClass() { }
+	virtual ~DALootPowerUpClass();
 
 protected:
 	virtual bool PowerUp_Grant_Request(cPlayer *Player);
 	virtual void PowerUp_Grant(cPlayer *Player);
 	virtual void Timer_Expired(GameObject *obj,int Number);
+	void Create_Icon();
+	void Set_Icon(const WeaponDefinitionClass *Weapon);
+	void Destroy_Icon();
 	virtual const char *Get_Name() { 
 		return "DALootPowerUpClass"; 
 	}
 	
 	DynamicVectorClass<cPlayer*> Damagers;
 	cPlayer *Dropper;
+	ReferencerClass Icon;
 };
 
 class DA_API DALootBackpackClass : public DALootPowerUpClass {
@@ -77,7 +81,6 @@ public:
 	inline int Get_Weapon_Count() {
 		return Weapons.Count();
 	}
-	virtual ~DALootBackpackClass();
 
 private:
 	struct WeaponStruct {
@@ -93,14 +96,12 @@ private:
 	virtual void Init();
 	virtual void PowerUp_Grant(cPlayer *Player);
 	virtual void Timer_Expired(GameObject *obj,int Number);
-	void Set_Icon(int Index);
 	virtual const char *Get_Name() { 
 		return "DALootBackpackClass"; 
 	}
 	
 	DynamicVectorClass<WeaponStruct> Weapons;
 	Vector3 LastPos;
-	ReferencerClass Icon;
 	int IconIndex;
 };
 
@@ -108,7 +109,6 @@ class DA_API DALootDNAClass : public DALootPowerUpClass {
 public:
 	DALootDNAClass(const SoldierGameObjDef *Char) : DALootPowerUpClass() { Character = Char; }
 	DALootDNAClass(SoldierGameObj *Soldier) : DALootPowerUpClass(Soldier) { Character = &Soldier->Get_Definition(); }
-	virtual ~DALootDNAClass();
 
 private:
 	DALootDNAClass();
@@ -121,7 +121,6 @@ private:
 	}
 	const SoldierGameObjDef *Character;
 	Vector3 LastPos;
-	ReferencerClass Icon;
 };
 
 class DA_API DALootGameFeatureClass : public DAEventClass, public DAGameFeatureClass, public DAPlayerDataManagerClass<DALootPlayerDataClass> {

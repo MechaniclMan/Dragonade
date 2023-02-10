@@ -126,7 +126,7 @@ public:
 	void Damage_Meshes_Update() {DamageMeshesUpdate = true; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_FREQUENT,true);}
 	void Set_Occupant(int seat, SoldierGameObj *occupant) {SeatOccupants[seat] = occupant;}
 	bool Is_Underground() {return Peek_Physical_Object()->Get_Collision_Group() == UNDERGROUND_COLLISION_GROUP;}
-	void Set_Immovable(bool b) {Peek_Physical_Object()->Set_Immovable(b);Set_Object_Dirty_Bit(NetworkObjectClass::BIT_FREQUENT,true);}
+	SCRIPTS_API void Set_Immovable(bool b);
 	bool Is_Immovable() {return Peek_Physical_Object()->Is_Immovable();}
 	void Set_Lock_Team(int team) {LockTeam = (char)team;Set_Object_Dirty_Bit(BIT_RARE,true);} //0 = nod, 1 = gdi, 2 = both
 	int Get_Lock_Team() {return LockTeam;}

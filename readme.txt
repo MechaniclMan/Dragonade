@@ -1,4 +1,4 @@
-Dragonade 1.6.1
+Dragonade 1.6.2
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -27,6 +27,20 @@ Installation:
 Update History:
 
 
+Version 1.6.2:
+  Additions:
+   - Added "RebalanceScoreLimit" setting.
+
+  Changes:
+   - Players on teams other than Nod/GDI will no longer be affected by team remixing/rebalancing/swapping.
+   - The icons over Loot powerups now work for weapons with no powerup model.
+   - The vehicle limit reached message will no longer play on maps without a vehicle factory.
+  
+  Bug Fixes:
+   - Fixed a client crash.
+
+
+
 Version 1.6.1:
   Changes:
    - The UAV Crate will now temporarily reactivate a team's radar if it is offline.
@@ -37,6 +51,7 @@ Version 1.6.1:
    - Fixed parachutes getting stuck on uneven terrain.
    - The Vehicle Queue will now correctly respawn the Harvester when the Refinery is revived.
    - Added a per-player weapon limit of 30 to prevent a crash.
+
 
 
 Version 1.6:
@@ -61,6 +76,7 @@ Version 1.6:
    - Fixed crate spawners not working on some fan maps.
 
 
+
 Version 1.5:
   Additions:
    - Updated to TT 4.1.
@@ -73,6 +89,7 @@ Version 1.5:
    - Fixed the da.ini spawn character settings breaking the spawn character settings in leveledit and tt.ini.
    - Visceroids now have a firing animation.
    - Fixed the invisible blockers in Domination mode sometimes being visible.
+
 
 
 Version 1.4:
@@ -115,6 +132,7 @@ Version 1.4:
    - Fixed responses to chat commands appearing in the chat window before the command itself.
 
 
+
 Version 1.3:
   Additions:
    - Crates have been added. See da_crates.ini.
@@ -137,6 +155,7 @@ Version 1.3:
    - Fixed a rare crash on map end.
    - Players will no longer get a death when switching teams.
    - Fixed an exploit in stock Renegade where a player could avoid a death by leaving the game after they died but before they respawned.
+
 
 
 Version 1.2:
@@ -171,6 +190,7 @@ Version 1.2:
    - Fixed some bugs in the Squad System.
 
 
+
 Version 1.1:
   Additions:
    - The Drop Weapons Game Feature is now the Loot Game Feature and includes support for dropping backpacks, DNA powerups, and generic powerups(health/armor/weapons).
@@ -203,11 +223,13 @@ Version 1.1:
    - Black Hand Rocket Soldiers in Domination mode will now work correctly with the Loot Game Feature.
 
 
+
 Version 1.0.1:
   Bug Fixes:
    - Added missing cPlayer exports that would cause some plugins to not load correctly.
    - Fixed crash that occurred on certain fan maps with Tiberium Silos.
    - Fixed one of the examples in the example plugin not working.
+
 
 
 Version 1.0:

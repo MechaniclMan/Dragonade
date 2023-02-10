@@ -37,13 +37,14 @@ private:
 	static int Winner;
 
 	//Settings
-	static unsigned int RebalanceTime;
-	static int RemixFrequency;
-	static int SwapChance;
-	static int RemixCount;
-	static bool EnableRebalance;
 	static bool EnableFreeTeamChanging;
 	static int ForceTeam;
+	unsigned int RebalanceTime;
+	int RemixFrequency;
+	int SwapChance;
+	int RemixCount;
+	bool EnableRebalance;
+	int RebalanceScoreLimit;
 };
 
 

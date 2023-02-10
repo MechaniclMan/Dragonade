@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -48,6 +48,8 @@ class TDA_Send_Custom_Zone: public ScriptImpClass {
 
 class TDA_Conyard_Controller: public ScriptImpClass {
 	void Killed(GameObject *obj,GameObject *killer);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Enable_Repairs(GameObject *obj,bool Enable);
 };
 
 // Conyard Repair Script,still working on the script commands to do this,but for now

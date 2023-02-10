@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,53 +17,48 @@
 
 void Nod_Obelisk_CnC::Created(GameObject* ObeliskObj) {
 	if (Commands->Get_Building_Power(ObeliskObj)) {
-		// Get weapon position
-		Vector3 WeaponPos = Commands->Get_Position(ObeliskObj);
-		WeaponPos.Z += 45;
-
-		// Create the Obelisk weapon
-		GameObject* WeaponObj = Commands->Create_Object("Nod_Obelisk", WeaponPos);
-		if (WeaponObj) {
-			WeaponID = Commands->Get_ID(WeaponObj);
-			Commands->Attach_Script(WeaponObj, "Obelisk_Weapon_CnC", "");
-		}
+		Create_Weapon(ObeliskObj);
 	}
 }
 
 void Nod_Obelisk_CnC::Killed(GameObject* ObeliskObj, GameObject* Killer) {
-	// Kill the weapon too
-	GameObject* WeaponObj = Commands->Find_Object(WeaponID);
-	if (WeaponObj != 0) {
-		Commands->Destroy_Object(WeaponObj);
-	}
+	Destroy_Weapon(ObeliskObj);
 }
 
-void Nod_Obelisk_CnC::Custom(GameObject* ObeliskObj, int type, int Param, GameObject* Sender) {
-	if (type == CUSTOM_EVENT_BUILDING_POWER_CHANGED) {
-		if (Param != 0) {
-			GameObject* WeaponObj = Commands->Find_Object(WeaponID);
-			if (!WeaponObj) {
-				// Get weapon position
-				Vector3 WeaponPos = Commands->Get_Position(ObeliskObj);
-				WeaponPos.Z += 45;
-
-				// Create the Obelisk weapon
-				WeaponObj = Commands->Create_Object("Nod_Obelisk", WeaponPos);
-				if (WeaponObj) {
-					WeaponID = Commands->Get_ID(WeaponObj);
-					Commands->Attach_Script(WeaponObj, "Obelisk_Weapon_CnC", "");
-				}
-			}
-		} else {
-			// Kill the weapon object
-			GameObject* WeaponObj = Commands->Find_Object(WeaponID);
-			if (WeaponObj) {
-				Commands->Destroy_Object(WeaponObj);
-			}
+void Nod_Obelisk_CnC::Custom(GameObject* ObeliskObj, int Type, int Param, GameObject* Sender) {
+	if (Type == CUSTOM_EVENT_BUILDING_POWER_CHANGED) {
+		if (!Param) {
+			Destroy_Weapon(ObeliskObj);
+		}
+		else {
+			Create_Weapon(ObeliskObj);
+		}
+	}
+	else if (Type == CUSTOM_EVENT_BUILDING_REVIVED) {
+		if (Commands->Get_Building_Power(ObeliskObj)) {
+			Create_Weapon(ObeliskObj);
 		}
 	}
 }
 
+void Nod_Obelisk_CnC::Create_Weapon(GameObject* ObeliskObj) {
+	Destroy_Weapon(ObeliskObj);
+
+	// Get weapon position
+	Vector3 WeaponPos = Commands->Get_Position(ObeliskObj);
+	WeaponPos.Z += 45;
+
+	// Create the Obelisk weapon
+	GameObject* WeaponObj = Commands->Create_Object("Nod_Obelisk", WeaponPos);
+	if (WeaponObj) {
+		WeaponID = Commands->Get_ID(WeaponObj);
+		Commands->Attach_Script(WeaponObj, "Obelisk_Weapon_CnC", "");
+	}
+}
+
+void Nod_Obelisk_CnC::Destroy_Weapon(GameObject* ObeliskObj) {
+	Commands->Destroy_Object(Commands->Find_Object(WeaponID));
+}
 
 void Obelisk_Weapon_CnC::Created(GameObject* WeaponObj) {
 	// Some settings
@@ -91,6 +86,7 @@ bool Obelisk_Weapon_CnC::IsValidEnemy(GameObject* WeaponObj, GameObject* EnemyOb
 	if (Commands->Get_Player_Type(EnemyObj) != 1) return false;
 	if (Commands->Get_Health(EnemyObj) <= 0) return false;
 	if (!Commands->Is_Object_Visible(WeaponObj, EnemyObj)) return false;
+	if (Is_Harvester(EnemyObj)) return false;
 
 	Vector3 WeaponObjPos = Commands->Get_Position(WeaponObj);
 	Vector3 WeaponObjPosXY = WeaponObjPos;
@@ -304,7 +300,7 @@ bool Obelisk_Weapon_CnC_Ground::IsValidEnemy(GameObject* WeaponObj, GameObject* 
 	if (Commands->Get_Health(EnemyObj) <= 0) return false;
 	if (!Commands->Is_Object_Visible(WeaponObj, EnemyObj)) return false;
 	if (Is_Harvester(EnemyObj)) return false;
-	
+
 	Vector3 WeaponObjPos = Commands->Get_Position(WeaponObj);
 	Vector3 WeaponObjPosXY = WeaponObjPos;
 	WeaponObjPosXY.Z = 0;

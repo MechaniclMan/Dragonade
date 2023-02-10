@@ -99,7 +99,7 @@ int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControlle
 
 bool DAVehicleQueueGameFeatureClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) {
 	int Team = Factory->Get_Player_Type();
-	if (Team == 0 || Team == 1) {
+	if ((Team == 0 || Team == 1) && Factory->Is_Available()) {
 		if (Building[Team]) {
 			if (Vehicle != Building[Team]->Vehicle && Player != Building[Team]->Player) { //Check if the VQ ordered this vehicle.
 				if (!Player) {
@@ -150,7 +150,8 @@ void DAVehicleQueueGameFeatureClass::Player_Leave_Event(cPlayer *Player) {
 void DAVehicleQueueGameFeatureClass::Object_Created_Event(GameObject *obj) {
 	int Team = ((VehicleGameObj*)obj)->Get_Definition().Get_Default_Player_Type();
 	if (Team == 0 || Team == 1) {
-		if (((VehicleGameObj*)obj)->Peek_Physical_Object()->As_MoveablePhysClass() && (unsigned int)Get_Ground_Vehicle_Count(Team) == Get_Vehicle_Limit()) { //Clear the queue if the vehicle limit has been reached.
+		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
+		if (VF && !VF->Is_Destroyed() && ((VehicleGameObj*)obj)->Peek_Physical_Object()->As_MoveablePhysClass() && (unsigned int)Get_Ground_Vehicle_Count(Team) == Get_Vehicle_Limit()) { //Clear the queue if the vehicle limit has been reached.
 			DA::Team_Color_Message(Team,GRAY,"Vehicle limit reached.");
 			for (int i = Queue[Team].Count()-1;i >= 0;i--) {
 				if (Queue[Team][i]->Cost != -1) {
@@ -194,28 +195,34 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 		if (!Text.Size()) {
 			DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
 			if (Building[Team]) {
+				StringClass Name;
 				if (Building[Team]->Player) {
-					DA::Private_Color_Message(Player,GRAY,"Building: %ls - %s",Building[Team]->Player->Get_Name(),DATranslationManager::Translate(Building[Team]->Vehicle));
+					Name = Building[Team]->Player->Get_Name();
+					Name += " - ";
 				}
 				else if (Building[Team]->Cost == -1) {
 					RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
-					DA::Private_Color_Message(Player,GRAY,"Building: %s - %s",DATranslationManager::Translate(Ref),DATranslationManager::Translate(Building[Team]->Vehicle));
+					if (Ref) {
+						Name = DATranslationManager::Translate(Ref);
+						Name += " - ";
+					}
 				}
-				else {
-					DA::Private_Color_Message(Player,GRAY,"Building: %s",DATranslationManager::Translate(Building[Team]->Vehicle));
-				}
+				DA::Private_Color_Message(Player,GRAY,"Building: %s%s",Name,DATranslationManager::Translate(Building[Team]->Vehicle));
 			}
 			for (int i = 0;i < Queue[Team].Count();++i) {
+				StringClass Name;
 				if (Queue[Team][i]->Player) {
-					DA::Private_Color_Message(Player,GRAY,"%d/%d: %ls - %s",i+1,Queue[Team].Count(),Queue[Team][i]->Player->Get_Name(),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
+					Name = Queue[Team][i]->Player->Get_Name();
+					Name += " - ";
 				}
 				else if (Queue[Team][i]->Cost == -1) {
 					RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
-					DA::Private_Color_Message(Player,GRAY,"%d/%d: %s - %s",i+1,Queue[Team].Count(),DATranslationManager::Translate(Ref),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
+					if (Ref) {
+						Name = DATranslationManager::Translate(Ref);
+						Name += " - ";
+					}
 				}
-				else {
-					DA::Private_Color_Message(Player,GRAY,"%d/%d: %s",i+1,Queue[Team].Count(),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
-				}
+				DA::Private_Color_Message(Player,GRAY,"%d/%d: %s%s",i+1,Queue[Team].Count(),Name,DATranslationManager::Translate(Queue[Team][i]->Vehicle));
 			}
 		}
 		else if (Text[1] == "cancel" || Text[1] == "halt" || Text[1] == "stop" || Text[1] == "leave" || Text[1] == "end") {
@@ -229,7 +236,7 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 
 void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,DAVehicleQueueStruct *Q) {
 	VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
-	if (VF && !VF->Is_Destroyed()) {
+	if (VF && VF->Is_Available()) {
 		Building[Team] = Q;
 		float Delay = 5.0f;
 		if (!BaseControllerClass::Find_Base(Team)->Is_Base_Powered()) {
