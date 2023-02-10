@@ -1,0 +1,38 @@
+/*!
+* \defgroup scripts Object Scripts
+*
+* This group contains all of the scripts which can be attached to objects, which are sorted into
+* subgroups for easy reference
+*/
+
+/*!
+* \defgroup scripts_basedefences Scripts - Base Defences
+* \ingroup scripts
+*
+* This group contains all of the scripts that can be used to create automated base defences. You
+* should only attach one of these scripts to your base defence preset, using more than one will
+* cause unpredictable results.
+*/
+
+/*!
+* \defgroup scripts_weather Scripts - Weather
+* \ingroup scripts
+* \brief Scripts that control weather effects
+*/
+
+
+
+
+/*!
+* \defgroup api Engine API
+*
+* This group contains all of the various engine API commands, which are sorted into subgroups for
+* easy reference
+*/
+
+/*!
+* \defgroup api_translations Engine API - Translations
+* \ingroup api
+*
+* Engine API commands related to the translations database
+*/
