@@ -26,6 +26,7 @@
 #include "cScTextObj.h"
 #include "GameObjManager.h"
 #include "ArmorWarheadManager.h"
+#include "da_soldier.h"
 
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
@@ -35,7 +36,6 @@ DynamicVectorClass<DAObjectEventStruct*> DAEventManager::ObjectEvents[DAObjectEv
 DynamicVectorClass<DAEventTimerStruct*> DAEventManager::Timers;
 bool DAEventManager::IsSoldierReInit = false;
 int DAEventManager::AddOccupantSeat = -1;
-DAEventManager::DADamageEventStruct DAEventManager::LastDamageEvent;
 
 void DAEventManager::Register_Event(DAEventClass *Base,DAEvent::Type Type,int Priority) {
 	for (int i = 0;i < Events[Type].Count();i++) {
@@ -270,10 +270,6 @@ void DAEventManager::Level_Loaded_Event() {
 	for (int i = 0;i < Events[DAEvent::LEVELLOADED].Count();i++) {
 		Events[DAEvent::LEVELLOADED][i]->Base->Level_Loaded_Event();
 	}
-	LastDamageEvent.Type = DADamageType::NONE;
-	LastDamageEvent.Bone = "None";
-	LastDamageEvent.Damage = 0.0f;
-	LastDamageEvent.Warhead = 0;
 	AddOccupantSeat = -1;
 }
 
@@ -477,39 +473,39 @@ void DAEventManager::Team_Change_Request_Event(int ID) {
 }
 
 void DAEventManager::Transition_Check_Event(TransitionInstanceClass *Transition,SoldierGameObj *Soldier) {
-	VehicleGameObj *Vehicle = (VehicleGameObj*)Transition->Get_Vehicle();
+	VehicleGameObj *Vehicle = Transition->Get_Vehicle();
 	if (!Vehicle || Soldier->Get_Vehicle() == Vehicle) { //Ladder or exiting vehicle.
 		Transition->Start(Soldier);
 		return;
 	}
 	int Seat = Find_Empty_Vehicle_Seat(Vehicle);
-	int SeatCount = Vehicle->Get_Definition().Get_Seat_Count();
 	if (Seat != -1) {
-		int SeatRef = Seat;
 		for (int i = 0;i < Events[DAEvent::VEHICLEENTRYREQUEST].Count();i++) {
-			if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Soldier->Get_Player(),SeatRef)) {
+			if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Soldier->Get_Player(),Seat)) {
 				return;
 			}
 		}
-		if (SeatRef >= SeatCount || SeatRef < 0 || Vehicle->Get_Occupant(SeatRef)) {
-			AddOccupantSeat = Seat; //Use the seat we picked before if an event returned an invalid one.
+		if (Seat >= Vehicle->Get_Definition().Get_Seat_Count() || Seat < 0 || Vehicle->Get_Occupant(Seat)) {
+			return;
 		}
 		else {
-			AddOccupantSeat = SeatRef;
+			AddOccupantSeat = Seat;
 		}
 		Transition->Start(Soldier);
 	}
 }
 
 void DAEventManager::Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier) {
-	if (AddOccupantSeat == -1) {
-		AddOccupantSeat = Find_Empty_Vehicle_Seat(Vehicle);
-	}
-	if (AddOccupantSeat != -1) {
-		Vehicle->Add_Occupant(Soldier,AddOccupantSeat);
-		AddOccupantSeat = -1;
-		if (!Vehicle->Get_Driver()) {
-			Commands->Enable_Engine(Vehicle,false);
+	if (!Soldier->Get_Vehicle()) {
+		if (AddOccupantSeat == -1) {
+			AddOccupantSeat = Find_Empty_Vehicle_Seat(Vehicle);
+		}
+		if (AddOccupantSeat != -1 && !Vehicle->Get_Occupant(AddOccupantSeat)) {
+			Vehicle->Add_Occupant(Soldier,AddOccupantSeat);
+			AddOccupantSeat = -1;
+			if (!Vehicle->Get_Driver()) {
+				Commands->Enable_Engine(Vehicle,false);
+			}
 		}
 	}
 }
@@ -579,12 +575,12 @@ void DAEventManager::Beacon_Set_State_Event(BeaconGameObj *Beacon) {
 		if (Beacon->Get_Defense_Object()->Get_Health()) { //If the beacon has no health then it was disarmed by damage and the normal killed event will trigger.
 			for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) { //This is for when it gets disarmed by a command or the planter leaving the game.
 				if (ObjectEvents[DAObjectEvent::KILLDEALT][i]->Check_Object_Type(0)) {
-					ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event(Beacon,0,0.0f,0,DADamageType::NORMAL,"None");
+					ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
 				}
 			}
 			for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLRECEIVED].Count();i++) {
 				if (ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Check_Object_Type(Beacon)) {
-					ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event(Beacon,0,0.0f,0,DADamageType::NORMAL,"None");
+					ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event(Beacon,0,0,0,0,DADamageType::NORMAL);
 				}
 			}
 		}
@@ -594,6 +590,7 @@ void DAEventManager::Beacon_Set_State_Event(BeaconGameObj *Beacon) {
 			Events[DAEvent::BEACONDETONATE][i]->Base->Beacon_Detonate_Event(Beacon);
 		}
 	}
+	Update_Network_Object(Beacon);
 }
 
 bool DAEventManager::C4_Detonate_Request_Event(C4GameObj *C4) {
@@ -658,11 +655,6 @@ bool DAEventManager::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,unsign
 
 void DAEventManager::Object_Created_Event(void *Data,GameObject *obj) {
 	obj->Add_Observer(new DAEventObserverClass);
-	if (obj->Get_Observers().Count() > 1) {
-		GameObjObserverClass *Observer = obj->Get_Observers()[0];
-		const_cast<SimpleDynVecClass<GameObjObserverClass*>&>(obj->Get_Observers())[0] = obj->Get_Observers()[obj->Get_Observers().Count()-1];
-		const_cast<SimpleDynVecClass<GameObjObserverClass*>&>(obj->Get_Observers())[obj->Get_Observers().Count()-1] = Observer;
-	}
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::CREATED].Count() && !obj->Is_Delete_Pending();i++) {
 		if (ObjectEvents[DAObjectEvent::CREATED][i]->Check_Object_Type(obj)) {
 			ObjectEvents[DAObjectEvent::CREATED][i]->Base->Object_Created_Event(obj);
@@ -705,42 +697,7 @@ void DAEventManager::Object_Created_Event(void *Data,GameObject *obj) {
 	}
 }
 
-bool Check_Weapon_Damage(SoldierGameObj *Soldier,float Scale,float Damage,int Warhead) {
-	if (Soldier->Get_Vehicle()) {
-		const WeaponDefinitionClass *Weapon = (WeaponDefinitionClass*)Find_Definition(Soldier->Get_Vehicle()->Get_Definition().WeaponDefID);
-		if (Weapon) {
-			const AmmoDefinitionClass *Ammo = (AmmoDefinitionClass*)Find_Definition(Weapon->PrimaryAmmoDefID);
-			if (Ammo && Ammo->Warhead == Warhead && Ammo->Damage*Scale == Damage) {
-				return true;
-			}
-			Ammo = (AmmoDefinitionClass*)Find_Definition(Weapon->SecondaryAmmoDefID);
-			if (Ammo && Ammo->Warhead == Warhead && Ammo->Damage*Scale == Damage) {
-				return true;
-			}
-		}
-	}
-	WeaponBagClass *Bag = Soldier->Get_Weapon_Bag();
-	for (int i = 1;i < Bag->Get_Count();i++) {
-		const WeaponDefinitionClass *Weapon = Bag->Peek_Weapon(i)->Get_Definition();
-		if (Weapon) {
-			AmmoDefinitionClass *Ammo = (AmmoDefinitionClass*)Find_Definition(Weapon->PrimaryAmmoDefID);
-			if (Ammo && Ammo->Warhead == Warhead && Ammo->Damage*Scale == Damage) {
-				return true;
-			}
-			Ammo = (AmmoDefinitionClass*)Find_Definition(Weapon->SecondaryAmmoDefID);
-			if (Ammo && Ammo->Warhead == Warhead && Ammo->Damage*Scale == Damage) {
-				return true;
-			}
-		}
-	}
-	return false;
-}
-
 bool DAEventManager::Stock_Client_Damage_Request_Event(PhysicalGameObj *Damager,PhysicalGameObj *Target,float Damage,uint Warhead) {
-	if (((SoldierGameObj*)Damager)->Get_Player()->Get_DA_Player()->Use_Server_Damage()) { //Ignore client damage requests if server damage extrapolation is turned on.
-		//Console_InputF("msg blocking client damage");
-		return false;
-	}
 	if (!Target->Get_Defense_Object()->Get_Health()) {
 		return false;
 	}
@@ -751,29 +708,6 @@ bool DAEventManager::Stock_Client_Damage_Request_Event(PhysicalGameObj *Damager,
 			}
 		}
 	}
-	if (Target->As_SoldierGameObj()) {
-		if (Check_Weapon_Damage(((SoldierGameObj*)Damager),1.0f,Damage,Warhead)) {
-			LastDamageEvent.Bone = "K_CHEST";
-			LastDamageEvent.Type = DADamageType::NORMAL;
-		}
-		else if (Check_Weapon_Damage(((SoldierGameObj*)Damager),5.0f,Damage,Warhead)) {
-			LastDamageEvent.Bone = "K_HEAD";
-			LastDamageEvent.Type = DADamageType::HEADSHOT;
-		}
-		else if (Check_Weapon_Damage(((SoldierGameObj*)Damager),3.0f,Damage,Warhead)) {
-			LastDamageEvent.Bone = "K_NECK";
-			LastDamageEvent.Type = DADamageType::NECKSHOT;
-		}
-		else {
-			LastDamageEvent.Bone = "K_CHEST";
-			LastDamageEvent.Type = DADamageType::NORMAL;
-		}
-	}
-	else {
-		LastDamageEvent.Bone = "None";
-		LastDamageEvent.Type = DADamageType::NORMAL;
-	}
-
 	OffenseObjectClass Offense(Damage,Warhead,(ArmedGameObj*)Damager);
 	Offense.ForceServerDamage = true;
 	Target->Apply_Damage_Extended(Offense);
@@ -781,10 +715,6 @@ bool DAEventManager::Stock_Client_Damage_Request_Event(PhysicalGameObj *Damager,
 }
 
 bool DAEventManager::TT_Client_Damage_Request_Event(PhysicalGameObj *Damager,PhysicalGameObj *Target,const AmmoDefinitionClass *Ammo,const char *Bone) {
-	if (((SoldierGameObj*)Damager)->Get_Player()->Get_DA_Player()->Use_Server_Damage()) { //Ignore client damage requests if server damage extrapolation is turned on.
-		//Console_InputF("msg blocking client damage");
-		return false;
-	}
 	if (!Target->Get_Defense_Object()->Get_Health()) {
 		return false;
 	}
@@ -795,148 +725,21 @@ bool DAEventManager::TT_Client_Damage_Request_Event(PhysicalGameObj *Damager,Phy
 			}
 		}
 	}
-	LastDamageEvent.Bone = Bone;
-	if (strstr(Bone,"K_HEAD")) {
-		LastDamageEvent.Type = DADamageType::HEADSHOT;
-	}
-	else if (strstr(Bone,"K_NECK")) {
-		LastDamageEvent.Type = DADamageType::NECKSHOT;
-	}
-	else {
-		LastDamageEvent.Type = DADamageType::NORMAL;
-	}
 	return true;
 }
 
-bool DAEventManager::Damage_Request_Event(DefenseObjectClass *Defense,OffenseObjectClass *Offense,float Scale) {
-	DamageableGameObj *Victim = Defense->Get_Owner();
-	ArmedGameObj *Damager = Offense->Get_Owner();
-	//Console_InputF("msg damage request start %s %s %f %u %d %d %f",Victim->Get_Definition().Get_Name(),Damager?Damager->Get_Definition().Get_Name():"None",Offense->Get_Damage(),Offense->Get_Warhead(),Offense->EnableClientDamage,Offense->ForceServerDamage,Scale);
-	if (Offense->EnableClientDamage) { //Server damage request.
-		if (Is_Player(Damager)) { //Server extrapolation of client damage.
-			if (((SoldierGameObj*)Damager)->Get_Player()->Get_DA_Player()->Use_Server_Damage()) { //Use server damage if enabled.
-				if (!Victim->As_BuildingGameObj()) {
-					//Console_InputF("msg enabling server damage");
-					Offense->EnableClientDamage = false;
-					Offense->ForceServerDamage = true;
-				}
-				if (Victim->As_SoldierGameObj()) {
-					if (Scale == 5.0f) {
-						LastDamageEvent.Bone = "K_HEAD";
-						LastDamageEvent.Type = DADamageType::HEADSHOT;
-					}
-					else if (Scale == 3.0f) {
-						LastDamageEvent.Bone = "K_NECK";
-						LastDamageEvent.Type = DADamageType::NECKSHOT;
-					}
-					else {
-						LastDamageEvent.Bone = "K_CHEST";
-						LastDamageEvent.Type = DADamageType::NORMAL;
-					}
-				}
-				else {
-					LastDamageEvent.Bone = "None";
-					LastDamageEvent.Type = DADamageType::NORMAL;
-				}
-			}
-			else if (Victim->As_BuildingGameObj()) { //Only used for buildings.
-				LastDamageEvent.Bone = "None";
-				LastDamageEvent.Type = DADamageType::NORMAL;
-			}
-			else { //Ignore duplicate damage events generated by server.
-				return false;
-			}
-		}
-		else { //AI
-			if (Victim->As_SoldierGameObj()) {
-				if (Scale == 5.0f) {
-					LastDamageEvent.Bone = "K_HEAD";
-					LastDamageEvent.Type = DADamageType::HEADSHOT;
-				}
-				else if (Scale == 3.0f) {
-					LastDamageEvent.Bone = "K_NECK";
-					LastDamageEvent.Type = DADamageType::NECKSHOT;
-				}
-				else {
-					LastDamageEvent.Bone = "K_CHEST";
-					LastDamageEvent.Type = DADamageType::NORMAL;
-				}
-			}
-			else {
-				LastDamageEvent.Bone = "None";
-				LastDamageEvent.Type = DADamageType::NORMAL;
-			}
-		}
-	}
-	else if (!Offense->ForceServerDamage) { //Damage with no damager, splash/burn, and C4/beacon explosions.
-		if (Damager) {
-			if (Scale == 10000.0f && Offense->Get_Damage() == 10000.0f) { //Squish
-				LastDamageEvent.Type = DADamageType::SQUISH;
-			}
-			else if (GetExplosionObj()) { //C4/Beacon explosion
-				LastDamageEvent.Type = DADamageType::EXPLOSION;
-			}
-			else if (Offense->Get_Warhead() == 0) {
-				if (Offense->Get_Damage() < 2.0f) { //Burn damage
-					LastDamageEvent.Type = DADamageType::BURN;
-				}
-				else { //Probably Commands->Apply_Damage
-					LastDamageEvent.Type = DADamageType::NONE;
-				}
-			}
-			else if (Scale < 1.0f) { //Splash damage from indirect hit
-				LastDamageEvent.Type = DADamageType::SPLASH;
-			}
-			else { //Splash damage from direct hit.
-				LastDamageEvent.Type = DADamageType::SPLASHDIRECT;
-			}
-		}
-		else if (Offense->Get_Warhead() == 9) { //Tiberium damage
-			LastDamageEvent.Type = DADamageType::TIBERIUM;
-			if (Is_Player(Victim)) {
-				((SoldierGameObj*)Victim)->Get_DA_Player()->Reset_Last_Tib_Damage_Time();
-			}
-		}
-		else if (Offense->Get_Warhead() == 0) {
-			if (Is_Player(Victim)) {
-				if (Offense->Get_Damage() < 2.0f) {
-					if (((SoldierGameObj*)Victim)->Get_DA_Player()->Get_Time_Since_Last_Tib_Damage() <= 3000) { //Tiberium burn damage
-						LastDamageEvent.Type = DADamageType::TIBERIUM;
-					}
-					else { //Burn damage
-						LastDamageEvent.Type = DADamageType::BURN;
-					}
-				}
-				else { //Probably Commands->Apply_Damage
-					LastDamageEvent.Type = DADamageType::NORMAL;
-				}
-			}
-			else if (Offense->Get_Damage() < 2.0f) { //Burn damage
-				LastDamageEvent.Type = DADamageType::BURN;
-			}
-			else { //Probably Commands->Apply_Damage
-				LastDamageEvent.Type = DADamageType::NONE;
-			}
-		}
-		else if (Offense->Get_Warhead() == 22) { //Fall damage
-			LastDamageEvent.Type = DADamageType::FALL;
-		}
-		else { //Probably Commands->Apply_Damage
-			LastDamageEvent.Type = DADamageType::NONE;
-		}
-		LastDamageEvent.Bone = "None";
-	}
-	//Console_InputF("msg damage request end %s %s %f %u %d %d %d %s",Victim->Get_Definition().Get_Name(),Damager?Damager->Get_Definition().Get_Name():"None",Offense->Get_Damage(),Offense->Get_Warhead(),Offense->EnableClientDamage,Offense->ForceServerDamage,LastDamageEvent.Type,LastDamageEvent.Bone);
+bool DAEventManager::Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	//Console_InputF("msg %s %s %s %f %u %f %d\n",__FUNCTION__,Victim->Get_Definition().Get_Name(),Damager?Damager->Get_Definition().Get_Name():"None",Damage,Warhead,Scale,Type);
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::DAMAGEDEALTREQUEST].Count();i++) {
 		if (ObjectEvents[DAObjectEvent::DAMAGEDEALTREQUEST][i]->Check_Object_Type(Damager)) {
-			if (!ObjectEvents[DAObjectEvent::DAMAGEDEALTREQUEST][i]->Base->Damage_Request_Event(Victim,Offense,LastDamageEvent.Type,LastDamageEvent.Bone)) {
+			if (!ObjectEvents[DAObjectEvent::DAMAGEDEALTREQUEST][i]->Base->Damage_Request_Event(Victim,Damager,Damage,Warhead,Scale,Type)) {
 				return false;
 			}
 		}
 	}
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::DAMAGERECEIVEDREQUEST].Count();i++) {
 		if (ObjectEvents[DAObjectEvent::DAMAGERECEIVEDREQUEST][i]->Check_Object_Type(Victim)) {
-			if (!ObjectEvents[DAObjectEvent::DAMAGERECEIVEDREQUEST][i]->Base->Damage_Request_Event(Victim,Offense,LastDamageEvent.Type,LastDamageEvent.Bone)) {
+			if (!ObjectEvents[DAObjectEvent::DAMAGERECEIVEDREQUEST][i]->Base->Damage_Request_Event(Victim,Damager,Damage,Warhead,Scale,Type)) {
 				return false;
 			}
 		}
@@ -944,20 +747,32 @@ bool DAEventManager::Damage_Request_Event(DefenseObjectClass *Defense,OffenseObj
 	return true;
 }
 
-void DAEventManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead) {
-	//Console_InputF("msg damage complete %s %s %f %u %d %s",Victim->Get_Definition().Get_Name(),Damager?Damager->Get_Definition().Get_Name():"None",Damage,Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
+void DAEventManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+	//Console_InputF("msg %s %s %s %f %u %f %d\n",__FUNCTION__,Victim->Get_Definition().Get_Name(),Damager?Damager->Get_Definition().Get_Name():"None",Damage,Warhead,Scale,Type);
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::DAMAGEDEALT].Count();i++) {
 		if (ObjectEvents[DAObjectEvent::DAMAGEDEALT][i]->Check_Object_Type(Damager)) {
-			ObjectEvents[DAObjectEvent::DAMAGEDEALT][i]->Base->Damage_Event(Victim,Damager,Damage,Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
+			ObjectEvents[DAObjectEvent::DAMAGEDEALT][i]->Base->Damage_Event(Victim,Damager,Damage,Warhead,Scale,Type);
 		}
 	}
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::DAMAGERECEIVED].Count();i++) {
 		if (ObjectEvents[DAObjectEvent::DAMAGERECEIVED][i]->Check_Object_Type(Victim)) {
-			ObjectEvents[DAObjectEvent::DAMAGERECEIVED][i]->Base->Damage_Event(Victim,Damager,Damage,Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
+			ObjectEvents[DAObjectEvent::DAMAGERECEIVED][i]->Base->Damage_Event(Victim,Damager,Damage,Warhead,Scale,Type);
 		}
 	}
-	LastDamageEvent.Damage = Damage;
-	LastDamageEvent.Warhead = Warhead;
+}
+
+void DAEventManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+	//Console_InputF("msg %s %s %s %f %u %f %d\n",__FUNCTION__,Victim->Get_Definition().Get_Name(),Killer?Killer->Get_Definition().Get_Name():"None",Damage,Warhead,Scale,Type);
+	for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) {
+		if (ObjectEvents[DAObjectEvent::KILLDEALT][i]->Check_Object_Type(Killer)) {
+			ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event(Victim,Killer,Damage,Warhead,Scale,Type);
+		}
+	}
+	for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLRECEIVED].Count();i++) {
+		if (ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Check_Object_Type(Victim)) {
+			ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event(Victim,Killer,Damage,Warhead,Scale,Type);
+		}
+	}
 }
 
 bool DAEventManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
@@ -966,29 +781,12 @@ bool DAEventManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 			return false;
 		}
 	}
-	LastDamageEvent.Type = DADamageType::FLIP;
-	LastDamageEvent.Bone = "None";
-	LastDamageEvent.Damage = 0.0f;
-	LastDamageEvent.Warhead = 0;
+	DAEventManager::Kill_Event(Vehicle,0,0,0,0,DADamageType::FLIP);
 	return true;
 }
 
 void DAEventManager::DAEventObserverClass::Detach(GameObject *obj) {
 	delete this;
-}
-
-void DAEventManager::DAEventObserverClass::Killed(GameObject *obj,GameObject *Killer) {
-	//Console_InputF("msg kill %s %s %f %u %d %s",obj->Get_Definition().Get_Name(),Killer?Killer->Get_Definition().Get_Name():"None",LastDamageEvent.Damage,LastDamageEvent.Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
-	for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) {
-		if (ObjectEvents[DAObjectEvent::KILLDEALT][i]->Check_Object_Type(Killer)) {
-			ObjectEvents[DAObjectEvent::KILLDEALT][i]->Base->Kill_Event((DamageableGameObj*)obj,(ArmedGameObj*)Killer,LastDamageEvent.Damage,LastDamageEvent.Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
-		}
-	}
-	for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLRECEIVED].Count();i++) {
-		if (ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Check_Object_Type(obj)) {
-			ObjectEvents[DAObjectEvent::KILLRECEIVED][i]->Base->Kill_Event((DamageableGameObj*)obj,(ArmedGameObj*)Killer,LastDamageEvent.Damage,LastDamageEvent.Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
-		}
-	}
 }
 
 void DAEventManager::DAEventObserverClass::Custom(GameObject *obj,int Message,int Param,GameObject *Sender) {
@@ -1074,13 +872,16 @@ void DAEventManager::DAEventConnectionAcceptanceFilterClass::handleInitiation(co
 }
 
 ConnectionAcceptanceFilter::STATUS DAEventManager::DAEventConnectionAcceptanceFilterClass::getStatus(const ConnectionRequest &Request,WideStringClass &RefusalMessage) {
+	if (Request.clientSerialHash.Is_Empty()) {
+		return ConnectionAcceptanceFilter::STATUS_INDETERMINATE;
+	}
 	for (int i = 0;i < Events[DAEvent::CONNECTIONREQUEST].Count();i++) {
 		STATUS Return = Events[DAEvent::CONNECTIONREQUEST][i]->Base->Connection_Request_Event(const_cast<ConnectionRequest&>(Request),RefusalMessage);
 		if (Return == ConnectionAcceptanceFilter::STATUS_REFUSING) {
 			StringClass String;
-			String.Format("Refused connection from %ls(%s)(%s)(%.2f)(%u): %ls\n",Request.clientName,Long_To_IP(Request.clientAddress.sin_addr.s_addr),Request.clientSerialHash,Request.clientVersion,Request.clientRevisionNumber,RefusalMessage);
+			String.Format("Refused connection from %ls(%s)(%s)(%.1f)(%u): %ls\n",Request.clientName,Long_To_IP(Request.clientAddress.sin_addr.s_addr),Request.clientSerialHash,Request.clientVersion,Request.clientRevisionNumber,RefusalMessage);
 			Console_Output("%s\n",String);
-			DALogManager::Write_Log("_CONNECTIONREFUSED","%s\n",String);
+			DALogManager::Write_Log("_CONNECTIONREFUSED","%s",String);
 			return ConnectionAcceptanceFilter::STATUS_REFUSING;
 		}
 		else if (Return == ConnectionAcceptanceFilter::STATUS_INDETERMINATE) {

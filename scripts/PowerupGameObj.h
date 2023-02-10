@@ -34,6 +34,7 @@ public:
 	virtual	bool	Is_Always_Dirty( void )					{ return false; }
 	virtual	void	Get_Description( StringClass & description );
 	void	Expire( void );
+	void	Set_State( int state );
 protected:
 	enum
 	{
@@ -42,7 +43,6 @@ protected:
 		STATE_GRANTING,
 		STATE_EXPIRING,
 	};
-	void						Set_State( int state );
 	void						Update_State( void );
 	AudibleSoundClass *	IdleSoundObj;
 	int						State;

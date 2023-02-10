@@ -20,8 +20,8 @@
 class DABuildingObserverClass : public DAGameObjObserverClass {
 	virtual void Init();
 	virtual void Timer_Expired(GameObject *obj,int Number);
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual const char *Get_Name() {
 		return "DABuildingObserverClass";
 	}
@@ -39,8 +39,8 @@ private:
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Timer_Expired(int Number,unsigned int Data);
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 
 	bool UnderAttackMessage[2];
 };

@@ -41,7 +41,7 @@ public:
 	bool Save(ChunkSaveClass& chunkSaver);
 	void Reset_Player();
 	void Set_Score(float score);
-	void Increment_Score(float score);
+	SCRIPTS_API void Increment_Score(float score);
 	void Set_Money(float money);
 	void Increment_Money(float money);
 	unsigned int Get_Network_Class_ID() const;

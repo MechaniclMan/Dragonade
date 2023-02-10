@@ -71,7 +71,7 @@ bool DAParachutesObserverClass::Vehicle_Entry_Request(VehicleGameObj *Vehicle,in
 	return true;
 }
 
-void DAParachutesObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAParachutesObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	Set_Delete_Pending();
 }
 

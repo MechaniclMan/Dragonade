@@ -668,26 +668,6 @@ SCRIPTS_API void Set_Team_Score(int ID,float score)
 	}
 }
 
-void cPlayer::Increment_Kills() {
-	Kills++;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
-void cPlayer::Increment_Deaths() {
-	Deaths++;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
-void cPlayer::Decrement_Kills() {
-	Kills--;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
-void cPlayer::Decrement_Deaths() {
-	Deaths--;
-	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-}
-
 void cPlayer::Set_Kills(int kills) {
 	Kills = kills;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);

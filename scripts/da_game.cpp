@@ -157,7 +157,7 @@ void DAGameManager::Level_Loaded_Event() {
 		}
 		if (!ValidGameModes.Count()) {
 			Factory = Find_Game_Mode("AOW");
-			DALogManager::Write_Log("_ERROR","None of the selected game modes support map %s. Defaulting to AOW",The_Game()->Get_Map_Name());
+			DALogManager::Write_Log("_ERROR","None of the selected game modes support map %s. Defaulting to AOW.",The_Game()->Get_Map_Name());
 		}
 		else {
 			int Rand = Commands->Get_Random_Int(0,ValidGameModes.Count());

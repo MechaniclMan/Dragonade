@@ -21,7 +21,7 @@ class DA_API DATimedInvincibilityObserverClass : public DAGameObjObserverClass {
 public:
 	DATimedInvincibilityObserverClass(float ProtectTime);
 	virtual void Init();
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual const char *Get_Name() { 
 		return "DATimedInvincibilityObserverClass"; 

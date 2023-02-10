@@ -25,7 +25,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE( C4GameObjDef, SimpleGameObjDef );
-private:
 	float ThrowVelocity;
 	friend class C4GameObj;
 	friend class PresetDump;

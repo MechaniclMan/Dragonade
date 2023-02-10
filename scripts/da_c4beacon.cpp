@@ -30,33 +30,38 @@ void DAC4BeaconManager::Init() {
 	Instance.Register_Event(DAEvent::BEACONDETONATE,INT_MAX);
 	Instance.Register_Event(DAEvent::C4DETONATE,INT_MAX);
 	Instance.Register_Event(DAEvent::POWERUPPURCHASEREQUEST,INT_MIN);
+	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::BEACON);
 	Instance.Register_Object_Event(DAObjectEvent::POKE,DAObjectEvent::C4 | DAObjectEvent::BEACON,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::C4 | DAObjectEvent::BEACON,INT_MAX);
 }
 
 void DAC4BeaconManager::Settings_Loaded_Event() {
 	Console_InputF("mlimit %d",DASettingsManager::Get_Int("C4Limit",Get_Mine_Limit()));
-	if (DASettingsManager::Get_Bool("BlockFakeBeacons",false)) {
-		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::BEACON,INT_MAX);
-	}
-	else {
-		Unregister_Object_Event(DAObjectEvent::CREATED);
-	}
+	BlockFakeBeacons = DASettingsManager::Get_Bool("BlockFakeBeacons",false);
 }
 
 void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 	BeaconGameObj *Beacon = (BeaconGameObj*)obj;
 	if (Beacon->Get_Owner()) {
-		BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),Beacon->Get_Player_Type()?0:1);
-		if (Building) {
-			ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
+		bool Ped = Beacon->Is_In_Enemy_Base();
+		ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
+		if (Explosion) {
 			float DamageRadius = Explosion->DamageRadius*Explosion->DamageRadius;
 			float Distance = 0.0f;
-			Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
-			if (Distance > DamageRadius) {
-				Set_Bullets(Beacon->Get_Owner(),Beacon->Get_WeaponDef()->Get_Name(),2);
+			BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+			if (Building) {
+				Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
+			}
+			if (BlockFakeBeacons && (!The_Cnc_Game()->BeaconPlacementEndsGame || !Ped) && Distance > DamageRadius) {
+				WeaponClass *Weapon = Beacon->Get_Owner()->Get_Weapon_Bag()->Find_Weapon(Beacon->Get_WeaponDef());
+				if (Weapon) { //Refund the ammo used to plant this beacon.
+					Weapon->Set_Clip_Rounds(Weapon->Get_Clip_Rounds()+Weapon->PrimaryAmmoDefinition->SprayBulletCost);
+				}
 				Beacon->Set_Delete_Pending();
 				DA::Page_Player(Beacon->Get_Owner(),"Beacons may only be deployed where they would damage an enemy building.");
+			}
+			else if (Ped && !The_Cnc_Game()->BeaconPlacementEndsGame && Distance > DamageRadius) {
+				DA::Page_Player(Beacon->Get_Owner(),"Sure you want to deploy that here? Pedestal beacons are disabled on this server.");
 			}
 		}
 	}
@@ -64,7 +69,7 @@ void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 
 void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
 	if (Beacon->Get_Owner()) {
-		if (The_Cnc_Game()->BeaconPlacementEndsGame && CollisionMath::Overlap_Test((Beacon->Get_Player_Type()?The_Cnc_Game()->Nod:The_Cnc_Game()->GDI).Get_Beacon_Zone(),Beacon->Get_Position()) == CollisionMath::INSIDE) {
+		if (The_Cnc_Game()->BeaconPlacementEndsGame && Beacon->Is_In_Enemy_Base()) {
 			DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
 		}
 		else {
@@ -117,7 +122,7 @@ void DAC4BeaconManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
 	}
 }
 
-void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (((PhysicalGameObj*)Victim)->As_BeaconGameObj()) {
 		BeaconGameObj *Beacon = (BeaconGameObj*)Victim;
 		if (Beacon->Get_Owner()) {
@@ -144,18 +149,14 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 
 //Default powerup purchase handler.
 int DAC4BeaconManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) {
-	//The normal protection against buying a weapon twice doesn't work if the PT data on the server has been changed.
-	if (Item->GrantWeapon) {
-		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-		for (int i = 1;i < Bag->Get_Count();i++) {
-			if (Bag->Peek_Weapon(i)->Get_ID() == Item->GrantWeaponID && Bag->Peek_Weapon(i)->Get_Total_Rounds()) {
-				return 4;
-			}
+	if (Player->Get_Money() >= Cost) {
+		if (Item->Grant(Player->Get_GameObj())) {
+			Player->Purchase_Item((int)Cost);
+			return 0;
 		}
-	}
-	if (Player->Purchase_Item((int)Cost)) {
-		Item->Grant(Player->Get_GameObj());
-		return 0;
+		else {
+			return 4;
+		}
 	}
 	return 2;
 }

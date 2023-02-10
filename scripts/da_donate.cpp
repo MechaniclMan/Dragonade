@@ -21,23 +21,29 @@
 
 void DADonateGameFeatureClass::Init() {
 	Register_Event(DAEvent::SETTINGSLOADED);
-	Register_Chat_Command((DAECC)&DADonateGameFeatureClass::Donate_Chat_Command,"!donate|!d|!tdonate|!td");
+	Register_Chat_Command((DAECC)&DADonateGameFeatureClass::Donate_Chat_Command,"!donate|!d|!tdonate|!teamdonate|!donateteam|!td");
 }
 
 void DADonateGameFeatureClass::Settings_Loaded_Event() {
 	TimeLimit = DASettingsManager::Get_Int("DonateTimeLimit",120);
+	Stop_Timer(1);
+	int Timer = TimeLimit-The_Game()->Get_Game_Duration_S();
+	if (Timer > 0) {
+		Start_Timer(1,(float)Timer);
+	}
+}
+
+void DADonateGameFeatureClass::Timer_Expired(int Number,unsigned int Data) {
+	DA::Host_Message("Donations are now enabled.");
 }
 
 bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	if (The_Game()->GameDuration_Seconds <= TimeLimit) {
-		DA::Page_Player(Player,"You cannot use donate during the first %u seconds of a game.",TimeLimit);
+	if ((int)The_Game()->Get_Game_Duration_S() < TimeLimit) {
+		DA::Page_Player(Player,"You cannot use donate during the first %d seconds of a game.",TimeLimit);
 	}
 	else if (Text.Size() < 2) { //Distributive donate
 		int Amount = 0;
-		if (Text.Size() == 1) {
-			Amount = Text.As_Int(1);
-		}
-		else {
+		if (!Text.As_Int(1,Amount)) {
 			Amount = (int)Player->Get_Money();
 		}
 		if (Amount < 1) {
@@ -64,7 +70,8 @@ bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DAToken
 		}
 	}
 	else { //Player donate
-		int Amount = Text.As_Int(2);
+		int Amount = 0;
+		Text.As_Int(2,Amount);
 		if (Amount < 1) {
 			return true;
 		}

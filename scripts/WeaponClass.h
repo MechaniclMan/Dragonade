@@ -105,8 +105,8 @@ public:
 	int16 Export_Ammo_Info();
 	void				Add_Rounds( int num );
 	void				Add_Rounds_Client( int num );
-	void				Set_Clip_Rounds( int rounds );
-	void				Set_Inventory_Rounds( int rounds );
+	void				Set_Clip_Rounds( int rounds ) { ClipRounds = rounds; }
+	void				Set_Inventory_Rounds( int rounds ) { InventoryRounds = rounds; }
 	void				Set_Clip_Rounds_Client( int rounds );
 	void				Set_Inventory_Rounds_Client( int rounds );
 	int				Get_Clip_Rounds( void )					{ return ClipRounds; }

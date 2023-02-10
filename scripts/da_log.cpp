@@ -98,6 +98,8 @@ void DALogManager::Write_Log(const char *Header,const char *Format,...) {
 	va_end(arg_list);
 	DAEventManager::DA_Log_Event(Header,Buffer+Len);
 	Send(Buffer);
+	Buffer[2] = '1';
+	Send(Buffer);
 }
 
 void DALogManager::Write_GameLog(const char *Format,...) {

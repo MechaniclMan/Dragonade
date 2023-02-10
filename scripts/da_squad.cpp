@@ -39,13 +39,13 @@ void DASquadMemberClass::Name_Change() {
 	Get_Owner()->PlayerName = "#" + NameSave;
 	for (int i = 0;i < Squad->Size();i++) {
 		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
-		Get_Owner()->Set_Object_Dirty_Bits(Member->Get_Id(),NetworkObjectClass::BIT_CREATION);
+		Get_Owner()->Set_Object_Dirty_Bit(Member->Get_Id(),NetworkObjectClass::BIT_CREATION);
 		//Send_Object_Update(Get_Owner(),Member->Get_Id()); //Send new member's updated name to squadmates
 
 		if (Member != Get_Owner()) {
 			WideStringClass NameSave2 = Member->Get_Name();
 			Member->PlayerName = "#" + Member->PlayerName;
-			Member->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION);
+			Member->Set_Object_Dirty_Bit(Get_ID(),NetworkObjectClass::BIT_CREATION);
 			//Send_Object_Update(Member,Get_ID()); //Send updated squadmate's names to new member
 			Update_Network_Object(Member);
 			Member->PlayerName = NameSave2;
@@ -60,11 +60,11 @@ DASquadMemberClass::~DASquadMemberClass() {
 		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
 
 		Reset_Radar(Member->Get_GameObj()); //Reset radar for other players
-		//Get_Owner()->Set_Object_Dirty_Bits(Member->Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset name for other players
+		//Get_Owner()->Set_Object_Dirty_Bit(Member->Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset name for other players
 
 		if (Get_Owner()->Is_Active()) {
 			Squad->Get_Member(i)->Reset_Radar(Get_GameObj()); //Reset other player's radar
-			//Member->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset other player's names
+			//Member->Set_Object_Dirty_Bit(Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset other player's names
 		}
 	}
 	Squad->Internal_Remove(this); //Remove this observer from the squad's list of members

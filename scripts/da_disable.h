@@ -19,6 +19,14 @@
 #include "Definition.h"
 #include "HashTemplateClass.h"
 
+struct DACharacterDisableListStruct {
+	DACharacterDisableListStruct() : EnterVehicles(false), DriveVehicles(false), StealVehicles(false) { }
+	DynamicVectorClass<const DefinitionClass*> DisableList;
+	bool EnterVehicles;
+	bool DriveVehicles;
+	bool StealVehicles;
+};
+
 class DADisableListManager : public DAEventClass {
 public:
 	static void Init();
@@ -26,22 +34,27 @@ public:
 	DA_API static bool Is_Preset_Disabled(const char *Preset);
 	DA_API static bool Is_Preset_Disabled(const DefinitionClass *Def);
 	DA_API static bool Is_Preset_Disabled(unsigned int DefID);
-	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,const DefinitionClass *Def);
-	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,const char *Preset);
-	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,unsigned int DefID);
+	DA_API static bool Is_Preset_Disabled_For_Character(const DefinitionClass *Character,const DefinitionClass *Def);
+	DA_API static bool Is_Preset_Disabled_For_Character(const DefinitionClass *Character,const char *Preset);
+	DA_API static bool Is_Preset_Disabled_For_Character(const DefinitionClass *Character,unsigned int DefID);
+	DA_API static bool Can_Character_Enter_Vehicles(const DefinitionClass *Character);
+	DA_API static bool Can_Character_Drive_Vehicles(const DefinitionClass *Character);
+	DA_API static bool Can_Character_Steal_Vehicles(const DefinitionClass *Character);
 	
 private:
+	virtual void Settings_Loaded_Event();
 	virtual void Level_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
 	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
-	virtual bool PowerUp_Grant_Request_Event(SoldierGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
+	virtual bool PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon);
 	virtual bool Refill_Event(cPlayer *Player);
+	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat);
 	
-	static DynamicVectorClass<unsigned int> DisableList;
-	static HashTemplateClass<unsigned int,DynamicVectorClass<unsigned int>> CharacterDisableList; //SoldierGameObjDef*,Definition ID
+	static DynamicVectorClass<const DefinitionClass*> DisableList;
+	static HashTemplateClass<unsigned int,DACharacterDisableListStruct> CharacterDisableList; //SoldierGameObjDef*,DACharacterDisableListStruct
 };
 
 #endif

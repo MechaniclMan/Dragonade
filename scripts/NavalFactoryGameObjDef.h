@@ -26,7 +26,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (NavalFactoryGameObjDef, BuildingGameObjDef);
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	float Timer;
 	int ConstructionZone1DefId;

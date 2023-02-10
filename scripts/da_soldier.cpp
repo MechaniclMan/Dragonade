@@ -25,6 +25,8 @@ void DASoldierManager::Init() {
 	static DASoldierManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::CHARACTERPURCHASEREQUEST,INT_MIN);
+	Instance.Register_Event(DAEvent::ADDWEAPONREQUEST,INT_MAX);
+	Instance.Register_Event(DAEvent::ADDWEAPON,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::SOLDIER,INT_MAX);
@@ -47,13 +49,84 @@ void DASoldierManager::Settings_Loaded_Event() {
 				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
 				DATokenParserClass Parser(Entry->Value,'|');
 				while (const char *Token = Parser.Get_String()) {
-					const WeaponDefinitionClass *WeaponDef = (WeaponDefinitionClass*)Find_Named_Definition(Token);
-					if (WeaponDef && WeaponDef->Get_Class_ID() == CID_Weapon) {
-						Weapons.Add(WeaponDef);
+					DefinitionClass *Def2 = Find_Named_Definition(Token);
+					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {
+						Weapons.Add((const WeaponDefinitionClass*)Def2);
 					}
 				}
 				if (Weapons.Count()) {
 					GrantWeapons.Insert((unsigned int)Def,Weapons);
+				}
+			}
+		}
+	}
+
+	//Exclusive weapons
+	ExclusiveWeapons.Remove_All();
+	Section = DASettingsManager::Get_Section("Exclusive_Weapons");
+	if (Section) {
+		for (int i = 0;i < Section->Count();i++) {
+			INIEntry *Entry = Section->Peek_Entry(i);
+			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+			if (Def && Def->Get_Class_ID() == CID_Weapon) {
+				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
+				DATokenParserClass Parser(Entry->Value,'|');
+				while (const char *Token = Parser.Get_String()) {
+					DefinitionClass *Def2 = Find_Named_Definition(Token);
+					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {
+						Weapons.Add((const WeaponDefinitionClass*)Def2);
+					}
+				}
+				if (Weapons.Count()) {
+					ExclusiveWeapons.Insert((unsigned int)Def,Weapons);
+				}
+			}
+		}
+	}
+
+	//Replace weapons
+	Section = DASettingsManager::Get_Section("Replace_Weapons");
+	if (Section) {
+		for (int i = 0;i < Section->Count();i++) {
+			INIEntry *Entry = Section->Peek_Entry(i);
+			DefinitionClass *OldWeaponDef = Find_Named_Definition(Entry->Entry);
+			DefinitionClass *NewWeaponDef = Find_Named_Definition(Entry->Value);
+			if (OldWeaponDef && OldWeaponDef->Get_Class_ID() == CID_Weapon && NewWeaponDef && NewWeaponDef->Get_Class_ID() == CID_Weapon) {
+				for (PowerUpGameObjDef *PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_First(CID_PowerUp);PowerUpDef;PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_Next(PowerUpDef,CID_PowerUp)) {
+					if ((unsigned int)PowerUpDef->GrantWeaponID == OldWeaponDef->Get_ID()) {
+						PowerUpDef->GrantWeaponID = NewWeaponDef->Get_ID();
+					}
+				}
+				for (SoldierGameObjDef *SoldierDef = (SoldierGameObjDef*)DefinitionMgrClass::Get_First(CID_Soldier);SoldierDef;SoldierDef = (SoldierGameObjDef*)DefinitionMgrClass::Get_Next(SoldierDef,CID_Soldier)) {
+					if ((unsigned int)SoldierDef->WeaponDefID == OldWeaponDef->Get_ID()) {
+						SoldierDef->WeaponDefID = NewWeaponDef->Get_ID();
+					}
+					if ((unsigned int)SoldierDef->SecondaryWeaponDefID == OldWeaponDef->Get_ID()) {
+						SoldierDef->SecondaryWeaponDefID = NewWeaponDef->Get_ID();
+					}
+				}
+			}
+		}
+	}
+
+	//Remove weapons
+	RemoveWeapons.Remove_All();
+	Section = DASettingsManager::Get_Section("Remove_Weapons");
+	if (Section) {
+		for (int i = 0;i < Section->Count();i++) {
+			INIEntry *Entry = Section->Peek_Entry(i);
+			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+			if (Def && Def->Get_Class_ID() == CID_Weapon) {
+				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
+				DATokenParserClass Parser(Entry->Value,'|');
+				while (const char *Token = Parser.Get_String()) {
+					DefinitionClass *Def2 = Find_Named_Definition(Token);
+					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {
+						Weapons.Add((const WeaponDefinitionClass*)Def2);
+					}
+				}
+				if (Weapons.Count()) {
+					RemoveWeapons.Insert((unsigned int)Def,Weapons);
 				}
 			}
 		}
@@ -70,7 +143,7 @@ void DASoldierManager::Object_Created_Event(GameObject *obj) {
 	}
 }
 
-void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	StringClass Message;
 	if (((SoldierGameObj*)Victim)->Get_Player()) { //Player
 		if (!Killer) { //No killer
@@ -97,6 +170,7 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				else {
 					Create_2D_WAV_Sound_Player(Killer,"correction_3.wav");
 					if (Type == DADamageType::SQUISH) {
+						((SoldierGameObj*)Killer)->Get_Player()->Squishes++;
 						Message.Format("%d %ls killed %ls SQUISH! (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),Get_Wide_Player_Name(Victim),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
 					}
 					else if (Type == DADamageType::HEADSHOT || Type == DADamageType::NECKSHOT) {
@@ -152,6 +226,7 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 		else if (Killer->As_SoldierGameObj()) { //Killed by soldier
 			if (((SoldierGameObj*)Killer)->Get_Player()) { //Killed by player
 				if (Type == DADamageType::SQUISH) {
+					((SoldierGameObj*)Killer)->Get_Player()->Squishes++;
 					Message.Format("%d %ls killed %s SQUISH! (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
 				}
 				else if (Type == DADamageType::HEADSHOT || Type == DADamageType::NECKSHOT) {
@@ -212,4 +287,37 @@ int DASoldierManager::Character_Purchase_Request_Event(BaseControllerClass *Base
 		return 2;
 	}
 	return 3;
+}
+
+bool DASoldierManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
+	DynamicVectorClass<const WeaponDefinitionClass*> *ExWeapons = ExclusiveWeapons.Get((unsigned int)Weapon);
+	if (ExWeapons) {
+		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
+		for (int i = 0;i < ExWeapons->Count();i++) {
+			if (Bag->Find_Weapon(ExWeapons->operator[](i))) { //Block grant if they have any of these weapons.
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void DASoldierManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	DynamicVectorClass<const WeaponDefinitionClass*> *RemWeapons = RemoveWeapons.Get((unsigned int)Weapon->Get_Definition());
+	if (RemWeapons) {
+		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
+		bool Select = false;
+		for (int i = 0;i < RemWeapons->Count();i++) { //Remove these weapons.
+			int Index = Bag->Get_Weapon_Position(RemWeapons->operator[](i));
+			if (Index) {
+				if (Index == Bag->Get_Index()) {
+					Select = true;
+				}
+				Bag->Remove_Weapon(Index);
+			}
+		}
+		if (Select) { //Select new weapon if current weapon was removed.
+			Bag->Select_Weapon(Weapon);
+		}
+	}
 }

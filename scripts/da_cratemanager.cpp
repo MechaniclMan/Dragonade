@@ -272,7 +272,7 @@ void DACrateManager::Settings_Loaded_Event() {
 	Stop_Timer(1);
 	if (Spawners.Count()) {
 		float Rand = Get_Random_Float(FirstSpawnTimeMin,FirstSpawnTimeMax);
-		for (int i = 1;i <= MaxCrates;i++) {
+		for (int i = 1;i <= (MaxCrates-CrateObjs.Count());i++) {
 			Start_Timer(1,Rand*i);
 		}
 	}
@@ -494,12 +494,10 @@ public:
 bool DACrateManager::ShowCrateSpawners_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	HideCrateSpawners_Chat_Command(Player,Text,ChatType);
 	for (int i = 0;i < Spawners.Count();i++) {
-		PhysicalGameObj *Marker = Create_Object("Mounted",Spawners[i]);
+		PhysicalGameObj *Marker = Create_Object("Invisible_Object",Spawners[i]);
 		Marker->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 		Marker->Peek_Physical_Object()->Set_Immovable(true);
-		Commands->Set_Model(Marker,Model);
-		Update_Network_Object(Marker);
-		Commands->Display_Health_Bar(Marker,true);
+		Commands->Set_Model(Marker,"dsp_holo");
 		Marker->Add_Observer(new DAShowCrateSpawnersObserverClass(i+1));
 	}
 	return false;

@@ -193,7 +193,6 @@ public:
 private:
 	virtual void Player_Loaded_Event(cPlayer *Player);
 	virtual void Timer_Expired(int Number,unsigned int Data);
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
 	bool Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	
 	inline void Update_Radar_Player(GameObject *obj) {

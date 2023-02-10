@@ -37,7 +37,7 @@ private:
 
 class DAExtraRadioCommandsGameFeatureClass : public DAEventClass, public DAGameFeatureClass, public DAPlayerDataManagerClass<DAExtraRadioCommandsPlayerDataClass> {
 	virtual void Init();
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	void Radio1_Key_Hook(cPlayer *Player); //Repair the <building>!
 	void Radio2_Key_Hook(cPlayer *Player); //Enemy beacon detected at the <building>!
 	void Radio3_Key_Hook(cPlayer *Player); //Defend the pedestal!

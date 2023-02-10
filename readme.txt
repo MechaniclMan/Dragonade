@@ -1,4 +1,4 @@
-Dragonade 1.3
+Dragonade 1.4
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -24,6 +24,46 @@ Installation:
 
 
 Update History:
+
+Version 1.4:
+  Additions:
+   - A new ban manager has been added. It supports bans, ban exceptions, forceTTs, and forceTT exceptions.
+     Console functions are included to kick/ban/forceTT players, or add/remove/list bans, ban exceptions, forceTTs, and forceTT exceptions.
+     Log messages will be under the "_BAN" header.
+   - Settings sections "[Exclusive_Weapons]", "[Replace_Weapons]", and "[Remove_Weapons]" have been added. Together these can be used to prevent players
+     from having multiple versions of the same weapon.
+   - Added per-crate settings "DisableInfantry" and "DisableVehicle" which can be used to turn a generic crate into a vehicle or infantry only crate.
+   - Added crate odds modifier "Stealth" which will be applied if the player or their vehicle is stealthed.
+   - Added crate odds modifiers "Vehicle" and "Infantry" which will be applied if the player is or is not in a vehicle.
+   - Added a warning message to players when they try to deploy a beacon on the pedestal when pedestal beacons are disabled.
+   - Settings "DisableDamagePoints", "DisableDeathPoints", and "DisableTeamScoreCounter" have been added.
+   - New setting "CreditsMultiplier" to control how many credits are granted per-point.
+   - New settings "NodRefineryDumpAmount", "GDIRefineryDumpAmount", "NodRefineryTickAmount", and "GDIRefineryTickAmount" to control how many credits Refineries grant.
+   - A BRenBot plugin is now included that will display DA's log messages on IRC.
+   - Settings "C4", "Beacons", "EnterVehicles", "DriveVehicles", and "StealVehicles" have been added to the per-character disable list.
+   - Added vehicle theft log messages under the "_VEHICLE" header.
+   - New console function "mapch" to check if a scripts 3.4 client has a given file.
+   - Added support for the cheat warnings sent by RR clients. 
+   - Added "!vkills" chat command to get how many enemy vehicles a player has killed.
+   - Added "!killme" chat command that will kill a player after 10 seconds.
+  
+  Changes:
+   - The formats for the damage and kill events have been changed. If your plugin uses these you will need to update them and recompile.
+   - The owner of a multi-seat vehicle will no longer always be put into the driver seat when entering their vehicle.
+   - The "!lock" and "!vkick" commands will now move the owner of the vehicle to the driver seat if they remove the current driver.
+   - Vehicles that have been put up for grabs with the "!free" command will now auto-bind when a player enters them.
+   - The UAV Crate will now only mark stealth units when they're decloaked.
+   - Players will now remain in their vehicle when picking up the Overhaul Crate.
+   - Renamed "EnableStockKillMessages" setting to "DisableKillMessages".
+
+  Bug Fixes:
+   - The UAV Crate will now mark beacons.
+   - Fixed a bug where beacons placed on the pedestal could be incorrectly considered as fake.
+   - Fixed some bugs in the damage and kill events and removed the ugly workarounds that were previously used.
+   - The "VehiclesDestroyed" player stat now only counts enemy player vehicles.
+   - The "Squishes" player stat now works.
+   - Fixed responses to chat commands appearing in the chat window before the command itself.
+
 
 Version 1.3:
   Additions:

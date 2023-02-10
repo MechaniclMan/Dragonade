@@ -19,29 +19,25 @@
 #include "da_pointsdistribution.h"
 #include "da_damagelog.h"
 #include "da_vehicle.h"
+#include "da_player.h"
 
 void DAPointsDistributionGameFeatureClass::Init() {
+	Register_Event(DAEvent::SETTINGSLOADED);
 	Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL);
 }
 
-void DAPointsDistributionGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	if (!Is_Beacon(GetExplosionObj())) { //Give all points to the killer if killed by a beacon.
-		float Points = Get_Death_Points(Victim);
+void DAPointsDistributionGameFeatureClass::Settings_Loaded_Event() {
+	DAPlayerManager::Set_Disable_Death_Points(true);
+}
+
+void DAPointsDistributionGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+	if (Is_Beacon(GetExplosionObj()) && Is_Player(Killer)) { //Give all points to the killer if killed by a beacon.
+		((SoldierGameObj*)Killer)->Get_Player()->Increment_Score(Victim->Get_Defense_Object()->Get_Death_Points());
+	}
+	else {
+		float Points = Victim->Get_Defense_Object()->Get_Death_Points();
 		if (Points) {
-			int Team = Victim->Get_Player_Type();
-			if (Is_Player(Killer)) {
-				if (Victim->As_VehicleGameObj()) {
-					Team = DAVehicleManager::Get_Team(Victim);
-					if ((Victim->Get_Player_Type() != -2 && Victim->Get_Player_Type() != Killer->Get_Player_Type()) || (((VehicleGameObj*)Victim)->Get_Last_Team() != -2 && ((VehicleGameObj*)Victim)->Get_Last_Team() != Killer->Get_Player_Type())) {
-						((SoldierGameObj*)Killer)->Get_Player()->Increment_Score(Points*-1.0f); //Remove points the killer got for getting the last shot.
-						((SoldierGameObj*)Killer)->Get_Player()->Increment_Money(Points*-1.0f);
-					}
-				}
-				else if (Victim->Get_Player_Type() != Killer->Get_Player_Type()) {
-					((SoldierGameObj*)Killer)->Get_Player()->Increment_Score(Points*-1.0f);
-					((SoldierGameObj*)Killer)->Get_Player()->Increment_Money(Points*-1.0f);
-				}
-			}
+			int Team = Victim->As_VehicleGameObj()?DAVehicleManager::Get_Team(Victim):Victim->Get_Player_Type();
 			if (Team != -2) {
 				DynamicVectorClass<DADamageTableStruct> Damagers;
 				DADamageLog::Get_Damagers_By_Percent_Other_Team(Damagers,Victim,Team,0.0f,0.0f);

@@ -20,6 +20,8 @@
 #include "da_settings.h"
 #include "da_translation.h"
 #include "GameObjManager.h"
+#include "RefineryGameObj.h"
+#include "SoldierFactoryGameObj.h"
 
 static const char DestructionWarningText[2][BuildingConstants::TYPE_COUNT][50] = {
 	{ //Nod Buildings
@@ -304,7 +306,7 @@ void DABuildingObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	}
 }
 
-void DABuildingObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DABuildingObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (!((BuildingGameObj*)Get_Owner())->Is_Destroyed()) {
 		if (Damage > 0.0f) {
 			if (((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health() <= ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health_Max()*0.9f) {
@@ -347,7 +349,7 @@ void DABuildingObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage
 	}
 }
 
-void DABuildingObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DABuildingObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	int Team = ((BuildingGameObj*)Get_Owner())->Get_Player_Type();
 	BuildingConstants::BuildingType BuildingType = ((BuildingGameObj*)Get_Owner())->Get_Definition().Get_Type();
 	const SimpleDynVecClass<GameObjObserverClass *> &Observers = Get_Owner()->Get_Observers();
@@ -366,19 +368,44 @@ void DABuildingManager::Init() {
 	static DABuildingManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED);
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::BUILDING);
-	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::BUILDING);
+	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::BUILDING | DAObjectEvent::VEHICLE);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::BUILDING);
 	Instance.UnderAttackMessage[0] = true;
 	Instance.UnderAttackMessage[1] = true;
+	Instance.Register_Event(DAEvent::PLAYERJOIN);
 }
 
 void DABuildingManager::Settings_Loaded_Event() {
 	if (DASettingsManager::Get_Bool("EnableInvincibleBuildings",false)) {
 		for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
-			ArmorType Type =  ArmorWarheadManager::Get_Armor_Type("Blamo");
-			BuildingGameObj *Building = z->Data();
-			Building->Get_Defense_Object()->Set_Skin(Type);
-			*((ArmorType*)((unsigned int)&Building->Get_Definition()+0x88)) = Type; //MCT Skin
+			z->Data()->Get_Defense_Object()->Set_Can_Object_Die(false);
+		}
+		for (SLNode<VehicleGameObj> *z = GameObjManager::VehicleGameObjList.Head();z;z = z->Next()) {
+			if (z->Data()->Is_Turret()) {
+				z->Data()->Get_Defense_Object()->Set_Can_Object_Die(false);
+			}
+		}
+	}
+	float NodDump = DASettingsManager::Get_Float("NodRefineryDumpAmount",-1.0f);
+	float NodTick = DASettingsManager::Get_Float("NodRefineryTickAmount",-1.0f);
+	float GDIDump = DASettingsManager::Get_Float("GDIRefineryDumpAmount",-1.0f);
+	float GDITick = DASettingsManager::Get_Float("GDIRefineryTickAmount",-1.0f);
+	for (RefineryGameObjDef *Ref = (RefineryGameObjDef*)DefinitionMgrClass::Get_First(CID_Refinery);Ref;Ref = (RefineryGameObjDef*)DefinitionMgrClass::Get_Next(Ref,CID_Refinery)) {
+		if (Ref->Get_Default_Player_Type() == 0) {
+			if (NodDump != -1.0f) {
+				Ref->FundsGathered = NodDump;
+			}
+			if (NodTick != -1.0f) {
+				Ref->FundsDistributedPerSec = NodTick;
+			}
+		}
+		else if (Ref->Get_Default_Player_Type() == 1) {
+			if (GDIDump != -1.0f) {
+				Ref->FundsGathered = GDIDump;
+			}
+			if (GDITick != -1.0f) {
+				Ref->FundsDistributedPerSec = GDITick;
+			}
 		}
 	}
 }
@@ -393,26 +420,37 @@ void DABuildingManager::Timer_Expired(int Number,unsigned int Data) {
 	UnderAttackMessage[Data] = true;
 }
 
-void DABuildingManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DABuildingManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	int Team = Victim->Get_Player_Type();
-	if (Damage > 0.0f && (Team == 0 || Team == 1) && UnderAttackMessage[Team]) {
-		UnderAttackMessage[Team] = false;
-		Start_Timer(1,30.0f,false,Team);
-		DALogManager::Write_Log("_BUILDING","%s under attack.",DATranslationManager::Translate_With_Team_Name(Victim));
-		BuildingConstants::BuildingType Type = ((BuildingGameObj*)Victim)->Get_Definition().Get_Type();
-		const SimpleDynVecClass<GameObjObserverClass *> &Observers = Victim->Get_Observers();
-		for (int i = 0;i < Observers.Count();i++) {
-			if (!_stricmp(Observers[i]->Get_Name(),"ConYard")) {
-				Type = BuildingConstants::TYPE_CONYARD;
-				break;
-			}
+	if (Damage > 0.0f && (Team == 0 || Team == 1) && UnderAttackMessage[Team] && Victim->Get_Defense_Object()->Get_Health()) {
+		int Announcement = 0;
+		if (Victim->As_BuildingGameObj()) {
+			Announcement = ((BuildingGameObj*)Victim)->Get_Definition().Get_Damage_Report(!Victim->Get_Player_Type());
 		}
-		//Create_2D_WAV_Sound_Team(UnderAttackSounds[Team][0][Type],0);
-		//Create_2D_WAV_Sound_Team(UnderAttackSounds[Team][1][Type],1);
+		else {
+			Announcement = ((VehicleGameObj*)Victim)->Get_Definition().Get_Damage_Report(!Victim->Get_Player_Type());
+		}
+		if (Announcement) {
+			UnderAttackMessage[Team] = false;
+			Start_Timer(1,30.0f,false,Team);
+			DALogManager::Write_Log("_BUILDING","%s under attack.",DATranslationManager::Translate_With_Team_Name(Victim));
+			/*
+			BuildingConstants::BuildingType Type = ((BuildingGameObj*)Victim)->Get_Definition().Get_Type();
+			const SimpleDynVecClass<GameObjObserverClass *> &Observers = Victim->Get_Observers();
+			for (int i = 0;i < Observers.Count();i++) {
+				if (!_stricmp(Observers[i]->Get_Name(),"ConYard")) {
+					Type = BuildingConstants::TYPE_CONYARD;
+					break;
+				}
+			}
+			Create_2D_WAV_Sound_Team(UnderAttackSounds[Team][0][Type],0);
+			Create_2D_WAV_Sound_Team(UnderAttackSounds[Team][1][Type],1);
+			*/
+		}
 	}
 }
 
-void DABuildingManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DABuildingManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	StringClass Message;
 	if (Killer->As_SoldierGameObj()) { //Killed by player
 		if (((SoldierGameObj*)Killer)->Get_Player()) {

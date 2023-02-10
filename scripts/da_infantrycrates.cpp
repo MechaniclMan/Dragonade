@@ -99,7 +99,7 @@ class DARandomVehicleCrateClass : public DACrateClass {
 					if (PT) {
 						for (int i = 0;i < 10;i++) {
 							VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
-							if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying())) {
+							if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
 								Vehicles.Add(Def);
 							}
 						}
@@ -108,22 +108,10 @@ class DARandomVehicleCrateClass : public DACrateClass {
 			}
 			VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike"); //Special case for Recon Bike.
 			if (Def) {
-				Def->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
-				DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
-				Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-				Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-				Defense.ShieldStrengthMax = 150;
-				Defense.ShieldStrength = 150;
 				Vehicles.Add(Def);
 			}
 			Def = (VehicleGameObjDef*)Find_Named_Definition("Nod_SSM_Launcher_Player"); //Special case for SSM.
 			if (Def) {
-				Def->WeaponDefID = 0;
-				DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
-				Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-				Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-				Defense.ShieldStrengthMax = 125;
-				Defense.ShieldStrength = 125;
 				Vehicles.Add(Def);
 			}
 		}
@@ -183,8 +171,8 @@ class DAArmsDealerCrateClass : public DACrateClass {
 		}
 	}
 	
-	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if stealth.
-		return (Weapons.Count() && !Player->Get_GameObj()->Is_Stealth_Enabled());
+	virtual bool Can_Activate(cPlayer *Player) {
+		return Weapons.Count();
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -202,10 +190,6 @@ Register_Crate(DAArmsDealerCrateClass,"Arms Dealer",DACrateType::INFANTRY);
 /********************************************************************************************************************************/
 
 class DADemolitionKitCrateClass : public DACrateClass {
-	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if stealth.
-		return !Player->Get_GameObj()->Is_Stealth_Enabled();
-	}
-
 	virtual void Activate(cPlayer *Player) {
 		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
 		Bag->Add_Weapon("Weapon_MineProximity_Player",999);
@@ -336,17 +320,17 @@ class DATiberiumMutantCrateObserverClass : public DAGameObjObserverClass {
 		return !_stricmp(Weapon->Get_Name(),"CNC_Weapon_ChemSprayer_Player"); //Can only use chem sprayer.
 	}
 	
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 		if (Type == DADamageType::SQUISH || Type == DADamageType::FALL) {
 			return false; //Can't be squished and doesn't take fall damage.
 		}
-		else if (Offense->Get_Damage() > 0) {
-			Offense->Scale_Damage(0.5f); //Only takes half damage.
+		else if (Type != DADamageType::REPAIR) {
+			Damage *= 0.5f; //Only takes half damage.
 		}
 		return true;
 	}
 
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		Get_Owner()->Set_Delete_Pending(); //Fix bug where the player won't respawn when they die because the visceroid doesn't have a death animation.
 	}
 };
@@ -403,7 +387,7 @@ class DAHumanSiloCrateObserverClass : public DAGameObjObserverClass {
 		Total = 0;
 	}
 
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		if (Type == DADamageType::TIBERIUM || Warhead == 9 || Warhead == 10 || Warhead == 11) { //Tiberium based warheads.
 			Give_Credits_Team(((SoldierGameObj*)Get_Owner())->Get_Player_Type(),Damage/2);
 			Total += Damage;

@@ -26,7 +26,6 @@ public:
 	virtual void                        DumpPhys (FileClass &file);
 #endif
 	DECLARE_EDITABLE( CinematicGameObjDef, ArmedGameObjDef );
-private:
 	int SoundDefID;
 	StringClass SoundBoneName;
 	StringClass AnimationName;

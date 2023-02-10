@@ -45,7 +45,7 @@ private:
 
 class DAAirDroppedVehicleObserverClass : public DAGameObjObserverClass {
 	virtual void Init();
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
 	virtual const char *Get_Name() { return "DAAirDroppedVehicleObserverClass"; }
@@ -69,11 +69,13 @@ private:
 	class DefaultPurchaseEvent : public DAEventClass {
 		virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	};
+	virtual void Level_Loaded_Event();
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual bool Vehicle_Flip_Event(VehicleGameObj *Vehicle);
+	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat);
 	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 
 	//Settings

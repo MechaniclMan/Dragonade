@@ -26,7 +26,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (AirFactoryGameObjDef, BuildingGameObjDef);
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	int LandingPosDefId;
 	float LandingPosDistance;

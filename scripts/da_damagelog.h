@@ -45,7 +45,7 @@ struct DADamageTableStruct {
 class DADamageLogObserverClass : public DAGameObjObserverClass {
 public:
 	virtual void Init();
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
 	DA_API void Remove_Damage(cPlayer *Player);

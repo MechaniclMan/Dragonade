@@ -26,7 +26,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE(DamageZoneGameObjDef, BaseGameObjDef);
-private:
 	float DamageRate;
 	int DamageWarhead;
 	Vector3 Color;

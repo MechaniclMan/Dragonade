@@ -113,7 +113,7 @@ bool DARTCGameFeatureClass::Team_Change_Request_Event(cPlayer *Player) {
 	else if (Is_RTC(Player)) {
 		DA::Page_Player(Player,"You already have a team change request pending.");
 	}
-	else if (!Get_Can_RTC(Player) || (int)Player->Get_Score() >= ScoreLimit) {
+	else if (!Get_Can_RTC(Player) || (ScoreLimit && (int)Player->Get_Score() >= ScoreLimit)) {
 		DA::Page_Player(Player,"You can not request a team change as you have already started playing.");
 	}
 	else if (Queue[OtherTeam].Count()) { //If there's someone in the queue swap with them.

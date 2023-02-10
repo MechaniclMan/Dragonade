@@ -307,25 +307,28 @@ public:
 		return -1;
 	}
 
-	inline int As_Int(int Pos) const {
+	inline bool As_Int(int Pos,int &Buffer) const {
 		if (Is_Int(Pos)) {
-			return atoi(Tokens[Pos]);
+			Buffer = atoi(Tokens[Pos]);
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
-	inline unsigned int As_UInt(int Pos) const {
+	inline bool As_UInt(int Pos,unsigned int &Buffer) const {
 		if (Is_UInt(Pos)) {
-			return (unsigned int)atoi(Tokens[Pos]);
+			Buffer = atoi(Tokens[Pos]);
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
-	inline float As_Float(int Pos) const {
+	inline bool As_Float(int Pos,float &Buffer) const {
 		if (Is_Float(Pos)) {
-			return (float)atof(Tokens[Pos]);
+			Buffer = (float)atof(Tokens[Pos]);
+			return true;
 		}
-		return 0;
+		return false;
 	}
 
 	inline WideStringClass As_Wide(int Pos) const {

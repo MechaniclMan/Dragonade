@@ -23,7 +23,7 @@ class DAParachutesObserverClass : public DAGameObjObserverClass {
 	virtual const char *Get_Name() { return "DAParachutesObserverClass"; }
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual bool Vehicle_Entry_Request(VehicleGameObj *Vehicle,int &Seat);
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual ~DAParachutesObserverClass();
 	ReferencerClass Parachute;
 	Vector3 StartPos;

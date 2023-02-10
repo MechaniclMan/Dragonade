@@ -21,16 +21,28 @@
 #include "da_settings.h"
 #include "da_log.h"
 #include "da_chatcommand.h"
+#include "da_vehicle.h"
 #include "cScTextObj.h"
 #include "SCAnnouncement.h"
 #include "WeaponBagClass.h"
 #include "WeaponClass.h"
 #include "weaponmgr.h"
 #include "MoveablePhysClass.h"
+#include "ArmorWarheadManager.h"
+#include "CombatManager.h"
+#include "GameObjManager.h"
 
 DynamicVectorClass<DAPlayerDataFactoryClass*> DAPlayerManager::DataFactories;
 DynamicVectorClass<DAPlayerClass*> DAPlayerManager::Players;
-
+bool DAPlayerManager::DisableKillMessages;
+bool DAPlayerManager::DisableKillCounter;
+bool DAPlayerManager::DisableTeamKillCounter;
+bool DAPlayerManager::DisableDeathCounter;
+bool DAPlayerManager::DisableTeamDeathCounter;
+bool DAPlayerManager::DisableDamagePoints;
+bool DAPlayerManager::DisableDeathPoints;
+bool DAPlayerManager::DisableTeamScoreCounter;
+float DAPlayerManager::CreditsMultiplier;
 
 
 DAPlayerClass::DAPlayerClass(cPlayer *Player) {
@@ -425,6 +437,10 @@ bool DAPlayerClass::Is_TT_Client() {
 	return (Get_Version() >= 4.0f);
 }
 
+bool DAPlayerClass::Is_Scripts_Client() {
+	return (Get_Version() >= 2.6f);
+}
+
 bool DAPlayerClass::Is_Stock_Client() {
 	return (Get_Version() < 4.0f);
 }
@@ -770,45 +786,45 @@ void DAPlayerClass::Destroyed() {
 	}
 }
 
-bool DAPlayerClass::Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAPlayerClass::Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		if (!Observers[i]->Damage_Dealt_Request(Victim,Offense,Type,Bone)) {
+		if (!Observers[i]->Damage_Dealt_Request(Victim,Damage,Warhead,Scale,Type)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-bool DAPlayerClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAPlayerClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		if (!Observers[i]->Damage_Received_Request(Offense,Type,Bone)) {
+		if (!Observers[i]->Damage_Received_Request(Damager,Damage,Warhead,Scale,Type)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-void DAPlayerClass::Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAPlayerClass::Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Damage_Dealt(Victim,Damage,Warhead,Type,Bone);
+		Observers[i]->Damage_Dealt(Victim,Damage,Warhead,Scale,Type);
 	}
 }
 
-void DAPlayerClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAPlayerClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Damage_Received(Damager,Damage,Warhead,Type,Bone);
+		Observers[i]->Damage_Received(Damager,Damage,Warhead,Scale,Type);
 	}
 }
 
-void DAPlayerClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAPlayerClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
+		Observers[i]->Kill_Dealt(Victim,Damage,Warhead,Scale,Type);
 	}
 }
 
-void DAPlayerClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAPlayerClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Kill_Received(Killer,Damage,Warhead,Type,Bone);
+		Observers[i]->Kill_Received(Killer,Damage,Warhead,Scale,Type);
 	}
 }
 
@@ -930,6 +946,78 @@ void DAPlayerManager::Remove_Data_Factory(DAPlayerDataFactoryClass *Factory) {
 	}
 }
 
+bool DAPlayerManager::Get_Disable_Kill_Messages() {
+	return DisableKillMessages;
+}
+
+bool DAPlayerManager::Get_Disable_Kill_Counter() {
+	return DisableKillCounter;
+}
+
+bool DAPlayerManager::Get_Disable_Team_Kill_Counter() {
+	return DisableTeamKillCounter;
+}
+
+bool DAPlayerManager::Get_Disable_Death_Counter() {
+	return DisableDeathCounter;
+}
+
+bool DAPlayerManager::Get_Disable_Team_Death_Counter() {
+	return DisableTeamDeathCounter;
+}
+
+bool DAPlayerManager::Get_Disable_Damage_Points() {
+	return DisableDamagePoints;
+}
+
+bool DAPlayerManager::Get_Disable_Death_Points() {
+	return DisableDeathPoints;
+}
+
+bool DAPlayerManager::Get_Disable_Team_Score_Counter() {
+	return DisableTeamScoreCounter;
+}
+
+float DAPlayerManager::Get_Credits_Multiplier() {
+	return CreditsMultiplier;
+}
+
+void DAPlayerManager::Set_Disable_Kill_Messages(bool Enable) {
+	DisableKillMessages = Enable;
+}
+
+void DAPlayerManager::Set_Disable_Kill_Counter(bool Disable) {
+	DisableKillCounter = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Team_Kill_Counter(bool Disable) {
+	DisableTeamKillCounter = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Death_Counter(bool Disable) {
+	DisableDeathCounter = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Team_Death_Counter(bool Disable) {
+	DisableTeamDeathCounter = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Damage_Points(bool Disable) {
+	DisableDamagePoints = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Death_Points(bool Disable) {
+	DisableDeathPoints = Disable;
+}
+
+void DAPlayerManager::Set_Disable_Team_Score_Counter(bool Disable) {
+	DisableTeamScoreCounter = Disable;
+}
+
+void DAPlayerManager::Set_Credits_Multiplier(float Multiplier) {
+	CreditsMultiplier = Multiplier;
+}
+
 bool DAPlayerManager::Check_Player(DAPlayerClass *DAPlayer) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data() == DAPlayer->Get_Owner()) {
@@ -996,20 +1084,20 @@ void DAPlayerManager::Settings_Loaded_Event() {
 	ForceTT = (unsigned int)DASettingsManager::Get_Int("ForceTT",0);
 	TTRevision = (unsigned int)DASettingsManager::Get_Int("TTRevision",0);
 
-	//Kill messages and kill/death counters
-	EnableStockKillMessages = DASettingsManager::Get_Bool("EnableStockKillMessages",true);
+	//Kill messages, score/kill/death counters, and points stuff.
+	DisableKillMessages = DASettingsManager::Get_Bool("DisableKillMessages",false);
 	DisableKillCounter = DASettingsManager::Get_Bool("DisableKillCounter",false);
 	DisableTeamKillCounter = DASettingsManager::Get_Bool("DisableTeamKillCounter",false);
 	DisableDeathCounter = DASettingsManager::Get_Bool("DisableDeathCounter",false);
 	DisableTeamDeathCounter = DASettingsManager::Get_Bool("DisableTeamDeathCounter",false);
+	DisableDamagePoints = DASettingsManager::Get_Bool("DisableDamagePoints",false);
+	DisableDeathPoints = DASettingsManager::Get_Bool("DisableDeathPoints",false);
+	DisableTeamScoreCounter = DASettingsManager::Get_Bool("DisableTeamScoreCounter",false);
+	CreditsMultiplier = DASettingsManager::Get_Float("CreditsMultiplier",1.0f);
 }
 
 ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(ConnectionRequest &Request,WideStringClass &RefusalMessage) {
 	cGameData *TheGame = The_Game();
-
-	if (Request.clientSerialHash.Is_Empty()) {
-		return ConnectionAcceptanceFilter::STATUS_INDETERMINATE;
-	}
 	
 	CheckFirst:
 	for (wchar_t *DisallowedPtr = DisallowedNickFirstCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
@@ -1159,17 +1247,17 @@ int DAPlayerManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,cPl
 }
 
 void DAPlayerManager::Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	DALogManager::Write_Log("_PURCHASE","%ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
 	Player->Get_DA_Player()->Character_Purchase(Cost,Item);
 }
 
 void DAPlayerManager::Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	DALogManager::Write_Log("_PURCHASE","%ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
 	Player->Get_DA_Player()->Vehicle_Purchase(Cost,Item);
 }
 
 void DAPlayerManager::PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	DALogManager::Write_Log("_PURCHASE","%ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
 	Player->Get_DA_Player()->PowerUp_Purchase(Cost,Item);
 }
 
@@ -1251,71 +1339,6 @@ void DAPlayerManager::Think() {
 	}
 }
 
-void DAPlayerManager::Object_Created_Event(GameObject *obj) {
-	((SoldierGameObj*)obj)->Get_DA_Player()->Created();
-}
-
-void DAPlayerManager::Object_Destroyed_Event(GameObject *obj) {
-	cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
-	Player->Get_DA_Player()->Destroyed();
-	if ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health()) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
-		if (!DisableDeathCounter) { //Handle death counters.
-			Player->Increment_Deaths();
-			if (!DisableTeamDeathCounter) {
-				cTeam *Team = Find_Team(Player->Get_Player_Type());
-				if (Team) {
-					Team->Increment_Deaths();
-				}
-			}
-		}
-	}
-}
-
-bool DAPlayerManager::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	if (Is_Player(Offense->Get_Owner())) {
-		if (!((SoldierGameObj*)Offense->Get_Owner())->Get_DA_Player()->Damage_Dealt_Request(Victim,Offense,Type,Bone)) {
-			return false;
-		}
-	}
-	if (Is_Player(Victim)) {
-		return ((SoldierGameObj*)Victim)->Get_DA_Player()->Damage_Received_Request(Offense,Type,Bone);
-	}
-	return true;
-}
-
-void DAPlayerManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	if (Is_Player(Damager)) {
-		((SoldierGameObj*)Damager)->Get_DA_Player()->Damage_Dealt(Victim,Damage,Warhead,Type,Bone);
-	}
-	if (Is_Player(Victim)) {
-		((SoldierGameObj*)Victim)->Get_DA_Player()->Damage_Received(Damager,Damage,Warhead,Type,Bone);
-	}
-}
-
-void DAPlayerManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	if (Is_Player(Killer)) {
-		cPlayer *Player = ((SoldierGameObj*)Killer)->Get_Player();
-		Player->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
-		if (Victim->As_SoldierGameObj() && Killer != Victim) { //Handle kill counters.
-			if (!DisableKillCounter) {
-				Player->Increment_Kills();
-				if (!DisableTeamKillCounter) {
-					cTeam *Team = Find_Team(Player->Get_Team());
-					if (Team) {
-						Team->Increment_Kills();
-					}
-				}
-			}
-			if (EnableStockKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
-				Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
-			}
-		}
-	}
-	if (Is_Player(Victim)) {
-		((SoldierGameObj*)Victim)->Get_DA_Player()->Kill_Received(Killer,Damage,Warhead,Type,Bone);
-	}
-}
-
 void DAPlayerManager::Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender) {
 	((SoldierGameObj*)obj)->Get_DA_Player()->Custom(Sender,Type,Param);
 }
@@ -1324,6 +1347,124 @@ void DAPlayerManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
 	((SoldierGameObj*)obj)->Get_DA_Player()->Poked(Player);
 }
 
+void DAPlayerManager::Object_Created_Event(GameObject *obj) {
+	((SoldierGameObj*)obj)->Get_DA_Player()->Created();
+}
+
+void DAPlayerManager::Object_Destroyed_Event(GameObject *obj) {
+	cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
+	Player->Get_DA_Player()->Destroyed();
+	if (!DisableDeathCounter && ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health())) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
+		Player->Increment_Deaths();
+	}
+}
+
+bool DAPlayerManager::Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	if (Is_Player(Victim)) {
+		return ((SoldierGameObj*)Victim)->Get_DA_Player()->Damage_Received_Request(Damager,Damage,Warhead,Scale,Type);
+	}
+	if (Is_Player(Damager)) {
+		if (!((SoldierGameObj*)Damager)->Get_DA_Player()->Damage_Dealt_Request(Victim,Damage,Warhead,Scale,Type)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void DAPlayerManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type){
+	if (Is_Player(Victim)) {
+		((SoldierGameObj*)Victim)->Get_DA_Player()->Damage_Received(Damager,Damage,Warhead,Scale,Type);
+	}
+	if (Is_Player(Damager)) {
+		((SoldierGameObj*)Damager)->Get_DA_Player()->Damage_Dealt(Victim,Damage,Warhead,Scale,Type);
+	}
+}
+
+void DAPlayerManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+	if (Is_Player(Victim)) {
+		((SoldierGameObj*)Victim)->Get_DA_Player()->Kill_Received(Killer,Damage,Warhead,Scale,Type);
+	}
+	if (Is_Player(Killer)) {
+		cPlayer *Player = ((SoldierGameObj*)Killer)->Get_Player();
+		Player->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Scale,Type);
+		if (Victim->As_SoldierGameObj() && Killer != Victim) {
+			if (!DisableKillCounter) {
+				Player->Increment_Kills();
+			}
+			if (!DisableKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
+				Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
+			}
+		}
+	}
+}
+
+void cPlayer::Increment_Score(float Score) {
+	if (Is_Gameplay_Permitted()) {
+		this->Score += Score;
+		if (!DAPlayerManager::Get_Disable_Team_Score_Counter()) {
+			cTeam *Team = Find_Team(Get_Team());
+			if (Team) {
+				Team->Increment_Score(Score);
+			}
+		}	
+		if (Score > 0) {
+			Money += Score * DAPlayerManager::Get_Credits_Multiplier();
+		}
+		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+	}
+}
+
+void cPlayer::Increment_Kills() {
+	if (Is_Gameplay_Permitted()) {
+		Kills++;
+		if (!DAPlayerManager::Get_Disable_Team_Kill_Counter()) {
+			cTeam *Team = Find_Team(Get_Team());
+			if (Team) {
+				Team->Increment_Kills();
+			}
+		}
+		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+	}
+}
+
+void cPlayer::Decrement_Kills() {
+	if (Is_Gameplay_Permitted()) {
+		Kills--;
+		if (!DAPlayerManager::Get_Disable_Team_Kill_Counter()) {
+			cTeam *Team = Find_Team(Get_Team());
+			if (Team) {
+				Team->Decrement_Kills();
+			}
+		}
+		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+	}
+}
+
+void cPlayer::Increment_Deaths() {
+	if (Is_Gameplay_Permitted()) {
+		Deaths++;
+		if (!DAPlayerManager::Get_Disable_Team_Death_Counter()) {
+			cTeam *Team = Find_Team(Get_Team());
+			if (Team) {
+				Team->Increment_Deaths();
+			}
+		}
+		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+	}
+}
+
+void cPlayer::Decrement_Deaths() {
+	if (Is_Gameplay_Permitted()) {
+		Deaths--;
+		if (!DAPlayerManager::Get_Disable_Team_Death_Counter()) {
+			cTeam *Team = Find_Team(Get_Team());
+			if (Team) {
+				Team->Decrement_Deaths();
+			}
+		}
+		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+	}
+}
 
 class DALegacyTagConsoleFunctionClass : public ConsoleFunctionClass {
 	const char *Get_Name() { return "tag"; }
@@ -1554,6 +1695,21 @@ class SDEToggleConsoleFunctionClass : public ConsoleFunctionClass {
 };
 Register_Console_Function(SDEToggleConsoleFunctionClass);
 
+class MapCHConsoleFunctionClass : public ConsoleFunctionClass {
+	const char* Get_Name() { return "mapch"; }
+	const char* Get_Help() { return "MAPCH <playerid> <file> - Check if a given client has a given file. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int ID;
+		Parser.Get_Int(ID);
+		if (Find_Player(ID) && Parser.Get_Remaining_String()) {
+			Send_Client_Text(WideStringFormat(L"j\n71\n%d\n%hs\n",ID,Parser.Get_Remaining_String()),TEXT_MESSAGE_PRIVATE,true,-2,ID,true,true);
+		}
+	}
+};
+Register_Console_Function(MapCHConsoleFunctionClass);
+
+
 
 class DAVoteYesKeyHookClass : public DAKeyHookClass {
 	void Activate(cPlayer *Player) {
@@ -1585,16 +1741,33 @@ class DAUnStuckChatCommandClass: public DAChatCommandClass {
 		if (!Phys) {
 			Phys = Player->Get_GameObj();
 		}
-		if (((MoveablePhysClass*)Phys->Peek_Physical_Object())->Can_Teleport(Phys->Get_Transform())) {
+		if (Phys->Is_Attached_To_An_Object() || ((MoveablePhysClass*)Phys->Peek_Physical_Object())->Can_Teleport(Phys->Get_Transform())) {
 			DA::Page_Player(Player,"You are not stuck.");
 		}
 		else if (Fix_Stuck_Object(Phys,10.0f)) {
 			DA::Page_Player(Player,"You have been unstuck.");
 		}
 		else {
-			DA::Page_Player(Player,"Unstuck failed. Try again.");
+			DA::Page_Player(Player,"Unstuck failed. You can try again, or use the !killme command.");
 		}
 		return true;
 	}
 };
 Register_Simple_Chat_Command(DAUnStuckChatCommandClass,"!unstuck|!unstick|!stuck|!stick");
+
+class DAKillMeChatCommandClass: public DAChatCommandClass, public DAEventClass {
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		if (!Is_Timer(1,Player->Get_GameObj()->Get_ID())) {
+			Start_Timer(1,10.0f,false,Player->Get_GameObj()->Get_ID());
+			DA::Page_Player(Player,"You will be killed in 10 seconds.");
+		}
+		return true;
+	}
+	void Timer_Expired(int Number,unsigned int Data) {
+		GameObject *Soldier = GameObjManager::Find_SmartGameObj(Data);
+		if (Soldier) {
+			Commands->Apply_Damage(Soldier,99999.0f,"BlamoKiller",0);
+		}
+	}
+};
+Register_Simple_Chat_Command(DAKillMeChatCommandClass,"!killme|!suicide");

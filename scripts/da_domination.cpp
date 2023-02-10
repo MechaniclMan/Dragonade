@@ -176,12 +176,6 @@ void DADominationManagerClass::Init() {
 	if (PT->Get_Definition(5) == Get_Definition_ID("CnC_Nod_Stealth_Tank")) {
 		VehicleGameObjDef *Recon = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
 		if (Recon) {
-			Recon->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
-			DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef());
-			Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldStrengthMax = 150;
-			Defense.ShieldStrength = 150;
 			PT->Set_Definition(5,Recon->Get_ID());
 			PT->Set_Cost(5,500);
 		}
@@ -220,13 +214,37 @@ void DADominationManagerClass::Init() {
 			PT->Set_Definition(5,BHRS->Get_ID());
 		}
 	}
+
+	//Change 4 shot Ramjets into 1 shot.
+	DefinitionClass *OldWeaponDef = Find_Named_Definition("CnC_Weapon_RamjetRifle_Player");
+	DefinitionClass *NewWeaponDef = Find_Named_Definition("Weapon_RamjetRifle_Player");
+	if (OldWeaponDef && OldWeaponDef->Get_Class_ID() == CID_Weapon && NewWeaponDef && NewWeaponDef->Get_Class_ID() == CID_Weapon) {
+		for (PowerUpGameObjDef *PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_First(CID_PowerUp);PowerUpDef;PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_Next(PowerUpDef,CID_PowerUp)) {
+			if ((unsigned int)PowerUpDef->GrantWeaponID == OldWeaponDef->Get_ID()) {
+				PowerUpDef->GrantWeaponID = NewWeaponDef->Get_ID();
+			}
+		}
+		for (SoldierGameObjDef *SoldierDef = (SoldierGameObjDef*)DefinitionMgrClass::Get_First(CID_Soldier);SoldierDef;SoldierDef = (SoldierGameObjDef*)DefinitionMgrClass::Get_Next(SoldierDef,CID_Soldier)) {
+			if ((unsigned int)SoldierDef->WeaponDefID == OldWeaponDef->Get_ID()) {
+				SoldierDef->WeaponDefID = NewWeaponDef->Get_ID();
+			}
+			if ((unsigned int)SoldierDef->SecondaryWeaponDefID == OldWeaponDef->Get_ID()) {
+				SoldierDef->SecondaryWeaponDefID = NewWeaponDef->Get_ID();
+			}
+		}
+	}
 	
+	Register_Event(DAEvent::SETTINGSLOADED);
 	Register_Event(DAEvent::PLAYERLOADED);
 	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
-	Register_Object_Event(DAObjectEvent::KILLDEALT,DAObjectEvent::PLAYER,INT_MIN);
-	Register_Object_Event(DAObjectEvent::DAMAGEDEALT,DAObjectEvent::PLAYER,INT_MIN);
 	
 	Start_Timer(10,CreditTickTime,true);
+}
+
+void DADominationManagerClass::Settings_Loaded_Event() {
+	DAPlayerManager::Set_Disable_Team_Kill_Counter(true);
+	DAPlayerManager::Set_Disable_Team_Death_Counter(true);
+	DAPlayerManager::Set_Disable_Team_Score_Counter(true);
 }
 
 void DADominationManagerClass::Player_Loaded_Event(cPlayer *Player) {
@@ -237,17 +255,6 @@ void DADominationManagerClass::Object_Created_Event(GameObject *obj) {
 	((SoldierGameObj*)obj)->Give_Key(1);
 	((SoldierGameObj*)obj)->Give_Key(2);
 	((SoldierGameObj*)obj)->Give_Key(3);
-}
-
-void DADominationManagerClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	Update_Score(Damager->Get_Player_Type()?1:0); //Remove player score from team total.
-}
-
-void DADominationManagerClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	int Team = Killer->Get_Player_Type();
-	if (Team == 0 || Team == 1) {
-		Update_Score(Team); //Remove player score from team total.
-	}
 }
 
 void DADominationManagerClass::Timer_Expired(int Number,unsigned int Data) {

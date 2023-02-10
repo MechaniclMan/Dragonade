@@ -34,7 +34,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (VehicleFactoryGameObjDef, BuildingGameObjDef);
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	int					PadClearingWarhead;
 	float					TotalBuildingTime;

@@ -39,7 +39,7 @@ SCRIPTS_API const char *Get_Translated_String(unsigned long ID)
 	}
 	else
 	{
-		return newstr("ERROR: String Not Found");
+		return newstr("No String");
 	}
 }
 
@@ -56,7 +56,7 @@ SCRIPTS_API const wchar_t *Get_Wide_Translated_String(unsigned long ID)
 	}
 	else
 	{
-		return newwcs(L"ERROR: String Not Found");
+		return L"No String";
 	}
 }
 
@@ -64,12 +64,12 @@ SCRIPTS_API const char *Get_Translated_Preset_Name(GameObject *obj)
 {
 	if (!obj)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	DamageableGameObj *o = obj->As_DamageableGameObj();
 	if (!o)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	const DamageableGameObjDef *d = &o->Get_Definition();
 	return Get_Translated_String(d->Get_Translated_Name_ID());
@@ -108,24 +108,24 @@ SCRIPTS_API const char *Get_Translated_Weapon(GameObject *obj,int position)
 {
 	if (!obj)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	PhysicalGameObj *o = obj->As_PhysicalGameObj();
 	if (!o)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	ArmedGameObj *o2 = o->As_ArmedGameObj();
 	if (!o2)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	WeaponBagClass *w = o2->Get_Weapon_Bag();
 	if ((position) && (position < w->Get_Count()))
 	{
 		return Get_Translated_String(w->Peek_Weapon(position)->Get_Definition()->IconNameID);
 	}
-	return newstr("");
+	return newstr("No String");
 }
 
 SCRIPTS_API const char *Get_Team_Name(int Team)
@@ -165,7 +165,7 @@ SCRIPTS_API const char *Get_Translated_Definition_Name(const char *preset)
 	DamageableGameObjDef *d = (DamageableGameObjDef *)Find_Named_Definition(preset);
 	if (!d)
 	{
-		return newstr("");
+		return newstr("No String");
 	}
 	return Get_Translated_String(d->Get_Translated_Name_ID());
 }

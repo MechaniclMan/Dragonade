@@ -156,6 +156,9 @@ public:
 		Rights = mode;
 		switch (Rights)
 		{
+		case 3:
+			Handle = CreateFileA(Filename,GENERIC_WRITE,0,0,OPEN_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
+			break;
 		case 2:
 			Handle = CreateFileA(Filename,GENERIC_WRITE,0,0,CREATE_ALWAYS,FILE_ATTRIBUTE_NORMAL,0);
 			break;
@@ -401,29 +404,16 @@ public:
 	bool Read_Line(StringClass &str)
 	{
 		str = "";
-		char buf[64];
-		memset(buf,0,sizeof(buf));
-		bool b = false;
-		do
-		{
-			int sz = Read(buf,63);
-			b = (sz == 63);
-			if (sz > 0)
-			{
-				for (int i = 0;i < sz;i++)
-				{
-					if (buf[i] == 0xA)
-					{
-						buf[i + 1] = 0;
-						Seek(1 - sz - i,1);
-						b = false;
-					}
-				}
-				str += buf;
+		char Buffer;
+		while (Read(&Buffer,1)) {
+			if (Buffer == '\n') {
+				break;
 			}
-		} while (b);
-		strtrim(str.Peek_Buffer());
-		return false;
+			else if (Buffer != '\r') {
+				str += Buffer;
+			}
+		}
+		return str != "";
 	}
 	bool Write_Line(StringClass const &str)
 	{

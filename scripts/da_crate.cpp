@@ -89,14 +89,26 @@ void DACrateFactoryClass::Destroy_Instance() {
 }
 
 bool DACrateFactoryClass::Check_Enabled() const {
-	if ((DASettingsManager::Get_Bool("EnableInfantryCrates",true) && Check_Type(DACrateType::INFANTRY)) || (DASettingsManager::Get_Bool("EnableVehicleCrates",true) && Check_Type(DACrateType::VEHICLE))) {
-		return (DASettingsManager::Get_Float(Section,"Odds",0) > 0);
-	}
-	return false;
+	return (DASettingsManager::Get_Float(Section,"Odds",0) > 0 && Get_Enabled_Type());
 }
 
 bool DACrateFactoryClass::Check_Type(DACrateType::Type Type) const {
 	return (this->Type & Type) == Type;
+}
+
+bool DACrateFactoryClass::Check_Enabled_Type(DACrateType::Type Type) const {
+	return (Get_Enabled_Type() & Type) == Type;
+}
+
+DACrateType::Type DACrateFactoryClass::Get_Enabled_Type() const { //Modifies and returns the type based on settings.
+	DACrateType::Type Return = Type;
+	if (Check_Type(DACrateType::INFANTRY) && (!DASettingsManager::Get_Bool("EnableInfantryCrates",true) || DASettingsManager::Get_Bool(Get_Section(),"DisableInfantry",false))) {
+		Return &= ~DACrateType::INFANTRY;
+	}
+	if (Check_Type(DACrateType::VEHICLE) && (!DASettingsManager::Get_Bool("EnableVehicleCrates",true) || DASettingsManager::Get_Bool(Get_Section(),"DisableVehicle",false))) {
+		Return &= ~DACrateType::VEHICLE;
+	}
+	return Return;
 }
 
 void DACrateClass::Init() {
@@ -136,13 +148,7 @@ void DACrateClass::Settings_Loaded() {
 	}
 
 	//Type
-	Type = Factory->Get_Type();
-	if (Check_Type(DACrateType::INFANTRY) && !DASettingsManager::Get_Bool("EnableInfantryCrates",true)) {
-		Type &= ~DACrateType::INFANTRY;
-	}
-	if (Check_Type(DACrateType::VEHICLE) && !DASettingsManager::Get_Bool("EnableVehicleCrates",true)) {
-		Type &= ~DACrateType::VEHICLE;
-	}
+	Type = Factory->Get_Enabled_Type();
 }
 
 void DACrateClass::Calculate_Odds(cPlayer *Player) {

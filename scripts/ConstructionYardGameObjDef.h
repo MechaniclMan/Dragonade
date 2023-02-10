@@ -26,7 +26,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (ConstructionYardGameObjDef, BuildingGameObjDef);
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	float RepairRate;
 	float VehicleRepairRate;

@@ -99,12 +99,11 @@ public:
 
 private:
 	virtual void Init();
+	virtual void Settings_Loaded_Event();
 	virtual void Player_Loaded_Event(cPlayer *Player);
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 	void Send_Info_Message(int ID);
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	
 	virtual ~DADominationManagerClass() {
 		DANodeManager->Destroy_Instance();

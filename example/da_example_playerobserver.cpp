@@ -85,7 +85,7 @@ void DAExamplePlayerObserverClass::Created() {
 }
 
 //This is called when the player damages another object.
-bool DAExamplePlayerObserverClass::Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAExamplePlayerObserverClass::Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	if (Type == DADamageType::SPLASH) {
 		return false; //This player deals no splash damage.
 	}
@@ -93,7 +93,7 @@ bool DAExamplePlayerObserverClass::Damage_Dealt_Request(DamageableGameObj *Victi
 }
 
 //This is called when the player is damaged.
-bool DAExamplePlayerObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAExamplePlayerObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	if (Type == DADamageType::SQUISH || Type == DADamageType::FALL) {
 		return false; //This player cannot be squished and takes no fall damage.
 	}
@@ -101,13 +101,13 @@ bool DAExamplePlayerObserverClass::Damage_Received_Request(OffenseObjectClass *O
 }
 
 //This is called when the player kills another object.
-void DAExamplePlayerObserverClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAExamplePlayerObserverClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	//Anything this player kills explodes.
 	Commands->Create_Explosion("Explosion_Shell_Artillery",Commands->Get_Position(Victim),Get_GameObj());
 }
 
 //This is called when the player is killed.
-void DAExamplePlayerObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAExamplePlayerObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	//Anyone who kills this player gets a refill.
 	Grant_Refill(Killer);
 }

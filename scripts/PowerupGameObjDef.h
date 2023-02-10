@@ -32,7 +32,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (PowerUpGameObjDef, SimpleGameObjDef);
-public:
 	int											GrantShieldType;
 	float											GrantShieldStrength;
 	float											GrantShieldStrengthMax;

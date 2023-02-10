@@ -52,12 +52,11 @@ void DABaseNodeClass::Init(const INIClass *INI,const StringClass &Header) {
 	if (!Animation.Is_Empty()) {
 		Commands->Set_Animation(Object,Animation,true,0,0,-1.0f,false);
 	}
-	Set_Skin(Object,"Blamo");
-	Commands->Set_Shield_Type(Object,"Blamo");
 	Set_Max_Health(Object,Commands->Get_Max_Health(Object)+Commands->Get_Max_Shield_Strength(Object));
 	Set_Max_Shield_Strength(Object,0.0f);
 	Commands->Set_Health(Object,1.0f);
 	Object->Set_Collision_Group(TERRAIN_COLLISION_GROUP);
+	Object->Get_Defense_Object()->Set_Can_Object_Die(false);
 
 	Vector3 IconPos = Position;
 	IconPos.Z += 1.0f;
@@ -156,7 +155,7 @@ void DABaseNodeClass::Think() {
 							StringClass Message;
 							Message.Format("%ls is attacking the %s %s Node!",Get_Wide_Team_Name(AttackTeam),Get_Name(),Get_Type());
 							DA::Color_Message_With_Team_Color(AttackTeam,"%s",Message);
-							DALogManager::Write_Log("_NODE","%s",Message);
+							DALogManager::Write_Log("_NODE","%d %s",AttackTeam,Message);
 						}
 						SentAttackMessage = true;
 					}
@@ -181,7 +180,7 @@ void DABaseNodeClass::Think() {
 							StringClass Message;
 							Message.Format("%ls is attacking the %s %s Node!",Get_Wide_Team_Name(OtherTeam),Get_Name(),Get_Type());
 							DA::Color_Message_With_Team_Color(OtherTeam,"%s",Message);
-							DALogManager::Write_Log("_NODE","%s",Message);
+							DALogManager::Write_Log("_NODE","%d %s",OtherTeam,Message);
 						}
 						SentAttackMessage = true;
 						SentDefendMessage[0] = false;
@@ -199,7 +198,7 @@ void DABaseNodeClass::Think() {
 								StringClass Message;
 								Message.Format("%ls has defended the %s %s Node!",Get_Wide_Team_Name(Team),Get_Name(),Get_Type());
 								DA::Color_Message_With_Team_Color(Team,"%s",Message);
-								DALogManager::Write_Log("_NODE","%s",Message);
+								DALogManager::Write_Log("_NODE","%d %s",Team,Message);
 							}
 							SentDefendMessage[1] = true;
 						}
@@ -209,7 +208,7 @@ void DABaseNodeClass::Think() {
 							StringClass Message;
 							Message.Format("%ls is defending the %s %s Node!",Get_Wide_Team_Name(Team),Get_Name(),Get_Type());
 							DA::Color_Message_With_Team_Color(Team,"%s",Message);
-							DALogManager::Write_Log("_NODE","%s",Message);
+							DALogManager::Write_Log("_NODE","%d %s",Team,Message);
 						}
 						SentDefendMessage[0] = true;
 						SentDefendMessage[1] = false;
@@ -223,7 +222,7 @@ void DABaseNodeClass::Think() {
 							StringClass Message;
 							Message.Format("%ls is defending the %s %s Node!",Get_Wide_Team_Name(Team),Get_Name(),Get_Type());
 							DA::Color_Message_With_Team_Color(Team,"%s",Message);
-							DALogManager::Write_Log("_NODE","%s",Message);
+							DALogManager::Write_Log("_NODE","%d %s",Team,Message);
 						}
 						SentDefendMessage[0] = true;
 						SentDefendMessage[1] = false;
@@ -239,7 +238,7 @@ void DABaseNodeClass::Think() {
 							StringClass Message;
 							Message.Format("%ls is attacking the %s %s Node!",Get_Wide_Team_Name(OtherTeam),Get_Name(),Get_Type());
 							DA::Color_Message_With_Team_Color(OtherTeam,"%s",Message);
-							DALogManager::Write_Log("_NODE","%s",Message);
+							DALogManager::Write_Log("_NODE","%d %s",OtherTeam,Message);
 						}
 						LastAttackTick = GetTickCount();
 						SentAttackMessage = true;
@@ -266,7 +265,7 @@ void DABaseNodeClass::Captured(int CaptureTeam) {
 		StringClass Message;
 		Message.Format("%ls has captured the %s %s Node!",Get_Wide_Team_Name(Team),Get_Name(),Get_Type());
 		DA::Color_Message_With_Team_Color(Team,"%s",Message);
-		DALogManager::Write_Log("_NODE","%s",Message);
+		DALogManager::Write_Log("_NODE","%d %s",Team,Message);
 	}
 	Commands->Set_Health(Object,Commands->Get_Max_Health(Object));
 	Set_Object_Type(Object,Team);
@@ -416,7 +415,6 @@ void DANodeManagerClass::Init(const INIClass *INI) {
 	ContestedSpawnTime = (unsigned int)(INI->Get_Float(The_Game()->MapName,"NodeContestedSpawnTime",INI->Get_Float("General","NodeContestedSpawnTime",5.0f))*1000);
 
 	Register_Event(DAEvent::PLAYERLOADED);
-	Register_Object_Event(DAObjectEvent::DAMAGERECEIVEDREQUEST,DAObjectEvent::SIMPLE);
 	Register_Chat_Command((DAECC)&DANodeManagerClass::Nodes_Chat_Command,"!nodes|!node|!nodeinfo");
 }
 
@@ -426,13 +424,6 @@ void DANodeManagerClass::Player_Loaded_Event(cPlayer *Player) {
 
 void DANodeManagerClass::Timer_Expired(int Number,unsigned int Data) {
 	Update_Radar_Player(Commands->Find_Object(Data));
-}
-
-bool DANodeManagerClass::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	if (((PhysicalGameObj*)Victim)->Get_Collision_Group() == TERRAIN_COLLISION_GROUP) { //More effecient than checking the node list.
-		return false;
-	}
-	return true;
 }
 
 bool DANodeManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {

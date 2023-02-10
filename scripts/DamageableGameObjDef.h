@@ -38,7 +38,6 @@ public:
 	const DefenseObjectDefClass &			Get_DefenseObjectDef( void ) const	{ return DefenseObjectDef; }
 	int											Get_Default_Player_Type(void) const { return DefaultPlayerType; }
 	void Set_Name_ID(int id) {TranslatedNameID = id;}
-protected:
 	DefenseObjectDefClass						DefenseObjectDef; // 004C
 	StringClass									InfoIconTextureFilename; // 006C
 	int											TranslatedNameID; // 0070

@@ -43,7 +43,7 @@ private:
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Object_Destroyed_Event(GameObject *obj);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	bool VQ_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	virtual void Timer_Expired(int Number,unsigned int Team);
 

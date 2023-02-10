@@ -26,7 +26,7 @@ void DADamageLogObserverClass::Init() {
 	Start_Timer(1,30.0f);
 }
 
-void DADamageLogObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DADamageLogObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (Damager != Get_Owner() && Damage) {
 		DADamageEventStruct *Event = new DADamageEventStruct;
 		Event->Damage = Damage;

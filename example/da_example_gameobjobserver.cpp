@@ -64,11 +64,11 @@ bool DAExampleGameObjObserverClass::Vehicle_Entry_Request(cPlayer *Player,int &S
 }
 
 //This allows you to block or change the damage done to the object the observer is attached to.
-bool DAExampleGameObjObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	Offense->Scale_Damage(0.9f); //%10 damage reduction.
+bool DAExampleGameObjObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	Damage *= 0.9f; //%10 damage reduction.
 	return true;
 }
 
 //Called when the object the observer is attached to kills another object.
-void DAExampleGameObjObserverClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAExampleGameObjObserverClass::Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 }

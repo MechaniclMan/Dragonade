@@ -29,8 +29,8 @@ struct DAVehicleShellStruct {
 class DAVehicleShellObserverClass : public DAGameObjObserverClass {
 public:
 	DAVehicleShellObserverClass(DAVehicleShellStruct *ShellDef,VehicleGameObj *Vehicle);
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	~DAVehicleShellObserverClass();
 	const char *Get_Name() {
@@ -51,7 +51,8 @@ private:
 class DAVehicleShellShadowObserverClass : public DAGameObjObserverClass {
 public:
 	DAVehicleShellShadowObserverClass(GameObject *Shell);
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	const char *Get_Name() {
 		return "DAVehicleShellShadowObserverClass";
 	}
@@ -69,7 +70,7 @@ public:
 private:
 	virtual void Init();
 	virtual void Settings_Loaded_Event();
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 
 	HashTemplateClass<unsigned int,DAVehicleShellStruct> Shells;
 };

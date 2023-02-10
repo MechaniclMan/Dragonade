@@ -148,6 +148,10 @@ RENEGADE_FUNCTION
 void SmartGameObj::Enable_Stealth(bool)
 AT2(0x0069F7A0,0x0069F7A0);
 
+RENEGADE_FUNCTION
+bool BeaconGameObj::Is_In_Enemy_Base()
+AT2(0x00709A90,0x00709A90);
+
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
 		if (z->Data()->As_ScriptableGameObj()) {
@@ -355,16 +359,9 @@ const wchar_t *Get_Wide_Team_Name(int Team) {
 
 int Find_Empty_Vehicle_Seat(VehicleGameObj *obj,bool AllowDriver) {
 	int x = obj->Get_Definition().Get_Seat_Count();
-	for (int i = 0;i < x;i++) {
+	for (int i = (AllowDriver?0:1);i < x;i++) {
 		if (!obj->Get_Occupant(i)) {
-			if (i == 0) {
-				if (AllowDriver) {
-					return i;
-				}
-			}
-			else {
-				return i;
-			}
+			return i;
 		}
 	}
 	return -1;
@@ -525,9 +522,9 @@ float Get_Distance_To_Closest_Player(const Vector3 &Position,int Team) {
 
 void Give_Credits_Team(int Team,float Credits) {
 	for (SLNode<SoldierGameObj> *z = GameObjManager::StarGameObjList.Head();z;z = z->Next()) {
-		GameObject *obj = z->Data();
-		if (Get_Object_Type(obj) == Team) {
-			Commands->Give_Money(obj,Credits,false);
+		SoldierGameObj *Soldier = z->Data();
+		if (Soldier->Get_Player_Type() == Team) {
+			Soldier->Get_Player()->Increment_Money(Credits);
 		}
 	}
 }
@@ -538,11 +535,11 @@ const char *PhysClass::Get_Name() {
 
 void Give_Points_Players_In_Range(const Vector3 &Position,float Range,float Points,bool GiveMoney) {
 	for (SLNode<SoldierGameObj> *z = GameObjManager::StarGameObjList.Head();z;z = z->Next()) {
-		GameObject *obj = z->Data();
-		if (Commands->Get_Distance(Commands->Get_Position(obj),Position) <= Range) {
-			Commands->Give_Points(obj,Points,false);
+		SoldierGameObj *Soldier = z->Data();
+		if (Commands->Get_Distance(Soldier->Get_Position(),Position) <= Range) {
+			Soldier->Get_Player()->Increment_Score(Points);
 			if (!GiveMoney) {
-				Commands->Give_Money(obj,Points*-1.0f,false);
+				Soldier->Get_Player()->Increment_Money(Points * DAPlayerManager::Get_Credits_Multiplier() * -1.0f);
 			}
 		}
 	}
@@ -550,11 +547,11 @@ void Give_Points_Players_In_Range(const Vector3 &Position,float Range,float Poin
 
 void Give_Points_Players_In_Range_Team(int Team,const Vector3 &Position,float Range,float Points,bool GiveMoney) {
 	for (SLNode<SoldierGameObj> *z = GameObjManager::StarGameObjList.Head();z;z = z->Next()) {
-		GameObject *obj = z->Data();
-		if (Get_Object_Type(obj) == Team && Commands->Get_Distance(Commands->Get_Position(obj),Position) <= Range) {
-			Commands->Give_Points(obj,Points,false);
+		SoldierGameObj *Soldier = z->Data();
+		if (Soldier->Get_Player_Type() == Team && Commands->Get_Distance(Soldier->Get_Position(),Position) <= Range) {
+			Soldier->Get_Player()->Increment_Score(Points);
 			if (!GiveMoney) {
-				Commands->Give_Money(obj,Points*-1.0f,false);
+				Soldier->Get_Player()->Increment_Money(Points * DAPlayerManager::Get_Credits_Multiplier() * -1.0f);
 			}
 		}
 	}
@@ -1140,7 +1137,7 @@ bool ScriptableGameObj::Is_Custom_Timer(ScriptableGameObj *Sender,int Message) {
 void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool DestroyUnfixable) {
 	for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) {
 		PhysicalGameObj *obj = x->Data();
-		if (obj->Peek_Physical_Object()->As_MoveablePhysClass() && Commands->Get_Distance(Position,obj->Get_Position()) <= CheckRange && !((MoveablePhysClass*)obj->Peek_Physical_Object())->Can_Teleport(obj->Get_Transform())) {
+		if (obj->Peek_Physical_Object()->As_MoveablePhysClass() && Commands->Get_Distance(Position,obj->Get_Position()) <= CheckRange && !((MoveablePhysClass*)obj->Peek_Physical_Object())->Can_Teleport(obj->Get_Transform()) && !obj->Is_Attached_To_An_Object() && (!obj->As_SoldierGameObj() || !((SoldierGameObj*)obj)->Get_Vehicle())) {
 			if (!Fix_Stuck_Object(obj,Range) && DestroyUnfixable) {
 				Commands->Apply_Damage(obj,99999.0f,"None",0);
 			}
@@ -1150,26 +1147,25 @@ void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool
 
 bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 	MoveablePhysClass *Phys = (MoveablePhysClass*)obj->Peek_Physical_Object();
-	int CollisionSave = obj->Get_Collision_Group();
+	Collision_Group_Type CollisionSave = Phys->Get_Collision_Group();
 	float MinDistance = FLT_MAX;
 	Matrix3D MinTransform;
+	Matrix3D OldTransform = Phys->Get_Transform();
 	for (int i = 0;i < 50;i++) { //First try to find a new position without changing the Z axis.
-		Matrix3D Transform = Phys->Get_Transform();
-		Vector3 Position;
-		Transform.Get_Translation(&Position);
-		Transform.Set_X_Translation(Position.X+Get_Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Position.Y+Get_Random_Float(Range*-1.0f,Range));
-		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
-		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
+		Matrix3D NewTransform = OldTransform;
+		NewTransform.Set_X_Translation(OldTransform.Get_Translation().X+Get_Random_Float(Range*-1.0f,Range));
+		NewTransform.Set_Y_Translation(OldTransform.Get_Translation().Y+Get_Random_Float(Range*-1.0f,Range));
+		float Distance = Commands->Get_Distance(NewTransform.Get_Translation(),OldTransform.Get_Translation());
+		if (Phys->Can_Teleport(NewTransform)) { //Don't use this position if it collides with something.
 			if (Distance < MinDistance) { //Use closest positon.
+				Phys->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
 				CastResultStruct CastResult;
-				PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
-				obj->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
+				PhysRayCollisionTestClass CollisionTest(LineSegClass(NewTransform.Get_Translation(),OldTransform.Get_Translation()),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
 				PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
-				obj->Set_Collision_Group(CollisionSave); //Restore old collision group.
+				Phys->Set_Collision_Group(CollisionSave); //Restore old collision group.
 				if (CollisionTest.CollidedPhysObj == Phys) { //Only use this position if it can see the original position. Prevents teleporting through walls.
 					MinDistance = Distance;
-					MinTransform = Transform;
+					MinTransform = NewTransform;
 				}
 			}
 		}
@@ -1179,23 +1175,21 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 		return true;
 	}
 	for (int i = 0;i < 50;i++) { //Shit's getting serious. Start changing the Z axis too.
-		Matrix3D Transform = Phys->Get_Transform();
-		Vector3 Position;
-		Transform.Get_Translation(&Position);
-		Transform.Set_X_Translation(Position.X+Get_Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Position.Y+Get_Random_Float(Range*-1.0f,Range));
-		Transform.Set_Z_Translation(Position.Z+Get_Random_Float(0.0f,Range));
-		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
-		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
+		Matrix3D NewTransform = OldTransform;
+		NewTransform.Set_X_Translation(OldTransform.Get_Translation().X+Get_Random_Float(Range*-1.0f,Range));
+		NewTransform.Set_Y_Translation(OldTransform.Get_Translation().Y+Get_Random_Float(Range*-1.0f,Range));
+		NewTransform.Set_Z_Translation(OldTransform.Get_Translation().Z+Get_Random_Float(0.0f,Range));
+		float Distance = Commands->Get_Distance(NewTransform.Get_Translation(),OldTransform.Get_Translation());
+		if (Phys->Can_Teleport(NewTransform)) { //Don't use this position if it collides with something.
 			if (Distance < MinDistance) { //Use closest positon.
+				Phys->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
 				CastResultStruct CastResult;
-				PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
-				obj->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
+				PhysRayCollisionTestClass CollisionTest(LineSegClass(NewTransform.Get_Translation(),OldTransform.Get_Translation()),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
 				PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
-				obj->Set_Collision_Group(CollisionSave); //Restore old collision group.
+				Phys->Set_Collision_Group(CollisionSave); //Restore old collision group.
 				if (CollisionTest.CollidedPhysObj == Phys) { //Only use this position if it can see the original position. Prevents teleporting through walls.
 					MinDistance = Distance;
-					MinTransform = Transform;
+					MinTransform = NewTransform;
 				}
 			}
 		}
@@ -1290,4 +1284,25 @@ void Send_Player_Kill_Message(int Killer,int Victim) {
 	cPlayerKill *Event = (cPlayerKill*)operator new(sizeof(cPlayerKill));
 	Event->Constructor();
 	Event->Init(Killer,Victim);
+}
+
+bool Exit_Vehicle(SoldierGameObj *Soldier) {
+	if (Is_Player(Soldier) && Soldier->Get_Vehicle()) {
+		VehicleGameObj *Vehicle = Soldier->Get_Vehicle();
+		Soldier->Get_Control().Set_Action_Trigger(true);
+		Soldier->Apply_Control();
+		Update_Network_Object(Vehicle);
+		Update_Network_Object(Soldier);
+		return (!Soldier->Get_Vehicle() && Vehicle->Find_Seat(Soldier) == -1);
+	}
+	return false;
+}
+
+int	VehicleGameObj::Find_Seat(SoldierGameObj *Soldier) {
+	for (int i = 0;i < SeatOccupants.Length();i++) {
+		if (SeatOccupants[i] == Soldier) {
+			return i;
+		}
+	}
+	return -1;
 }

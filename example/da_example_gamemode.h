@@ -25,7 +25,7 @@ class DAExampleGameModeClass : public DAEventClass, public DAGameModeClass {
 	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
 	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
 	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon);
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 	bool Example4_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);

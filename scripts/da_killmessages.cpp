@@ -15,6 +15,7 @@
 #include "da.h"
 #include "da_killmessages.h"
 #include "da_settings.h"
+#include "da_player.h"
 
 void DAAdvancedKillMessagesGameFeatureClass::Init() {
 	Register_Event(DAEvent::SETTINGSLOADED);
@@ -26,6 +27,7 @@ void DAAdvancedKillMessagesGameFeatureClass::Settings_Loaded_Event() {
 	EnableVehicle = DASettingsManager::Get_Bool("EnableVehicleKillMessages",true);
 	EnableBuilding = DASettingsManager::Get_Bool("EnableBuildingKillMessages",true);
 	EnableBot = DASettingsManager::Get_Bool("EnableBotKillMessages",true);
+	DAPlayerManager::Set_Disable_Kill_Messages(EnablePlayer);
 }
 
 //This just displays the kill messages ingame. Actual messages are made by the soldier, vehicle, and building managers.

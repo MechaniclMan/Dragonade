@@ -57,8 +57,8 @@ bool DAExampleGameModeClass::Add_Weapon_Request_Event(cPlayer *Player,const Weap
 	return false; //Block players from having any weapons.
 }
 
-bool DAExampleGameModeClass::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	Offense->Scale_Damage(0.5f); //Since there's no way to repair in this game mode we will half all damage to buildings.
+bool DAExampleGameModeClass::Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	Damage *= 0.5f; //Since there's no way to repair in this game mode we will half all damage to buildings.
 	return true;
 }
 

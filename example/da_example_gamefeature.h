@@ -39,7 +39,7 @@ class DAExampleGameFeatueClass : public DAEventClass, public DAGameFeatureClass,
 
 	//The events needed to implement this game feature.
 	virtual bool Team_Change_Request_Event(cPlayer *Player);
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 	bool Example3_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 

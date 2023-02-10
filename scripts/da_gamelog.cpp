@@ -108,7 +108,7 @@ void DAGameLogGameFeatureClass::Object_Created_Event(GameObject *obj) {
 	}
 }
 
-void DAGameLogGameFeatureClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAGameLogGameFeatureClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type){
 	if (Damage) {
 		Vector3 VictimPos;
 		Vector3 DamagerPos;
@@ -146,7 +146,7 @@ void DAGameLogGameFeatureClass::Damage_Event(DamageableGameObj *Victim,ArmedGame
 	}
 }
 
-void DAGameLogGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAGameLogGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	Vector3 VictimPos;
 	Vector3 KillerPos;
 	Victim->Get_Position(&VictimPos);

@@ -105,6 +105,7 @@ public:
 	DA_API void Destroy_Instance();
 	DA_API bool Check_Enabled() const;
 	DA_API bool Check_Type(DACrateType::Type Type) const;
+	DA_API bool Check_Enabled_Type(DACrateType::Type Type) const;
 	inline const char *Get_Name() const {
 		return Name;
 	}
@@ -114,6 +115,7 @@ public:
 	inline DACrateType::Type Get_Type() const {
 		return Type;
 	}
+	DACrateType::Type Get_Enabled_Type() const;
 	inline DACrateClass *Get_Instance() const {
 		return Instance;
 	}

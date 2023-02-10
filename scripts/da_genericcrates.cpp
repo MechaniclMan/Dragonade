@@ -54,11 +54,11 @@ class DADeathCrateClass : public DACrateClass {
 	virtual void Activate(cPlayer *Player) {
 		if (Player->Get_GameObj()->Get_Vehicle()) { //Kill character or vehicle.
 			Commands->Apply_Damage(Player->Get_GameObj()->Get_Vehicle(),99999.0f,"None",0);
-			Commands->Create_Explosion("Explosion_Mine_Proximity_01",Player->Get_GameObj()->Get_Vehicle()->Get_Position(),0);
+			Commands->Create_Explosion("Explosion_Mine_Remote_01",Player->Get_GameObj()->Get_Vehicle()->Get_Position(),0);
 		}
 		else {
 			Commands->Apply_Damage(Player->Get_GameObj(),99999.0f,"None",0);
-			Commands->Create_Explosion("Explosion_Mine_Proximity_01",Player->Get_GameObj()->Get_Position(),0);
+			Commands->Create_Explosion("Explosion_Mine_Remote_01",Player->Get_GameObj()->Get_Position(),0);
 		}
 		DA::Host_Message("Some poor %ls player just got pwned by the fearsome Death Crate!",Get_Wide_Team_Name(Player->Get_Team()));
 	}
@@ -240,7 +240,7 @@ class DARegenerationCrateObserverClass : public DAGameObjObserverClass {
 		}
 	}
 
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		Set_Delete_Pending(); //Turn off regen when dead.
 	}
 
@@ -363,7 +363,7 @@ public:
 		Vehicle = Get_Owner()->Get_GameObj()->Get_Vehicle();
 	}
 
-	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		if (Victim->As_BuildingGameObj()) {
 			if (Vehicle) {
 				Vehicle->Remove_Observer("DASpyCrateVehicleObserverClass");
@@ -424,7 +424,7 @@ class DASpyCrateSoldierObserverClass : public DAGameObjObserverClass {
 		((SoldierGameObj*)Get_Owner())->Set_Is_Visible(false);
 	}
 
-	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		if (Victim->As_BuildingGameObj()) {
 			Set_Delete_Pending();
 		}
@@ -471,7 +471,7 @@ public:
 	virtual const char *Get_Name() { 
 		return DAUAVCrateObserverName; 
 	}
-
+	
 	DAUAVCrateObserverClass(int Team) {
 		Radar = Create_Object("Invisible_Object",Vector3());
 		((PhysicalGameObj*)Radar.Get_Ptr())->Set_Player_Type(Team);
@@ -480,11 +480,13 @@ public:
 	virtual void Init() {
 		Commands->Attach_To_Object_Bone(Radar,Get_Owner(),"Origin");
 		Update_Network_Object(Radar);
-		Start_Timer(1,0.0f);
-	}
-	
-	void Set_Radar_Shape() {
-		Commands->Set_Obj_Radar_Blip_Shape(Radar,((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
+		if (Get_Owner()->As_SmartGameObj()) {
+			Start_Timer(1,0.0f);
+		}
+		else {
+			Set_Radar_Color();
+			Commands->Set_Obj_Radar_Blip_Shape(Radar,((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
+		}
 	}
 
 	void Set_Radar_Color() {
@@ -496,13 +498,31 @@ public:
 		}
 	}
 
-	virtual void Timer_Expired(GameObject *obj,int Number) { //This timer is in case the team is changed right after creation.
-		if (Get_Owner()->As_VehicleGameObj() || ((PhysicalGameObj*)Radar.Get_Ptr())->Get_Player_Type() != ((PhysicalGameObj*)Get_Owner())->Get_Player_Type()) { //Vehicle or different team.
-			Set_Radar_Shape();
-			Set_Radar_Color();
+	void Update_New_Player(int ID) {
+		Set_Obj_Radar_Blip_Color_Player_By_ID(ID,Radar,((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Color_Type());
+		Set_Obj_Radar_Blip_Shape_Player_By_ID(ID,Radar,((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type());
+	}
+
+	virtual void Timer_Expired(GameObject *obj,int Number) {
+		if (Number == 1) {
+			if (Get_Owner()->As_VehicleGameObj() || ((PhysicalGameObj*)Radar.Get_Ptr())->Get_Player_Type() != ((PhysicalGameObj*)Get_Owner())->Get_Player_Type()) { //Vehicle or different team.
+				Set_Radar_Color();
+				Timer_Expired(obj,2);
+			}
+			else { //Same team, radar marker not needed.
+				Set_Delete_Pending();
+			}
 		}
-		else { //Same team, radar marker not needed.
-			Set_Delete_Pending();
+		else {
+			if (((SmartGameObj*)Get_Owner())->Is_Stealthed()) {
+				if (((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type() != RADAR_BLIP_SHAPE_NONE) {
+					Commands->Set_Obj_Radar_Blip_Shape(Radar,RADAR_BLIP_SHAPE_NONE);
+				}
+			}
+			else if (((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type() == RADAR_BLIP_SHAPE_NONE) {
+				Commands->Set_Obj_Radar_Blip_Shape(Radar,((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
+			}
+			Start_Timer(2,0.5f);
 		}
 	}
 	
@@ -514,7 +534,7 @@ public:
 		Set_Radar_Color();
 	}
 
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		Set_Delete_Pending();
 	}
 	
@@ -565,7 +585,7 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 	}
 
 	virtual void Player_Join_Event(cPlayer *Player) {
-		Start_Timer(2,1.0f);
+		Start_Timer(2,1.0f,false,Player->Get_ID());
 	}
 
 	virtual void Game_Over_Event() {
@@ -601,8 +621,7 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
 				for (int i = 0;i < Observers.Count();i++) {
 					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Radar_Shape();
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Radar_Color();
+						((DAUAVCrateObserverClass*)Observers[i])->Update_New_Player(Data);
 					}
 				}
 			}
@@ -610,8 +629,7 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
 				for (int i = 0;i < Observers.Count();i++) {
 					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Radar_Shape();
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Radar_Color();
+						((DAUAVCrateObserverClass*)Observers[i])->Update_New_Player(Data);
 					}
 				}
 			}
@@ -634,21 +652,18 @@ class DAKamikazeCrateObserverClass : public DAGameObjObserverClass {
 		Killed = false;
 	}
 
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		if (Get_Owner()->As_VehicleGameObj()) {
 			Killed = true;
 		}
 		else {
-			Start_Timer(1,0.0f);
+			Vector3 Position;
+			Get_Owner()->Get_Position(&Position);
+			GameObject *ExplosionObjSave = GetExplosionObj();
+			SetExplosionObj(Create_Object("Beacon_Ion_Cannon_Anim_Post",Position));
+			Damage_All_Objects_Area(350.0f,"Laser_NoBuilding",Position,15.0f,Get_Owner(),Get_Owner());
+			SetExplosionObj(ExplosionObjSave);
 		}
-	}
-
-	virtual void Timer_Expired(GameObject *obj,int Number) {
-		Vector3 Position;
-		Get_Owner()->Get_Position(&Position);
-		SetExplosionObj(Create_Object("Beacon_Ion_Cannon_Anim_Post",Position));
-		Damage_All_Objects_Area(350.0f,"Laser_NoBuilding",Position,15.0f,Get_Owner(),Get_Owner());
-		SetExplosionObj(0);
 	}
 	
 	virtual void Destroyed(GameObject *obj) { //This ensures the explosion will happen after the vehicle shell is created and destroy it.
@@ -693,7 +708,7 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 		return "DASecondWindCrateObserverClass"; 
 	}
 
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		DefenseObjectClass *Defense = ((SoldierGameObj*)Get_Owner())->Get_Defense_Object();
 		if (!Defense->Get_Health()) {
 			if (Defense->Get_Shield_Strength_Max()) {

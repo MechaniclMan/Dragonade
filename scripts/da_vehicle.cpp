@@ -22,6 +22,7 @@
 #include "da_settings.h"
 #include "da_damagelog.h"
 #include "da_chatcommand.h"
+#include "da_player.h"
 #include "VehicleFactoryGameObj.h"
 #include "AirFactoryGameObj.h"
 #include "NavalFactoryGameObj.h"
@@ -97,7 +98,7 @@ void DAAirDroppedVehicleObserverClass::Init() {
 	((VehicleGameObj*)Get_Owner())->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 }
 
-bool DAAirDroppedVehicleObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAAirDroppedVehicleObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	return false;
 }
 
@@ -133,8 +134,10 @@ void DAVehicleManager::Init() {
 
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::VEHICLE,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::VEHICLE | DAObjectEvent::BUILDING,INT_MAX);
+	Instance.Register_Event(DAEvent::LEVELLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEPURCHASEREQUEST,INT_MAX);
+	Instance.Register_Event(DAEvent::VEHICLEENTRYREQUEST,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MIN); //Theft stuff needs to trigger after all other vehicle enter events.
 
 	static DefaultPurchaseEvent Instance2;
@@ -215,6 +218,27 @@ VehicleGameObj *DAVehicleManager::Air_Drop_Vehicle(int Team,const char *Vehicle,
 		return Veh;
 	}
 	return 0;
+}
+
+void DAVehicleManager::Level_Loaded_Event() {
+	VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike"); //Setup Recon Bike for use by other things.
+	if (Def) {
+		Def->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
+		DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
+		Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleMedium");
+		Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleMedium");
+		Defense.ShieldStrengthMax = 150;
+		Defense.ShieldStrength = 150;
+	}
+	Def = (VehicleGameObjDef*)Find_Named_Definition("Nod_SSM_Launcher_Player"); //Setup SSM for use by other things.
+	if (Def) {
+		Def->WeaponDefID = 0;
+		DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
+		Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+		Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+		Defense.ShieldStrengthMax = 125;
+		Defense.ShieldStrength = 125;
+	}
 }
 
 void DAVehicleManager::Settings_Loaded_Event() {
@@ -321,8 +345,11 @@ int DAVehicleManager::DefaultPurchaseEvent::Vehicle_Purchase_Request_Event(BaseC
 	return 3;
 }
 
-void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (Victim->As_VehicleGameObj()) {
+		if (Is_Player(Killer)) { //Fix this stat so it only counts enemy vehicles.
+			((SoldierGameObj*)Killer)->Get_Player()->VehiclesDestroyed--;
+		}
 		StringClass Message;
 		if (!((VehicleGameObj*)Victim)->Are_Transitions_Enabled() || !((VehicleGameObj*)Victim)->Get_Definition().Get_Seat_Count()) { //Harvesters/Defenses/AI Vehicles
 			if (Victim->Get_Player_Type() != -2) {
@@ -377,7 +404,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				DALogManager::Write_Log(Header,"%s",Message);
 			}
 		}
-		else {
+		else { //Player vehicle
 			cPlayer *Owner = 0;
 			if (((VehicleGameObj*)Victim)->Get_Occupant(0)) {
 				Owner = ((VehicleGameObj*)Victim)->Get_Occupant(0)->Get_Player();
@@ -419,6 +446,9 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 			}
 			else if (Killer->As_SoldierGameObj()) { //Killed by soldier
 				if (((SoldierGameObj*)Killer)->Get_Player()) { //Killed by player
+					if (Killer->Get_Player_Type() != DAVehicleManager::Get_Team(Victim)) {
+						((SoldierGameObj*)Killer)->Get_Player()->VehiclesDestroyed++;
+					}
 					if (Type == DADamageType::EXPLOSION) {
 						Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate(GetExplosionObj()),DATranslationManager::Translate(Victim));
 					}
@@ -426,7 +456,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 						Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
 					}
 				}
-				else {
+				else { //Killed by bot
 					Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
 				}
 			}
@@ -455,7 +485,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 	}
 	else if (((BuildingGameObj*)Victim)->As_RefineryGameObj()) { //Fix bug where the Nod Harvester can still exist if it is building when the Refinery is killed.
 		for (SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();x;x = x->Next()) {
-			if (x->Data()->Get_Definition().Get_ID() == (unsigned int)((RefineryGameObj*)Victim)->Get_Definition().Get_Harvester_ID()) {
+			if (x->Data()->Get_Definition().Get_ID() == (unsigned int)((RefineryGameObj*)Victim)->Get_Definition().HarvesterDefID) {
 				x->Data()->Set_Delete_Pending();
 			}
 		}
@@ -469,14 +499,17 @@ bool DAVehicleManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
 	DAVehicleObserverClass *VehicleData = Get_Vehicle_Data(Vehicle);
 	if (VehicleData->Get_Team() != -2 && VehicleData->Get_Team() != Player->Get_Team()) {
-		if (EnableTheftMessage) {
-			if (VehicleData->Get_Vehicle_Owner() && VehicleData->Get_Vehicle_Owner()->Is_Active()) {
-				DA::Color_Message_With_Team_Color(Player->Get_Team(),"%ls has stolen %ls %s!",Player->Get_Name(),Make_Possessive(VehicleData->Get_Vehicle_Owner()->Get_Name()),DATranslationManager::Translate(Vehicle));
-			}
-			else {
-				DA::Color_Message_With_Team_Color(Player->Get_Team(),"%ls has stolen %s!",Player->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Vehicle)));
-			}
+		StringClass String;
+		if (VehicleData->Get_Vehicle_Owner() && VehicleData->Get_Vehicle_Owner()->Is_Active()) {
+			String.Format("%ls has stolen %ls %s!",Player->Get_Name(),Make_Possessive(VehicleData->Get_Vehicle_Owner()->Get_Name()),DATranslationManager::Translate(Vehicle));
 		}
+		else {
+			String.Format("%ls has stolen %s!",Player->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Vehicle)));
+		}
+		if (EnableTheftMessage) {
+			DA::Color_Message_With_Team_Color(Player->Get_Team(),"%s",String);
+		}
+		DALogManager::Write_Log("_VEHICLE","%d %s",Player->Get_Team(),String);
 		if (VehicleData->Get_Time_Since_Last_Theft() >= 10) { //Reward players for stealing vehicles. 10 second timer to prevent exploits.
 			Player->Increment_Score(Vehicle->Get_Defense_Object()->Get_Death_Points());
 		}
@@ -488,6 +521,15 @@ void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Play
 	VehicleData->Set_Team(Player->Get_Team());
 }
 
+bool DAVehicleManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
+	if (Seat == 0 && Player->Get_DA_Player()->Is_Stock_Client()) { //Prevent stock clients from entering Recon Bikes, otherwise they will trigger cheat warnings because of the changed weapon.
+		if (!_stricmp(Vehicle->Get_Definition().Get_Name(),"CnC_Nod_Recon_Bike")) {
+			return false;
+		}
+	}
+	return true;
+}
+
 
 
 class DAAirDroppedVehicleScript : public ScriptImpClass {
@@ -495,8 +537,7 @@ class DAAirDroppedVehicleScript : public ScriptImpClass {
 		Commands->Enable_Vehicle_Transitions(obj,false);
 		((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false);
 		((VehicleGameObj*)obj)->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
-		Commands->Set_Shield_Type(obj,"Blamo");
-		Set_Skin(obj,"Blamo");
+		((VehicleGameObj*)obj)->Get_Defense_Object()->Set_Can_Object_Die(false);
 	}
 };
 ScriptRegistrant<DAAirDroppedVehicleScript> DAAirDroppedVehicleScriptRegistrant("DAAirDroppedVehicleScript","");
@@ -518,3 +559,19 @@ class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get ove
 	}
 };
 Register_Simple_Chat_Command(DAVehicleChatCommandClass,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit|!vlimit");
+
+class DAVKillsChatCommandClass: public DAChatCommandClass { 
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		if (Text.Size()) {
+			cPlayer *MatchPlayer = Match_Player(Player,Text[1],false,true);
+			if (MatchPlayer) {
+				DA::Page_Player(Player,"%ls has destroyed %d enemy vehicles this match.",MatchPlayer->Get_Name(),MatchPlayer->VehiclesDestroyed);
+			}
+		}
+		else {
+			DA::Page_Player(Player,"You have destroyed %d enemy vehicles this match.",Player->VehiclesDestroyed);
+		}
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DAVKillsChatCommandClass,"!vkills|!vkill|!vehkills|!vehkill|!vehiclekills|!vehiclekill");

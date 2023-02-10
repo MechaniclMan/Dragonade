@@ -19,14 +19,18 @@
 class DAC4BeaconManager : public DAEventClass {
 public:
 	static void Init();
+
+private:
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Beacon_Deploy_Event(BeaconGameObj *Beacon);
 	virtual void Beacon_Detonate_Event(BeaconGameObj *Beacon);
 	virtual void C4_Detonate_Event(C4GameObj *C4);
 	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
+	
+	bool BlockFakeBeacons;
 };
 
 #endif

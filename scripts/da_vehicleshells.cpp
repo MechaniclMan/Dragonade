@@ -90,7 +90,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	Start_Timer(1,0.5f);
 }
 
-void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	DefenseObjectClass *ShellDefense = ((DamageableGameObj*)Get_Owner())->Get_Defense_Object();
 	if (Damage < 0.0f) {
 		if (ShellDefense->Get_Shield_Strength() == ShellDefense->Get_Shield_Strength_Max()) { //Spawn revived vehicle if fully repaired.
@@ -127,7 +127,7 @@ void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Da
 	}
 }
 
-void DAVehicleShellObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleShellObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	Commands->Create_Explosion("Explosion_with_Debris_small",((PhysicalGameObj*)Get_Owner())->Get_Position(),Killer);
 }
 
@@ -180,10 +180,15 @@ DAVehicleShellShadowObserverClass::DAVehicleShellShadowObserverClass(GameObject 
 	this->Shell = Shell;
 }
 
-void DAVehicleShellShadowObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	if (Type != DADamageType::EXPLOSION && Type != DADamageType::SPLASH) { //Splash damage from stock clients will damage the "true" shell even if they can't see it.
-		Commands->Apply_Damage(Shell,Damage,"None",Damager); //Copy damage to shell.
+bool DAVehicleShellShadowObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	if (Type == DADamageType::EXPLOSION || Type == DADamageType::SPLASH) {
+		return false;
 	}
+	return true;
+}
+
+void DAVehicleShellShadowObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+	Commands->Apply_Damage(Shell,Damage,"None",Damager); //Copy damage to shell.
 }
 
 void DAVehicleShellsGameFeatureClass::Init() {
@@ -229,7 +234,7 @@ void DAVehicleShellsGameFeatureClass::Settings_Loaded_Event() {
 	}
 }
 
-void DAVehicleShellsGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleShellsGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	DAVehicleShellStruct *Shell = Get_Shell((VehicleGameObj*)Victim);
 	if (Shell) {
 		if (Shell->Def && ((VehicleGameObj*)Victim)->Are_Transitions_Enabled() && ((VehicleGameObj*)Victim)->Get_Definition().Get_Seat_Count()) { //Don't spawn shells for AI vehicles.

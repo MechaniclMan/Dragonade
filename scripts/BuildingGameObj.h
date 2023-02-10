@@ -116,8 +116,8 @@ public:
 	virtual	SuperWeaponGameObj *		As_SuperWeaponGameObj (void)			{ return NULL; }
 	int Get_State() { return CurrentState; }
 	BaseControllerClass *Get_Base() { return BaseController; }
+	void Update_State(bool force_update = false);
 	static REF_DECL2(CanRepairBuildings,bool);
-
 protected:
 	BuildingMonitorClass *					BuildingMonitor;
 	BaseControllerClass *					BaseController;
@@ -144,7 +144,6 @@ protected:
 	void											Remove_Aggregate(BuildingAggregateClass * aggregate);
 	void											Add_Light(LightPhysClass * light);
 	void											Find_Closest_Poly_For_Model (RenderObjClass *model, const Vector3 &pos, float *distance2);
-	void											Update_State(bool force_update = false);
 	void											Enable_Alternate_Materials(RefMultiListClass<StaticPhysClass> & models, bool onoff);
 	void											Enable_Alternate_Materials(RenderObjClass * model,bool onoff);
 	friend class GameObjManager;

@@ -41,12 +41,12 @@ public:
 	virtual void Vehicle_Exit(cPlayer *Player,int Seat) { } //Called when a soldier exits the vehicle this observer is attached to.
 	virtual void Vehicle_Exit(VehicleGameObj *Vehicle,int Seat) { } //Called when the soldier this observer is attached to exits a vehicle.
 	virtual bool Vehicle_Flip() { return true; } //Called when the vehicle this observer is attached to tries to flip. Return bool to block the flip.
-	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) { return true; } //Called when the object this observer is attached to damages another object. Damage can be changed by modifying the OffenseObjectClass.
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) { return true; } //Called when the object this observer is attached to is damaged. Damage can be changed by modifying the OffenseObjectClass.
-	virtual void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the object this observer is attached to damages another object.
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the object this observer is attached to is damaged.
-	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the object this observer is attached to kills another object.
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the object this observer is attached to is killed.
+	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) { return true; } //Called when the object this observer is attached to damages another object. Damage can be changed by modifying the OffenseObjectClass.
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) { return true; } //Called when the object this observer is attached to is damaged. Damage can be changed by modifying the OffenseObjectClass.
+	virtual void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the object this observer is attached to damages another object.
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the object this observer is attached to is damaged.
+	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the object this observer is attached to kills another object.
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the object this observer is attached to is killed.
 	virtual bool PowerUp_Grant_Request(cPlayer *Player) { return true; } //Called when a soldier attempts to pickup the powerup this observer is attached to. Return false to block the pickup.
 	virtual bool PowerUp_Grant_Request(const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) { return true; } //Called when the soldier this observer is attached to attempts to pickup a powerup. Return false to block the pickup.
 	virtual void PowerUp_Grant(cPlayer *Player) { } //Called when a soldier picks up the powerup this observer is attached to.
@@ -90,9 +90,9 @@ private:
 	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 	virtual bool Vehicle_Flip_Event(VehicleGameObj *Vehicle);
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual bool PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	virtual void PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon);

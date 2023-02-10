@@ -27,7 +27,6 @@ public:
 	virtual void                        DumpPhys (FileClass &file);
 #endif
 	DECLARE_EDITABLE( SimpleGameObjDef, PhysicalGameObjDef );
-protected:
 	bool IsEditorObject; // 00A5
 	bool IsHiddenObject; // 00A6
 	int PlayerTerminalType; // 00A8

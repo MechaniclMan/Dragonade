@@ -34,15 +34,15 @@ class DAAblativeArmorCrateObserverClass : public DAGameObjObserverClass {
 		Total = 0;
 	}
 
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-		if (Offense->Get_Damage() > 0) {
-			Offense->Scale_Damage(0.75f); //25% damage reduction.
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+		if (Type != DADamageType::REPAIR) {
+			Damage *= 0.75f; //25% damage reduction.
 		}
 		return true;
-	} 
+	}
 	
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-		if (Damage > 0) {
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
+		if (Type != DADamageType::REPAIR) {
 			Total += Damage/3;
 			DefenseObjectClass *Defense = ((VehicleGameObj*)Get_Owner())->Get_Defense_Object();
 			if (Total >= (Defense->Get_Health_Max()+Defense->Get_Shield_Strength_Max())) { //Wear off after absorbing damage equal to the vehicle's health.
@@ -76,26 +76,29 @@ public:
 	}
 
 	DATankDestroyerCrateSoldierObserverClass(int Warhead) {
-		this->Warhead = Warhead;
+		this->WeaponWarhead = Warhead;
 	}
 
-	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-		if (!Warhead) { //Cannon/Missile
-			if (Type == DADamageType::SPLASH) {
-				return false; //No splash damage.
+	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+		if (!WeaponWarhead) { //Cannon/Missile
+			if (Victim->As_VehicleGameObj()) {
+				if (Type != DADamageType::SPLASH || Scale >= 0.8f) {
+					Damage *= 1.25f; //25% increase to vehicles.
+				}
+				else {
+					return false;
+				}
 			}
-			else if ((Type == DADamageType::NORMAL || Type == DADamageType::SPLASHDIRECT) && Victim->As_VehicleGameObj()) {
-				Offense->Scale_Damage(1.25f); //25% increase to vehicles.
+			else if (Type == DADamageType::SPLASH && Scale < 0.8f) {
+				return false; //Reduce splash range.
 			}
 		}
-		else { //Machine gun
-			if (Type == DADamageType::NORMAL && (int)Offense->Get_Warhead() == Warhead) {
-				if (Victim->As_VehicleGameObj()) {
-					Offense->Scale_Damage(1.25f); //25% increase to vehicles.
-				}
-				else if (Victim->As_SoldierGameObj()) {
-					Offense->Scale_Damage(0.5f); //50% decrease to infantry.
-				}
+		else if ((int)Warhead == WeaponWarhead) { //Machine gun
+			if (Victim->As_VehicleGameObj()) {
+				Damage *= 1.25f; //25% increase to vehicles.
+			}
+			else if (Victim->As_SoldierGameObj()) {
+				Damage *= 0.5f; //50% decrease to infantry.
 			}
 		}
 		return true;
@@ -105,7 +108,7 @@ public:
 		Set_Delete_Pending(); //Destroy when exiting vehicle.
 	}
 	
-	int Warhead;
+	int WeaponWarhead;
 };
 
 class DATankDestroyerCrateVehicleObserverClass : public DAGameObjObserverClass {
@@ -194,37 +197,19 @@ class DAOverhaulCrateClass : public DACrateClass {
 
 		//Vehicles
 		Vehicles.Delete_All();
-		for (int Team = 0;Team < 2;Team++) { //Add all purchasable vehicles into vector.
-			for (int Type = 0;Type < 7;Type++) {
-				PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
-				if (PT) {
-					for (int i = 0;i < 10;i++) {
-						VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
-						if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying())) {
-							Vehicles.Add(Def);
-						}
+		for (int Team = 0;Team < 2;Team++) { //Add all normal purchasable vehicles into vector.
+			PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES,(PurchaseSettingsDefClass::TEAM)Team);
+			if (PT) {
+				for (int i = 0;i < 10;i++) {
+					VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
+					if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+						Vehicles.Add(Def);
 					}
 				}
 			}
 		}
 		VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike"); //Special case for Recon Bike.
 		if (Def) {
-			Def->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
-			DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
-			Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldStrengthMax = 150;
-			Defense.ShieldStrength = 150;
-			Vehicles.Add(Def);
-		}
-		Def = (VehicleGameObjDef*)Find_Named_Definition("Nod_SSM_Launcher_Player"); //Special case for SSM.
-		if (Def) {
-			Def->WeaponDefID = 0;
-			DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Def->Get_DefenseObjectDef());
-			Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			Defense.ShieldStrengthMax = 125;
-			Defense.ShieldStrength = 125;
 			Vehicles.Add(Def);
 		}
 	}
@@ -235,18 +220,32 @@ class DAOverhaulCrateClass : public DACrateClass {
 	
 	virtual void Activate(cPlayer *Player) {
 		VehicleGameObj *Vehicle = Player->Get_GameObj()->Get_Vehicle();
+		int Seats = Vehicle->Get_Definition().Get_Seat_Count();
+		DynamicVectorClass<SoldierGameObj*> Occupants;
+		for (int i = 0;i < Seats;i++) { //Save occupants of old vehicle.
+			if (Vehicle->Get_Occupant(i)) {
+				SoldierGameObj *Occupant = Vehicle->Get_Occupant(i);
+				if (Exit_Vehicle(Occupant)) {
+					Occupants.Add(Occupant);
+				}
+			}
+		}
 		Vehicle->Set_Delete_Pending(); //Destroy old vehicle.
 		Reselect:
 		int Rand = Get_Random_Int(0,Vehicles.Count()); //Get random vehicle.
 		const VehicleGameObjDef *Def = Vehicles[Rand];
-		if (Def == &Vehicle->Get_Definition()) { //Don't pick the vehicle they already have.
+		if (Def == &Vehicle->Get_Definition()) { //Don't pick the same vehicle they had.
 			goto Reselect;
 		}
 		Vehicle = (VehicleGameObj*)Create_Object(Def,Vehicle->Get_Transform()); //Create new vehicle.
 		Vehicle->Set_Player_Type(-2);
 		Vehicle->Lock_Vehicle(Player->Get_GameObj(),5.0f);
+		Update_Network_Object(Vehicle);
+		for (int i = 0;i < Occupants.Count();i++) { //Put them in the new vehicle.
+			Vehicle->Add_Occupant(Occupants[i]);
+		}
 		Fix_Stuck_Objects(Vehicle->Get_Position(),10.0f,15.0f);
-		DA::Page_Player(Player,"Your vehicle has been transformed into %s by the Overhaul Crate.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
+		DA::Page_Player(Player,"The Overhaul Crate has transformed your vehicle into %s.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
 	}
 	DynamicVectorClass<const VehicleGameObjDef*> Vehicles;
 };

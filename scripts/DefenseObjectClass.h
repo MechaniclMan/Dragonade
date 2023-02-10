@@ -60,6 +60,7 @@ public:
 	bool			Would_Damage( const OffenseObjectClass	& offense, float scale = 1.0f );
 	bool			Is_Soft( void );
 	void			Set_Can_Object_Die( bool onoff )	{ CanObjectDie = onoff; }
+	bool			Get_Can_Object_Die()	{ return CanObjectDie; }
 	virtual	void	Import( BitStreamClass & packet );
 	virtual	void	Export( BitStreamClass & packet );
 	static void Set_Precision(void);

@@ -200,6 +200,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da.cpp" />
     <ClCompile Include="dan.cpp" />
     <ClCompile Include="da_aow.cpp" />
+    <ClCompile Include="da_ban.cpp" />
     <ClCompile Include="da_building.cpp" />
     <ClCompile Include="da_c4beacon.cpp" />
     <ClCompile Include="da_characterrefunds.cpp" />
@@ -464,6 +465,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="DamageZoneGameObj.h" />
     <ClInclude Include="DamageZoneGameObjDef.h" />
     <ClInclude Include="dan.h" />
+    <ClInclude Include="da_ban.h" />
     <ClInclude Include="da_building.h" />
     <ClInclude Include="da_c4beacon.h" />
     <ClInclude Include="da_characterrefunds.h" />
@@ -655,6 +657,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="StaticPhysClass.h" />
     <ClInclude Include="straw.h" />
     <ClInclude Include="survival.h" />
+    <ClInclude Include="SysTimeClass.h" />
     <ClInclude Include="tcw_building.h" />
     <ClInclude Include="tcw_center_point.h" />
     <ClInclude Include="tcw_coop.h" />

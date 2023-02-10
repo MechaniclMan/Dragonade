@@ -10,7 +10,7 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 //Changes made in DA:
-//Added Get_Harvester_ID.
+//Added Get_Harvester_ID, Set_Funds_Gathered, and Set_Funds_Distributed_Per_Sec.
 #ifndef TT_INCLUDE__REFINERYGAMEOBJDEF_H
 #define TT_INCLUDE__REFINERYGAMEOBJDEF_H
 
@@ -31,10 +31,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (RefineryGameObjDef, BuildingGameObjDef);
-	int Get_Harvester_ID() const {
-		return HarvesterDefID;
-	}
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	float			UnloadTime;
 	float			FundsGathered;	

@@ -24,7 +24,6 @@ public:
 	DECLARE_EDITABLE( ScriptableGameObjDef, BaseGameObjDef );
 	DynamicVectorClass<StringClass>		ScriptNameList; // 001C
 	DynamicVectorClass<StringClass>		ScriptParameterList; // 0034
-protected:
 	friend class ScriptableGameObj;
 	friend class PresetDump;
 }; // 004C

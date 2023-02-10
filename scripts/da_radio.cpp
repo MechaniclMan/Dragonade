@@ -46,7 +46,7 @@ void DAExtraRadioCommandsGameFeatureClass::Init() {
 	Register_Key_Hook((DAEKH)&DAExtraRadioCommandsGameFeatureClass::Radio19_Key_Hook,"Radio19");
 }
 
-void DAExtraRadioCommandsGameFeatureClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAExtraRadioCommandsGameFeatureClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type){
 	if (Victim->Is_Enemy(Damager) && Damage > 0.0f) {
 		Get_Player_Data(Damager)->Set_Last_Damage(Victim);
 	}

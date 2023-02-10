@@ -52,12 +52,12 @@ bool DAExampleGameFeatueClass::Team_Change_Request_Event(cPlayer *Player) {
 	return false; //Block team change requests.
 }
 
-bool DAExampleGameFeatueClass::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAExampleGameFeatueClass::Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	if (Victim->Get_Player_Type() == 0) {
-		Offense->Scale_Damage(NodDamageScale); //Scale damage based on loaded setting.
+		Damage *= NodDamageScale; //Scale damage based on loaded setting.
 	}
 	else if (Victim->Get_Player_Type() == 1) {
-		Offense->Scale_Damage(GDIDamageScale);
+		Damage *= GDIDamageScale;
 	}
 	return true;
 }

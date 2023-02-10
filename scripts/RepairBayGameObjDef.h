@@ -30,7 +30,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (RepairBayGameObjDef, BuildingGameObjDef);
-protected:
 	void					Load_Variables (ChunkLoadClass &cload);
 	float					RepairPerSec;
 	int					RepairingStaticAnimDefID;

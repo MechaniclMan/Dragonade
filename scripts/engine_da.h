@@ -226,4 +226,6 @@ DA_API void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDista
 
 DA_API void Send_Player_Kill_Message(int Killer,int Victim);
 
+DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
+
 #endif

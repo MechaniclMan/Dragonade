@@ -44,11 +44,8 @@ bool DATauntsGameFeatureClass::Taunt_Chat_Command(cPlayer *Player,const DATokenC
 	}
 	else {
 		int Num = 0;
-		if (!Text.Size()) {
-			Num = Commands->Get_Random_Int(0,10);
-		}
-		else {
-			Num = Text.As_Int(1);
+		if (!Text.As_Int(1,Num)) {
+			Num = Get_Random_Int(0,10);
 		}
 		if (Num == 0) {
 			Taunt0_Key_Hook(Player);

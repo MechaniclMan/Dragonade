@@ -43,7 +43,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (ScriptZoneGameObjDef, ScriptableGameObjDef);
-protected:
 	ZoneConstants::ZoneType ZoneType;
 	Vector3 Color;
 	bool unk;

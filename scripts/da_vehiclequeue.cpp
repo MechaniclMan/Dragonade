@@ -167,7 +167,7 @@ void DAVehicleQueueGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
 	}
 }
 
-void DAVehicleQueueGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleQueueGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	int Team = Victim->Get_Player_Type();
 	if (Team == 0 || Team == 1) {
 		if (((BuildingGameObj*)Victim)->As_PowerPlantGameObj()) { //Double cost of everything in the queue.

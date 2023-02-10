@@ -33,7 +33,6 @@ public:
 	virtual void                        Dump (FileClass &file);
 #endif
 	DECLARE_EDITABLE (AirStripGameObjDef, VehicleFactoryGameObjDef);
-private:
 	void					Load_Variables (ChunkLoadClass &cload);
 	int DropCinematicDefId; // 00A8
 	int CinematicSlotIndex; // 00AC

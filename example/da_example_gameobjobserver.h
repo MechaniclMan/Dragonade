@@ -23,8 +23,8 @@ class DAExampleGameObjObserverClass : public DAGameObjObserverClass {
 	virtual void Destroyed(GameObject *obj);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	virtual bool Vehicle_Entry_Request(cPlayer *Player,int &Seat);
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	const char *Get_Name() { return "DAExampleObserverClass"; } //This is required.
 };
 

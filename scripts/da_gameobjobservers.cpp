@@ -27,8 +27,8 @@ void DATimedInvincibilityObserverClass::Init() {
 	Start_Timer(1,ProtectTime);
 }
 
-bool DATimedInvincibilityObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	if (Offense->Get_Damage() > 0.0f) {
+bool DATimedInvincibilityObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	if (Type != DADamageType::REPAIR) {
 		return false;
 	}
 	return true;

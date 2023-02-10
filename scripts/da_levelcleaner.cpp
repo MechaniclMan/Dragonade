@@ -18,6 +18,7 @@
 #include "da.h"
 #include "da_levelcleaner.h"
 #include "da_settings.h"
+#include "da_gameobj.h"
 #include "GameObjManager.h"
 #include "SpawnerClass.h"
 
@@ -84,8 +85,7 @@ void DALevelCleaner::Load_Blockers(const INIClass *INI) {
 			}
 			Commands->Set_Facing(obj,INI->Get_Float(The_Game()->MapName,StringFormat("%s_Facing",Header),0.0f));
 			if (INI->Get_Bool(The_Game()->MapName,StringFormat("%s_Invisible",Header),false)) {
-				obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_CREATION,false);
-				//obj->Clear_Object_Dirty_Bits();
+				DAGameObjManager::Set_GameObj_Invisible(obj);
 			}
 		}
 		else {

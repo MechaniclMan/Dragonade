@@ -280,18 +280,18 @@ bool DAGameObjManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 	return true;
 }
 
-bool DAGameObjManager::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+bool DAGameObjManager::Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Victim->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Victim->Get_Observers()[i])) {
-			if (!((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Damage_Received_Request(Offense,Type,Bone)) {
+			if (!((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Damage_Received_Request(Damager,Damage,Warhead,Scale,Type)) {
 				return false;
 			}
 		}
 	}
-	if (Offense->Get_Owner()) {
-		for (int i = 0;i < Offense->Get_Owner()->Get_Observers().Count();i++) {
-			if (Is_DAGameObjObserverClass(Offense->Get_Owner()->Get_Observers()[i])) {
-				if (!((DAGameObjObserverClass*)Offense->Get_Owner()->Get_Observers()[i])->Damage_Dealt_Request(Victim,Offense,Type,Bone)) {
+	if (Damager) {
+		for (int i = 0;i < Damager->Get_Observers().Count();i++) {
+			if (Is_DAGameObjObserverClass(Damager->Get_Observers()[i])) {
+				if (!((DAGameObjObserverClass*)Damager->Get_Observers()[i])->Damage_Dealt_Request(Victim,Damage,Warhead,Scale,Type)) {
 					return false;
 				}
 			}
@@ -300,31 +300,31 @@ bool DAGameObjManager::Damage_Request_Event(DamageableGameObj *Victim,OffenseObj
 	return true;
 }
 
-void DAGameObjManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAGameObjManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Victim->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Victim->Get_Observers()[i])) {
-			((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Damage_Received(Damager,Damage,Warhead,Type,Bone);
+			((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Damage_Received(Damager,Damage,Warhead,Scale,Type);
 		}
 	}
 	if (Damager) {
 		for (int i = 0;i < Damager->Get_Observers().Count();i++) {
 			if (Is_DAGameObjObserverClass(Damager->Get_Observers()[i])) {
-				((DAGameObjObserverClass*)Damager->Get_Observers()[i])->Damage_Dealt(Victim,Damage,Warhead,Type,Bone);
+				((DAGameObjObserverClass*)Damager->Get_Observers()[i])->Damage_Dealt(Victim,Damage,Warhead,Scale,Type);
 			}
 		}
 	}
 }
 
-void DAGameObjManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAGameObjManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	for (int i = 0;i < Victim->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Victim->Get_Observers()[i])) {
-			((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Kill_Received(Killer,Damage,Warhead,Type,Bone);
+			((DAGameObjObserverClass*)Victim->Get_Observers()[i])->Kill_Received(Killer,Damage,Warhead,Scale,Type);
 		}
 	}
 	if (Killer) {
 		for (int i = 0;i < Killer->Get_Observers().Count();i++) {
 			if (Is_DAGameObjObserverClass(Killer->Get_Observers()[i])) {
-				((DAGameObjObserverClass*)Killer->Get_Observers()[i])->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
+				((DAGameObjObserverClass*)Killer->Get_Observers()[i])->Kill_Dealt(Victim,Damage,Warhead,Scale,Type);
 			}
 		}
 	}

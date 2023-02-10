@@ -82,7 +82,7 @@ void DATeamManager::Player_Join_Event(cPlayer *Player) {
 	if (ForceTeam != -1) {
 		Player->Set_Player_Type(ForceTeam);
 	}
-	else if (!EnableFreeTeamChanging && !(int)Player->Get_Score()) { //Check if this player imbalanced the teams by joining. Can be caused by a player using the team select screen on XWIS or rejoining after other players have joined and changed the team sizes.
+	else if (!EnableFreeTeamChanging && (100.0f > Player->Get_Score() || The_Game()->Get_Game_Duration_S() <= RebalanceTime)) { //Check if this player imbalanced the teams by joining. Can be caused by a player using the team select screen on XWIS or rejoining after other players have joined and changed the team sizes.
 		int TeamCount[2] = {0,0};
 		Count_Team();
 		if ((TeamCount[0]-TeamCount[1]) > 1) {

@@ -111,6 +111,7 @@ public:
 	float Get_Version();
 	unsigned int Get_Revision();
 	bool Is_TT_Client();
+	bool Is_Scripts_Client();
 	bool Is_Stock_Client();
 	void Increment_Flood_Counter();
 	void Decrement_Flood_Counter();
@@ -151,12 +152,12 @@ public:
 
 	void Created();
 	void Destroyed();
-	bool Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	bool Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	void Custom(GameObject *Sender,int Type,int Param);
 	void Poked(cPlayer *Player);
 
@@ -322,12 +323,12 @@ public:
 
 	virtual void Created() { } //Called when the player changes to a new gameobject.
 	virtual void Destroyed() { } //Called when the player's gameobject is destroyed.
-	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) { return true; } //Called when the player tries to damage an object. Damage can be changed by modifying the OffenseObjectClass.
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) { return true; } //Called when an object tries to damage the player. Damage can be changed by modifying the OffenseObjectClass.
-	virtual void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the player damages an object.
-	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when an object damages the player.
-	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the player kills an object.
-	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when an object kills the player.
+	virtual bool Damage_Dealt_Request(DamageableGameObj *Victim,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) { return true; } //Called when the player tries to damage an object. Damage can be changed by modifying the OffenseObjectClass.
+	virtual bool Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) { return true; } //Called when an object tries to damage the player. Damage can be changed by modifying the OffenseObjectClass.
+	virtual void Damage_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the player damages an object.
+	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when an object damages the player.
+	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when the player kills an object.
+	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { } //Called when an object kills the player.
 	virtual void Custom(GameObject *Sender,int Type,int Param) { } //Called when the player receives a custom.
 	virtual void Poked(cPlayer *Player) { } //Called when the player is poked.
 	
@@ -424,6 +425,24 @@ public:
 	static void Shutdown();
 	DA_API static void Add_Data_Factory(DAPlayerDataFactoryClass *Factory);
 	DA_API static void Remove_Data_Factory(DAPlayerDataFactoryClass *Factory);
+	DA_API static bool Get_Disable_Kill_Messages();
+	DA_API static bool Get_Disable_Kill_Counter();
+	DA_API static bool Get_Disable_Team_Kill_Counter();
+	DA_API static bool Get_Disable_Death_Counter();
+	DA_API static bool Get_Disable_Team_Death_Counter();
+	DA_API static bool Get_Disable_Damage_Points();
+	DA_API static bool Get_Disable_Death_Points();
+	DA_API static bool Get_Disable_Team_Score_Counter();
+	DA_API static float Get_Credits_Multiplier();
+	DA_API static void Set_Disable_Kill_Messages(bool Enable);
+	DA_API static void Set_Disable_Kill_Counter(bool Disable);
+	DA_API static void Set_Disable_Team_Kill_Counter(bool Disable);
+	DA_API static void Set_Disable_Death_Counter(bool Disable);
+	DA_API static void Set_Disable_Team_Death_Counter(bool Disable);
+	DA_API static void Set_Disable_Damage_Points(bool Disable);
+	DA_API static void Set_Disable_Death_Points(bool Disable);
+	DA_API static void Set_Disable_Team_Score_Counter(bool Disable);
+	DA_API static void Set_Credits_Multiplier(float Multiplier);
 	
 private:
 	static inline bool Check_Player(DAPlayerClass *DAPlayer);
@@ -462,9 +481,9 @@ private:
 	
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Object_Destroyed_Event(GameObject *obj);
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual void Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender);
 	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj);
 	
@@ -477,11 +496,15 @@ private:
 	DynamicVectorClass<WideStringClass> DisallowedNicks;
 	unsigned int ForceTT;
 	unsigned int TTRevision;
-	bool EnableStockKillMessages;
-	bool DisableKillCounter;
-	bool DisableTeamKillCounter;
-	bool DisableDeathCounter;
-	bool DisableTeamDeathCounter;
+	static bool DisableKillMessages;
+	static bool DisableKillCounter;
+	static bool DisableTeamKillCounter;
+	static bool DisableDeathCounter;
+	static bool DisableTeamDeathCounter;
+	static bool DisableDamagePoints;
+	static bool DisableDeathPoints;
+	static bool DisableTeamScoreCounter;
+	static float CreditsMultiplier;
 };
 
 #endif

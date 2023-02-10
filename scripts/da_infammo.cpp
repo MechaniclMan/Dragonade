@@ -82,7 +82,7 @@ void DANoReloadGameFeatureClass::Level_Loaded_Event() {
 }
 
 void DANoReloadGameFeatureClass::Player_Loaded_Event(cPlayer *Player) {
-	if (Get_Client_Version(Player->Get_ID()) >= 4.0f) {
+	if (Player->Get_DA_Player()->Is_TT_Client()) {
 		Player->Get_DA_Player()->Add_Observer(new DANoReloadPlayerObserverClass);
 	}
 }

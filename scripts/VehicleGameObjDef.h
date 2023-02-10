@@ -55,14 +55,29 @@ public:
 	DynamicVectorClass<TransitionDataClass*> *					Get_Transition_List( void ) { return &Transitions; }
 	const DynamicVectorClass<TransitionDataClass*> &			Get_Transition_List( void ) const { return Transitions; }
 	void											Free_Transition_List( void );
-	int Get_Damage_Report(int team) const;
-	int Get_Destroy_Report(int team) const;
+	int Get_Damage_Report(int Team) const {
+		if (Team == 0) {
+			return NodDamageReportID;
+		}
+		else if (Team == 1) {
+			return GDIDamageReportID;
+		}
+		return 0;
+	}
+	int Get_Destroy_Report(int Team) const {
+		if (Team == 0) {
+			return NodDestroyReportID;
+		}
+		else if (Team == 1) {
+			return GDIDestroyReportID;
+		}
+		return 0;
+	}
 	int Get_Seat_Count() const {return NumSeats;}
 	VehicleType Get_Type() const {return Type;}
 	const StringClass &Get_Fire0_Anim() const {return Fire0Anim;}
 	const StringClass &Get_Fire1_Anim() const {return Fire1Anim;}
 	bool Get_Build_At_Ground() const {return BuildAtGround;}
-protected:
 	VehicleType									Type;
 	StringClass									TypeName;
 	StringClass									Fire0Anim;

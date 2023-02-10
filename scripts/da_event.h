@@ -267,7 +267,7 @@ namespace DADamageType {
 		FALL,
 		TIBERIUM,
 		FLIP,
-		SPLASHDIRECT
+		REPAIR
 	};
 };
 
@@ -321,13 +321,13 @@ public:
 	static void Object_Created_Event(void *Data,GameObject *obj);
 	static bool Stock_Client_Damage_Request_Event(PhysicalGameObj *Damager,PhysicalGameObj *Target,float Damage, uint Warhead);
 	static bool TT_Client_Damage_Request_Event(PhysicalGameObj *Damager, PhysicalGameObj *Target,const AmmoDefinitionClass* Ammo,const char* Bone);
-	static bool Damage_Request_Event(DefenseObjectClass *Defense,OffenseObjectClass *Offense,float Scale);
-	static void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead);
+	static bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type);
+	static void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
+	static void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	static bool Vehicle_Flip_Event(VehicleGameObj *Vehicle);
 	
 	class DAEventObserverClass : public GameObjObserverClass {
 		virtual void Detach(GameObject *obj);
-		virtual void Killed(GameObject *obj,GameObject *Killer);
 		virtual void Custom(GameObject *obj,int Message,int Param,GameObject *Sender);
 		virtual void Poked(GameObject *obj,GameObject *Poker);
 		virtual void Entered(GameObject *obj,GameObject *Enterer);
@@ -341,6 +341,7 @@ public:
 		virtual void Created(GameObject *obj) { }
 		virtual void Attach(GameObject *obj) { }
 		virtual void Damaged(GameObject *obj,GameObject *Damager,float Damage) { }
+		virtual void Killed(GameObject *obj,GameObject *Killer) { }
 		virtual void Sound_Heard(GameObject *obj,const CombatSound &Sound) { }
 		virtual void Enemy_Seen(GameObject *obj,GameObject *Enemy) { }
 		virtual void Action_Complete(GameObject *obj,int ActionID,ActionCompleteReason CompleteReason) { }
@@ -369,18 +370,11 @@ public:
 	static void Clear_Timers(DAEventClass *Base);
 	
 private:
-	struct DADamageEventStruct {
-		StringClass Bone;
-		DADamageType::Type Type;
-		float Damage;
-		unsigned int Warhead;
-	};
 	static DynamicVectorClass<DAEventStruct*> Events[DAEvent::MAX];
 	static DynamicVectorClass<DAObjectEventStruct*> ObjectEvents[DAObjectEvent::MAX];
 	static DynamicVectorClass<DAEventTimerStruct*> Timers;
 	static bool IsSoldierReInit;
 	static int AddOccupantSeat;
-	static DADamageEventStruct LastDamageEvent;
 };
 
 class DAEventClass abstract {
@@ -475,9 +469,9 @@ public:
 	virtual void Object_Created_Event(GameObject *obj) { }
 	virtual bool Stock_Client_Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,uint Warhead) { return true; }
 	virtual bool TT_Client_Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,const AmmoDefinitionClass *Ammo,const char *Bone) { return true; }
-	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) { return true; }
-	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { }
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { }
+	virtual bool Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) { return true; }
+	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type){ }
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) { }
 	virtual void Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender) { }
 	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj) { }
 	virtual void Zone_Enter_Event(ScriptZoneGameObj *obj,PhysicalGameObj *Enterer) { }

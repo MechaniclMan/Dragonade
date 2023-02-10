@@ -19,7 +19,8 @@
 
 class DAPointsDistributionGameFeatureClass : public DAEventClass, public DAGameFeatureClass {
 	virtual void Init();
-	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
+	virtual void Settings_Loaded_Event();
+	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 };
 
 #endif

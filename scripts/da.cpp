@@ -32,6 +32,7 @@
 #include "da_building.h"
 #include "da_damagelog.h"
 #include "da_cratemanager.h"
+#include "da_ban.h"
 #include <random>
 
 #pragma warning(disable: 4073)
@@ -65,7 +66,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.3";
+	return "1.4";
 }
 
 void DA::Init() {
@@ -87,20 +88,21 @@ void DA::Init() {
 	DAC4BeaconManager::Init();
 	DABuildingManager::Init();
 	DACrateManager::Static_Init();
+	DABanManager::Init();
 	DAChatCommandManager::Init();
 	DAPluginManager::Init();
+	
+	HINSTANCE Handle = LoadLibrary("da.dll");
+	if (!Handle) {
+		MessageBox(NULL,"da.dll was not found. Exiting FDS.","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
+		ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
+	}
 
 	for (int i = 0;i < ConsoleFunctions.Count();i++) { //Add any console functions using the registrant to the main list.
 		Add_Console_Function(ConsoleFunctions[i]);
 	}
 	Sort_Function_List();
 	Verbose_Help_File();
-
-	HINSTANCE Handle = LoadLibrary("da.dll");
-	if (!Handle) {
-		MessageBox(NULL,"da.dll was not found. Exiting FDS.","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
-		ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
-	}
 
 	DASettingsManager::Get_String(MessageNick,"General","MessageNick",0);
 	DASettingsManager::Get_String(MessagePrefix,"General","MessagePrefix",0);
@@ -110,6 +112,7 @@ void DA::Init() {
 }
 
 void DA::Shutdown() {
+	DABanManager::Shutdown();
 	DAPluginManager::Shutdown();
 	DAChatCommandManager::Shutdown();
 	DALogManager::Shutdown();
@@ -163,7 +166,7 @@ void DA::Team_Host_Message(int Team,const char *Format,...) {
 void DA::Private_Host_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
-	if (MessageNick.Is_Empty() || Player->Get_DA_Player()->Get_Version() < 2.6f) {
+	if (MessageNick.Is_Empty() || !Player->Get_DA_Player()->Is_Scripts_Client()) {
 		cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
 		Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
 	}
@@ -307,7 +310,7 @@ void DA::Page_Player(cPlayer *Player,const char *Format,...) {
 	int ID = Player->Get_ID();
 	char Message[256];
 	Format_String_Prefix(Message);
-	if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 	}
 	else {
@@ -341,7 +344,7 @@ void DA::Color_Message(unsigned int Red,int unsigned Green,int unsigned Blue,con
 	cScTextObj *ChatEvent = 0;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && Player->Get_DA_Player()->Get_Version() < 2.6f) {
+		if (Player->Is_Active() && !Player->Get_DA_Player()->Is_Scripts_Client()) {
 			if (!ChatEvent) {
 				ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message),-1,false,false);
 			}
@@ -367,7 +370,7 @@ void DA::Color_Message_With_Team_Color(int Team,const char *Format,...) {
 		cScTextObj *ChatEvent = 0;
 		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
-			if (Player->Is_Active() && Player->Get_DA_Player()->Get_Version() < 2.6f) {
+			if (Player->Is_Active() && !Player->Get_DA_Player()->Is_Scripts_Client()) {
 				if (!ChatEvent) {
 					ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,0,-1,false,false);
 					int Sender = Setup_Send_Message_Team_Fake(Message,Team);
@@ -397,7 +400,7 @@ void DA::Team_Color_Message(int Team,unsigned int Red,int unsigned Green,int uns
 	cScTextObj *ChatEvent = 0;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
-		if (Player->Get_Player_Type() == Team && Player->Is_Active() && Player->Get_DA_Player()->Get_Version() < 2.6f) {
+		if (Player->Get_Player_Type() == Team && Player->Is_Active() && !Player->Get_DA_Player()->Is_Scripts_Client()) {
 			if (!ChatEvent) {
 				ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message),-1,false,false);
 			}
@@ -419,7 +422,7 @@ void DA::Team_Color_Message_With_Team_Color(int Team,const char *Format,...) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
 		if (Player->Get_Player_Type() == Team && Player->Is_Active()) {
-			if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+			if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 				if (!ChatEvent) {
 					ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,0,-1,false,false);
 					int Sender = Setup_Send_Message_Team_Fake(Message,Team);
@@ -449,7 +452,7 @@ void DA::Private_Color_Message(cPlayer *Player,unsigned int Red,unsigned int Gre
 	int ID = Player->Get_ID();
 	char Message[256];
 	Format_String(Message);
-	if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 		cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message,ID),-1,false,false);
 		ChatEvent->Set_Object_Dirty_Bits(ID,NetworkObjectClass::BIT_CREATION);
 		Update_Network_Object(ChatEvent);
@@ -488,7 +491,7 @@ void DA::Private_Color_Message_With_Team_Color(cPlayer *Player,int Team,const ch
 	else {
 		unsigned int Red = 0,Green = 0,Blue = 0;
 		Get_Team_Color(Team,&Red,&Green,&Blue);
-		if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+		if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 			cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,0,-1,false,false);
 			int Sender = Setup_Send_Message_Team_Fake(Message,Team,ID);
 			if (Sender) {
@@ -650,8 +653,10 @@ public:
 	void Activate(const char *ArgumentsString) {
 		DATokenParserClass Text(ArgumentsString,' ');
 		int ID = 0;
-		if (Text.Get_Int(ID) && Text.Get_Remaining_String()) {
-			if (Get_Client_Version(ID) < 2.6f) {
+		Text.Get_Int(ID);
+		cPlayer *Player = Find_Player(ID);
+		if (Player && Text.Get_Remaining_String()) {
+			if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 				Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 			}
 			else {
@@ -674,7 +679,7 @@ public:
 			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 				cPlayer *Player = z->Data();
 				if (Player->Is_Active() && Player->Get_Team() == Team) {
-					if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+					if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
 					}
 					else {

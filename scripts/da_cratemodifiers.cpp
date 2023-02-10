@@ -326,3 +326,43 @@ Register_Crate_Modifier(DAFactoriesDestroyedCrateModifierClass,"FactoriesDestroy
 
 /********************************************************************************************************************************/
 
+class DAStealthCrateModifierClass : public DACrateModifierClass {
+	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			if (Player->Get_GameObj()->Get_Vehicle()->Is_Stealth_Enabled()) {
+				Apply_Modifier(Odds); //Apply modifier if vehicle is stealth.
+			}
+		}
+		else if (Player->Get_GameObj()->Is_Stealth_Enabled()) {
+			Apply_Modifier(Odds); //Apply modifier if character is stealth.
+		}
+	}
+};
+
+Register_Crate_Modifier(DAStealthCrateModifierClass,"Stealth");
+
+/********************************************************************************************************************************/
+
+class DAInfantryCrateModifierClass : public DACrateModifierClass {
+	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
+		if (!Player->Get_GameObj()->Get_Vehicle()) {
+			Apply_Modifier(Odds); //Apply modifier if infantry.
+		}
+	}
+};
+
+Register_Crate_Modifier(DAInfantryCrateModifierClass,"Infantry");
+
+/********************************************************************************************************************************/
+
+class DAVehicleCrateModifierClass : public DACrateModifierClass {
+	virtual void Calculate_Odds(float &Odds,cPlayer *Player) {
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			Apply_Modifier(Odds); //Apply modifier if in a vehicle.
+		}
+	}
+};
+
+Register_Crate_Modifier(DAVehicleCrateModifierClass,"Vehicle");
+
+/********************************************************************************************************************************/

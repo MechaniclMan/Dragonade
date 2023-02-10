@@ -89,9 +89,15 @@ void DAVehicleOwnershipObserverClass::Destroy_Icons() {
 
 void DAVehicleOwnershipObserverClass::Lock() {
 	Set_State(DAVehicleOwnershipState::LOCKED);
-	if (Get_Vehicle()->Get_Occupant(0) && Get_Vehicle()->Get_Occupant(0)->Get_Player() != Get_Vehicle_Owner()) { //Kick the driver if they're not the owner.
-		DA::Page_Player(Get_Vehicle()->Get_Occupant(0),"%ls has removed you from the vehicle.",Get_Vehicle_Owner()->Get_Name());
-		Soldier_Transition_Vehicle(Get_Vehicle()->Get_Occupant(0));
+	SoldierGameObj *Occupant = Get_Vehicle()->Get_Occupant(0);
+	if (Occupant && Occupant->Get_Player() != Get_Vehicle_Owner()) { //Kick the driver if they're not the owner.
+		if (Exit_Vehicle(Occupant)) {
+			DA::Page_Player(Occupant,"%ls has removed you from the vehicle.",Get_Vehicle_Owner()->Get_Name());
+			int OwnerSeat = Get_Vehicle()->Find_Seat(Get_Vehicle_Owner()->Get_GameObj());
+			if (OwnerSeat != -1 && Exit_Vehicle(Get_Vehicle_Owner()->Get_GameObj())) { //Move owner to driver's seat.
+				Get_Vehicle()->Add_Occupant(Get_Vehicle_Owner()->Get_GameObj());
+			}
+		}
 	}
 }
 
@@ -105,7 +111,7 @@ void DAVehicleOwnershipObserverClass::Sell() {
 	int Seats = Get_Vehicle()->Get_Definition().Get_Seat_Count();
 	for (int i = 0;i < Seats;i++) { //Remove all players when selling.
 		if (Get_Vehicle()->Get_Occupant(i)) {
-			Soldier_Transition_Vehicle(Get_Vehicle()->Get_Occupant(i));
+			Exit_Vehicle(Get_Vehicle()->Get_Occupant(i));
 		}
 	}
 	Start_Timer(1,10.0f);
@@ -139,7 +145,7 @@ void DAVehicleOwnershipObserverClass::Set_State(DAVehicleOwnershipState::State s
 }
 
 void DAVehicleOwnershipObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
-	if (Seat == 0) {
+	if (Seat == 0 && Get_Vehicle_Owner()) {
 		if (Get_Team() == Player->Get_Team()) {
 			if (Get_Vehicle_Owner() != Player) {
 				DA::Page_Player(Player,"This vehicle belongs to %ls.",Get_Vehicle_Owner()->Get_Name());
@@ -149,9 +155,6 @@ void DAVehicleOwnershipObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
 				DA::Page_Player(Get_Vehicle_Owner(),"You have cancelled the sale of your vehicle.");
 				Unlock();
 			}
-		}
-		else if (Is_Free()) {
-			DA::Page_Player(Player,"This vehicle has been put up for grabs. You can take ownership of it by using the \"!bind\" command.");
 		}
 		else {
 			DA::Page_Player(Get_Vehicle_Owner(),"The enemy has stolen your vehicle!");
@@ -169,35 +172,33 @@ bool DAVehicleOwnershipObserverClass::Vehicle_Entry_Request(cPlayer *Player,int 
 			}
 		}
 		else if (Seat == 0) {
-			if (Is_Locked()) {
-				if (Get_Vehicle_Owner() != Player) {
-					int NewSeat = Find_Empty_Vehicle_Seat(Get_Vehicle(),false); //Try to find a passenger seat to put them in.
-					if (NewSeat == -1) {
-						DA::Page_Player(Player,"This vehicle is locked and belongs to %ls. You may not enter it.",Get_Vehicle_Owner()->Get_Name());
-						return false; //If there isn't one then block the entry.
-					}
-					else {
-						DA::Page_Player(Player,"This vehicle is locked and belongs to %ls. You have been moved to a passenger seat.",Get_Vehicle_Owner()->Get_Name());
-						Seat = NewSeat; //If there is a free seat put them in it.
-					}
+			if (Is_Locked() && Get_Vehicle_Owner() != Player) {
+				int NewSeat = Find_Empty_Vehicle_Seat(Get_Vehicle(),false); //Try to find a passenger seat to put them in.
+				if (NewSeat == -1) {
+					DA::Page_Player(Player,"This vehicle is locked and belongs to %ls. You may not enter it.",Get_Vehicle_Owner()->Get_Name());
+					return false; //If there isn't one then block the entry.
+				}
+				else {
+					DA::Page_Player(Player,"This vehicle is locked and belongs to %ls. You have been moved to a passenger seat.",Get_Vehicle_Owner()->Get_Name());
+					Seat = NewSeat; //If there is a free seat put them in it.
 				}
 			}
 		}
-		else if (Get_Vehicle_Owner() == Player) { //This allows the owner of a vehicle to get in the driver seat even if another player is already in it.
+		/*else if (Get_Vehicle_Owner() == Player) { //This allows the owner of a vehicle to get in the driver seat even if another player is already in it.
 			int NewSeat = Find_Empty_Vehicle_Seat(Get_Vehicle(),false);
 			if (NewSeat != -1) { //It only works on vehicles with an empty passenger seat, though. The client won't send the entry request if the vehicle is full.
 				Get_Vehicle()->Set_Occupant(NewSeat,Get_Vehicle()->Get_Occupant(0)); //Move the current driver to the passenger seat.
 				Get_Vehicle()->Set_Occupant(0,0);
 				Seat = 0; //Set the owner to get in the driver seat.
 			}
-		}
+		}*/
 	}
 	return true;
 }
 
-bool DAVehicleOwnershipObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	if (Offense->Get_Damage() > 0.0f) { //Block friendly players from damaging a locked vehicle.
-		if ((Is_Locked() || Is_Selling()) && Offense->Get_Owner() && Offense->Get_Owner()->Get_Player_Type() == Get_Team() && Get_Vehicle_Owner()->Get_GameObj() != Offense->Get_Owner()) {
+bool DAVehicleOwnershipObserverClass::Damage_Received_Request(ArmedGameObj *Damager,float &Damage,unsigned int &Warhead,float Scale,DADamageType::Type Type) {
+	if (Type != DADamageType::REPAIR) { //Block friendly players from damaging a locked vehicle.
+		if ((Is_Locked() || Is_Selling()) && Is_Player(Damager) && Damager->Get_Player_Type() == Get_Team() && Get_Vehicle_Owner() != ((SoldierGameObj*)Damager)->Get_Player()) {
 			return false;
 		}
 	}
@@ -207,6 +208,7 @@ bool DAVehicleOwnershipObserverClass::Damage_Received_Request(OffenseObjectClass
 void DAVehicleOwnershipObserverClass::Destroyed(GameObject *obj) {
 	if (!Is_Selling() && Get_Vehicle_Owner()) {
 		DA::Page_Player(Get_Vehicle_Owner(),"Your vehicle has been destroyed.");
+		VehicleOwner = 0;
 	}
 }
 
@@ -240,7 +242,7 @@ void DAVehicleOwnershipGameFeatureClass::Init() {
 }
 
 void DAVehicleOwnershipGameFeatureClass::Settings_Loaded_Event() {
-	SellPercent= WWMath::Clamp(DASettingsManager::Get_Float("VehicleSellPercent",0.5f),0.0f,1.0f);
+	SellPercent = WWMath::Clamp(DASettingsManager::Get_Float("VehicleSellPercent",0.5f),0.0f,1.0f);
 	Unregister_Chat_Command("!sellveh");
 	if (SellPercent) {
 		Register_Chat_Command((DAECC)&DAVehicleOwnershipGameFeatureClass::SellVeh_Chat_Command,"!sellveh|!vsell|!vehsell");
@@ -456,45 +458,54 @@ bool DAVehicleOwnershipGameFeatureClass::BL_Chat_Command(cPlayer *Player,const D
 bool DAVehicleOwnershipGameFeatureClass::VKick_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	VehicleGameObj *Vehicle = Get_Vehicle(Player);
 	if (Vehicle) {
-		if (ChatType == TEXT_MESSAGE_KEYHOOK) {
-			int Seats = Vehicle->Get_Definition().Get_Seat_Count();
-			for (int i = 0;i < Seats;i++) { //Kick all players that aren't the owner.
-				if (Vehicle->Get_Occupant(i) && Vehicle->Get_Occupant(i) != Player->Get_GameObj()) {
-					DA::Page_Player(Vehicle->Get_Occupant(i),"%ls has removed you from the vehicle.",Player->Get_Name());
-					Soldier_Transition_Vehicle(Vehicle->Get_Occupant(i));
+		bool DriverKicked = false;
+		int Seats = Vehicle->Get_Definition().Get_Seat_Count();
+		if (ChatType == TEXT_MESSAGE_KEYHOOK || !Text.Size()) {
+			for (int i = 0;i < Seats;i++) { //Kick the first player that isn't the owner.
+				SoldierGameObj *Occupant = Vehicle->Get_Occupant(i);
+				if (Occupant && Occupant->Get_Player() != Player) {
+					if (Exit_Vehicle(Occupant)) {
+						DA::Page_Player(Occupant->Get_Player(),"%ls has removed you from the vehicle.",Player->Get_Name());
+						if (i == 0) {
+							DriverKicked = true;
+						}
+					}
+					break;
 				}
 			}
 		}
-		else if (Text.Size()) {
-			if (Text[1] == "all") {
-				int Seats = Vehicle->Get_Definition().Get_Seat_Count();
-				for (int i = 0;i < Seats;i++) { //Kick all players that aren't the owner.
-					if (Vehicle->Get_Occupant(i) && Vehicle->Get_Occupant(i) != Player->Get_GameObj()) {
-						DA::Page_Player(Vehicle->Get_Occupant(i),"%ls has removed you from the vehicle.",Player->Get_Name());
-						Soldier_Transition_Vehicle(Vehicle->Get_Occupant(i));
-					}
-				}
-			}
-			else { //Look for any players in the vehicle that match the parameters of the command.
-				for (int x = 1;x <= Text.Size();x++) { //Multiple nicks can be given at once.
-					int Seats = Vehicle->Get_Definition().Get_Seat_Count();
-					for (int i = 0;i < Seats;i++) {
-						if (Vehicle->Get_Occupant(i) && Vehicle->Get_Occupant(i) != Player->Get_GameObj() && wcsistr(Vehicle->Get_Occupant(i)->Get_Player()->Get_Name(),Text.As_Wide(x))) {
-							DA::Page_Player(Vehicle->Get_Occupant(i),"%ls has removed you from the vehicle.",Player->Get_Name());
-							Soldier_Transition_Vehicle(Vehicle->Get_Occupant(i));
+		else if (Text[1] == "all") { 
+			for (int i = 0;i < Seats;i++) { //Kick all players that aren't the owner.
+				SoldierGameObj *Occupant = Vehicle->Get_Occupant(i);
+				if (Occupant && Occupant->Get_Player() != Player) {
+					if (Exit_Vehicle(Occupant)) {
+						DA::Page_Player(Occupant->Get_Player(),"%ls has removed you from the vehicle.",Player->Get_Name());
+						if (i == 0) {
+							DriverKicked = true;
 						}
 					}
 				}
 			}
 		}
-		else {
-			int Seats = Vehicle->Get_Definition().Get_Seat_Count();
-			for (int i = 0;i < Seats;i++) { //Kick the first player that isn't the owner.
-				if (Vehicle->Get_Occupant(i) && Vehicle->Get_Occupant(i) != Player->Get_GameObj()) {
-					DA::Page_Player(Vehicle->Get_Occupant(i),"%ls has removed you from the vehicle.",Player->Get_Name());
-					Soldier_Transition_Vehicle(Vehicle->Get_Occupant(i));
-					break;
+		else { //Look for any players in the vehicle that match the parameters of the command.
+			for (int x = 1;x <= Text.Size();x++) { //Multiple nicks can be given at once.
+				for (int i = 0;i < Seats;i++) {
+					SoldierGameObj *Occupant = Vehicle->Get_Occupant(i);
+					if (Occupant && Occupant->Get_Player() != Player && wcsistr(Occupant->Get_Player()->Get_Name(),Text.As_Wide(x))) {
+						if (Exit_Vehicle(Occupant)) {
+							DA::Page_Player(Occupant->Get_Player(),"%ls has removed you from the vehicle.",Player->Get_Name());
+							if (i == 0) {
+								DriverKicked = true;
+							}
+						}
+					}
 				}
+			}
+		}
+		if (DriverKicked) { //Move owner to driver's seat.
+			int OwnerSeat = Vehicle->Find_Seat(Player->Get_GameObj());
+			if (OwnerSeat != -1 && Exit_Vehicle(Player->Get_GameObj())) {
+				Vehicle->Add_Occupant(Player->Get_GameObj());
 			}
 		}
 	}
@@ -540,7 +551,6 @@ bool DAVehicleOwnershipGameFeatureClass::Free_Chat_Command(cPlayer *Player,const
 }
 
 bool DAVehicleOwnershipGameFeatureClass::SellVeh_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	Start_Timer(1,2.0f);
 	DAVehicleOwnershipObserverClass *Data = Get_Vehicle_Data(Player);
 	if (Data) {
 		if (Text[1] == "cancel" || Text[1] == "halt" || Text[1] == "stop") {
@@ -575,7 +585,8 @@ bool DAVehicleOwnershipGameFeatureClass::SellVeh_Chat_Command(cPlayer *Player,co
 void DAVehicleOwnershipGameFeatureClass::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
 	if (Seat == 0) {
 		DAVehicleObserverClass *VehicleData = DAVehicleManager::Get_Vehicle_Data(Vehicle);
-		if (VehicleData && (VehicleData->Get_Vehicle_Owner() == Player || VehicleData->Get_Team() != Player->Get_Team()) && !Get_Vehicle_Data(Player) && Bind_Vehicle(Vehicle,Player)) { //Automatically bind the vehicle if they bought or stole it.
+		DAVehicleOwnershipObserverClass *VehicleOwnershipData = Get_Vehicle_Data(Vehicle);
+		if (VehicleData && (VehicleData->Get_Vehicle_Owner() == Player || VehicleData->Get_Team() != Player->Get_Team() || (VehicleOwnershipData && VehicleOwnershipData->Is_Free())) && !Get_Vehicle_Data(Player) && Bind_Vehicle(Vehicle,Player)) { //Automatically bind the vehicle if they bought it, stole it, or it's free.
 			DA::Page_Player(Player,"This vehicle has been automatically bound to you. Use \"!lock\" to lock it, or \"!unbind\"/\"!free\" to relinquish ownership.");
 		}
 	}
@@ -595,7 +606,7 @@ void DAVehicleOwnershipGameFeatureClass::Object_Destroyed_Event(GameObject *obj)
 	}
 }
 
-void DAVehicleOwnershipGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+void DAVehicleOwnershipGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 	if (Unlock_Vehicle(((SoldierGameObj*)Victim)->Get_Player())) {
 		DA::Page_Player(((SoldierGameObj*)Victim)->Get_Player(),"Your vehicle has been unlocked.");
 	}
