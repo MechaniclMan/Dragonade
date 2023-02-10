@@ -946,6 +946,8 @@ void DB_DeployableTank_Upgradeable::Custom(GameObject *obj,int type,int param,Ga
 			Commands->Send_Custom_Event(obj,obj,UNDEPLOY_BEGIN_CUSTOM,0,0);
 			mode = 3;
 			Set_Model_Custom(obj,dmodel);
+			Commands->Set_Animation_Frame(obj,deployanim,(int)Get_Float_Parameter("Last_Deploy_Frame"));
+			Update_Network_Object(obj);
 			Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Clear_Weapons(obj);
 			Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name2"),false);

@@ -1,10 +1,16 @@
 #include "General.h"
 #include "engine_tt.h"
 #include "engine_def.h"
+#include "engine_script.h"
+#include "engine_obj.h"
+#include "engine_obj2.h"
+#include "engine_phys.h"
+#include "engine_tdb.h"
+#include "engine_dmg.h"
+#include "engine_game.h"
+#include "engine_player.h"
 #include "VehicleGameObjDef.h"
 #include "BeaconGameObjDef.h"
-#include "gmplugin.h"
-#include "gmgame.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "PurchaseSettingsDefClass.h"
 #include "PowerupGameObj.h"
@@ -564,26 +570,36 @@ void  PlayInsufficientFunds(GameObject *obj)
 
 class DB_capturable_Helipad_Terminal : public ScriptImpClass {
 	bool Do_Poke_Stuff;
+	ReferencerClass building;
 void  DB_capturable_Helipad_Terminal::Created(GameObject *obj)
 {
 	Do_Poke_Stuff = true; 
 	Commands->Enable_HUD_Pokable_Indicator(obj, true);
+	Commands->Set_Animation_Frame(obj,Get_Model(obj),0);
+	Commands->Start_Timer(obj,this,0.5f,1);
+	building = Commands->Find_Object(Get_Int_Parameter("BuildingID"));
 }
 void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 {
 	if (Do_Poke_Stuff)
 	{
 		Do_Poke_Stuff = false; Commands->Start_Timer(obj,this,5.0f,12345);
-		if (Get_Object_Type(Commands->Find_Object(Get_Int_Parameter("BuildingID")))==Get_Object_Type(poker))
+		if (Get_Object_Type(building)==Get_Object_Type(poker))
 		{
 			const char *preset;
-			int cost;
+			float cost;
 			int spawnlocation;
 			Vector3 location;
-			cost=Get_Int_Parameter("Cost");
+			bool powered=true;
+			cost=Get_Float_Parameter("Cost");
 			preset = Get_Parameter("Preset");
 			spawnlocation = Get_Int_Parameter("SpawnLocation");
 			location = Commands->Get_Position(Commands->Find_Object(spawnlocation));
+			if(!Is_Base_Powered(Get_Object_Type(poker)))
+			{
+				powered=false;
+				cost=cost*1.5f;
+			}
 			if (cost <= Commands->Get_Money(poker))
 			{
 				cost = -cost;
@@ -595,20 +611,24 @@ void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 				{
 					Set_Object_Type(Purchase,Get_Object_Type(poker));
 					Purchase->As_VehicleGameObj()->Lock_Vehicle(poker,45.0f);
-					//if(!Purchase->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass()->Can_Teleport(Purchase->As_PhysicalGameObj()->Get_Transform()))
-						//Fix_Stuck_Object(Purchase->As_VehicleGameObj(),15);
 				}
-				Send_Message_Player(poker,255,255,255,"Purchase request granted!");
+				Send_Message_Team(Get_Object_Type(poker),160,160,255,StringClass::getFormattedString("Building: %s - %s",Get_Translated_Definition_Name(preset),Get_Player_Name(poker)));
+				Send_Message_Player(poker,178,178,178,"Purchase request granted!");
+				Stop_Timer2(obj,this,1);
+				DB_capturable_Helipad_Terminal::Timer_Expired(obj, 1);
 			}
 			else
 			{
 				PlayInsufficientFunds(poker);
-				Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds!");
+				if(!powered)
+					Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds! (Power Down - Cost x 1.5)");
+				else
+					Send_Message_Player(poker,255,255,255,"Access Denied! Insufficient Funds!");
 			}
 		}
 		else
 		{
-			const char *Building = Get_Translated_Preset_Name(Commands->Find_Object(Get_Int_Parameter("BuildingID")));
+			const char *Building = Get_Translated_Preset_Name(building);
 			Send_Message_Player(poker,255,255,255,StringClass::getFormattedString("Sorry, the %s is not captured. Purchase denied.",Building));
 
 		}
@@ -617,11 +637,74 @@ void  DB_capturable_Helipad_Terminal::Poked(GameObject *obj,GameObject *poker)
 }
 void  DB_capturable_Helipad_Terminal::Timer_Expired(GameObject *obj, int number)
 {
-	if (number == 12345)
+	if(number == 1)
+	{
+		int team = Get_Object_Type(building);
+		int frame = 0;
+		if(team == 1)
+		{
+			if(Do_Poke_Stuff)
+			{
+				if(Is_Base_Powered(1))
+					frame=7;
+				else
+					frame=5;
+			}
+			else
+			{
+				if(Is_Base_Powered(1))
+					frame=8;
+				else
+					frame=6;
+			}
+			if(Get_Object_Type(obj) != -2)
+			{
+				Set_Object_Type(obj,1);
+			}
+		}
+		else if (team == 0)
+		{
+			if(Do_Poke_Stuff)
+			{
+				if(Is_Base_Powered(0))
+					frame=3;
+				else
+					frame=1;
+			}
+			else
+			{
+				if(Is_Base_Powered(0))
+					frame=4;
+				else
+					frame=2;
+			}
+			if(Get_Object_Type(obj) != 0)
+			{
+				Set_Object_Type(obj,0);
+			}
+		}
+		else
+		{
+			frame=0;
+			if(Get_Object_Type(obj) != -2)
+			{
+				Set_Object_Type(obj,-2);
+			}
+		}
+		if(Get_Animation_Frame(obj) != frame)
+		{
+			Commands->Set_Animation_Frame(obj,Get_Model(obj),frame);
+		}
+		Commands->Start_Timer(obj,this,0.5f,1);
+	}
+
+	else if (number == 12345)
 	{
 		Do_Poke_Stuff = true;
 		Commands->Enable_HUD_Pokable_Indicator(obj, true);
 	}
+
+
 }
 };
 

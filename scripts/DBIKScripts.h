@@ -260,3 +260,8 @@ class DB_Damage_Vehicle_Occupants_Area_Timer : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj, int number);
 };
+
+class DB_Set_PT_Slot : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};

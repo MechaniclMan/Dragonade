@@ -7537,6 +7537,34 @@ bool JMG_Utility_Zone_Teleport_To_Random_Wander_Point::Get_A_Defense_Point(Vecto
 	*facing = node->facing;
 	return true;
 }
+bool JMG_Utility_Custom_Teleport_To_Random_Wander_Point::Get_A_Defense_Point(Vector3 *position,float *facing)
+{
+	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
+	if (wanderPointGroup != -1)
+		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(wanderPointGroup);
+	if (!node)
+	{
+		if (!retryOnFailure)
+			Console_Input("msg JMG_Utility_Custom_Teleport_To_Random_Wander_Point ERROR: No wander points could be found for that group!");
+		return false;
+	}
+	*position = node->position;
+	*facing = node->facing;
+	return true;
+}
+bool JMG_Utility_AI_Skittish_Herd_Animal::Get_A_Wander_Point(Vector3 *position,int wanderPointGroup)
+{
+	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
+	if (wanderPointGroup != -1)
+		node = JMG_Wandering_AI_Controller::wanderPoints.GetNearest(*position);
+	if (!node)
+	{
+		Console_Input("msg JMG_Utility_AI_Skittish_Herd_Animal ERROR: No wander points could be found for that group!");
+		return false;
+	}
+	*position = node->position;
+	return true;
+}
 bool JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach::Get_A_Defense_Point(Vector3 *position,float *facing)
 {
 	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
@@ -7565,11 +7593,11 @@ bool JMG_Utility_Custom_Teleport_Players_Outside_Range_To_Wanderpoints::Get_A_De
 bool JMG_Utility_AI_Goto_Player::GetRandomPosition(Vector3 *position)
 {
 	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
-	if (Get_Int_Parameter("WanderingAIGroupID") != -1)
-		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(Get_Int_Parameter("WanderingAIGroupID"));
+	if (wanderingAiGroupId != -1)
+		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(wanderingAiGroupId);
 	if (!node)
 	{
-		Console_Input("msg JMG_Utility_AI_Vehicle ERROR: No wander points could be found for that group!");
+		Console_Input("msg JMG_Utility_AI_Goto_Player ERROR: No wander points could be found for that group!");
 		*position = Vector3();
 		return false;
 	}
@@ -7579,8 +7607,8 @@ bool JMG_Utility_AI_Goto_Player::GetRandomPosition(Vector3 *position)
 bool JMG_Utility_AI_Goto_Enemy::GetRandomPosition(Vector3 *position)
 {
 	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
-	if (Get_Int_Parameter("WanderingAIGroupID") != -1)
-		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(Get_Int_Parameter("WanderingAIGroupID"));
+	if (wanderingAiGroupId != -1)
+		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(wanderingAiGroupId);
 	if (!node)
 	{
 		Console_Input("msg JMG_Utility_AI_Goto_Enemy ERROR: No wander points could be found for that group!");
@@ -7593,8 +7621,8 @@ bool JMG_Utility_AI_Goto_Enemy::GetRandomPosition(Vector3 *position)
 bool JMG_Utility_AI_Goto_Enemy_Not_Star::GetRandomPosition(Vector3 *position)
 {
 	Rp2SimplePositionSystem::SimplePositionNode *node = NULL;
-	if (Get_Int_Parameter("WanderingAIGroupID") != -1)
-		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(Get_Int_Parameter("WanderingAIGroupID"));
+	if (wanderingAiGroupId != -1)
+		node = JMG_Wandering_AI_Controller::wanderPoints.GetRandomFromGroup(wanderingAiGroupId);
 	if (!node)
 	{
 		Console_Input("msg JMG_Utility_AI_Goto_Enemy_Not_Star ERROR: No wander points could be found for that group!");

@@ -538,6 +538,12 @@
     <ClCompile Include="da_chatsounds.cpp">
       <Filter>DA Game Features</Filter>
     </ClCompile>
+    <ClCompile Include="DBScripts.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
+    <ClCompile Include="DBVehicleBypass.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">

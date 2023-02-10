@@ -35,7 +35,7 @@ void DAGameSpyGameFeatureClass::Init() {
 	unsigned short MasterPort = htons(27900);
 
 	StringClass Masters;
-	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","master.gamespy.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk");
+	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","renlist.w3dhub.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk");
 	DATokenParserClass Parser(Masters,'|');
 	while (char *Token = Parser.Get_String()) {
 		HostInfo = gethostbyname(Token);

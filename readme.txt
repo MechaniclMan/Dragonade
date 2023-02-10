@@ -1,4 +1,4 @@
-Dragonade 1.9.3
+Dragonade 1.9.4
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,6 +25,9 @@ Installation:
 
 
 Update History:
+
+Version 1.9.4:
+Fixed some bugs.
 
 Version 1.9.3:
 Updated to Scripts 4.6.

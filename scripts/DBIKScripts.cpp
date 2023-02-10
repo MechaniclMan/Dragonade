@@ -10,6 +10,8 @@
 #include "PurchaseSettingsDefClass.h"
 #include "GameObjManager.h"
 #include "DB_General.h"
+#include "PurchaseSettingsDefClass.h"
+#include "dp88_custom_timer_defines.h"
 #ifdef DRAGONADE
 #include "engine_da.h"
 #endif // DRAGONADE
@@ -1015,7 +1017,7 @@ void  DB_Infantry_Place_Buildable_Object::Custom(GameObject *obj,int message,int
 		if (Get_Float_Parameter("Cost") && Commands->Get_Money(obj) < Get_Float_Parameter("Cost"))
 		{
 			char costMessage[220];
-			sprintf(costMessage,"You need $%d to place this.",Get_Float_Parameter("Cost"));
+			sprintf(costMessage,"You need $%i to place this.",(int)Get_Float_Parameter("Cost"));
 			Send_Message_Player(obj,255,255,255,costMessage);
 			return;
 		}
@@ -1255,6 +1257,7 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 			{
 				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(sender));
 				Commands->Action_Reset(turret,100);
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_ENABLEAI,0,0);
 			}
 		}
 	}
@@ -1269,6 +1272,7 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(obj));
 				Commands->Action_Reset(turret,201);
 				bombard=false;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_DISABLEAI,0,0);
 			}
 		}
 	}
@@ -1294,6 +1298,7 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 				var.Set_Attack(obj->As_VehicleGameObj()->Get_Targeting_Pos(),1000,0,true);
 				Commands->Action_Attack(turret,var);
 				bombard=true;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_DISABLEAI,0,0);
 				Set_HUD_Help_Text_Player_Text(sender,7403,"Manual Targeting set, Press 'T' to switch to auto targeting",Vector3(0.3f,0.3f,1.0f));
 			}
 		}
@@ -1304,6 +1309,7 @@ void DB_Turret_Spawn::Custom(GameObject *obj,int message,int param,GameObject *s
 			{
 				Commands->Action_Reset(turret,201);
 				bombard=false;
+				Commands->Send_Custom_Event(turret,turret,CUSTOM_AI_ENABLEAI,0,0);
 				Set_HUD_Help_Text_Player_Text(sender,7403,"Auto Targeting set, Press 'T' to set manual target location",Vector3(0.3f,0.3f,1.0f));
 			}
 		}
@@ -1628,35 +1634,38 @@ ScriptRegistrant<DB_Visible_Passenger> DB_Visible_Passenger_Registrant("DB_Visib
 
 void DB_Drop_Wreckage_On_Death::Killed(GameObject *obj,GameObject *killer)
 {
-	if(Find_Named_Definition(Get_Parameter("Wreckage_Preset")) && obj->As_VehicleGameObj())
+	if(Get_Damage_Warhead()!=25)
 	{
-		Matrix3D transform = obj->As_PhysicalGameObj()->Get_Transform();
-		GameObject *CurTank;		
-		CurTank = Commands->Create_Object(Get_Parameter("Wreckage_Preset"),Commands->Get_Position(obj));
-		if(CurTank)
+		if(Find_Named_Definition(Get_Parameter("Wreckage_Preset")) && obj->As_VehicleGameObj())
 		{
-			PhysicalGameObj *Shell = (PhysicalGameObj*)Commands->Create_Object("Mounted",Commands->Get_Position(obj));
-			if(Shell)
+			Matrix3D transform = obj->As_PhysicalGameObj()->Get_Transform();
+			GameObject *CurTank;		
+			CurTank = Commands->Create_Object(Get_Parameter("Wreckage_Preset"),Commands->Get_Position(obj));
+			if(CurTank)
 			{
-				Shell->Set_Transform(transform);
-				Commands->Set_Model(Shell,Get_Model(CurTank));
-				Shell->Set_Collision_Group(SOLDIER_GHOST_COLLISION_GROUP);
-				Shell->Set_Player_Type(-2);
-				Commands->Enable_Vehicle_Transitions(Shell,false);
-				DefenseObjectClass *WreckDefense = CurTank->As_DamageableGameObj()->Get_Defense_Object();
-				DefenseObjectClass *ShellDefense = Shell->Get_Defense_Object();
-				ShellDefense->Set_Health_Max(WreckDefense->Get_Health_Max());
-				ShellDefense->Set_Shield_Strength_Max(WreckDefense->Get_Shield_Strength_Max());
-				Commands->Set_Health(Shell,WreckDefense->Get_Health());
-				Commands->Set_Shield_Strength(Shell,WreckDefense->Get_Shield_Strength());
-				ShellDefense->Set_Skin(WreckDefense->Get_Skin());
-				ShellDefense->Set_Shield_Type(WreckDefense->Get_Shield_Type());
-				ShellDefense->Set_Damage_Points(0.0f);
-				ShellDefense->Set_Death_Points(0.0f);
-				CurTank->Set_Delete_Pending();
-				Commands->Attach_Script(Shell,"DB_Wreckage_Rebuildable",Commands->Get_Preset_Name(obj));
-				Update_Network_Object(Shell);
-				Force_Orientation_Update(Shell);
+				PhysicalGameObj *Shell = (PhysicalGameObj*)Commands->Create_Object("Mounted",Commands->Get_Position(obj));
+				if(Shell)
+				{
+					Shell->Set_Transform(transform);
+					Commands->Set_Model(Shell,Get_Model(CurTank));
+					Shell->Set_Collision_Group(SOLDIER_GHOST_COLLISION_GROUP);
+					Shell->Set_Player_Type(-2);
+					Commands->Enable_Vehicle_Transitions(Shell,false);
+					DefenseObjectClass *WreckDefense = CurTank->As_DamageableGameObj()->Get_Defense_Object();
+					DefenseObjectClass *ShellDefense = Shell->Get_Defense_Object();
+					ShellDefense->Set_Health_Max(WreckDefense->Get_Health_Max());
+					ShellDefense->Set_Shield_Strength_Max(WreckDefense->Get_Shield_Strength_Max());
+					Commands->Set_Health(Shell,WreckDefense->Get_Health());
+					Commands->Set_Shield_Strength(Shell,WreckDefense->Get_Shield_Strength());
+					ShellDefense->Set_Skin(WreckDefense->Get_Skin());
+					ShellDefense->Set_Shield_Type(WreckDefense->Get_Shield_Type());
+					ShellDefense->Set_Damage_Points(0.0f);
+					ShellDefense->Set_Death_Points(0.0f);
+					CurTank->Set_Delete_Pending();
+					Commands->Attach_Script(Shell,"DB_Wreckage_Rebuildable",Commands->Get_Preset_Name(obj));
+					Update_Network_Object(Shell);
+					Force_Orientation_Update(Shell);
+				}
 			}
 		}
 	}
@@ -1746,7 +1755,7 @@ void DB_Damage_Vehicle_Occupants_Area_Killed::Killed(GameObject *obj, GameObject
 {
 	if(Get_Float_Parameter("Damage_Distance")>100)
 	{
-		Console_Input(StringClass::getFormattedString("msg bad occupant damage settings - %s",Commands->Get_Preset_Name(obj)));
+		//Console_Input(StringClass::getFormattedString("msg bad occupant damage settings - %s",Commands->Get_Preset_Name(obj)));
 		Set_Parameters_String(",Fire,150,3.5");
 	}
 	Vector3 pos = Commands->Get_Position(obj);
@@ -1779,3 +1788,59 @@ void DB_Damage_Vehicle_Occupants_Area_Timer::Timer_Expired(GameObject *obj, int 
 ScriptRegistrant<DB_Damage_Vehicle_Occupants_Area_Timer> DB_Damage_Vehicle_Occupants_Area_Timer_Registrant("DB_Damage_Vehicle_Occupants_Area_Timer","Occupants_Damage_Amount=1000:float,Occupants_Damage_Warhead=warhead:string,Damage_Distance=1000:float,ShooterID=0:int");
 ScriptRegistrant<DB_Damage_Vehicle_Occupants_Area_Killed> DB_Damage_Vehicle_Occupants_Area_Killed_Registrant("DB_Damage_Vehicle_Occupants_Area_Killed","Area_Damaging_Explosion=explosion:string,Occupants_Damage_Warhead=warhead:string,Occupants_Damage_Amount=1000:float,Damage_Distance=1000:float");
 
+void DB_Set_PT_Slot::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.0f,12321);
+	int Type=Get_Int_Parameter("Type");
+		int Team=Get_Int_Parameter("Team");
+		int Slot=Get_Int_Parameter("Slot");
+		int Alt=Get_Int_Parameter("Alt");
+		StringClass Preset=Get_Parameter("Preset");
+		if(stristr(Preset,"mirage"))
+		{
+			Team=0;
+			Type=1;
+			Slot=9;
+			Alt=0;
+		}
+		PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
+		if(PT)
+		{
+			int PresetID = Get_Definition_ID(Preset);
+			if(PresetID)
+			{
+				if(Alt==0 || Alt==1 || Alt==2)
+				{
+					PT->Set_Alt_Definition(Slot,Alt,PresetID);
+				}
+				else
+				{
+					PT->Set_Definition(Slot,PresetID);
+				}
+			}
+			else
+			{
+				if(Alt==0 || Alt==1 || Alt==2)
+				{
+					PT->Set_Alt_Definition(Slot,Alt,0);
+				}
+				else
+				{
+					PT->Set_Definition(Slot,0);
+				}
+			}
+		}
+
+}
+
+void DB_Set_PT_Slot::Timer_Expired(GameObject *obj,int number)
+{
+#ifdef DRAGONADE
+	if(number==12321)
+	{
+		Console_Input("reload");
+	}
+#endif // DRAGONADE
+}
+
+ScriptRegistrant<DB_Set_PT_Slot> DB_Set_PT_Slot_Registrant("DB_Set_PT_Slot","Team=0:int,Type=0:int,Slot=0:int,Alt=-1:int,Preset=CnC_Nod_Light_Tank:String");

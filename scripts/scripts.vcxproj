@@ -255,6 +255,8 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_vehiclequeue.cpp" />
     <ClCompile Include="da_weapons.cpp" />
     <ClCompile Include="DBIKScripts.cpp" />
+    <ClCompile Include="DBScripts.cpp" />
+    <ClCompile Include="DBVehicleBypass.cpp" />
     <ClCompile Include="DB_Research_Terminals.cpp" />
     <ClCompile Include="DefinitionFactoryClass.cpp" />
     <ClCompile Include="DefinitionFactoryMgrClass.cpp" />

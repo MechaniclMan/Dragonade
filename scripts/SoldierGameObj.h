@@ -207,6 +207,15 @@ public:
 	bool Get_Use_Stock_Ghost_Behavior(){return useStockGhostBehavior;}
 	void Set_Override_Muzzle_Direction(bool override){OverrideMuzzleDirection = override; Set_Object_Dirty_Bit(BIT_RARE, true);};
 	bool Get_Override_Muzzle_Direction(){return OverrideMuzzleDirection;};
+	virtual int Get_Contact_Surface_Type();
+	virtual float		Get_Skeleton_Heigth( void );
+	virtual void 		Set_Skeleton_Height( float height );
+	virtual float		Get_Skeleton_Width( void );
+	virtual void 		Set_Skeleton_Width( float width );
+	virtual void 		Set_Override_Weapon_Hold_Style(int overrideWeaponHoldStyleId);
+	virtual int			Get_Override_Weapon_Hold_Style();
+	virtual void 		Set_Human_Anim_Override(bool enableHumanAnimOverride);
+	virtual int			Get_Human_Anim_Override();
 
 	cPlayer *Get_Player() {
 		return (cPlayer*)Get_Player_Data();
@@ -284,6 +293,12 @@ protected:
 	bool						movementLoitersAllowed;
 	bool						useStockGhostBehavior;
 	bool						OverrideMuzzleDirection;
+	float						skeletonHeight;
+	float						skeletonWidth;
+	float						lastSkeletonHeight;
+	float						lastSkeletonWidth;
+	int							overrideWeaponHoldStyleId;
+	bool						enableHumanAnimOverride;
 	TT_DEPRECATED("Do not use") int						Check(void);
 }; // size: 3404
 
