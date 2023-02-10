@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Gamelog
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,8 +21,8 @@ class DAGameLogGameFeatureClass: public DAEventClass, public DAGameFeatureClass 
 	virtual void Init();
 	virtual void Level_Loaded_Event();
 	virtual void Game_Over_Event();
-	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat);
-	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat);
+	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
+	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);

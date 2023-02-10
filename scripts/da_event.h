@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -276,8 +276,10 @@ namespace DADamageType {
 class DA_API DAEventManager {
 public:
 	static void Init();
+	static void Shutdown();
 	static void Settings_Loaded_Event();
 	static bool Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID);
+	static bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
 	static bool Key_Hook_Event(cPlayer *Player,const StringClass &Key);
 	static bool Host_Chat_Event(int ID,TextMessageEnum Type,const char *Message);
 	static bool Radio_Event(int PlayerType,int ID,int AnnouncementID,int IconID,AnnouncementEnum AnnouncementType);
@@ -292,15 +294,15 @@ public:
 	static void Console_Output_Event(const char *Output);
 	static void Ren_Log_Event(const char *Output);
 	static void DA_Log_Event(const char *Header,const char *Output);
-	static int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data);
-	static int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data);
-	static int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data);
-	static int Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset);
-	static void Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Def);
-	static void Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Def);
-	static void PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Def);
-	static void Custom_Purchase_Event(SoldierGameObj *Purchaser,float Cost,unsigned int ID);
-	static bool Refill_Event(SoldierGameObj *Purchaser);
+	static int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data);
+	static int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data);
+	static int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data);
+	static int Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset);
+	static void Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Def);
+	static void Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Def);
+	static void PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Def);
+	static void Custom_Purchase_Event(cPlayer *Player,float Cost,unsigned int ID);
+	static bool Refill_Event(SoldierGameObj *Soldier);
 	static void Suicide_Event(int ID);
 	static void Team_Change_Request_Event(int ID);
 
@@ -308,8 +310,8 @@ public:
 	static void Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier);
 	static bool PowerUp_Grant_Request_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	static void PowerUp_Grant_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
-	static bool Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon);
-	static void Add_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon);
+	static bool Add_Weapon_Request_Event(WeaponBagClass *Bag,const WeaponDefinitionClass *Weapon);
+	static void Add_Weapon_Event(WeaponBagClass *Bag,WeaponClass *Weapon);
 	static void Remove_Weapon_Event(WeaponBagClass *Bag,int Index);
 	static void Clear_Weapons_Event(WeaponBagClass *Bag);
 	static void Beacon_Set_State_Event(BeaconGameObj *Beacon);
@@ -327,6 +329,7 @@ public:
 	static bool Vehicle_Flip_Event(VehicleGameObj *Vehicle);
 	
 	class DAEventObserverClass : public GameObjObserverClass {
+		virtual void Detach(GameObject *obj);
 		virtual void Killed(GameObject *obj,GameObject *Killer);
 		virtual void Custom(GameObject *obj,int Message,int Param,GameObject *Sender);
 		virtual void Poked(GameObject *obj,GameObject *Poker);
@@ -340,7 +343,6 @@ public:
 		//Unused
 		virtual void Created(GameObject *obj) { }
 		virtual void Attach(GameObject *obj) { }
-		virtual void Detach(GameObject *obj) { }
 		virtual void Damaged(GameObject *obj,GameObject *Damager,float Damage) { }
 		virtual void Sound_Heard(GameObject *obj,const CombatSound &Sound) { }
 		virtual void Enemy_Seen(GameObject *obj,GameObject *Enemy) { }
@@ -366,8 +368,9 @@ public:
 	
 	static void Start_Timer(DAEventClass *Base,int Number,float Duration,bool Repeat,unsigned int Data);
 	static void Stop_Timer(DAEventClass *Base,int Number,unsigned int Data);
+	static bool Is_Timer(DAEventClass *Base,int Number,unsigned int Data);
 	static void Clear_Timers(DAEventClass *Base);
-
+	
 private:
 	struct DADamageEventStruct {
 		StringClass Bone;
@@ -443,6 +446,9 @@ public:
 	inline void Stop_Timer(int Number,unsigned int Data = 0) {
 		DAEventManager::Stop_Timer(this,Number,Data);
 	}
+	inline bool Is_Timer(int Number,unsigned int Data = 0) {
+		return DAEventManager::Is_Timer(this,Number,Data);
+	}
 	inline void Clear_Timers() {
 		DAEventManager::Clear_Timers(this);
 	}
@@ -473,34 +479,34 @@ public:
 	virtual void Console_Output_Event(const char *Output) { }
 	virtual void Ren_Log_Event(const char *Output) { }
 	virtual void DA_Log_Event(const char *Header,const char *Output) { }
-	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item) { return -1; }
-	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) { return -1; }
-	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item) { return -1; }
-	virtual int Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,unsigned int ID) { return -1; }
-	virtual void Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Item) { }
-	virtual void Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Item) { }
-	virtual void PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Item) { }
-	virtual void Custom_Purchase_Event(SoldierGameObj *Purchaser,float Cost,unsigned int ID) { }
-	virtual bool Refill_Event(SoldierGameObj *Purchaser) { return true; }
+	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item) { return -1; }
+	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) { return -1; }
+	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) { return -1; }
+	virtual int Custom_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,unsigned int ID) { return -1; }
+	virtual void Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item) { }
+	virtual void Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item) { }
+	virtual void PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item) { }
+	virtual void Custom_Purchase_Event(cPlayer *Player,float Cost,unsigned int ID) { }
+	virtual bool Refill_Event(cPlayer *Player) { return true; }
 	virtual bool Suicide_Event(cPlayer *Player) { return true; }
 	virtual bool Team_Change_Request_Event(cPlayer *Player) { return true; }
 	virtual void Team_Change_Event(cPlayer *Player) { }
-	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int &Seat) { return true; }
-	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) { }
-	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) { }
-	virtual bool PowerUp_Grant_Request_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) { return true; }
-	virtual void PowerUp_Grant_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) { }
-	virtual bool Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon) { return true; }
-	virtual void Add_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon) { }
-	virtual void Remove_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon) { }
-	virtual void Clear_Weapons_Event(SoldierGameObj *Soldier) { }
+	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) { return true; }
+	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) { }
+	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) { }
+	virtual bool PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) { return true; }
+	virtual void PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) { }
+	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) { return true; }
+	virtual void Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) { }
+	virtual void Remove_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) { }
+	virtual void Clear_Weapons_Event(cPlayer *Player) { }
 	virtual void Beacon_Deploy_Event(BeaconGameObj *Beacon) { }
 	virtual void Beacon_Detonate_Event(BeaconGameObj *Beacon) { }
 	virtual bool C4_Detonate_Request_Event(C4GameObj *C4,SmartGameObj *Triggerer) { return true; }
 	virtual void C4_Detonate_Event(C4GameObj *C4) { }
-	virtual void Change_Character_Event(SoldierGameObj *Soldier,const SoldierGameObjDef *SoldierDef) { }
+	virtual void Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier) { }
 	virtual bool Vehicle_Flip_Event(VehicleGameObj *Vehicle) { return true; }
-	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,SoldierGameObj *Owner,float Delay) { return true; }
+	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) { return true; }
 	virtual void Think() { }
 	
 	virtual void Object_Created_Event(GameObject *obj) { }
@@ -510,7 +516,7 @@ public:
 	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { }
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { }
 	virtual void Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender) { }
-	virtual void Poke_Event(PhysicalGameObj *obj,SoldierGameObj *Poker) { }
+	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj) { }
 	virtual void Zone_Enter_Event(ScriptZoneGameObj *obj,PhysicalGameObj *Enterer) { }
 	virtual void Zone_Exit_Event(ScriptZoneGameObj *obj,PhysicalGameObj *Exiter) { }
 	virtual void Object_Destroyed_Event(GameObject *obj) { }

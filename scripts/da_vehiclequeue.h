@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Purchase Queue Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,7 +38,7 @@ private:
 	~DAVehicleQueueGameFeatureClass();
 	virtual void Level_Loaded_Event();
 	virtual void Game_Over_Event();
-	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item);
+	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	virtual void Team_Change_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Object_Created_Event(GameObject *obj);

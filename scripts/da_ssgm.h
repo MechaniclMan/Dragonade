@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Legacy SSGM Interface
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -66,9 +66,9 @@ public:
 	virtual void OnPlayerJoin(int PlayerID,const char *PlayerName) { };
 	virtual void OnPlayerLeave(int PlayerID) { };
 	virtual bool OnRefill(GameObject *purchaser) { return true; };
-	virtual int OnPowerupPurchase(BaseControllerClass *base,GameObject *Purchaser,float Cost,unsigned int preset,const char *data) { return -1; };
-	virtual int OnVehiclePurchase(BaseControllerClass *base,GameObject *Purchaser,float Cost,unsigned int preset,const char *data) { return -1; };
-	virtual int OnCharacterPurchase(BaseControllerClass *base,GameObject *Purchaser,float Cost,unsigned int preset,const char *data) { return -1; };
+	virtual int OnPowerupPurchase(BaseControllerClass *base,GameObject *Purchaser,unsigned int cost,unsigned int preset,const char *data) { return -1; };
+	virtual int OnVehiclePurchase(BaseControllerClass *base,GameObject *Purchaser,unsigned int cost,unsigned int preset,const char *data) { return -1; };
+	virtual int OnCharacterPurchase(BaseControllerClass *base,GameObject *Purchaser,unsigned int cost,unsigned int preset,const char *data) { return -1; };
 	virtual void OnThink() { };
 	virtual bool OnRadioCommand(int PlayerType, int PlayerID, int AnnouncementID, int IconID, AnnouncementEnum AnnouncementType) { return true; }
 	virtual bool OnStockDamage(PhysicalGameObj* damager, PhysicalGameObj* target, float damage, uint warheadId) { return true; }
@@ -94,10 +94,10 @@ private:
 	virtual void Settings_Loaded_Event();
 	virtual void Game_Over_Event();
 	virtual void Console_Output_Event(const char *Output);
-	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item);
-	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item);
-	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item);
-	virtual bool Refill_Event(SoldierGameObj *Purchaser);
+	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
+	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
+	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
+	virtual bool Refill_Event(cPlayer *Player);
 	virtual bool Stock_Client_Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage, uint Warhead);
 	virtual bool TT_Client_Damage_Request_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,const AmmoDefinitionClass *Ammo,const char *Bone);
 	virtual void Think();

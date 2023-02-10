@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Request Team Change Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,7 +28,7 @@ void DARTCGameFeatureClass::Init() {
 	Register_Event(DAEvent::TEAMCHANGEREQUEST);
 	Register_Event(DAEvent::TEAMCHANGE);
 	Register_Event(DAEvent::THINK);
-	Register_Chat_Command((DAECC)&DARTCGameFeatureClass::RTC_Chat_Command,"!rtc|!tc|!swap|!switch|!change");
+	Register_Chat_Command((DAECC)&DARTCGameFeatureClass::RTC_Chat_Command,"!rtc|!tc|!swap|!switch|!change|!teamchange|!changeteam|!requestteamchange");
 }
 
 void DARTCGameFeatureClass::Settings_Loaded_Event() {
@@ -138,7 +138,7 @@ bool DARTCGameFeatureClass::Team_Change_Request_Event(cPlayer *Player) {
 
 bool DARTCGameFeatureClass::RTC_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	DAEventManager::Team_Change_Request_Event(Player->Get_ID());
-	return true;
+	return false;
 }
 
 void DARTCGameFeatureClass::Remove_RTC(cPlayer *Player) {

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade GameSpy Q&R
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -66,8 +66,6 @@ void DAGameSpyGameFeatureClass::Init() {
 }
 
 void DAGameSpyGameFeatureClass::Settings_Loaded_Event() {
-	ShowGameFeatures = DASettingsManager::Get_Bool("GameSpyShowGameFeatures",true);
-	ShowTeamInfo = DASettingsManager::Get_Bool("GameSpyShowTeamInfo",true);
 	CustomRules.Delete_All();
 	INISection *Section = DASettingsManager::Get_Section("GameSpyRules");
 	if (Section) {
@@ -113,13 +111,11 @@ void DAGameSpyGameFeatureClass::Think() {
 			}
 
 			//Game features
-			if (ShowGameFeatures) {
-				const DynamicVectorClass<DAGameFeatureFactoryClass*> &GameFeatures = DAGameManager::Get_Game_Features();
-				for (int i = 0;i < GameFeatures.Count();i++) {
-					if (GameFeatures[i]->Get_Instance() && GameFeatures[i]->Get_Instance() != this && GameFeatures[i]->Get_Name()) {
-						Send += GameFeatures[i]->Get_Name();
-						Send += "\\1\\";
-					}
+			const DynamicVectorClass<DAGameFeatureFactoryClass*> &GameFeatures = DAGameManager::Get_Game_Features();
+			for (int i = 0;i < GameFeatures.Count();i++) {
+				if (GameFeatures[i]->Get_Instance() && GameFeatures[i]->Get_Instance() != this && GameFeatures[i]->Get_Name()) {
+					Send += GameFeatures[i]->Get_Name();
+					Send += "\\1\\";
 				}
 			}
 
@@ -135,71 +131,33 @@ void DAGameSpyGameFeatureClass::Think() {
 			int PlayerCount = 0;
 			int SendCount = 2;
 
-			if (ShowTeamInfo) {
-				int BuildingCount[2] = {0,0};
-				for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
-					if (!z->Data()->Is_Destroyed()) {
-						if (z->Data()->Get_Player_Type() == 0) {
-							BuildingCount[0]++;
-						}
-						else if (z->Data()->Get_Player_Type() == 1) {
-							BuildingCount[1]++;
-						}
+			int BuildingCount[2] = {0,0};
+			for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
+				if (!z->Data()->Is_Destroyed()) {
+					if (z->Data()->Get_Player_Type() == 0) {
+						BuildingCount[0]++;
+					}
+					else if (z->Data()->Get_Player_Type() == 1) {
+						BuildingCount[1]++;
 					}
 				}
-
-				//Nod team
-				cTeam *Team = Find_Team(0);
-				Send += StringFormat(
-					"\\player_%d\\%ls\\score_%d\\%d\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\%s\\ping_%d\\%d\\team_%d\\%ls",
-					PlayerCount,Get_Wide_Team_Name(0),PlayerCount,(int)Team->Get_Score(),PlayerCount,Team->Get_Kills(),PlayerCount,Team->Get_Deaths(),PlayerCount,Format_Time(The_Game()->Get_Game_Duration_S()),PlayerCount,BuildingCount[0],PlayerCount,Get_Wide_Team_Name(0)
-				);
-				PlayerCount++;
-	
-				//GDI team
-				Team = Find_Team(1);
-				Send += StringFormat(
-					"\\player_%d\\%ls\\score_%d\\%d\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\%s\\ping_%d\\%d\\team_%d\\%ls",
-					PlayerCount,Get_Wide_Team_Name(1),PlayerCount,(int)Team->Get_Score(),PlayerCount,Team->Get_Kills(),PlayerCount,Team->Get_Deaths(),PlayerCount,Format_Time(The_Game()->Get_Game_Duration_S()),PlayerCount,BuildingCount[1],PlayerCount,Get_Wide_Team_Name(1)
-				);
-				PlayerCount++;
-				
-				/*//Nod buildings
-				BaseControllerClass *Base = &The_Cnc_Game()->Nod;
-				for (int i = 0;i < Base->Get_Building_List().Count();i++) {
-					if (Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Skin() != 1) { //Don't display invincible buildings.
-						if (Send.Get_Length() > 1000) {
-							Send += StringFormat("\\queryid\\%u.%d",QueryID,SendCount);
-							sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
-							Send = "";
-							SendCount++;
-						}
-						Send += StringFormat(
-							"\\player_%d\\%s\\score_%d\\0\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\0\\ping_%d\\0\\team_%d\\%ls\n",
-							PlayerCount,DATranslationManager::Translate(Base->Get_Building_List()[i]),PlayerCount,PlayerCount,(int)Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Health(),PlayerCount,(int)Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Health_Max(),PlayerCount,PlayerCount,PlayerCount,Get_Wide_Team_Name(0)
-						);
-						PlayerCount++;
-					}
-				}
-				
-				//GDI buildings
-				Base = &The_Cnc_Game()->GDI;
-				for (int i = 0;i < Base->Get_Building_List().Count();i++) {
-					if (Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Skin() != 1) {
-						if (Send.Get_Length() > 1000) {
-							Send += StringFormat("\\queryid\\%u.%d",QueryID,SendCount);
-							sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
-							Send = "";
-							SendCount++;
-						}
-						Send += StringFormat(
-							"\\player_%d\\%s\\score_%d\\0\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\0\\ping_%d\\0\\team_%d\\%ls\n",
-							PlayerCount,DATranslationManager::Translate(Base->Get_Building_List()[i]),PlayerCount,PlayerCount,(int)Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Health(),PlayerCount,(int)Base->Get_Building_List()[i]->Get_Defense_Object()->Get_Health_Max(),PlayerCount,PlayerCount,PlayerCount,Get_Wide_Team_Name(1)
-						);
-						PlayerCount++;
-					}
-				}*/
 			}
+
+			//Nod team
+			cTeam *Team = Find_Team(0);
+			Send += StringFormat(
+				"\\player_%d\\%ls\\score_%d\\%d\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\%s\\ping_%d\\%d\\team_%d\\%ls",
+				PlayerCount,Get_Wide_Team_Name(0),PlayerCount,(int)Team->Get_Score(),PlayerCount,Team->Get_Kills(),PlayerCount,Team->Get_Deaths(),PlayerCount,Format_Time(The_Game()->Get_Game_Duration_S()),PlayerCount,BuildingCount[0],PlayerCount,Get_Wide_Team_Name(0)
+			);
+			PlayerCount++;
+	
+			//GDI team
+			Team = Find_Team(1);
+			Send += StringFormat(
+				"\\player_%d\\%ls\\score_%d\\%d\\kills_%d\\%d\\deaths_%d\\%d\\time_%d\\%s\\ping_%d\\%d\\team_%d\\%ls",
+				PlayerCount,Get_Wide_Team_Name(1),PlayerCount,(int)Team->Get_Score(),PlayerCount,Team->Get_Kills(),PlayerCount,Team->Get_Deaths(),PlayerCount,Format_Time(The_Game()->Get_Game_Duration_S()),PlayerCount,BuildingCount[1],PlayerCount,Get_Wide_Team_Name(1)
+			);
+			PlayerCount++;
 
 			//Players
 			for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
@@ -258,6 +216,7 @@ DAGameSpyGameFeatureClass::~DAGameSpyGameFeatureClass() {
 	Send.Format("\\heartbeat\\%u\\gamename\\ccrenegade\\statechanged\\2",Port);
 	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress1,sizeof(MasterAddress1));
 	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress2,sizeof(MasterAddress2));
+	closesocket(ListenSocket);
 }
 
 Register_Game_Feature(DAGameSpyGameFeatureClass,"GameSpy Q&R","EnableGameSpy",0);

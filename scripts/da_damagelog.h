@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Damage Log
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -47,9 +47,10 @@ public:
 	virtual void Init();
 	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Timer_Expired(GameObject *obj,int Number);
-	virtual void Vehicle_Enter(SoldierGameObj *Soldier,int Seat);
+	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
 	DA_API void Remove_Damage(cPlayer *Player);
 	DA_API void Clear_Damage();
+	virtual ~DADamageLogObserverClass();
 
 	DA_API SList<DADamageEventStruct> *Get_Damage_Events();
 

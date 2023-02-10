@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,8 +16,9 @@
 
 #include "da_string.h"
 #include "da_token.h"
+#include "engine_tt.h"
 
-#define DA_VERSION "1.0.1"
+#define DA_VERSION "1.1"
 
 class cPlayer;
 class SoldierGameObj;
@@ -62,7 +63,6 @@ public:
 	static void Page_Team(int Team,const char *Format,...); //Sends a page to an entire team. Page will be light blue for players with scripts.
 	static void Page_Team_Except(int Team,cPlayer *Except,const char *Format,...); //Sends a page to an entire team, except for the given player. Page will be light blue for players with scripts.
 
-
 	static void Page_Player(cPlayer *Player,const char *Format,...); //Sends a page to a single player. Page will be light blue for players with scripts.
 	static void Page_Player(int Player,const char *Format,...);
 	static void Page_Player(GameObject *Player,const char *Format,...);
@@ -89,9 +89,26 @@ public:
 	static const StringClass &Get_Message_Prefix() {
 		return MessagePrefix;
 	}
+	static const StringClass &Get_Message_Nick() {
+		return MessageNick;
+	}
+	static inline DynamicVectorClass<ConsoleFunctionClass*> &Get_Console_Function_List() {
+		return ConsoleFunctions;
+	}
+
 private:
 	static StringClass MessagePrefix;
+	static StringClass MessageNick;
+	static DynamicVectorClass<ConsoleFunctionClass*> ConsoleFunctions;
 };
+
+template <class T> class DAConsoleFunctionRegistrant {
+public:
+	DAConsoleFunctionRegistrant() {
+		DA::Get_Console_Function_List().Add(new T);
+	}
+};
+#define Register_Console_Function(ClassName) DAConsoleFunctionRegistrant<ClassName> ClassName##Registrant;
 
 DA_API void DebugMsg(const char *Format,...);
 

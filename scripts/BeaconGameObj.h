@@ -10,7 +10,7 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 //Changes made in DA:
-//Added Get_State.
+//Added Get_State and Get_WeaponDef.
 #ifndef TT_INCLUDE_BEACONGAMEOBJ_H
 #define TT_INCLUDE_BEACONGAMEOBJ_H
 #include "SimpleGameObj.h"
@@ -80,6 +80,9 @@ public:
 	int Get_State() { return State; }
 	float Get_Arm_Time() { return ArmTime; }
 	float Get_Detonate_Time() { return DetonateTime; }
+	const WeaponDefinitionClass *Get_WeaponDef() {
+		return WeaponDef;
+	}
 }; // 07F8
 
 #endif

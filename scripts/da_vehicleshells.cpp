@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Shells Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,11 +22,15 @@
 #include "da_vehicleownership.h"
 #include "da_player.h"
 #include "da_vehicle.h"
+#include "da_gameobjobservers.h"
 #include "MoveablePhysClass.h"
 
-DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *ShellDef,VehicleGameObj *Vehicle,cPlayer *Player,int Team) {
-	PreviousOwner = Player;
-	PreviousTeam = Team;
+DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *ShellDef,VehicleGameObj *Vehicle) {
+	VOGFOwner = DAVehicleOwnershipGameFeature?DAVehicleOwnershipGameFeature->Get_Vehicle_Owner(Vehicle):0; //Previous owner according to the Vehicle Ownership Game Feature. Used for rebinding the revived vehicle.
+	DAVehicleObserverClass *VehicleData = DAVehicleManager::Get_Vehicle_Data(Vehicle); //Previous owner according to the Vehicle Manager. Used to restore the revived vehicle's owner and team so the vehicle theft message is correct.
+	VMOwner = VehicleData->Get_Vehicle_Owner();
+	Team = VehicleData->Get_Team();
+
 	VehicleDef = &Vehicle->Get_Definition();
 	this->ShellDef = ShellDef;
 	Matrix3D Transform = Vehicle->Get_Transform();
@@ -60,8 +64,10 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 
 	//This is the "true" shell that 4.0 clients see.
 	VehicleGameObjDef *MountedDef = (VehicleGameObjDef*)Find_Named_Definition("Mounted"); //This preset is used because it has no default team and won't count towards the vehicle limit.
+	int PhysDefIDSave = MountedDef->PhysDefID;
 	MountedDef->PhysDefID = VehicleDef->PhysDefID; //Copy the physics of the vehicle so the shell will have the proper physics.
 	VehicleGameObj *Shell = (VehicleGameObj*)Create_Object(MountedDef,Transform);
+	MountedDef->PhysDefID = PhysDefIDSave;
 	Commands->Set_Model(Shell,Get_Model(Shadow));
 	Shell->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 	Shell->Set_Player_Type(-2);
@@ -103,15 +109,18 @@ void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Da
 			if (DAVehicleOwnershipGameFeature) {
 				cPlayer *HighestRepairer = DADamageLog::Get_Highest_Repairer_Team(Get_Owner(),2);
 				if (HighestRepairer) {
-					if (PreviousOwner && PreviousOwner->Is_Active() && HighestRepairer->Get_Team() == PreviousOwner->Get_Team() && !DAVehicleOwnershipGameFeature->Get_Vehicle_Data(PreviousOwner) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,PreviousOwner)) {
-						DA::Page_Player(PreviousOwner,"Your previously bound vehicle has been revived and rebound to you.");
+					if (VOGFOwner && VOGFOwner->Is_Active() && HighestRepairer->Get_Team() == VOGFOwner->Get_Team() && !DAVehicleOwnershipGameFeature->Get_Vehicle_Data(VOGFOwner) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,VOGFOwner)) {
+						DA::Page_Player(VOGFOwner,"Your previously bound vehicle has been revived and rebound to you.");
 					}
 					else if (!DAVehicleOwnershipGameFeature->Get_Vehicle_Data(HighestRepairer) && DAVehicleOwnershipGameFeature->Bind_Vehicle((VehicleGameObj*)Vehicle,HighestRepairer)) {
 						DA::Page_Player(HighestRepairer,"You have been given ownership of this vehicle. Use \"!lock\" to lock it, or \"!unbind\"/\"!free\" to relinquish ownership.");
 					}
 				}
 			}
-			DAVehicleManager::Set_Team(Vehicle,PreviousTeam);
+			Vehicle->Add_Observer(new DANoPointsUntilEnteredObserverClass);
+			DAVehicleObserverClass *VehicleData = DAVehicleManager::Get_Vehicle_Data(Vehicle);
+			VehicleData->Set_Vehicle_Owner(VMOwner);
+			VehicleData->Set_Team(Team);
 			Get_Owner()->Set_Delete_Pending();
 		}
 	}
@@ -227,8 +236,8 @@ void DAVehicleShellsGameFeatureClass::Settings_Loaded_Event() {
 void DAVehicleShellsGameFeatureClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
 	DAVehicleShellStruct *Shell = Get_Shell((VehicleGameObj*)Victim);
 	if (Shell) {
-		if (Shell->Def) {
-			new DAVehicleShellObserverClass(Shell,(VehicleGameObj*)Victim,DAVehicleOwnershipGameFeature?DAVehicleOwnershipGameFeature->Get_Owner((VehicleGameObj*)Victim):0,DAVehicleManager::Get_Team(Victim));
+		if (Shell->Def && ((VehicleGameObj*)Victim)->Are_Transitions_Enabled() && ((VehicleGameObj*)Victim)->Get_Definition().Get_Seat_Count()) { //Don't spawn shells for AI vehicles.
+			new DAVehicleShellObserverClass(Shell,(VehicleGameObj*)Victim);
 		}
 		else {
 			Commands->Create_Explosion(Shell->Explosion,((PhysicalGameObj*)Victim)->Get_Position(),Killer);

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Gamelog
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -58,7 +58,8 @@ void DAGameLogGameFeatureClass::Game_Over_Event() {
 	DALogManager::Write_GameLog("WIN;%ls;%s;%d;%d",Get_Wide_Team_Name(The_Game()->Get_Winner_ID()),WinType,(int)Get_Team_Score(0),(int)Get_Team_Score(1));
 }
 
-void DAGameLogGameFeatureClass::Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
+void DAGameLogGameFeatureClass::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
 	Vector3	VehiclePos;
 	Vector3	SoldierPos;
 	Vehicle->Get_Position(&VehiclePos);
@@ -66,7 +67,8 @@ void DAGameLogGameFeatureClass::Vehicle_Enter_Event(VehicleGameObj *Vehicle,Sold
 	DALogManager::Write_GameLog("ENTER;%d;%s;%d;%d;%d;%d;%s;%d;%d;%d",Vehicle->Get_ID(),Vehicle->Get_Definition().Get_Name(),(int)VehiclePos.Y,(int)VehiclePos.X,(int)VehiclePos.Z,Soldier->Get_ID(),Soldier->Get_Definition().Get_Name(),(int)SoldierPos.Y,(int)SoldierPos.Y,(int)SoldierPos.Y);
 }
 
-void DAGameLogGameFeatureClass::Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
+void DAGameLogGameFeatureClass::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
 	Vector3	VehiclePos;
 	Vector3	SoldierPos;
 	Vehicle->Get_Position(&VehiclePos);

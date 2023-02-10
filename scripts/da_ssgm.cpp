@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Legacy SSGM Interface
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -226,9 +226,9 @@ void DASSGMPluginManager::Game_Over_Event() {
 	}
 }
 
-int DASSGMPluginManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item) {
+int DASSGMPluginManager::Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item) {
 	for (int i = Events[EVENT_CHARACTER_PURCHASE_HOOK].Count()-1;i >= 0;i--) {
-		int Return = Events[EVENT_CHARACTER_PURCHASE_HOOK][i]->OnCharacterPurchase(Base,Purchaser,Cost,Item->Get_ID(),0);
+		int Return = Events[EVENT_CHARACTER_PURCHASE_HOOK][i]->OnCharacterPurchase(Base,Player->Get_GameObj(),(unsigned int)Cost,Item->Get_ID(),0);
 		if (Return != -1) {
 			return Return;
 		}
@@ -236,9 +236,9 @@ int DASSGMPluginManager::Character_Purchase_Request_Event(BaseControllerClass *B
 	return -1;
 }
 
-int DASSGMPluginManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
+int DASSGMPluginManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	for (int i = Events[EVENT_VEHICLE_PURCHASE_HOOK].Count()-1;i >= 0;i--) {
-		int Return = Events[EVENT_VEHICLE_PURCHASE_HOOK][i]->OnVehiclePurchase(Base,Purchaser,Cost,Item->Get_ID(),0);
+		int Return = Events[EVENT_VEHICLE_PURCHASE_HOOK][i]->OnVehiclePurchase(Base,Player->Get_GameObj(),(unsigned int)Cost,Item->Get_ID(),0);
 		if (Return != -1) {
 			return Return;
 		}
@@ -246,9 +246,9 @@ int DASSGMPluginManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Bas
 	return -1;
 }
 
-int DASSGMPluginManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item) {
+int DASSGMPluginManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) {
 	for (int i = Events[EVENT_POWERUP_PURCHASE_HOOK].Count()-1;i >= 0;i--) {
-		int Return = Events[EVENT_POWERUP_PURCHASE_HOOK][i]->OnPowerupPurchase(Base,Purchaser,Cost,Item->Get_ID(),0);
+		int Return = Events[EVENT_POWERUP_PURCHASE_HOOK][i]->OnPowerupPurchase(Base,Player->Get_GameObj(),(unsigned int)Cost,Item->Get_ID(),0);
 		if (Return != -1) {
 			return Return;
 		}
@@ -256,9 +256,9 @@ int DASSGMPluginManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Bas
 	return -1;
 }
 
-bool DASSGMPluginManager::Refill_Event(SoldierGameObj *Purchaser) {
+bool DASSGMPluginManager::Refill_Event(cPlayer *Player) {
 	for (int i = Events[EVENT_REFILL_HOOK].Count()-1;i >= 0;i--) {
-		if (!Events[EVENT_REFILL_HOOK][i]->OnRefill(Purchaser)) {
+		if (!Events[EVENT_REFILL_HOOK][i]->OnRefill(Player->Get_GameObj())) {
 			return false;
 		}
 	}

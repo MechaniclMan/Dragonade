@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Added Stop_Observer_Timer, Stop_Custom_Timer, Is_Observer_Timer, and Is_Custom_Timer.
 #ifndef TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 #define TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 class ScriptableGameObj;
@@ -87,6 +89,8 @@ public:
 	SCRIPTS_API void Start_Custom_Timer(ScriptableGameObj *Sender,float Delay,int Message,int Param);
 	SCRIPTS_API void Stop_Observer_Timer(int ObserverID,int Number);
 	SCRIPTS_API void Stop_Custom_Timer(ScriptableGameObj *Sender,int Message);
+	SCRIPTS_API bool Is_Observer_Timer(int ObserverID,int Number);
+	SCRIPTS_API bool Is_Custom_Timer(ScriptableGameObj *Sender,int Message);
 	virtual	ScriptableGameObj	*As_ScriptableGameObj( void )	{ return this; };
 	virtual	DamageableGameObj	*As_DamageableGameObj( void )	{ return NULL; };
 	virtual	BuildingGameObj	*As_BuildingGameObj( void )	{ return NULL; };

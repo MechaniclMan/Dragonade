@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Spawn System Game Mode Framework
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -189,7 +189,7 @@ float DASpawnPointClass::Get_Distance(const Vector3 &Position) const {
 	return Return;
 }
 
-#define Do_Spawn() { Phys->Set_Transform(SpawnPos); Commands->Create_Object("Spawner Created Special Effect",SpawnPos.Get_Translation()); new DATimedInvincibilityObserverClass(obj,ProtectTime); }
+#define Do_Spawn() { Phys->Set_Transform(SpawnPos); Commands->Create_Object("Spawner Created Special Effect",SpawnPos.Get_Translation()); obj->Add_Observer(new DATimedInvincibilityObserverClass(ProtectTime)); }
 
 bool DASpawnPointClass::Spawn_Player(GameObject *obj) const {
 	MoveablePhysClass *Phys = obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass();
@@ -321,17 +321,17 @@ void DASpawnManagerClass::Init(const INIClass *INI) {
 	Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER);
 }
 
-void DASpawnManagerClass::Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Item) { 
-	DASpawnState::State SpawnState = Get_Player_Data(Purchaser)->SpawnState;
+void DASpawnManagerClass::Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item) { 
+	DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
 	if (SpawnState == DASpawnState::WAITINGROOM) {
-		Display_PT(Purchaser);
+		Display_PT(Player->Get_GameObj());
 	}
 }
 
-void DASpawnManagerClass::PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Item) {
-	DASpawnState::State SpawnState = Get_Player_Data(Purchaser)->SpawnState;
+void DASpawnManagerClass::PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item) {
+	DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
 	if (SpawnState == DASpawnState::WAITINGROOM) {
-		Display_PT(Purchaser);
+		Display_PT(Player->Get_GameObj());
 	}
 }
 

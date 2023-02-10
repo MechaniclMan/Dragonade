@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Disable List
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -247,22 +247,22 @@ void DADisableListManager::Object_Created_Event(GameObject *obj) {
 	}
 }
 
-int DADisableListManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item) {
+int DADisableListManager::Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item) {
 	if (Is_Preset_Disabled(Item)) {
 		return 4;
 	}
 	return -1;
 }
 
-int DADisableListManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
+int DADisableListManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	if (Is_Preset_Disabled(Item)) {
 		return 4;
 	}
 	return -1;
 }
 
-int DADisableListManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item) {	
-	if (Is_Preset_Disabled(Item) || Is_Preset_Disabled(Item->GrantWeaponID) || Is_Preset_Disabled_For_Character(Purchaser,Item) || Is_Preset_Disabled_For_Character(Purchaser,Item->GrantWeaponID)) {
+int DADisableListManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) {	
+	if (Is_Preset_Disabled(Item) || Is_Preset_Disabled(Item->GrantWeaponID) || Is_Preset_Disabled_For_Character(Player->Get_GameObj(),Item) || Is_Preset_Disabled_For_Character(Player->Get_GameObj(),Item->GrantWeaponID)) {
 		return 4;
 	}
 	return -1;
@@ -275,13 +275,13 @@ bool DADisableListManager::PowerUp_Grant_Request_Event(SoldierGameObj *Grantee,c
 	return true;
 }
 
-bool DADisableListManager::Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon) {
-	if (Is_Preset_Disabled(Weapon) || Is_Preset_Disabled_For_Character(Soldier,Weapon)) {
+bool DADisableListManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
+	if (Is_Preset_Disabled(Weapon) || Is_Preset_Disabled_For_Character(Player->Get_GameObj(),Weapon)) {
 		return false;
 	}
 	return true;
 }
 
-bool DADisableListManager::Refill_Event(SoldierGameObj *Purchaser) {
+bool DADisableListManager::Refill_Event(cPlayer *Player) {
 	return false;
 }

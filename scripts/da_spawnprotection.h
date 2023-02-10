@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Spawn Protection Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,7 +21,7 @@ class DASpawnProtectionGameFeatureClass : public DAEventClass, public DAGameFeat
 	virtual void Init();
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
-	virtual void Change_Character_Event(SoldierGameObj *Soldier,const SoldierGameObjDef *SoldierDef);
+	virtual void Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier);
 	bool ChangeCharacter;
 	float ProtectTime;
 };

@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Added Set_Jump_Transform.
 #ifndef TT_INCLUDE__HUMANSTATECLASS_H
 #define TT_INCLUDE__HUMANSTATECLASS_H
 
@@ -132,6 +134,7 @@ public:
 	void				Reset_Loiter_Delay( void );
 	void				Set_Loiters_Allowed( bool allowed )						{ LoitersAllowed = allowed; }
 	void				Get_Information( StringClass & string );
+	void				Set_Jump_Transform(const Matrix3D &Transform) { JumpTM = Transform; }
 private:
 	bool					StateLocked;
 	HumanStateType		State;

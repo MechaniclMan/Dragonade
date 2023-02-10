@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -60,6 +60,7 @@
 #include "SpawnerClass.h"
 #include "cGameOptionsEvent.h"
 #include "cPurchaseResponseEvent.h"
+#include "CombatManager.h"
 
 RENEGADE_FUNCTION
 uint Send_Object_Update(NetworkObjectClass *object, int remoteHostId)
@@ -114,6 +115,9 @@ RENEGADE_FUNCTION
 void BuildingGameObj::Find_Closest_Poly(const Vector3&,float*) 
 AT2(0x00684ED0,0x00684ED0)
 
+REF_DEF2(CombatManager::FriendlyFirePermitted,bool,0x008550E4,0x008550E4);
+REF_DEF2(CombatManager::BeaconPlacementEndsGame,bool,0x008550E5,0x008550E5);
+REF_DEF2(BuildingGameObj::CanRepairBuildings,bool,0x00810474,0x00810474);
 
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
@@ -166,7 +170,7 @@ float Get_Distance_To_Closest_PCT(const Vector3 &Position,int Team) {
 	float ClosestDist = FLT_MAX;
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
 		if (z->Data()->As_PhysicalGameObj() && ((PhysicalGameObj*)z->Data())->As_SimpleGameObj()) {
-			if (((SimpleGameObj*)z->Data())->Get_Definition().Get_Player_Terminal_Type() == Team || Team == 2) {
+			if ((Team == 0 && ((SimpleGameObj*)z->Data())->Get_Definition().Get_Player_Terminal_Type() == 1) || (Team == 1 && ((SimpleGameObj*)z->Data())->Get_Definition().Get_Player_Terminal_Type() == 0) || Team == 2) { //Stupid backwards teams.
 				float Dist = Commands->Get_Distance(Position,((PhysicalGameObj*)z->Data())->Get_Position());
 				if (Dist < ClosestDist) {
 					ClosestDist = Dist;
@@ -216,9 +220,7 @@ BuildingGameObj *Get_Random_Building(int Team) {
 		}
 		return 0;
 	}
-	else {
-		return Return;
-	}
+	return Return;
 }
 
 void Send_Custom_Event_Vehicle_Occupants(GameObject *obj,GameObject *Sender,int Message,int Param,float Delay,bool Driver) {
@@ -593,6 +595,8 @@ void Console_InputF(const char *Format,...) {
 	va_end(arg_list);
 }
 
+PUSH_MEMORY_MACROS
+#undef new
 void Update_Game_Settings(int ID) {
 	if (ID) {
 		cGameOptionsEvent *Event = (cGameOptionsEvent*)operator new(sizeof(cGameOptionsEvent));
@@ -605,6 +609,7 @@ void Update_Game_Settings(int ID) {
 		Event->Init();
 	}
 }
+POP_MEMORY_MACROS
 
 bool Is_Stealth_Unit(GameObject *obj) {
 	if (!obj || !obj->As_SmartGameObj()) {
@@ -665,7 +670,7 @@ unsigned int Get_Naval_Vehicle_Count(int Team) {
 void Set_Object_Dirty_Bit_For_Version_Greater_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Get_DA_Player()->Get_Version() >= Version) {
-			obj->Set_Object_Dirty_Bits(z->Data()->Get_ID(),(BYTE)Bit);
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
 		}
 	}
 }
@@ -673,7 +678,23 @@ void Set_Object_Dirty_Bit_For_Version_Greater_Than(NetworkObjectClass *obj,float
 void Set_Object_Dirty_Bit_For_Version_Less_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Get_DA_Player()->Get_Version() < Version) {
-			obj->Set_Object_Dirty_Bits(z->Data()->Get_ID(),(BYTE)Bit);
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+		}
+	}
+}
+
+void Set_Object_Dirty_Bit_For_Team_Version_Greater_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+		if (z->Data()->Get_DA_Player()->Get_Version() >= Version && z->Data()->Get_Team() == Team) {
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
+		}
+	}
+}
+
+void Set_Object_Dirty_Bit_For_Team_Version_Less_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff) {
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+		if (z->Data()->Get_DA_Player()->Get_Version() < Version && z->Data()->Get_Team() == Team) {
+			obj->Set_Object_Dirty_Bit(z->Data()->Get_ID(),Bit,OnOff);
 		}
 	}
 }
@@ -800,6 +821,12 @@ void Send_Announcement_Team_Version_Less_Than(int Team,const char *StringID,floa
 			}
 		}
 	}
+}
+
+void Send_Message_Team_With_Team_Color(int Team,const char *Msg) {
+	unsigned int Red = 0,Blue = 0,Green = 0;
+	Get_Team_Color(Team,&Red,&Green,&Blue);
+	Send_Message_Team(Team,Red,Green,Blue,Msg);
 }
 
 void Send_Message_Player_By_ID(int ID,unsigned int Red,int unsigned Green,int unsigned Blue,const char *Message) {
@@ -1095,6 +1122,24 @@ void ScriptableGameObj::Stop_Custom_Timer(ScriptableGameObj *Sender,int Message)
 	}
 }
 
+bool ScriptableGameObj::Is_Observer_Timer(int ObserverID,int Number) {
+	for (int i = ObserverTimerList.Count()-1;i >= 0;i--) {
+		if (ObserverTimerList[i]->ObserverID == ObserverID && (!Number || ObserverTimerList[i]->Number == Number)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool ScriptableGameObj::Is_Custom_Timer(ScriptableGameObj *Sender,int Message) {
+	for (int i = CustomTimerList.Count()-1;i >= 0;i--) {
+		if (CustomTimerList[i]->Sender == Sender && (!Message || CustomTimerList[i]->Message == Message)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void Fix_Stuck_Objects(const Vector3 &Position,float Range) {
 	for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) {
 		PhysicalGameObj *obj = x->Data();
@@ -1143,8 +1188,43 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 	return false;
 }
 
+PUSH_MEMORY_MACROS
+#undef new
 void Send_Purchase_Response(int ID,int Type) {
 	cPurchaseResponseEvent *Event = (cPurchaseResponseEvent*)operator new(sizeof(cPurchaseResponseEvent));
 	Event->Constructor();
 	Event->Init(Type,ID);
 }
+POP_MEMORY_MACROS
+
+StringClass Clean_Model_Name(StringClass Model) {
+	Model.cropTo(Model.Get_Length()-4);
+	for (int i = Model.Get_Length();i >= 0;i--) {
+		if (Model[i] == '\\') {
+			Model.cropFrom(i+1);
+			break;
+		}
+	}
+	return Model;
+}
+
+StringClass Get_Weapon_PowerUp_Model(const WeaponDefinitionClass *Weapon) {
+	StringClass Model = Clean_Model_Name(Weapon->Model);
+	if (!Model.Is_Empty()) {
+		Model[0] = 'p';
+	}
+	return Model;
+}
+
+void Add_Console_Function(ConsoleFunctionClass *Func) {
+	if (Func->Get_Name()) {
+		Delete_Console_Function(Func->Get_Name());
+	}
+	if (Func->Get_Alias()) {
+		Delete_Console_Function(Func->Get_Alias());
+	}
+	ConsoleFunctionList.Add(Func);
+	Sort_Function_List();
+	Verbose_Help_File();
+}
+

@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Made BeaconPlacementEndsGame and FriendlyFirePermitted public.
 #ifndef TT_INCLUDE__COMBATMANAGER_H
 #define TT_INCLUDE__COMBATMANAGER_H
 #include "engine_string.h"
@@ -154,7 +156,6 @@ public:
 	static void Inc_Load_Progress( void ) { LoadProgress++; };
 	static void Set_Load_Progress( int set ) { LoadProgress = set; };
 #endif
-private:
 #ifndef TTLE_EXPORTS
 	static const ReferencerClass& getTheStarReference() { return TheStar; }
 #endif

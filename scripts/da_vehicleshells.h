@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Shells Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,7 +28,7 @@ struct DAVehicleShellStruct {
 
 class DAVehicleShellObserverClass : public DAGameObjObserverClass {
 public:
-	DAVehicleShellObserverClass(DAVehicleShellStruct *ShellDef,VehicleGameObj *Vehicle,cPlayer *Player,int Team);
+	DAVehicleShellObserverClass(DAVehicleShellStruct *ShellDef,VehicleGameObj *Vehicle);
 	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Timer_Expired(GameObject *obj,int Number);
@@ -38,8 +38,9 @@ public:
 	}
 	
 private:
-	cPlayer *PreviousOwner;
-	int PreviousTeam;
+	cPlayer *VOGFOwner;
+	cPlayer *VMOwner;
+	int Team;
 	const VehicleGameObjDef *VehicleDef;
 	DAVehicleShellStruct *ShellDef;
 	Vector3 LastPos;

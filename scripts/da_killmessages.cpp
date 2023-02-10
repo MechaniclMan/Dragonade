@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Advanced Kill Messages Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,14 +14,23 @@
 #include "General.h"
 #include "da.h"
 #include "da_killmessages.h"
+#include "da_settings.h"
 
 void DAAdvancedKillMessagesGameFeatureClass::Init() {
+	Register_Event(DAEvent::SETTINGSLOADED);
 	Register_Event(DAEvent::DALOG);
+}
+
+void DAAdvancedKillMessagesGameFeatureClass::Settings_Loaded_Event() {
+	EnablePlayer = DASettingsManager::Get_Bool("EnablePlayerKillMessages",true);
+	EnableVehicle = DASettingsManager::Get_Bool("EnableVehicleKillMessages",true);
+	EnableBuilding = DASettingsManager::Get_Bool("EnableBuildingKillMessages",true);
+	EnableBot = DASettingsManager::Get_Bool("EnableBotKillMessages",true);
 }
 
 //This just displays the kill messages ingame. Actual messages are made by the soldier, vehicle, and building managers.
 void DAAdvancedKillMessagesGameFeatureClass::DA_Log_Event(const char *Header,const char *Output) {
-	if (!strcmp(Header,"_PLAYERKILL") || !strcmp(Header,"_VEHKILL") || !strcmp(Header,"_BOTKILL") || !strcmp(Header,"_BUILDINGKILL")) {
+	if ((EnablePlayer && !strcmp(Header,"_PLAYERKILL")) || (EnableVehicle && (!strcmp(Header,"_VEHKILL") || !strcmp(Header,"_HARVKILL"))) || (EnableBuilding && !strcmp(Header,"_BUILDINGKILL")) || (EnableBot && !strcmp(Header,"_BOTKILL"))) {
 		int Color = 2; //First character of the message is the color to use.
 		if (Output[0] == '-') { //Negative team, need to advance Output an extra character.
 			Output += 3;

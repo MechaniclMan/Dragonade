@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Singleplayer Vehicle Spawner Game Mode Framework
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,13 +16,6 @@
 
 #include "da_event.h"
 #include "da_gameobj.h"
-
-class DAVehicleSpawnManagerVehicleObserverClass : public DAGameObjObserverClass {
-	virtual void Init();
-	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
-	virtual void Timer_Expired(GameObject *obj,int Number);
-	virtual const char *Get_Name() { return "DAVehicleSpawnManagerVehicleObserverClass"; }
-};
 
 class DA_API DAVehicleSpawnPointClass {
 public:
@@ -60,7 +53,6 @@ public:
 	}
 	inline float Get_Distance(const Vector3 &Pos) {
 		float Dis = Commands->Get_Distance(Position,Pos);
-		//Dis += Diff(Pos.Z,Position.Z)*4.0f;
 		return Dis;
 	}
 
@@ -176,7 +168,7 @@ public:
 	}
 
 protected:
-	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,SoldierGameObj *Owner,float Delay);
+	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 
 	virtual ~DAVehicleSpawnManagerClass() {

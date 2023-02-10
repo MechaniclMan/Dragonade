@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Object Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -49,6 +49,10 @@ void DAGameObjObserverClass::Stop_Timer(int Number) {
 	Get_Owner()->Stop_Observer_Timer(Get_ID(),Number);
 }
 
+bool DAGameObjObserverClass::Is_Timer(int Number) {
+	return Get_Owner()->Is_Observer_Timer(Get_ID(),Number);
+}
+
 void DAGameObjObserverClass::Set_Delete_Pending() {
 	DAGameObjManager::Set_Observer_Delete_Pending(this);
 }
@@ -60,6 +64,12 @@ void DAGameObjManager::Init() {
 	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEEXIT,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEFLIP,INT_MAX);
+	Instance.Register_Event(DAEvent::POWERUPGRANTREQUEST,INT_MAX);
+	Instance.Register_Event(DAEvent::POWERUPGRANT,INT_MAX);
+	Instance.Register_Event(DAEvent::ADDWEAPONREQUEST,INT_MAX);
+	Instance.Register_Event(DAEvent::ADDWEAPON,INT_MAX);
+	Instance.Register_Event(DAEvent::REMOVEWEAPON,INT_MAX);
+	Instance.Register_Event(DAEvent::CLEARWEAPONS,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVEDREQUEST,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL,INT_MAX);
@@ -102,14 +112,15 @@ void DAGameObjManager::Think() {
 	ObserversDeletePending.Delete_All();
 }
 
-bool DAGameObjManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int &Seat) {
+bool DAGameObjManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
 	for (int i = 0;i < Vehicle->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Vehicle->Get_Observers()[i])) {
-			if (!((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Entry_Request(Soldier,Seat)) {
+			if (!((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Entry_Request(Player,Seat)) {
 				return false;
 			}
 		}
 	}
+	SoldierGameObj *Soldier = Player->Get_GameObj();
 	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
 			if (!((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Vehicle_Entry_Request(Vehicle,Seat)) {
@@ -120,12 +131,13 @@ bool DAGameObjManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,Soldi
 	return true;
 }
 
-void DAGameObjManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
+void DAGameObjManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
 	for (int i = 0;i < Vehicle->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Vehicle->Get_Observers()[i])) {
-			((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Enter(Soldier,Seat);
+			((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Enter(Player,Seat);
 		}
 	}
+	SoldierGameObj *Soldier = Player->Get_GameObj();
 	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
 			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Vehicle_Enter(Vehicle,Seat);
@@ -133,12 +145,13 @@ void DAGameObjManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameOb
 	}
 }
 
-void DAGameObjManager::Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
+void DAGameObjManager::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
 	for (int i = 0;i < Vehicle->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Vehicle->Get_Observers()[i])) {
-			((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Exit(Soldier,Seat);
+			((DAGameObjObserverClass*)Vehicle->Get_Observers()[i])->Vehicle_Exit(Player,Seat);
 		}
 	}
+	SoldierGameObj *Soldier = Player->Get_GameObj();
 	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
 		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
 			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Vehicle_Exit(Vehicle,Seat);
@@ -203,6 +216,82 @@ void DAGameObjManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 			if (Is_DAGameObjObserverClass(Killer->Get_Observers()[i])) {
 				((DAGameObjObserverClass*)Killer->Get_Observers()[i])->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
 			}
+		}
+	}
+}
+
+bool DAGameObjManager::PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
+	if (PowerUpObj) {
+		for (int i = 0;i < PowerUpObj->Get_Observers().Count();i++) {
+			if (Is_DAGameObjObserverClass(PowerUpObj->Get_Observers()[i])) {
+				if (!((DAGameObjObserverClass*)PowerUpObj->Get_Observers()[i])->PowerUp_Grant_Request(Player)) {
+					return false;
+				}
+			}
+		}
+	}
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			if (!((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->PowerUp_Grant_Request(PowerUp,PowerUpObj)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void DAGameObjManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
+	if (PowerUpObj) {
+		for (int i = 0;i < PowerUpObj->Get_Observers().Count();i++) {
+			if (Is_DAGameObjObserverClass(PowerUpObj->Get_Observers()[i])) {
+				((DAGameObjObserverClass*)PowerUpObj->Get_Observers()[i])->PowerUp_Grant(Player);
+			}
+		}
+	}
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->PowerUp_Grant(PowerUp,PowerUpObj);
+		}
+	}
+}
+
+bool DAGameObjManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			if (!((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Add_Weapon_Request(Weapon)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+void DAGameObjManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Add_Weapon(Weapon);
+		}
+	}
+}
+
+void DAGameObjManager::Remove_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Remove_Weapon(Weapon);
+		}
+	}
+}
+
+void DAGameObjManager::Clear_Weapons_Event(cPlayer *Player) {
+	SoldierGameObj *Soldier = Player->Get_GameObj();
+	for (int i = 0;i < Soldier->Get_Observers().Count();i++) {
+		if (Is_DAGameObjObserverClass(Soldier->Get_Observers()[i])) {
+			((DAGameObjObserverClass*)Soldier->Get_Observers()[i])->Clear_Weapons();
 		}
 	}
 }

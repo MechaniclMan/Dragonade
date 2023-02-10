@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -71,10 +71,10 @@ public:
 		return Get_Owner()->Get_Name();
 	}
 	inline SoldierGameObj *Get_GameObj() {
-		return (SoldierGameObj*)Get_Owner()->Owner.Get_Ptr();
+		return Get_Owner()->Get_GameObj();
 	}
 	inline int Get_Team() {
-		return Get_Owner()->Get_Player_Type();
+		return Get_Owner()->Get_Team();
 	}
 	void Add_Observer(DAPlayerObserverClass *Observer);
 	void Remove_Observer(const char *Name);
@@ -84,47 +84,34 @@ public:
 	void Add_Tag(const char *Tag,int Position = 0,DAPlayerFlags::Flag Flags = (DAPlayerFlags::Flag)0);
 	void Remove_Tag(const char *Tag);
 	void Remove_Tags_With_Flag(DAPlayerFlags::Flag Flag);
-	inline const DynamicVectorClass<DAPlayerObserverClass*> &Get_Observers() {
-		return Observers;
-	}
-	inline void Set_Access_Level(DAAccessLevel::Level Level) {
-		AccessLevel = Level;
-	}
-	inline DAAccessLevel::Level Get_Access_Level() {
-		return AccessLevel;
-	}
-	inline void Mute(bool mute) {
-		Muted = mute;
-	}
-	inline bool Is_Muted() {
-		return Muted;
-	}
+	const DynamicVectorClass<DAPlayerObserverClass*> &Get_Observers();
+	void Set_Access_Level(DAAccessLevel::Level Level);
+	DAAccessLevel::Level Get_Access_Level();
+	void Mute(bool mute);
+	bool Is_Muted();
 	void Beacon_Lock(bool lock);
-	inline bool Is_Beacon_Locked() {
-		return BeaconLocked;
-	}
+	bool Is_Beacon_Locked();
 	void C4_Lock(bool lock);
-	inline bool Is_C4_Locked() {
-		return C4Locked;
-	}
-	inline unsigned long Get_Last_Tib_Damage_Time() {
-		return LastTibDamageTime;
-	}
-	inline void Set_Last_Tib_Damage_Time(unsigned long Time) {
-		LastTibDamageTime = Time;
-	}
-	inline bool Is_Loaded() {
-		return Loaded;
-	}
-	inline void Set_Loaded(bool Load) {
-		Loaded = Load;
-	}
-	inline const StringClass &Get_Serial() {
-		return Serial;
-	}
-	inline float Get_Version() {
-		return Version;
-	}
+	bool Is_C4_Locked();
+	void Set_Character_Discount(float Discount);
+	void Inc_Character_Discount(float Discount);
+	float Get_Character_Discount();
+	void Set_Vehicle_Discount(float Discount);
+	void Inc_Vehicle_Discount(float Discount);
+	float Get_Vehicle_Discount();
+	void Set_PowerUp_Discount(float Discount);
+	void Inc_PowerUp_Discount(float Discount);
+	float Get_PowerUp_Discount();
+	unsigned long Get_Time_Since_Last_Tib_Damage();
+	void Reset_Last_Tib_Damage_Time();
+	bool Is_Loaded();
+	void Set_Loaded(bool Load);
+	const StringClass &Get_Serial();
+	void Set_Version(float Ver);
+	float Get_Version();
+	unsigned int Get_Revision();
+	void Inc_Flood_Counter();
+	void Dec_Flood_Counter();
 	bool Is_Flooding();
 	
 	void Join();
@@ -156,7 +143,7 @@ public:
 	void Clear_Weapons();
 	bool C4_Detonate_Request(C4GameObj *C4);
 	void C4_Detonate(C4GameObj *C4);
-	void Change_Character(const SoldierGameObjDef *SoldierDef);
+	void Change_Character(const SoldierGameObjDef *Soldier);
 
 	void Created();
 	void Destroyed();
@@ -167,46 +154,40 @@ public:
 	void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	void Custom(GameObject *Sender,int Type,int Param);
-	void Poked(SoldierGameObj *Poker);
+	void Poked(cPlayer *Player);
 
 	inline void Think();
 
 private:
 	struct DAPlayerTagStruct {
-		inline void Set_Flags(DAPlayerFlags::Flag Flag) {
-			Flags = Flag;
-		}
-		inline bool Has_Flag(DAPlayerFlags::Flag Flag) {
-			return (Flags & Flag) == Flag;
-		}
+		void Set_Flags(DAPlayerFlags::Flag Flag);
+		bool Has_Flag(DAPlayerFlags::Flag Flag);
 		StringClass Tag;
 		DAPlayerFlags::Flag Flags;
 		int Position;
 	};
-	void Set_Serial(const char *serial) {
-		Serial = serial;
-	}
-	void Set_Version(float version) {
-		Version = version;
-	}
 	
 	void Add_Data(DAPlayerDataClass *data);
 	void Remove_Data(const DAPlayerDataFactoryClass *Parent);
 	DAPlayerClass();
-	DAPlayerClass(cPlayer *Player,const char *Serial,float Version);
+	DAPlayerClass(cPlayer *Player);
 	~DAPlayerClass();
+	cPlayer *Owner;
 	DAAccessLevel::Level AccessLevel;
 	bool Muted;
 	bool C4Locked;
 	bool BeaconLocked;
 	unsigned int VehicleLimit;
 	unsigned int C4Limit;
+	float CharacterDiscount;
+	float VehicleDiscount;
+	float PowerUpDiscount;
 	unsigned long LastTibDamageTime;
 	DynamicVectorClass<unsigned long> FloodProtection;
 	bool Loaded;
 	StringClass Serial;
 	float Version;
-	cPlayer *Owner;
+	unsigned int Revision;
 	DynamicVectorClass<DAPlayerObserverClass*> Observers;
 	DynamicVectorClass<DAPlayerDataClass*> Data;
 	DynamicVectorClass<DAPlayerTagStruct*> Tags;
@@ -267,6 +248,7 @@ public:
 	
 	DA_API void Start_Timer(int Number,float Duration,bool Repeat = false,unsigned int Data = 0);
 	DA_API void Stop_Timer(int Number,unsigned int Data = 0);
+	DA_API bool Is_Timer(int Number,unsigned int Data = 0);
 	DA_API void Clear_Timers();
 	
 	DA_API void Register_Chat_Command(DAPOCC FuncPtr,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
@@ -325,7 +307,7 @@ public:
 	virtual void Clear_Weapons() { } //Called when the player's weapons are cleared.
 	virtual bool C4_Detonate_Request(C4GameObj *C4) { return true; } //Called when the player tries to trigger a proximity C4.
 	virtual void C4_Detonate(C4GameObj *C4) { } //Called when the player triggers a proximity C4.
-	virtual void Change_Character(const SoldierGameObjDef *SoldierDef) { } //Called before the player changes characters.
+	virtual void Change_Character(const SoldierGameObjDef *Soldier) { } //Called before the player changes characters.
 
 	virtual void Created() { } //Called when the player changes to a new gameobject.
 	virtual void Destroyed() { } //Called when the player's gameobject is destroyed.
@@ -336,7 +318,7 @@ public:
 	virtual void Kill_Dealt(DamageableGameObj *Victim,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when the player kills an object.
 	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) { } //Called when an object kills the player.
 	virtual void Custom(GameObject *Sender,int Type,int Param) { } //Called when the player receives a custom.
-	virtual void Poked(SoldierGameObj *Poker) { } //Called when the player is poked.
+	virtual void Poked(cPlayer *Player) { } //Called when the player is poked.
 	
 	virtual void Timer_Expired(int Number,unsigned int Data) { } //Callback for Start_Timer.
 	virtual void Think() { } //Called on each frame. Requires THINK flag.
@@ -439,6 +421,7 @@ private:
 class DA_API DAPlayerManager : private DAEventClass {
 public:
 	static void Init();
+	static void Shutdown();
 	static void Add_Data_Factory(DAPlayerDataFactoryClass *Factory);
 	static void Remove_Data_Factory(DAPlayerDataFactoryClass *Factory);
 	
@@ -453,28 +436,28 @@ private:
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Player_Loaded_Event(cPlayer *Player);
 	virtual void Name_Change_Event(cPlayer *Player);
-	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item);
-	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item);
-	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item);
-	virtual int Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,unsigned int ID);
-	virtual void Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Item);
-	virtual void Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Item);
-	virtual void PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Item);
-	virtual void Custom_Purchase_Event(SoldierGameObj *Purchaser,float Cost,unsigned int ID);
+	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
+	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
+	virtual int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
+	virtual int Custom_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,unsigned int ID);
+	virtual void Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item);
+	virtual void Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item);
+	virtual void PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item);
+	virtual void Custom_Purchase_Event(cPlayer *Player,float Cost,unsigned int ID);
 	virtual void Team_Change_Event(cPlayer *Player);
 	virtual bool Suicide_Event(cPlayer *Player);
-	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int &Seat);
-	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat);
-	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat);
-	virtual bool PowerUp_Grant_Request_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
-	virtual void PowerUp_Grant_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
-	virtual bool Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon);
-	virtual void Add_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon);
-	virtual void Remove_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon);
-	virtual void Clear_Weapons_Event(SoldierGameObj *Soldier);
+	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat);
+	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
+	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
+	virtual bool PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
+	virtual void PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
+	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon);
+	virtual void Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon);
+	virtual void Remove_Weapon_Event(cPlayer *Player,WeaponClass *Weapon);
+	virtual void Clear_Weapons_Event(cPlayer *Player);
 	virtual bool C4_Detonate_Request_Event(C4GameObj *C4,SmartGameObj *Triggerer);
 	virtual void C4_Detonate_Event(C4GameObj *C4,SmartGameObj *Triggerer);
-	virtual void Change_Character_Event(SoldierGameObj *Soldier,const SoldierGameObjDef *SoldierDef);
+	virtual void Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier);
 	virtual void Think();
 	
 	virtual void Object_Created_Event(GameObject *obj);
@@ -483,7 +466,7 @@ private:
 	virtual void Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual void Custom_Event(GameObject *obj,int Type,int Param,GameObject *Sender);
-	virtual void Poke_Event(PhysicalGameObj *obj,SoldierGameObj *Poker);
+	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj);
 	
 	static DynamicVectorClass<DAPlayerDataFactoryClass*> DataFactories;
 	static DynamicVectorClass<DAPlayerClass*> Players;

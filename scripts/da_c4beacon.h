@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade C4 and Beacon Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,12 +20,13 @@ class DAC4BeaconManager : public DAEventClass {
 public:
 	static void Init();
 	virtual void Settings_Loaded_Event();
+	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Beacon_Deploy_Event(BeaconGameObj *Beacon);
 	virtual void Beacon_Detonate_Event(BeaconGameObj *Beacon);
 	virtual void C4_Detonate_Event(C4GameObj *C4);
 	virtual void Poke_Event(PhysicalGameObj *obj,SoldierGameObj *Poker);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item);
+	int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
 };
 
 #endif

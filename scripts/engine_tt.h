@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Added GetTTVersion.
 #pragma once
 
 #include "scripts.h"
@@ -248,6 +250,7 @@ SCRIPTS_API extern seo SetExplosionObj;
 SCRIPTS_API extern uno Update_Network_Object;
 SCRIPTS_API extern sct Send_Client_Text;
 SCRIPTS_API extern sca Send_Client_Announcement;
+SCRIPTS_API extern gttv GetTTVersion;
 SCRIPTS_API extern dod Do_Objectives_Dlg;
 SCRIPTS_API extern sl Set_Player_Limit;
 SCRIPTS_API extern gl Get_Player_Limit;

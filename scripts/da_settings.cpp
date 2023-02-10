@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Settings Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,36 +12,24 @@
 */
 
 #include "general.h"
+#include "engine_game.h"
+#include "engine_da.h"
 #include "da.h"
 #include "da_settings.h"
 #include "da_event.h"
 #include "da_game.h"
 #include "da_log.h"
-#include "engine_game.h"
-#include "engine_tt.h"
 
 DASettingsClass *DASettingsManager::Main;
 DASettingsClass *DASettingsManager::GameMode;
 unsigned int DASettingsManager::LastMainModTime = 0;
 unsigned int DASettingsManager::LastGameModeModTime = 0;
 
-class ReloadConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "reload"; }
-	const char *Get_Alias() { return "rehash"; }
-	const char *Get_Help() { return "RELOAD - Reload da.ini and gamemode.ini."; }
-	void Activate(const char *ArgumentsString) {
-		DASettingsManager::Reload();
-		DASettingsManager::Post_Reload();
-	}
-};
-
 void DASettingsManager::Init() {
 	Main = new DASettingsClass("da.ini");
 	GameMode = new DASettingsClass("da.ini");
 	LastMainModTime = 0;
 	LastGameModeModTime = 0;
-	ConsoleFunctionList.Add(new ReloadConsoleCommand);
 }
 
 void DASettingsManager::Shutdown() {
@@ -82,6 +70,20 @@ void DASettingsManager::Post_Reload() {
 	File.Close();
 	DAEventManager::Settings_Loaded_Event();
 }
+
+
+class DAReloadConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "reload"; }
+	const char *Get_Alias() { return "rehash"; }
+	const char *Get_Help() { return "RELOAD - Reload da.ini and gamemode.ini."; }
+	void Activate(const char *ArgumentsString) {
+		DASettingsManager::Reload();
+		DASettingsManager::Post_Reload();
+	}
+};
+Register_Console_Function(DAReloadConsoleFunctionClass);
+
 
 int DASettingsManager::Get_Int(const char *Entry,int Default) {
 	return GameMode->Get_Int(Entry,Main->Get_Int(Entry,Default));
@@ -153,7 +155,7 @@ int DASettingsClass::Get_Int(const char *Entry,int Default) const {
 }
 
 int DASettingsClass::Get_Int(const char *Section,const char *Entry,int Default) const {
-	return INI->Get_Int(StringFormat("%s_%s",Section,The_Game()->Get_Map_Name()),Entry,INI->Get_Int(Section,Entry,Default));
+	return INI->Get_Int(StringFormat("%s_%s",The_Game()->Get_Map_Name(),Section),Entry,INI->Get_Int(Section,Entry,Default));
 }
 
 float DASettingsClass::Get_Float(const char *Entry,float Default) const {
@@ -161,7 +163,7 @@ float DASettingsClass::Get_Float(const char *Entry,float Default) const {
 }
 
 float DASettingsClass::Get_Float(const char *Section,const char *Entry,float Default) const {
-	return INI->Get_Float(StringFormat("%s_%s",Section,The_Game()->Get_Map_Name()),Entry,INI->Get_Float(Section,Entry,Default));
+	return INI->Get_Float(StringFormat("%s_%s",The_Game()->Get_Map_Name(),Section),Entry,INI->Get_Float(Section,Entry,Default));
 }
 
 bool DASettingsClass::Get_Bool(const char *Entry,bool Default) const {
@@ -169,7 +171,7 @@ bool DASettingsClass::Get_Bool(const char *Entry,bool Default) const {
 }
 
 bool DASettingsClass::Get_Bool(const char *Section,const char *Entry,bool Default) const {
-	return INI->Get_Bool(StringFormat("%s_%s",Section,The_Game()->Get_Map_Name()),Entry,INI->Get_Bool(Section,Entry,Default));
+	return INI->Get_Bool(StringFormat("%s_%s",The_Game()->Get_Map_Name(),Section),Entry,INI->Get_Bool(Section,Entry,Default));
 }
 
 StringClass &DASettingsClass::Get_String(StringClass &Str,const char *Entry,const char *Default) const {
@@ -177,7 +179,7 @@ StringClass &DASettingsClass::Get_String(StringClass &Str,const char *Entry,cons
 }
 
 StringClass &DASettingsClass::Get_String(StringClass &Str,const char *Section,const char *Entry,const char *Default) const {
-	return INI->Get_String(Str,StringFormat("%s_%s",Section,The_Game()->Get_Map_Name()),Entry,INI->Get_String(Str,Section,Entry,Default));
+	return INI->Get_String(Str,StringFormat("%s_%s",The_Game()->Get_Map_Name(),Section),Entry,INI->Get_String(Str,Section,Entry,Default));
 }
 
 void DASettingsClass::Get_Vector3(Vector3 &Buffer,const char *Entry,const Vector3 &Default) const {
@@ -223,7 +225,7 @@ void DASettingsClass::Get_Vector3(Vector3 &Buffer,const char *Section,const char
 }
 
 INISection *DASettingsClass::Get_Section(const char *Section) const {
-	if (INISection *Sect = INI->Get_Section(StringFormat("%s_%s",Section,The_Game()->Get_Map_Name()))) {
+	if (INISection *Sect = INI->Get_Section(StringFormat("%s_%s",The_Game()->Get_Map_Name(),Section))) {
 		return Sect;
 	}
 	return INI->Get_Section(Section);

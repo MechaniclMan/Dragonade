@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,6 +19,7 @@
 #include "da_settings.h"
 #include "da_log.h"
 #include "da_chatcommand.h"
+#include "CombatManager.h"
 
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
@@ -31,35 +32,14 @@ bool DAGameManager::FirstMap = true;
 bool DAGameManager::ShutdownPending = false;
 StringClass DAGameManager::Map;
 
-class TimeoutConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "timeout"; }
-	const char *Get_Help() { return "TIMEOUT - Ends the game by time limit expired."; }
-	void Activate(const char *ArgumentsString) {
-		if (!The_Game()->Get_Time_Limit_Minutes()) {
-			The_Game()->Set_Time_Limit_Minutes(1u); //Needs a time limit or it won't timeout.
-		}
-		The_Game()->Set_Time_Remaining_Seconds(0); //Time out game by setting time remaining to 0.
-	}
-};
-
-class TimeChatCommand : public DAChatCommandClass {
-	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		DA::Host_Message("Time Elapsed: %s",Format_Time((unsigned long)The_Game()->Get_Game_Duration_S()));
-		return true;
-	}
-};
-DAChatCommandRegistrant<TimeChatCommand> TimeChatCommandRegistrant("!time");
-
-
 void DAGameManager::Init() {
 	static DAGameManager Instance;
 	Instance.Register_Event(DAEvent::GAMEOVER,INT_MAX);
 	Instance.Register_Event(DAEvent::LEVELLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
-	ConsoleFunctionList.Add(new TimeoutConsoleCommand);
-	Sort_Function_List();
-	Verbose_Help_File();
+
+	Console_Output("\nDragonade %s with Scripts %.1f\n",DA_VERSION,GetTTVersion());
+	Console_Output("Created by Black-Cell.net\n\n");
 }
 
 void DAGameManager::Shutdown() {
@@ -94,8 +74,8 @@ void DAGameManager::Game_Over_Event() {
 	}
 	StringClass Message;
 	Message.Format("Current game on map %s has ended. Game was won by %ls by %s, lasted %s, and had a total of %d player(s).",Get_Map(),Get_Wide_Team_Name(The_Game()->Get_Winner_ID()),WinType,Format_Time(The_Game()->Get_Game_Duration_S()),Get_Player_List()->Get_Count());
-	DALogManager::Write_Log("_GENERAL","%s",Message);
 	Console_Output("%s\n",Message);
+	DALogManager::Write_Log("_GENERAL","%s",Message);
 	DALogManager::Write_Log("_GAMEOVER","%s %ls %u %d %s",Get_Map(),Get_Wide_Team_Name(The_Game()->Get_Winner_ID()),The_Game()->Get_Game_Duration_S(),Get_Player_List()->Get_Count(),WinType);
 }
 
@@ -107,7 +87,7 @@ void DAGameManager::Level_Loaded_Event() {
 				Console_InputF("%s %s",Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value);
 			}
 		}
-		DA::Host_Message("Running Dragonade %s with Scripts %.1f. Created by Black-Cell.net.",DA_VERSION,TT_VERSION);
+		DA::Host_Message("Running Dragonade %s with Scripts %.1f. Created by Black-Cell.net.",DA_VERSION,GetTTVersion());
 		FirstMap = false;
 	}
 	Console_Output("Level %s Loaded OK\n",The_Game()->Get_Map_Name());
@@ -217,19 +197,31 @@ void DAGameManager::Settings_Loaded_Event() {
 	The_Cnc_Game()->RadarMode = DASettingsManager::Get_Int("RadarMode",SvrCfg.Get_Int("Settings","RadarMode",1));
 	The_Cnc_Game()->IsLaddered = DASettingsManager::Get_Bool("IsLaddered",SvrCfg.Get_Bool("Settings","IsLaddered",true));
 	The_Cnc_Game()->CanRepairBuildings = DASettingsManager::Get_Bool("CanRepairBuildings",SvrCfg.Get_Bool("Settings","CanRepairBuildings",true));
+	BuildingGameObj::CanRepairBuildings = The_Cnc_Game()->CanRepairBuildings;
 	The_Cnc_Game()->SpawnWeapons = DASettingsManager::Get_Bool("SpawnWeapons",SvrCfg.Get_Bool("Settings","SpawnWeapons",true));
 	The_Cnc_Game()->IsFriendlyFirePermitted = DASettingsManager::Get_Bool("IsFriendlyFirePermitted",SvrCfg.Get_Bool("Settings","IsFriendlyFirePermitted",false));
+	CombatManager::FriendlyFirePermitted = The_Cnc_Game()->IsFriendlyFirePermitted;
 	The_Cnc_Game()->IsTeamChangingAllowed = DASettingsManager::Get_Bool("IsTeamChangingAllowed",SvrCfg.Get_Bool("Settings","IsTeamChangingAllowed",false));
 	The_Cnc_Game()->BaseDestructionEndsGame = DASettingsManager::Get_Bool("BaseDestructionEndsGame",SvrCfg.Get_Bool("Settings","BaseDestructionEndsGame",true));
 	The_Cnc_Game()->BeaconPlacementEndsGame = DASettingsManager::Get_Bool("BeaconPlacementEndsGame",SvrCfg.Get_Bool("Settings","BeaconPlacementEndsGame",true));
+	CombatManager::BeaconPlacementEndsGame = The_Cnc_Game()->BeaconPlacementEndsGame;
 	The_Cnc_Game()->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
 	Update_Game_Settings();
 }
 
 DAGameModeFactoryClass *DAGameManager::Find_Game_Mode(const char *Name) {
 	for (int i = 0;i < GameModes.Count();i++) {
-		if (!_stricmp(GameModes[i]->Get_Short_Name(),Name)) {
+		if ((GameModes[i]->Get_Short_Name() && !_stricmp(GameModes[i]->Get_Short_Name(),Name)) || (GameModes[i]->Get_Long_Name() && !_stricmp(GameModes[i]->Get_Long_Name(),Name))) {
 			return GameModes[i];
+		}
+	}
+	return 0;
+}
+
+DAGameFeatureFactoryClass *DAGameManager::Find_Game_Feature(const char *Name) {
+	for (int i = 0;i < GameFeatures.Count();i++) {
+		if ((GameFeatures[i]->Get_Name() && !_stricmp(GameFeatures[i]->Get_Name(),Name)) || (GameFeatures[i]->Get_Enable_Setting() && !_stricmp(GameFeatures[i]->Get_Enable_Setting(),Name))) {
+			return GameFeatures[i];
 		}
 	}
 	return 0;
@@ -305,3 +297,26 @@ void DAGameFeatureFactoryClass::Destroy_Instance() {
 	delete Instance;
 	Instance = 0;
 }
+
+/********************************************************************************************************************************/
+
+class DATimeoutConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "timeout"; }
+	const char *Get_Help() { return "TIMEOUT - Ends the game by time limit expired."; }
+	void Activate(const char *ArgumentsString) {
+		if (!The_Game()->Get_Time_Limit_Minutes()) {
+			The_Game()->Set_Time_Limit_Minutes(1u); //Needs a time limit or it won't timeout.
+		}
+		The_Game()->Set_Time_Remaining_Seconds(0); //Time out game by setting time remaining to 0.
+	}
+};
+Register_Console_Function(DATimeoutConsoleFunctionClass);
+
+class DATimeChatCommandClass : public DAChatCommandClass {
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		DA::Host_Message("Time Elapsed: %s",Format_Time((unsigned long)The_Game()->Get_Game_Duration_S()));
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DATimeChatCommandClass,"!time|!timeleft");

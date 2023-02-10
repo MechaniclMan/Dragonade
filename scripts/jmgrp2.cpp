@@ -3228,7 +3228,7 @@ void JMG_Druggy_Script::Timer_Expired(GameObject *obj, int number)
 				if (CurrentDrugLevel > DrugDeathLevel + (DrugDeathLevel * -0.15f) && CanDisplayedDeathWarnMessage == 0)
 				{
 					CanDisplayedDeathWarnMessage = 1;
-					Send_Message_Player(obj,255,255,0,"I do not feel wellÖ I think I had better stop taking those pills immanently and head to the hospital as soon as I can.");
+					Send_Message_Player(obj,255,255,0,"I do not feel wellÅEI think I had better stop taking those pills immanently and head to the hospital as soon as I can.");
 				}
 				else if (DrugOverdoseLevel < DrugOverdoseLevel && CanDisplayedDeathWarnMessage == 1) 
 				{

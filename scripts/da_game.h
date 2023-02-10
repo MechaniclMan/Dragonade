@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -40,11 +40,13 @@ public:
 	static inline bool Is_Game_Mode(const char *Name) {
 		return (!_stricmp(Get_Game_Mode_Long_Name(),Name) || !_stricmp(Get_Game_Mode_Short_Name(),Name));
 	}
+	static DAGameModeFactoryClass *Find_Game_Mode(const char *Name);
 	static void Add_Game_Mode(DAGameModeFactoryClass *Factory);
 	static void Add_Game_Feature(DAGameFeatureFactoryClass* Factory);
 	static inline const DynamicVectorClass<DAGameFeatureFactoryClass*> &Get_Game_Features() {
 		return GameFeatures;
 	}
+	static DAGameFeatureFactoryClass *Find_Game_Feature(const char *Name);
 	static inline bool Is_Shutdown_Pending() {
 		return ShutdownPending;
 	}
@@ -56,7 +58,6 @@ private:
 	virtual void Game_Over_Event();
 	virtual void Level_Loaded_Event();
 	virtual void Settings_Loaded_Event();
-	static DAGameModeFactoryClass *Find_Game_Mode(const char *Name);
 	static DAGameModeFactoryClass *GameMode;
 	static DynamicVectorClass<DAGameModeFactoryClass*> GameModes;
 	static bool ShowGameModeTitle;

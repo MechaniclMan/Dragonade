@@ -347,7 +347,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Update_Network_Object = (uno)Address(tt,"Update_Network_Object");
 	Send_Client_Text = (sct)Address(tt,"Send_Client_Text");
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
-	gttv GetTTVersion = (gttv)Address(tt,"GetTTVersion");
+	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
 	Commands->Control_Enable = (void(*)( GameObject * obj, bool enable ))Address(tt,"New_Control_Enable");
 	AddShaderNotify = (asn)Address(tt,"AddShaderNotify");
 	RemoveShaderNotify = (rsn)Address(tt,"RemoveShaderNotify");
@@ -410,10 +410,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Waypoint_Position = (gwp)Address(tt,"Get_Waypoint_Position");
 	ssc ttssc = (ssc)Address(tt,"Set_Script_Commands");
 	ttssc(commands);
-	if (GetTTVersion() != TT_VERSION) {
-		Console_Output("Fatal Error: scripts.dll requires a tt.dll version of %f. You are running %f.",TT_VERSION,GetTTVersion());
-		return false;
-	}
 	
 	DA::Init();
 

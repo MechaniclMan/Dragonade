@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2012-2013 zunnie
+	Copyright 2013-2013 zunnie
 	Websites: http://www.MultiPlayerForums.com / http://www.UltraAOW.com
 	ModDB Profile: http://www.moddb.com/mods/renegade-domination
 

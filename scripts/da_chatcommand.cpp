@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Chat Command Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,9 +13,11 @@
 
 #include "general.h"
 #include "engine_da.h"
+#include "cScTextObj.h"
 #include "da.h"
 #include "da_chatcommand.h"
 #include "da_player.h"
+#include "da_settings.h"
 
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
@@ -28,8 +30,31 @@ DATokenClass DAChatCommandManager::NullToken; //For passing to chat commands tha
 
 void DAChatCommandManager::Init() {
 	static DAChatCommandManager Instance;
-	Instance.Register_Event(DAEvent::CHATCOMMAND,INT_MIN); //Trigger after anything that might need to mute the player.
+	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
+	Instance.Register_Event(DAEvent::CHATCOMMAND,INT_MIN);
 	Instance.Register_Event(DAEvent::KEYHOOK,INT_MIN);
+}
+
+void DAChatCommandManager::Shutdown() {
+	for (int i = 0;i < EventChatCommands.Count();i++) {
+		delete EventChatCommands[i];
+	}
+	EventChatCommands.Delete_All();
+
+	for (int i = 0;i < ChatCommands.Count();i++) {
+		delete ChatCommands[i];
+	}
+	ChatCommands.Delete_All();
+
+	for (int i = 0;i < EventKeyHooks.Count();i++) {
+		delete EventKeyHooks[i];
+	}
+	EventKeyHooks.Delete_All();
+
+	for (int i = 0;i < KeyHooks.Count();i++) {
+		delete KeyHooks[i];
+	}
+	KeyHooks.Delete_All();
 }
 
 bool DAChatCommandManager::Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID) {
@@ -102,7 +127,7 @@ bool DAChatCommandManager::Key_Hook_Event(cPlayer *Player,const StringClass &Key
 					DA::Page_Player(Player->Get_ID(),"You do not have access to use this command.");
 				}
 				else {
-					(Observers[i]->*Commands[x]->Func)(NullToken,TEXT_MESSAGE_PRIVATE);
+					(Observers[i]->*Commands[x]->Func)(NullToken,TEXT_MESSAGE_KEYHOOK);
 				}
 				return false;
 			}
@@ -122,7 +147,7 @@ bool DAChatCommandManager::Key_Hook_Event(cPlayer *Player,const StringClass &Key
 				DA::Page_Player(Player->Get_ID(),"You do not have access to use this command.");
 			}
 			else {
-				(EventChatCommands[i]->Base->*EventChatCommands[i]->Func)(Player,NullToken,TEXT_MESSAGE_PRIVATE);
+				(EventChatCommands[i]->Base->*EventChatCommands[i]->Func)(Player,NullToken,TEXT_MESSAGE_KEYHOOK);
 			}
 			return false;
 		}
@@ -140,7 +165,7 @@ bool DAChatCommandManager::Key_Hook_Event(cPlayer *Player,const StringClass &Key
 				DA::Page_Player(Player->Get_ID(),"You do not have access to use this command.");
 			}
 			else {
-				ChatCommands[i]->Activate(Player,NullToken,TEXT_MESSAGE_PRIVATE);
+				ChatCommands[i]->Activate(Player,NullToken,TEXT_MESSAGE_KEYHOOK);
 			}
 			return false;
 		}

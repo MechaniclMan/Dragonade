@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Node Manager Game Mode Framework
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -238,7 +238,7 @@ void DABaseNodeClass::Think() {
 						if (!Get_Name().Is_Empty()) {
 							StringClass Message;
 							Message.Format("%ls is attacking the %s %s Node!",Get_Wide_Team_Name(OtherTeam),Get_Name(),Get_Type());
-							DA::Color_Message_With_Team_Color(Team,"%s",Message);
+							DA::Color_Message_With_Team_Color(OtherTeam,"%s",Message);
 							DALogManager::Write_Log("_NODE","%s",Message);
 						}
 						LastAttackTick = GetTickCount();
@@ -280,7 +280,7 @@ void DABaseNodeClass::Captured(int CaptureTeam) {
 	if (CaptureOnce) {
 		IsCapturable = false;
 	}
-	Captured_Callback();
+	Capture_Event();
 	Set_Contested(false);
 }
 
@@ -385,7 +385,7 @@ void DASpawnNodeClass::Init(const INIClass *INI,const StringClass &Header) {
 	}
 }
 
-void DASpawnNodeClass::Set_Contested_Callback() {
+void DASpawnNodeClass::Contested_Event() {
 	if (SpawnPoint) {
 		if (Is_Contested()) {
 			SpawnPoint->Set_Spawn_Time(DANodeManager->Get_Contested_Spawn_Time());
@@ -396,7 +396,7 @@ void DASpawnNodeClass::Set_Contested_Callback() {
 	}
 }
 
-void DASpawnNodeClass::Captured_Callback() {
+void DASpawnNodeClass::Capture_Event() {
 	if (SpawnPoint) {
 		SpawnPoint->Set_Enabled(true);
 		SpawnPoint->Set_Team(Team);

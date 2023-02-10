@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Advanced Kill Messages Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,14 @@
 
 class DAAdvancedKillMessagesGameFeatureClass : public DAEventClass, public DAGameFeatureClass {
 	virtual void Init();
+	virtual void Settings_Loaded_Event();
 	virtual void DA_Log_Event(const char *Header,const char *Output);
+
+	//Settings
+	bool EnablePlayer;
+	bool EnableVehicle;
+	bool EnableBuilding;
+	bool EnableBot;
 };
 
 #endif

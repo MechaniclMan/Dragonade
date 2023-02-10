@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Building Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -309,7 +309,7 @@ void DABuildingObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage
 		if (Damage > 0.0f) {
 			if (((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health() <= ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health_Max()*0.9f) {
 				AllowRepairMessage = true;
-				if (DestructionMessage && ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health() <= ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health_Max()*0.2f) {
+				if (DestructionMessage && ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health() && ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health() <= ((BuildingGameObj*)Get_Owner())->Get_Defense_Object()->Get_Health_Max()*0.2f) {
 					DestructionMessage = false;
 					Start_Timer(1,30.0f);
 					int Team = ((BuildingGameObj*)Get_Owner())->Get_Player_Type();
@@ -413,9 +413,6 @@ void DABuildingManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Dam
 }
 
 void DABuildingManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
-	if (((BuildingGameObj*)Victim)->As_PowerPlantGameObj()) {
-		DALogManager::Write_Log("_BUILDING","%ls Base Power is off-line.",Get_Wide_Team_Name(Victim->Get_Player_Type()));
-	}
 	StringClass Message;
 	if (Killer->As_SoldierGameObj()) { //Killed by player
 		if (((SoldierGameObj*)Killer)->Get_Player()) {
@@ -442,7 +439,11 @@ void DABuildingManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 		}
 	}
 	else {
-		Message.Format("%d The %ls was destroyed.",Victim->Get_Player_Type(),DATranslationManager::Translate_With_Team_Name(Victim));
+		Message.Format("%d The %s was destroyed.",Victim->Get_Player_Type(),DATranslationManager::Translate_With_Team_Name(Victim));
 	}
 	DALogManager::Write_Log("_BUILDINGKILL","%s",Message);
+	DALogManager::Write_Log("_BUILDING","%s destroyed.",DATranslationManager::Translate_With_Team_Name(Victim));
+	if (((BuildingGameObj*)Victim)->As_PowerPlantGameObj()) {
+		DALogManager::Write_Log("_BUILDING","%ls Base Power is off-line.",Get_Wide_Team_Name(Victim->Get_Player_Type()));
+	}
 }

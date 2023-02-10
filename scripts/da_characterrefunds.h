@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Character Refunds Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -29,7 +29,7 @@ public:
 class DACharacterRefundsGameFeatureClass : public DAEventClass, public DAGameFeatureClass, public DAPlayerDataManagerClass<DACharacterRefundsPlayerDataClass> {
 	virtual void Init();
 	virtual void Settings_Loaded_Event();
-	virtual void Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Item);
+	virtual void Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item);
 	virtual void Object_Destroyed_Event(GameObject *obj);
 	float Percent;
 };

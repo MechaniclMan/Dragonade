@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Node Manager Game Mode Framework
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -54,7 +54,7 @@ public:
 	void Set_Contested(bool contested) {
 		if (IsContested != contested) {
 			IsContested = contested;
-			Set_Contested_Callback();
+			Contested_Event();
 		}
 	}
 	inline bool Is_Capturable() const {
@@ -77,8 +77,8 @@ protected:
 	void Captured(int CaptureTeam);
 	void Attack_Tick(int AttackTeam);
 	void Defend_Tick();
-	virtual void Set_Contested_Callback() { }
-	virtual void Captured_Callback() { }
+	virtual void Contested_Event() { }
+	virtual void Capture_Event() { }
 	void Update_Icon();
 	bool Is_Player_In_Range(SoldierGameObj *Player);
 	void Give_Attack_Defend_Tick_Points(int team);
@@ -135,8 +135,8 @@ public:
 		return SpawnNodeType;
 	}
 protected:
-	virtual void Captured_Callback();
-	virtual void Set_Contested_Callback();
+	virtual void Capture_Event();
+	virtual void Contested_Event();
 	virtual void Init(const INIClass *INI,const StringClass &Header);
 	DASpawnPointClass *SpawnPoint;
 };

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,107 +16,77 @@
 
 #include "da_event.h"
 #include "da_gameobj.h"
-#include "engine_game.h"
 
 class DAVehicleObserverClass : public DAGameObjObserverClass {
 public:
 	virtual void Init();
 	virtual void Timer_Expired(GameObject *obj,int Number);
-	virtual void Vehicle_Enter(SoldierGameObj *Soldier,int Seat);
-	virtual void Vehicle_Exit(SoldierGameObj *Soldier,int Seat);
+	virtual void Vehicle_Exit(cPlayer *Player,int Seat);
 
-	inline cPlayer *Get_Last_Driver() {
-		return LastDriver;
-	}
-	inline cPlayer *Get_Last_Player() {
-		return LastPlayer;
-	}
-	inline int Get_Team() {
-		return Team;
-	}
-	inline void Set_Team(int team) {
-		Team = team;
-	}
-	inline unsigned int Get_Time_Since_Last_Driver_Exit() {
-		return The_Game()->Get_Game_Duration_S()-LastDriverExitTime;
-	}
-	inline unsigned int Get_Time_Since_Last_Exit() {
-		return The_Game()->Get_Game_Duration_S()-LastExitTime;
-	}
+	DA_API cPlayer *Get_Vehicle_Owner();
+	DA_API void Set_Vehicle_Owner(cPlayer *Player);
+	DA_API int Get_Team();
+	DA_API void Set_Team(int team);
+	DA_API void Reset_Last_Exit_Time();
+	DA_API unsigned int Get_Time_Since_Last_Exit();
+	DA_API void Reset_Last_Theft_Time();
+	DA_API unsigned int Get_Time_Since_Last_Theft();
 	virtual const char *Get_Name();
 	inline VehicleGameObj *Get_Vehicle() {
 		return (VehicleGameObj*)Get_Owner();
 	}
 	
 private:
-	cPlayer *LastDriver;
-	cPlayer *LastPlayer;
-	unsigned int LastDriverExitTime;
-	unsigned int LastExitTime;
+	cPlayer *VehicleOwner;
 	int Team;
-	bool GiveSteal;
+	unsigned int LastExitTime;
+	unsigned int LastTheftTime;
+};
+
+class DAAirDroppedVehicleObserverClass : public DAGameObjObserverClass {
+	virtual void Init();
+	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
+	virtual void Timer_Expired(GameObject *obj,int Number);
+	virtual const char *Get_Name() { return "DAAirDroppedVehicleObserverClass"; }
 };
 
 class DAVehicleManager : public DAEventClass {
 public:
 	static void Init();
-	DA_API static bool Check_Limit_For_Player(SoldierGameObj *Player);
+	DA_API static bool Check_Limit_For_Player(cPlayer *Player);
 	DA_API static DAVehicleObserverClass *Get_Vehicle_Data(GameObject *obj);
-	DA_API static void Disable_Flip_Kill();
-	DA_API static void Enable_Flip_Kill();
-	inline static cPlayer *Get_Last_Driver(GameObject *obj) {
+	inline static cPlayer *Get_Vehicle_Owner(GameObject *obj) {
 		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
 		if (Data) {
-			return Data->Get_Last_Driver();
+			return Data->Get_Vehicle_Owner();
 		}
 		return 0;
-	}
-	inline static cPlayer *Get_Last_Player(GameObject *obj) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			return Data->Get_Last_Player();
-		}
-		return 0;
-	}
-	inline static unsigned int Get_Time_Since_Last_Driver_Exit(GameObject *obj) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			return Data->Get_Time_Since_Last_Driver_Exit();
-		}
-		return INT_MAX;
-	}
-	inline static unsigned int Get_Time_Since_Last_Exit(GameObject *obj) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			return Data->Get_Time_Since_Last_Exit();
-		}
-		return INT_MAX;
 	}
 	inline static int Get_Team(GameObject *obj) {
 		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
 		if (Data) {
 			return Data->Get_Team();
 		}
-		return 2;
+		return -2;
 	}
-	inline static void Set_Team(GameObject *obj,int Team) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			Data->Set_Team(Team);
-		}
-	}
+	DA_API static void Air_Drop_Vehicle(int Team,VehicleGameObj *Vehicle,const Vector3 &Position,float Facing);
+	DA_API static VehicleGameObj *Air_Drop_Vehicle(int Team,const VehicleGameObjDef *Vehicle,const Vector3 &Position,float Facing);
+	DA_API static VehicleGameObj *Air_Drop_Vehicle(int Team,unsigned int Vehicle,const Vector3 &Position,float Facing);
+	DA_API static VehicleGameObj *Air_Drop_Vehicle(int Team,const char *Vehicle,const Vector3 &Position,float Facing);
 	
 private:
 	class DefaultPurchaseEvent : public DAEventClass {
-		virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item);
+		virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	};
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
-	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item);
+	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	virtual bool Vehicle_Flip_Event(VehicleGameObj *Vehicle);
+	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 
-	static DAVehicleManager Instance;
+	//Settings
+	bool EnableTheftMessage;
 };
 
 #endif

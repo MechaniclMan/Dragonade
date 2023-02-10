@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Settings Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -47,15 +47,10 @@ public:
 		return *this;
 	}
 	inline void Set_INI(const char *ini) {
-		Release();
 		RawFileClass File(ini);
-		if (File.Is_Available(0)) {
-			INI = new INIClass(File);
-		}
-		else {
-			File.Open("server.ini",0);
-			INI = new INIClass(File);
-		}
+		INIClass *Temp = INI;
+		INI = new INIClass(File);
+		delete Temp;
 	}
 	inline void Set_INI(INIClass *That) {
 		Set_INI(That->Get_File_Name());

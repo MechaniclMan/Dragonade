@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,6 +28,7 @@
 #include "weaponmgr.h"
 #include "cPlayer.h"
 #include "cTeam.h"
+#include "engine_tt.h"
 
 template <typename A, typename B> class PairClass {
 public:
@@ -175,6 +176,8 @@ DA_API unsigned int Get_Naval_Vehicle_Count(int Team);
 
 DA_API void Set_Object_Dirty_Bit_For_Version_Greater_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff);
 DA_API void Set_Object_Dirty_Bit_For_Version_Less_Than(NetworkObjectClass *obj,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff);
+DA_API void Set_Object_Dirty_Bit_For_Team_Version_Greater_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff);
+DA_API void Set_Object_Dirty_Bit_For_Team_Version_Less_Than(NetworkObjectClass *obj,int Team,float Version,NetworkObjectClass::DIRTY_BIT Bit,bool OnOff);
 DA_API int Setup_Send_Message_Fake(const char *NewNick,int ID = 0);
 DA_API int Setup_Send_Message_Team_Fake(const char *NewNick,int Team,int ID = 0);
 DA_API void Restore_Send_Message_Fake();
@@ -186,6 +189,7 @@ DA_API void Send_Announcement_Player_Version_Less_Than(int ID,const char *String
 DA_API void Send_Announcement_Team(int Team,const char *StringID);
 DA_API void Send_Announcement_Team_Version_Less_Than(int Team,const char *StringID,float Version);
 
+DA_API void Send_Message_Team_With_Team_Color(int Team,const char *Msg);
 DA_API void Send_Message_Player_By_ID(int ID,unsigned int Red,int unsigned Green,int unsigned Blue,const char *Message);
 DA_API void Create_2D_WAV_Sound_Player_By_ID(int ID,const char *Sound);
 DA_API void Set_Obj_Radar_Blip_Shape_Player_By_ID(int ID,GameObject *obj,int Shape);
@@ -206,5 +210,10 @@ DA_API void Fix_Stuck_Objects(const Vector3 &Position,float Range);
 DA_API bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range);
 
 DA_API void Send_Purchase_Response(int ID,int Type);
+
+DA_API StringClass Clean_Model_Name(StringClass Model);
+DA_API StringClass Get_Weapon_PowerUp_Model(const WeaponDefinitionClass *Weapon);
+
+DA_API void Add_Console_Function(ConsoleFunctionClass *Func);
 
 #endif

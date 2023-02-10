@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Purchase Queue Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -32,7 +32,7 @@ void DAVehicleQueueGameFeatureClass::Init() {
 	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::VEHICLE);
 	Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::BUILDING);
 	Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::VEHICLE);
-	Register_Chat_Command((DAECC)&DAVehicleQueueGameFeatureClass::VQ_Chat_Command,"!vq|!queue|!q");
+	Register_Chat_Command((DAECC)&DAVehicleQueueGameFeatureClass::VQ_Chat_Command,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit");
 	Queue[0].Resize(8);
 	Queue[1].Resize(8);
 	Building[0] = 0;
@@ -109,9 +109,8 @@ void DAVehicleQueueGameFeatureClass::Game_Over_Event() {
 	Clear(1);
 }
 
-int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
+int DAVehicleQueueGameFeatureClass::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	int Team = Base->Get_Player_Type();
-	cPlayer *Player = Purchaser->Get_Player();
 	if ((unsigned int)Player->Get_Money() < Cost) {
 		return 2;
 	}
@@ -234,7 +233,7 @@ void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team)
 		}
 		else if (Q->Purchaser->Purchase_Item((int)Q->Cost)) {
 			Spawn_Vehicle(Team,Q);
-			DAEventManager::Vehicle_Purchase_Event(Q->Purchaser->Get_GameObj(),Q->Cost,Q->Vehicle); //Trigger the proper events.
+			DAEventManager::Vehicle_Purchase_Event(Q->Purchaser,Q->Cost,Q->Vehicle); //Trigger the proper events.
 			Send_Purchase_Response(Q->Purchaser->Get_ID(),0);
 		}
 		else {

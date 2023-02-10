@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Soldier Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -160,7 +160,7 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				Message.Format("%d %s killed itself (%s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Victim));
 			}
 			else { //Killed by bot
-				Message.Format("%d %s killed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate_Soldier(Killer)),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				Message.Format("%d %s killed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
 			}
 		}
 		else if (Killer->As_VehicleGameObj()) { //Killed by vehicle. Could be harvester, defense, or AI vehicle.
@@ -189,11 +189,11 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 }
 
 //Default character purchase handler.
-int DASoldierManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item) {
+int DASoldierManager::Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item) {
 	if (Base->Can_Generate_Soldiers() || !Cost) {
-		if (Purchaser->Get_Player()->Purchase_Item((int)Cost)) {
-			Purchaser->Re_Init(*Item);
-			Purchaser->Post_Re_Init();
+		if (Player->Purchase_Item((int)Cost)) {
+			Player->Get_GameObj()->Re_Init(*Item);
+			Player->Get_GameObj()->Post_Re_Init();
 			return 0;
 		}
 		return 2;

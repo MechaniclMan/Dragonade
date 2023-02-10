@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Misc. Game Object Observers
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,12 +16,47 @@
 
 #include "da_gameobj.h"
 
-class DATimedInvincibilityObserverClass : public DAGameObjObserverClass {
+//Makes an object invincible for ProtectTime.
+class DA_API DATimedInvincibilityObserverClass : public DAGameObjObserverClass {
 public:
-	DATimedInvincibilityObserverClass(GameObject *obj,float ProtectTime);
-	virtual const char *Get_Name() { return "DATimedInvincibilityObserverClass"; }
+	DATimedInvincibilityObserverClass(float ProtectTime);
+	virtual void Init();
 	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
 	virtual void Timer_Expired(GameObject *obj,int Number);
+	virtual const char *Get_Name() { 
+		return "DATimedInvincibilityObserverClass"; 
+	}
+
+private:
+	float ProtectTime;
+};
+
+//Attach an object to Host with a Z offset.
+class DA_API DAAttachToObjectWithZOffsetObserverClass : public DAGameObjObserverClass {
+public:
+	DAAttachToObjectWithZOffsetObserverClass(GameObject *Host,float Offset,float SyncTime);
+	virtual void Init();
+	virtual void Timer_Expired(GameObject *obj,int Number);
+	virtual const char *Get_Name() { 
+		return "DAAttachToObjectWithZOffsetObserverClass"; 
+	}
+
+private:
+	ReferencerClass Host;
+	float Offset;
+	float SyncTime;
+};
+
+//Clears a vehicle's death and damage points until it is entered.
+class DA_API DANoPointsUntilEnteredObserverClass : public DAGameObjObserverClass {
+	virtual void Init();
+	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
+	virtual const char *Get_Name() { 
+		return "DANoPointsUntilEnteredObserverClass"; 
+	}
+
+	float DeathPoints;
+	float DamagePoints;
 };
 
 #endif

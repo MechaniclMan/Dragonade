@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Team Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,7 +18,6 @@
 #include "da.h"
 #include "da_team.h"
 #include "da_settings.h"
-#include "da_hook.h"
 
 unsigned int DATeamManager::RebalanceTime = 10;
 int DATeamManager::RemixFrequency = 1;
@@ -28,97 +27,15 @@ bool DATeamManager::EnableRebalance = true;
 bool DATeamManager::EnableFreeTeamChanging = false;
 int DATeamManager::ForceTeam = -1;
 
-class RemixConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "remix"; }
-	const char *Get_Help() { return "REMIX - Remix teams."; }
-	void Activate(const char *ArgumentsString) {
-		DATeamManager::Remix();
-	}
-};
-
-class RebalanceConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "rebalance"; }
-	const char *Get_Help() { return "REBALANCE - Rebalance teams."; }
-	void Activate(const char *ArgumentsString) {
-		DATeamManager::Rebalance();
-	}
-};
-
-class SwapConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "swap"; }
-	const char *Get_Help() { return "SWAP - Swap teams."; }
-	void Activate(const char *ArgumentsString) {
-		DATeamManager::Swap();
-	}
-};
-
-class ForceTeamConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "forceteam"; }
-	const char *Get_Help() { return "FORCETEAM <team> - Force all players to switch to the given team."; }
-	void Activate(const char *ArgumentsString) {
-		DATeamManager::Set_Force_Team(atoi(ArgumentsString));
-	}
-};
-
-class Team3ConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "team3"; }
-	const char *Get_Help() { return "TEAM3 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and starting credits. Any credits over the starting amount are distributed to their team."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Change_Team_3(Player,Player->Get_Player_Type()?0:1);
-		}
-	}
-};
-
-class Team4ConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "team4"; }
-	const char *Get_Help() { return "TEAM4 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and reseting their credits to the starting amount."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Change_Team_4(Player,Player->Get_Player_Type()?0:1);
-		}
-	}
-};
-
-class Team5ConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "team5"; }
-	const char *Get_Help() { return "TEAM5 <playerid> - Swap a player's team, reseting their score, kills and deaths to 0, and their credits to the starting amount."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Change_Team_5(Player,Player->Get_Player_Type()?0:1);
-		}
-	}
-};
-
 void DATeamManager::Init() {
 	static DATeamManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::LEVELLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::PLAYERJOIN,INT_MAX);
-	Instance.Register_Event(DAEvent::TEAMCHANGEREQUEST,INT_MIN);
-
-	ConsoleFunctionList.Add(new RemixConsoleCommand);
-	ConsoleFunctionList.Add(new RebalanceConsoleCommand);
-	ConsoleFunctionList.Add(new SwapConsoleCommand);
-	ConsoleFunctionList.Add(new ForceTeamConsoleCommand);
-	ConsoleFunctionList.Add(new Team3ConsoleCommand);
-	ConsoleFunctionList.Add(new Team4ConsoleCommand);
-	ConsoleFunctionList.Add(new Team5ConsoleCommand);
-	Sort_Function_List();
-	Verbose_Help_File();
+	Instance.Register_Event(DAEvent::TEAMCHANGEREQUEST);
 }
 
-void DATeamManager::Settings_Loaded_Event() {	
+void DATeamManager::Settings_Loaded_Event() {
 	RebalanceTime = (unsigned int)DASettingsManager::Get_Int("RebalanceTime",10);
 	RemixFrequency = DASettingsManager::Get_Int("RemixFrequency",1);
 	SwapChance = DASettingsManager::Get_Int("SwapChance",50);
@@ -176,8 +93,9 @@ void DATeamManager::Player_Join_Event(cPlayer *Player) {
 		else {
 			Update_Game_Settings();
 		}
-		Stop_Timer(2);
-		Start_Timer(2,0.1f);
+		if (!Is_Timer(2)) {
+			Start_Timer(2,0.1f);
+		}
 	}
 }
 
@@ -187,8 +105,9 @@ void DATeamManager::Player_Leave_Event(cPlayer *Player) {
 		if (Team == 0 || Team == 1) {
 			int OtherTeam = Team?0:1;
 			if (Tally_Team_Size(OtherTeam)-(Tally_Team_Size(Team)-1) > 1) {
-				Stop_Timer(1);
-				Start_Timer(1,10.0f);
+				if (!Is_Timer(1)) {
+					Start_Timer(1,10.0f);
+				}
 			}
 		}
 	}
@@ -197,7 +116,7 @@ void DATeamManager::Player_Leave_Event(cPlayer *Player) {
 bool DATeamManager::Team_Change_Request_Event(cPlayer *Player) {
 	if (Is_Free_Team_Changing_Enabled()) {
 		Change_Team_3(Player,Player->Get_Team()?0:1);
-		Send_Client_Text(WideStringFormat(L"%ls changed teams.",Player->Get_Name()),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
+		DA::Host_Message("%ls changed teams.",Player->Get_Name());
 		return false;
 	}
 	return true;
@@ -366,3 +285,76 @@ void DATeamManager::Swap() {
 		}
 	}
 }
+
+
+class DARemixConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "remix"; }
+	const char *Get_Help() { return "REMIX - Remix teams."; }
+	void Activate(const char *ArgumentsString) {
+		DATeamManager::Remix();
+	}
+};
+Register_Console_Function(DARemixConsoleFunctionClass);
+
+class DARebalanceConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "rebalance"; }
+	const char *Get_Help() { return "REBALANCE - Rebalance teams."; }
+	void Activate(const char *ArgumentsString) {
+		DATeamManager::Rebalance();
+	}
+};
+Register_Console_Function(DARebalanceConsoleFunctionClass);
+
+class DASwapConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "swap"; }
+	const char *Get_Help() { return "SWAP - Swap teams."; }
+	void Activate(const char *ArgumentsString) {
+		DATeamManager::Swap();
+	}
+};
+Register_Console_Function(DASwapConsoleFunctionClass);
+
+class DAForceTeamConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "forceteam"; }
+	const char *Get_Help() { return "FORCETEAM <team> - Force all players to switch to the given team."; }
+	void Activate(const char *ArgumentsString) {
+		DATeamManager::Set_Force_Team(atoi(ArgumentsString));
+	}
+};
+Register_Console_Function(DAForceTeamConsoleFunctionClass);
+
+class DATeam3ConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "team3"; }
+	const char *Get_Help() { return "TEAM3 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and starting credits. Any credits over the starting amount are distributed to their team."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Change_Team_3(Player,Player->Get_Player_Type()?0:1);
+		}
+	}
+};
+Register_Console_Function(DATeam3ConsoleFunctionClass);
+
+class DATeam4ConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "team4"; }
+	const char *Get_Help() { return "TEAM4 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and reseting their credits to the starting amount."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Change_Team_4(Player,Player->Get_Player_Type()?0:1);
+		}
+	}
+};
+Register_Console_Function(DATeam4ConsoleFunctionClass);
+
+class DATeam5ConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "team5"; }
+	const char *Get_Help() { return "TEAM5 <playerid> - Swap a player's team, reseting their score, kills and deaths to 0, and their credits to the starting amount."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Change_Team_5(Player,Player->Get_Player_Type()?0:1);
+		}
+	}
+};
+Register_Console_Function(DATeam5ConsoleFunctionClass);

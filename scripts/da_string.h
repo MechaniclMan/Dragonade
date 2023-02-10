@@ -43,16 +43,6 @@ inline WideStringClass WideStringFormat(const wchar_t *Format,...) {
 	return Buffer;
 }
 
-inline bool IsNum(const char *sPtr) {
-	while (*sPtr != '\0') {
-		if ((*sPtr < 48 || *sPtr > 57) && *sPtr != '.') {
-			return false;
-		}
-		++sPtr;
-	}
-	return true;
-}
-
 inline char *A_Or_An(const char *String) {
 	if (*String == 'A' || *String == 'a' || *String == 'E' || *String == 'e' || *String == 'I' || *String == 'i' || *String == 'O' || *String == 'o' || *String == 'U' || *String == 'u') {
 		return "An";
@@ -114,6 +104,15 @@ inline WideStringClass Make_Possessive(const WideStringClass &String) {
 inline bool Is_Numeric(const char *String) {
 	for (;*String != '\0';String++) {
 		if (*String < 48 || *String > 57) {
+			return false;
+		}
+	}
+	return true;
+}
+
+inline bool Is_Number(const char *String) {
+	for (;*String != '\0';String++) {
+		if ((*String < 48 || *String > 57) && (*String != '-' && *String != '.')) {
 			return false;
 		}
 	}

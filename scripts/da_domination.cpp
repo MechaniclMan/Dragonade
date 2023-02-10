@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Domination Game Mode
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -41,15 +41,15 @@ void DAControlNodeClass::Timer_Expired(int Number,unsigned int Data) {
 	}
 }
 
-void DAControlNodeClass::Captured_Callback() {
-	DASpawnNodeClass::Captured_Callback();
+void DAControlNodeClass::Capture_Event() {
+	DASpawnNodeClass::Capture_Event();
 	Stop_Timer(10);
 	Start_Timer(10,DADominationManager->Get_Point_Tick_Time(),true);
 	DA::Create_2D_Sound_Team(Team,"M00EVAG_DSGN0048I1EVAG_snd.wav");
 	DADominationManager->Update_Node_Count();
 }
 
-void DAControlNodeClass::Set_Contested_Callback() {
+void DAControlNodeClass::Contested_Event() {
 	if (Is_Contested()) {
 		Stop_Timer(10);
 	}
@@ -57,7 +57,7 @@ void DAControlNodeClass::Set_Contested_Callback() {
 		Stop_Timer(10);
 		Start_Timer(10,DADominationManager->Get_Point_Tick_Time(),true);
 	}
-	DASpawnNodeClass::Set_Contested_Callback();
+	DASpawnNodeClass::Contested_Event();
 }
 
 void DATiberiumNodeClass::Init(const INIClass *INI,const StringClass &Header) {
@@ -77,14 +77,14 @@ void DATiberiumNodeClass::Timer_Expired(int Number,unsigned int Data) {
 	}
 }
 
-void DATiberiumNodeClass::Captured_Callback() {
+void DATiberiumNodeClass::Capture_Event() {
 	Stop_Timer(10);
 	Start_Timer(10,DADominationManager->Get_Credit_Tick_Time(),true);
 	DA::Create_2D_Sound_Team(Team,"M00EVAG_DSGN0049I1EVAG_snd.wav");
 	DADominationManager->Update_Node_Count();
 }
 
-void DATiberiumNodeClass::Set_Contested_Callback() {
+void DATiberiumNodeClass::Contested_Event() {
 	if (Is_Contested()) {
 		Stop_Timer(10);
 	}
@@ -173,20 +173,50 @@ void DADominationManagerClass::Init() {
 	
 	//Change Stealth Tanks into Recon Bikes.
 	PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES,PurchaseSettingsDefClass::TEAM_NOD);
-	VehicleGameObjDef *Recon = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
-	Recon->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
-	const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-	const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-	PT->Set_Definition(5,Recon->Get_ID());
-	PT->Set_Cost(5,500);
+	if (PT->Get_Definition(5) == Get_Definition_ID("CnC_Nod_Stealth_Tank")) {
+		VehicleGameObjDef *Recon = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
+		if (Recon) {
+			Recon->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
+			const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+			const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+			PT->Set_Definition(5,Recon->Get_ID());
+			PT->Set_Cost(5,500);
+		}
+	}
 
 	//Change beacons into Remote C4.
 	TeamPurchaseSettingsDefClass *PT2 = TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_NOD);
-	PT2->Set_Beacon_Definition(Get_Definition_ID("CnC_POW_MineRemote_02"));
-	PT2->Set_Beacon_Cost(200);
-	PT2 = TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_GDI);
-	PT2->Set_Beacon_Definition(Get_Definition_ID("CnC_POW_MineRemote_02"));
-	PT2->Set_Beacon_Cost(200);
+	if (PT2->Get_Beacon_Definition() == Get_Definition_ID("CnC_POW_Nuclear_Missle_Beacon")) {
+		PowerUpGameObjDef *RemotePowerUp = (PowerUpGameObjDef*)Find_Named_Definition("POW_MineRemote_Player");
+		if (RemotePowerUp) {
+			WeaponDefinitionClass *RemoteWeapon = (WeaponDefinitionClass*)Find_Definition(RemotePowerUp->GrantWeaponID);
+			if (RemoteWeapon) {
+				RemoteWeapon->MaxInventoryRounds = 1;
+				RemoteWeapon->CanReceiveGenericCnCAmmo = false;
+
+				PT2->Set_Beacon_Definition(RemotePowerUp->Get_ID());
+				PT2->Set_Beacon_Cost(200);
+
+				PT2 = TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_GDI);
+				PT2->Set_Beacon_Definition(RemotePowerUp->Get_ID());
+				PT2->Set_Beacon_Cost(200);
+			}
+		}
+	}
+
+	//Change Stealth Black Hand into Black Hand Rocket Soldier.
+	PT = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_CLASSES,PurchaseSettingsDefClass::TEAM_NOD);
+	SoldierGameObjDef *SBH = (SoldierGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+	if (SBH && PT->Get_Definition(5) == (int)SBH->Get_ID()) {
+		SoldierGameObjDef *BHRS = (SoldierGameObjDef*)Find_Named_Definition("CnC_Nod_MiniGunner_2SF_Skirmish");
+		if (BHRS) {
+			BHRS->WeaponDefID = Get_Definition_ID("CnC_Weapon_RocketLauncher_Player");
+			BHRS->WeaponRounds = 42;
+			BHRS->ScriptNameList = SBH->ScriptNameList;
+			BHRS->ScriptParameterList = SBH->ScriptParameterList;
+			PT->Set_Definition(5,BHRS->Get_ID());
+		}
+	}
 	
 	Register_Event(DAEvent::PLAYERLOADED);
 	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
@@ -212,14 +242,14 @@ void DADominationManagerClass::Object_Created_Event(GameObject *obj) {
 	((SoldierGameObj*)obj)->Give_Key(1);
 	((SoldierGameObj*)obj)->Give_Key(2);
 	((SoldierGameObj*)obj)->Give_Key(3);
-	if (!_stricmp(obj->Get_Definition().Get_Name(),"CnC_Nod_FlameThrower_2SF")) { //Change Stealth Black Hands into Black Hand Rocket Soldier.
+	/*if (!_stricmp(obj->Get_Definition().Get_Name(),"CnC_Nod_FlameThrower_2SF")) { //Change Stealth Black Hands into Black Hand Rocket Soldier.
 		Change_Character(obj,"CnC_Nod_RocketSoldier_2SF");
 		WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
 		Bag->Remove_Weapon("Weapon_LaserChaingun_Player");
 		WeaponDefinitionClass *Weapon = (WeaponDefinitionClass*)Find_Named_Definition("CnC_Weapon_RocketLauncher_Player");
 		Bag->Add_Weapon(Weapon,999,true);
 		Bag->Select_Weapon_Name("CnC_Weapon_RocketLauncher_Player");
-	}
+	}*/
 }
 
 void DADominationManagerClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {

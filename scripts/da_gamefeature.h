@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Feature Class
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,12 @@ class DAGameFeatureFactoryClass abstract {
 public:	
 	inline const char *Get_Name() const {
 		return Name;
+	}
+	inline const char *Get_Enable_Setting() const {
+		return EnableSetting;
+	}
+	inline const char *Get_Required_Data() const {
+		return RequiredData;
 	}
 	inline DAGameFeatureClass *Get_Instance() const {
 		return Instance;

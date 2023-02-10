@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #include "General.h"
 #include "engine.h"
 #include "engine_da.h"
+#include "cScTextObj.h"
 #include "da.h"
 #include "da_plugin.h"
 #include "da_log.h"
@@ -30,143 +31,14 @@
 #include "da_c4beacon.h"
 #include "da_building.h"
 #include "da_damagelog.h"
-#include "cScTextObj.h"
+#include "da_hook.h"
+
+#pragma warning(disable: 4073)
+#pragma init_seg(lib)
 
 StringClass DA::MessagePrefix;
-
-class PPageConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char* Get_Name() { return "ppage"; }
-	const char* Get_Help() { return "PPAGE <playerid> <message> - Sends a page to a specific player. Host only."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Text(ArgumentsString,' ');
-		int ID = 0;
-		if (Text.Get_Int(ID) && Text.Get_Remaining_String()) {
-			if (Get_Client_Version(ID) < 2.6f) {
-				Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
-			}
-			else {
-				DA::Private_Color_Message(ID,LIGHTBLUE,"Host: %s",Text.Get_Remaining_String());
-				Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
-			}
-		}
-	}
-};
-
-class TPageConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char* Get_Name() { return "tpage"; }
-	const char* Get_Help() { return "TPAGE <team> <message> - Sends a page to every player on the given team. Host only."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Text(ArgumentsString,' ');
-		int Team = 0;
-		if (Text.Get_Int(Team) && Text.Get_Remaining_String()) {
-			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-				cPlayer *Player = z->Data();
-				if (Player->Is_Active() && Player->Get_Team() == Team) {
-					if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
-						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
-					}
-					else {
-						DA::Private_Color_Message(Player,LIGHTBLUE,"Host: %s",Text.Get_Remaining_String());
-						Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"yo1.wav");
-					}
-				}
-			}
-		}
-	}
-};
-
-class CMsgConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char* Get_Name() { return "cmsg"; }
-	const char* Get_Help() { return "CMSG <red>,<green>,<blue> <message> - Displays a colored message in the info box of all players. Host only."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Text(ArgumentsString,' ');
-		const char *Colors = Text.Get_String();
-		const char *Message = Text.Get_Remaining_String();
-		if (Colors && Message) {
-			unsigned int Red,Green,Blue;
-			DATokenParserClass ColorParser(Colors,',');
-			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
-				unsigned int TeamRed,TeamGreen,TeamBlue;
-				Get_Team_Color(0,&TeamRed,&TeamGreen,&TeamBlue);
-				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
-					DA::Color_Message_With_Team_Color(0,"%s",Message);
-				}
-				else {
-					Get_Team_Color(1,&TeamRed,&TeamGreen,&TeamBlue);
-					if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
-						DA::Color_Message_With_Team_Color(1,"%s",Message);
-					}
-					else {
-						DA::Color_Message(Red,Green,Blue,"%s",Message);
-					}
-				}
-			}
-		}
-	}
-};
-
-class CMsgTConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char* Get_Name() { return "cmsgt"; }
-	const char* Get_Help() { return "CMSGT <team> <red>,<green>,<blue> <message> - Displays a colored message in the info box of a team. Host only."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Text(ArgumentsString,' ');
-		int Team;
-		Text.Get_Int(Team);
-		const char *Colors = Text.Get_String();
-		const char *Message = Text.Get_Remaining_String();
-		if (Colors && Message) {
-			unsigned int Red,Green,Blue;
-			DATokenParserClass ColorParser(Colors,',');
-			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
-				unsigned int TeamRed,TeamGreen,TeamBlue;
-				Get_Team_Color(Team,&TeamRed,&TeamGreen,&TeamBlue);
-				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
-					DA::Team_Color_Message_With_Team_Color(Team,"%s",Message);
-				}
-				else {
-					DA::Team_Color_Message(Team,Red,Green,Blue,"%s",Message);
-				}
-			}
-		}
-	}
-};
-
-class CMsgPConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char* Get_Name() { return "cmsgp"; }
-	const char* Get_Help() { return "CMSGP <player> <red>,<green>,<blue> <message> - Displays a colored message in the info box of a player. Host only."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Text(ArgumentsString,' ');
-		int ID;
-		Text.Get_Int(ID);
-		const char *Colors = Text.Get_String();
-		const char *Message = Text.Get_Remaining_String();
-		if (Colors && Message) {
-			unsigned int Red,Green,Blue;
-			DATokenParserClass ColorParser(Colors,',');
-			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
-				unsigned int TeamRed,TeamGreen,TeamBlue;
-				Get_Team_Color(0,&TeamRed,&TeamGreen,&TeamBlue);
-				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
-					DA::Private_Color_Message_With_Team_Color(ID,0,"%s",Message);
-				}
-				else {
-					Get_Team_Color(1,&TeamRed,&TeamGreen,&TeamBlue);
-					if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
-						DA::Private_Color_Message_With_Team_Color(ID,1,"%s",Message);
-					}
-					else {
-						DA::Private_Color_Message(ID,Red,Green,Blue,"%s",Message);
-					}
-				}
-			}
-		}
-	}
-};
+StringClass DA::MessageNick;
+DynamicVectorClass<ConsoleFunctionClass*> DA::ConsoleFunctions;
 
 /*
 Settings/Level Loaded Order:
@@ -190,13 +62,11 @@ Any other level loaded events
 */
 
 void DA::Init() {
-	Console_Output("\nDragonade %s with Scripts %.1f\n",DA_VERSION,TT_VERSION);
-	Console_Output("Created by Black-Cell.net\n\n");
-	
 	DAEventManager::Init(); //These must be initialized in this order.
 	DASettingsManager::Init();
 
-	DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(MessagePrefix,"General","MessagePrefix","");
+	DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(MessageNick,"General","MessageNick",0);
+	DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(MessagePrefix,"General","MessagePrefix",0);
 	if (!MessagePrefix.Is_Empty()) {
 		MessagePrefix += " ";
 	}
@@ -214,22 +84,15 @@ void DA::Init() {
 	DAC4BeaconManager::Init();
 	DABuildingManager::Init();
 	DAChatCommandManager::Init();
-	DAPluginManager::Init(); //Load plugins last so they can't have a higher priority than any of the managers.
-
-	Delete_Console_Function("ppage");
-	Delete_Console_Function("tpage");
-	Delete_Console_Function("cmsg");
-	Delete_Console_Function("cmsgt");
-	Delete_Console_Function("cmsgp");
-	ConsoleFunctionList.Add(new PPageConsoleCommand);
-	ConsoleFunctionList.Add(new TPageConsoleCommand);
-	ConsoleFunctionList.Add(new CMsgConsoleCommand);
-	ConsoleFunctionList.Add(new CMsgTConsoleCommand);
-	ConsoleFunctionList.Add(new CMsgPConsoleCommand);
-	Sort_Function_List();
-	Verbose_Help_File();
+	DAPluginManager::Init();
 
 	Commands->Get_Random_Int = Get_Random_Int;
+
+	for (int i = 0;i < ConsoleFunctions.Count();i++) { //Add any console functions using the registrant to the main list.
+		Add_Console_Function(ConsoleFunctions[i]);
+	}
+	Sort_Function_List();
+	Verbose_Help_File();
 
 	HINSTANCE Handle = LoadLibrary("da.dll");
 	if (!Handle) {
@@ -240,16 +103,30 @@ void DA::Init() {
 
 void DA::Shutdown() {
 	DAPluginManager::Shutdown();
+	DAChatCommandManager::Shutdown();
 	DALogManager::Shutdown();
 	DAGameManager::Shutdown();
+	DAPlayerManager::Shutdown();
 	DASettingsManager::Shutdown();
+	DAEventManager::Shutdown();
 }
 
 void DA::Host_Message(const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
 	if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,Message)) {
-		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
+		if (MessageNick.Is_Empty()) {
+			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
+		}
+		else {
+			cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
+			Set_Object_Dirty_Bit_For_Version_Less_Than(Text,2.6f,NetworkObjectClass::BIT_CREATION,true);
+			StringClass Buffer;
+			Buffer.Format("%s: %s",MessageNick,Message);
+			Send_Message(WHITE,Buffer);
+			Console_Output("%s\n",Buffer);
+		}
+		Commands->Create_2D_WAV_Sound("public_message.wav");
 	}
 }
 
@@ -257,39 +134,53 @@ void DA::Team_Host_Message(int Team,const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
 	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-	Text->Set_Dirty_Bit_For_Team(NetworkObjectClass::BIT_CREATION,Team);
+	Set_Object_Dirty_Bit_For_Team_Version_Less_Than(Text,Team,2.6f,NetworkObjectClass::BIT_CREATION,true);
+	Send_Message_Team_With_Team_Color(Team,StringFormat("%s: %s",MessageNick.Is_Empty()?"Host":MessageNick,Message));
+	Create_2D_WAV_Sound_Team("public_message.wav",Team);
 }
 
 void DA::Private_Host_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
-	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-	Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+	if (MessageNick.Is_Empty() || Player->Get_DA_Player()->Get_Version() < 2.6f) {
+		cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
+		Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
+	}
+	else {
+		Send_Message_Player_By_ID(Player->Get_ID(),LIGHTBLUE,StringFormat("%s: %s",MessageNick,Message));
+	}
+	Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"public_message.wav");
 }
 
 void DA::Private_Host_Message(int Player,const char *Format,...) {
-	char Message[256];
-	Format_String_Prefix(Message);
-	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-	Text->Set_Object_Dirty_Bits(Player,NetworkObjectClass::BIT_CREATION);
+	cPlayer *P = Find_Player(Player);
+	if (P) {
+		char Message[256];
+		Format_String(Message);
+		Private_Host_Message(P,"%s",Message);
+	}
 }
 
 void DA::Private_Host_Message(GameObject *Player,const char *Format,...) {
-	int ID = Get_Player_ID(Player);
-	if (ID == -1) {
-		return;
+	if (Is_Player(Player)) {
+		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
+		char Message[256];
+		Format_String(Message);
+		Private_Host_Message(P,"%s",Message);
 	}
-	char Message[256];
-	Format_String_Prefix(Message);
-	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-	Text->Set_Object_Dirty_Bits(ID,NetworkObjectClass::BIT_CREATION);
 }
 
 void DA::Admin_Message(const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
 	if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,Message)) {
-		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
+		if (MessageNick.Is_Empty()) {
+			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
+		}
+		else {
+			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,false);
+			Console_Output("%s: %s\n",MessageNick,Message);
+		}
 	}
 }
 
@@ -328,13 +219,13 @@ void DA::Private_Admin_Message(GameObject *Player,const char *Format,...) {
 void DA::Player_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player->Get_ID(),-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player->Get_ID(),-1,true,false);
 }
 
 void DA::Player_Message(int Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player,-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,Player,-1,true,false);
 }
 
 void DA::Player_Message(GameObject *Player,const char *Format,...) {
@@ -344,19 +235,19 @@ void DA::Player_Message(GameObject *Player,const char *Format,...) {
 	}
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,ID,-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,ID,-1,true,false);
 }
 
 void DA::Team_Player_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player->Get_ID(),-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player->Get_ID(),-1,true,false);
 }
 
 void DA::Team_Player_Message(int Player,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player,-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,Player,-1,true,false);
 }
 
 void DA::Team_Player_Message(GameObject *Player,const char *Format,...) {
@@ -366,7 +257,7 @@ void DA::Team_Player_Message(GameObject *Player,const char *Format,...) {
 	}
 	char Message[256];
 	Format_String(Message);
-	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,ID,-1,true,true);
+	Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_TEAM,false,ID,-1,true,false);
 }
 
 void DA::Page_Team(int Team,const char *Format,...) {
@@ -399,39 +290,26 @@ void DA::Page_Player(cPlayer *Player,const char *Format,...) {
 		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 	}
 	else {
-		//Private_Color_Message(ID,LIGHTBLUE,"Host: %s",Message);
-		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Message));
+		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("%s: %s",MessageNick.Is_Empty()?"Host":MessageNick,Message));
 		Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 	}
 }
 
 void DA::Page_Player(int Player,const char *Format,...) {
-	char Message[256];
-	Format_String_Prefix(Message);
-	if (Get_Client_Version(Player) < 2.6f) {
-		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,Player,true,true);
-	}
-	else {
-		//Private_Color_Message(Player,LIGHTBLUE,"Host: %s",Message);
-		Send_Message_Player_By_ID(Player,LIGHTBLUE,StringFormat("Host: %s",Message));
-		Create_2D_WAV_Sound_Player_By_ID(Player,"yo1.wav");
+	cPlayer *P = Find_Player(Player);
+	if (P) {
+		char Message[256];
+		Format_String(Message);
+		Page_Player(P,"%s",Message);
 	}
 }
 
 void DA::Page_Player(GameObject *Player,const char *Format,...) {
-	int ID = Get_Player_ID(Player);
-	if (ID == -1) {
-		return;
-	}
-	char Message[256];
-	Format_String_Prefix(Message);
-	if (((SoldierGameObj*)Player)->Get_Player()->Get_DA_Player()->Get_Version() < 2.6f) {
-		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
-	}
-	else {
-		//Private_Color_Message(ID,LIGHTBLUE,"Host: %s",Message);
-		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Message));
-		Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
+	if (Is_Player(Player)) {
+		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
+		char Message[256];
+		Format_String(Message);
+		Page_Player(P,"%s",Message);
 	}
 }
 
@@ -562,34 +440,20 @@ void DA::Private_Color_Message(cPlayer *Player,unsigned int Red,unsigned int Gre
 }
 
 void DA::Private_Color_Message(int Player,unsigned int Red,unsigned int Green,unsigned int Blue,const char *Format,...) {
-	char Message[256];
-	Format_String_Color(Message);
-	if (Get_Client_Version(Player) < 2.6f) {
-		cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message,Player),-1,false,false);
-		ChatEvent->Set_Object_Dirty_Bits(Player,NetworkObjectClass::BIT_CREATION);
-		Update_Network_Object(ChatEvent);
-		Restore_Send_Message_Fake();
-	}
-	else {
-		Send_Message_Player_By_ID(Player,Red,Green,Blue,Message);
+	cPlayer *P = Find_Player(Player);
+	if (P) {
+		char Message[256];
+		Format_String_Color(Message);
+		Private_Color_Message(P,Red,Green,Blue,"%s",Message);
 	}
 }
 
 void DA::Private_Color_Message(GameObject *Player,unsigned int Red,unsigned int Green,unsigned int Blue,const char *Format,...) {
-	int ID = Get_Player_ID(Player);
-	if (ID == -1) {
-		return;
-	}
-	char Message[256];
-	Format_String_Color(Message);
-	if (((SoldierGameObj*)Player)->Get_Player()->Get_DA_Player()->Get_Version() < 2.6f) {
-		cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message,ID),-1,false,false);
-		ChatEvent->Set_Object_Dirty_Bits(ID,NetworkObjectClass::BIT_CREATION);
-		Update_Network_Object(ChatEvent);
-		Restore_Send_Message_Fake();
-	}
-	else {
-		Send_Message_Player_By_ID(ID,Red,Green,Blue,Message);
+	if (Is_Player(Player)) {
+		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
+		char Message[256];
+		Format_String_Color(Message);
+		Private_Color_Message(P,Red,Green,Blue,"%s",Message);
 	}
 }
 
@@ -625,66 +489,20 @@ void DA::Private_Color_Message_With_Team_Color(cPlayer *Player,int Team,const ch
 }
 
 void DA::Private_Color_Message_With_Team_Color(int Player,int Team,const char *Format,...) {
-	char Message[256];
-	Format_String_Color(Message);
-	if (Team != 0 && Team != 1) {
-		Private_Color_Message(Player,WHITE,"%s",Message);
-	}
-	else {
-		unsigned int Red = 0,Green = 0,Blue = 0;
-		Get_Team_Color(Team,&Red,&Green,&Blue);
-		if (Get_Client_Version(Player) < 2.6f) {
-			cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,0,-1,false,false);
-			int Sender = Setup_Send_Message_Team_Fake(Message,Team,Player);
-			if (Sender) {
-				ChatEvent->senderId = Sender;
-				ChatEvent->type = TEXT_MESSAGE_TEAM;
-			}
-			else {
-				ChatEvent->senderId = Setup_Send_Message_Fake(Message,Player);
-				ChatEvent->type = TEXT_MESSAGE_PUBLIC;
-			}
-			ChatEvent->Set_Object_Dirty_Bits(Player,NetworkObjectClass::BIT_CREATION);
-			Update_Network_Object(ChatEvent);
-			Restore_Send_Message_Fake();
-		}
-		else {
-			Send_Message_Player_By_ID(Player,Red,Green,Blue,Message);
-		}
+	cPlayer *P = Find_Player(Player);
+	if (P) {
+		char Message[256];
+		Format_String_Color(Message);
+		Private_Color_Message_With_Team_Color(P,Team,"%s",Message);
 	}
 }
 
 void DA::Private_Color_Message_With_Team_Color(GameObject *Player,int Team,const char *Format,...) {
-	int ID = Get_Player_ID(Player);
-	if (ID == -1) {
-		return;
-	}
-	char Message[256];
-	Format_String_Color(Message);
-	if (Team != 0 && Team != 1) {
-		Private_Color_Message(ID,WHITE,"%s",Message);
-	}
-	else {
-		unsigned int Red = 0,Green = 0,Blue = 0;
-		Get_Team_Color(Team,&Red,&Green,&Blue);
-		if (((SoldierGameObj*)Player)->Get_Player()->Get_DA_Player()->Get_Version() < 2.6f) {
-			cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,0,-1,false,false);
-			int Sender = Setup_Send_Message_Team_Fake(Message,Team,ID);
-			if (Sender) {
-				ChatEvent->senderId = Sender;
-				ChatEvent->type = TEXT_MESSAGE_TEAM;
-			}
-			else {
-				ChatEvent->senderId = Setup_Send_Message_Fake(Message,ID);	
-				ChatEvent->type = TEXT_MESSAGE_PUBLIC;
-			}
-			ChatEvent->Set_Object_Dirty_Bits(ID,NetworkObjectClass::BIT_CREATION);
-			Update_Network_Object(ChatEvent);
-			Restore_Send_Message_Fake();
-		}
-		else {
-			Send_Message_Player_By_ID(ID,Red,Green,Blue,Message);
-		}
+	if (Is_Player(Player)) {
+		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
+		char Message[256];
+		Format_String_Color(Message);
+		Private_Color_Message_With_Team_Color(P,Team,"%s",Message);
 	}
 }
 
@@ -741,4 +559,208 @@ int Get_Random_Int(int Min,int Max) {
 	return (int)((double)rand() / (RAND_MAX + 1) * (Max - Min) + Min);
 }
 
+class DAMsgConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "message"; }
+	const char *Get_Alias() { return "msg"; }
+	const char *Get_Help() { return "MESSAGE <message> - Sends a chat message to all players."; }
+	void Activate(const char *ArgumentsString) {
+		if (ArgumentsString && strlen(ArgumentsString)) {
+			if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,ArgumentsString)) {
+				if (DA::Get_Message_Nick().Is_Empty()) {
+					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
+				}
+				else {
+					cScTextObj *Text = Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
+					Set_Object_Dirty_Bit_For_Version_Less_Than(Text,2.6f,NetworkObjectClass::BIT_CREATION,true);
+					StringClass Buffer;
+					Buffer.Format("%s: %s",DA::Get_Message_Nick(),ArgumentsString);
+					Send_Message(WHITE,Buffer);
+					Console_Output("%s\n",Buffer);
+				}
+				Commands->Create_2D_WAV_Sound("public_message.wav");
+			}
+		}
+	}
+};
+Register_Console_Function(DAMsgConsoleFunctionClass);
 
+class DATHMsgConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "teammessage"; }
+	const char *Get_Alias() { return "thmsg"; }
+	const char *Get_Help() { return "TEAMMESSAGE <team> <message> - Sends a chat message to all players on the specified team."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int Team;
+		if (Parser.Get_Int(Team) && Parser.Get_Remaining_String() && (Team == 0 || Team == 1)) {
+			if (DAEventManager::Host_Chat_Event(Team,TEXT_MESSAGE_TEAM,Parser.Get_Remaining_String())) {
+				cScTextObj *Text = Send_Client_Text(Parser.Get_Remaining_String(),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
+				Set_Object_Dirty_Bit_For_Team_Version_Less_Than(Text,Team,2.6f,NetworkObjectClass::BIT_CREATION,true);
+				Send_Message_Team_With_Team_Color(Team,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Parser.Get_Remaining_String()));
+				Create_2D_WAV_Sound_Team("public_message.wav",Team);
+			}
+		}
+	}
+};
+Register_Console_Function(DATHMsgConsoleFunctionClass);
+
+class DAAMsgConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "admin_message"; }
+	const char *Get_Alias() { return "amsg"; }
+	const char *Get_Help() { return "ADMIN_MESSAGE <message> - Sends a popup message to all players."; }
+	void Activate(const char *ArgumentsString) {
+		if (ArgumentsString && strlen(ArgumentsString)) {
+			if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,ArgumentsString)) {
+				if (DA::Get_Message_Nick().Is_Empty()) {
+					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
+				}
+				else {
+					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,false);
+					Console_Output("%s: %s\n",DA::Get_Message_Nick(),ArgumentsString);
+				}
+			}
+		}
+	}
+};
+Register_Console_Function(DAAMsgConsoleFunctionClass);
+
+class DAPPageConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "ppage"; }
+	const char* Get_Help() { return "PPAGE <playerid> <message> - Sends a page to a specific player."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString,' ');
+		int ID = 0;
+		if (Text.Get_Int(ID) && Text.Get_Remaining_String()) {
+			if (Get_Client_Version(ID) < 2.6f) {
+				Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
+			}
+			else {
+				Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Text.Get_Remaining_String()));
+				Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
+			}
+		}
+	}
+};
+Register_Console_Function(DAPPageConsoleFunctionClass);
+
+class DATPageConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "tpage"; }
+	const char* Get_Help() { return "TPAGE <team> <message> - Sends a page to every player on the given team. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString,' ');
+		int Team = 0;
+		if (Text.Get_Int(Team) && Text.Get_Remaining_String()) {
+			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+				cPlayer *Player = z->Data();
+				if (Player->Is_Active() && Player->Get_Team() == Team) {
+					if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
+						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
+					}
+					else {
+						DA::Private_Color_Message(Player,LIGHTBLUE,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Text.Get_Remaining_String()));
+						Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"yo1.wav");
+					}
+				}
+			}
+		}
+	}
+};
+Register_Console_Function(DATPageConsoleFunctionClass);
+
+class DACMsgConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "cmsg"; }
+	const char* Get_Help() { return "CMSG <red>,<green>,<blue> <message> - Displays a colored message in the info box of all players. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString,' ');
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red,Green,Blue;
+			DATokenParserClass ColorParser(Colors,',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				unsigned int TeamRed,TeamGreen,TeamBlue;
+				Get_Team_Color(0,&TeamRed,&TeamGreen,&TeamBlue);
+				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
+					DA::Color_Message_With_Team_Color(0,"%s",Message);
+				}
+				else {
+					Get_Team_Color(1,&TeamRed,&TeamGreen,&TeamBlue);
+					if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
+						DA::Color_Message_With_Team_Color(1,"%s",Message);
+					}
+					else {
+						DA::Color_Message(Red,Green,Blue,"%s",Message);
+					}
+				}
+			}
+		}
+	}
+};
+Register_Console_Function(DACMsgConsoleFunctionClass);
+
+class DACMsgTConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "cmsgt"; }
+	const char* Get_Help() { return "CMSGT <team> <red>,<green>,<blue> <message> - Displays a colored message in the info box of a team. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString,' ');
+		int Team;
+		Text.Get_Int(Team);
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red,Green,Blue;
+			DATokenParserClass ColorParser(Colors,',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				unsigned int TeamRed,TeamGreen,TeamBlue;
+				Get_Team_Color(Team,&TeamRed,&TeamGreen,&TeamBlue);
+				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
+					DA::Team_Color_Message_With_Team_Color(Team,"%s",Message);
+				}
+				else {
+					DA::Team_Color_Message(Team,Red,Green,Blue,"%s",Message);
+				}
+			}
+		}
+	}
+};
+Register_Console_Function(DACMsgTConsoleFunctionClass);
+
+class DACMsgPConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char* Get_Name() { return "cmsgp"; }
+	const char* Get_Help() { return "CMSGP <player> <red>,<green>,<blue> <message> - Displays a colored message in the info box of a player. Host only."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Text(ArgumentsString,' ');
+		int ID;
+		Text.Get_Int(ID);
+		const char *Colors = Text.Get_String();
+		const char *Message = Text.Get_Remaining_String();
+		if (Colors && Message) {
+			unsigned int Red,Green,Blue;
+			DATokenParserClass ColorParser(Colors,',');
+			if (ColorParser.Get_UInt(Red) && ColorParser.Get_UInt(Green) && ColorParser.Get_UInt(Blue)) {
+				unsigned int TeamRed,TeamGreen,TeamBlue;
+				Get_Team_Color(0,&TeamRed,&TeamGreen,&TeamBlue);
+				if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
+					DA::Private_Color_Message_With_Team_Color(ID,0,"%s",Message);
+				}
+				else {
+					Get_Team_Color(1,&TeamRed,&TeamGreen,&TeamBlue);
+					if (Red == TeamRed && Green == TeamGreen && Blue == TeamBlue) {
+						DA::Private_Color_Message_With_Team_Color(ID,1,"%s",Message);
+					}
+					else {
+						DA::Private_Color_Message(ID,Red,Green,Blue,"%s",Message);
+					}
+				}
+			}
+		}
+	}
+};
+Register_Console_Function(DACMsgPConsoleFunctionClass);

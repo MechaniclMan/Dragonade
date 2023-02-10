@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Plugin Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,9 +28,11 @@ void DAPluginManager::Init() {
 	DASSGMPluginManager::Init();
 	INISection *Section = DASettingsManager::Get_Main_Settings()->Get_INI()->Get_Section("Plugins");
 	if (Section) {
+		bool NewLine = false;
 		for (int i = 0;i < Section->Count();i++) {
 			INIEntry *Entry = Section->Peek_Entry(i);
 			if (!_stricmp(Entry->Value,"1") || !_stricmp(Entry ->Value,"true")) {
+				NewLine = true;
 				HINSTANCE Handle = LoadLibrary(Entry->Entry);
 				if (Handle) {
 					PluginInit Init = (PluginInit)GetProcAddress(Handle,"Plugin_Init");
@@ -47,9 +49,9 @@ void DAPluginManager::Init() {
 				}
 			}
 		}
-	}
-	if (Plugins.Count()) {
-		Console_Output("\n");
+		if (NewLine) {
+			Console_Output("\n");
+		}
 	}
 }
 

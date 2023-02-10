@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Ownership Game Feature
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -50,12 +50,12 @@ public:
 	inline VehicleGameObj *Get_Vehicle() {
 		return (VehicleGameObj*)Get_Owner();
 	}
-	inline cPlayer *Get_Player() {
-		return Player;
+	inline cPlayer *Get_Vehicle_Owner() {
+		return VehicleOwner;
 	}
 	inline int Get_Team() {
-		if (Player) {
-			return Player->Get_Team();
+		if (VehicleOwner) {
+			return VehicleOwner->Get_Team();
 		}
 		return INT_MAX;
 	}
@@ -64,13 +64,13 @@ public:
 private:
 	void Update_Icons();
 	void Set_State(DAVehicleOwnershipState::State state);
-	virtual void Vehicle_Enter(SoldierGameObj *Soldier,int Seat);
-	virtual bool Vehicle_Entry_Request(SoldierGameObj *Soldier,int &Seat);
+	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
+	virtual bool Vehicle_Entry_Request(cPlayer *Player,int &Seat);
 	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
 	virtual void Destroyed(GameObject *obj);
 	virtual void Timer_Expired(GameObject *obj,int Number);
 	
-	cPlayer *Player;
+	cPlayer *VehicleOwner;
 	DAVehicleOwnershipState::State State;
 	ReferencerClass Icon[2];
 };
@@ -84,10 +84,10 @@ public:
 	DA_API bool Lock_Vehicle(cPlayer *Player);
 	DA_API bool Unlock_Vehicle(VehicleGameObj *Vehicle);
 	DA_API bool Unlock_Vehicle(cPlayer *Player);
-	cPlayer *Get_Owner(GameObject *Vehicle) {
+	cPlayer *Get_Vehicle_Owner(GameObject *Vehicle) {
 		DAVehicleOwnershipObserverClass *Data = Get_Vehicle_Data(Vehicle);
 		if (Data) {
-			return Data->Get_Player();
+			return Data->Get_Vehicle_Owner();
 		}
 		return 0;
 	}
@@ -119,7 +119,7 @@ private:
 	bool Free_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	bool SellVeh_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 
-	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat);
+	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Team_Change_Event(cPlayer *Player);
 	virtual void Object_Destroyed_Event(GameObject *obj);

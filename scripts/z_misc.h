@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2012 UltraAOW.COM by zunnie
+	Copyright 2013 UltraAOW.COM by zunnie
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under

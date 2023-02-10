@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Singleplayer Vehicle Spawner Game Mode Framework
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,21 +18,9 @@
 #include "da.h"
 #include "da_spawnsystem.h"
 #include "da_vehiclespawn.h"
+#include "da_vehicle.h"
 
 DA_API DAVehicleSpawnManagerClass *DASingleton<DAVehicleSpawnManagerClass>::Instance = 0;
-
-void DAVehicleSpawnManagerVehicleObserverClass::Init() {
-	Start_Timer(1,14.0f);
-}
-
-bool DAVehicleSpawnManagerVehicleObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
-	return false;
-}
-
-void DAVehicleSpawnManagerVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
-	Fix_Stuck_Objects(((PhysicalGameObj*)obj)->Get_Position(),10.0f);
-	Set_Delete_Pending();
-}
 
 void DAVehicleSpawnPointClass::Init(const INIClass *INI,const StringClass &Header) {
 	Group = Header;
@@ -104,13 +92,8 @@ void DAVehicleSpawnPointClass::Set_Team(int team) {
 }
 
 void DAVehicleAirDropPointClass::Spawn_Vehicle(const VehicleGameObjDef *Def,SoldierGameObj *Owner) {
-	VehicleGameObj *Vehicle = (VehicleGameObj*)Create_Object(Def,Position);
-	GameObject *Cin = Commands->Create_Object("Invisible_Object",Position);
-	Commands->Set_Facing(Cin,Facing);
-	Commands->Attach_Script(Cin,"Test_Cinematic",StringClass::getFormattedString("%s_Vehicle_Purchase.txt",Team?"GDI":"Nod")); //Create the cinematic	
-	Commands->Send_Custom_Event(Vehicle,Cin,10004,Vehicle->Get_ID(),0); //Insert vehicle into cinematic at slot 4
-	Vehicle->Lock_Vehicle(Owner,30.0f);
-	Vehicle->Add_Observer(new DAVehicleSpawnManagerVehicleObserverClass);
+	VehicleGameObj *Vehicle = DAVehicleManager::Air_Drop_Vehicle(Team,Def,Position,Facing);
+	Vehicle->Lock_Vehicle(Owner,45.0f);
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
 		DASpawnManager->Set_Next_Spawn_Location(Owner,Get_Group());
 	}
@@ -139,8 +122,8 @@ void DAVehicleSpawnManagerClass::Init(const INIClass *INI) {
 	Register_Event(DAEvent::REQUESTVEHICLE);
 }
 
-bool DAVehicleSpawnManagerClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,SoldierGameObj *Owner,float Delay) {
-	Spawn_Vehicle(Factory->Get_Player_Type(),Vehicle,Owner);
+bool DAVehicleSpawnManagerClass::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay) {
+	Spawn_Vehicle(Factory->Get_Player_Type(),Vehicle,Player->Get_GameObj());
 	return false;
 }
 

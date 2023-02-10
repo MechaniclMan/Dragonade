@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Chat Command Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,7 @@
 
 #include "da_event.h"
 #include "da_token.h"
+#include "engine_ttdef.h"
 
 class DAChatCommandClass abstract {
 public:
@@ -24,6 +25,7 @@ public:
 	DAChatType::Type ChatType;
 	int Parameters;
 	virtual bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) = 0;
+	virtual ~DAChatCommandClass() { }
 };
 
 struct DAEventChatCommandStruct {
@@ -39,6 +41,7 @@ class DAKeyHookClass abstract {
 public:
 	DynamicVectorClass<unsigned int> Triggers;
 	virtual void Activate(cPlayer *Player) = 0;
+	virtual ~DAKeyHookClass() { }
 };
 
 struct DAEventKeyHookStruct {
@@ -50,6 +53,7 @@ struct DAEventKeyHookStruct {
 class DA_API DAChatCommandManager : private DAEventClass {
 public:
 	static void Init();
+	static void Shutdown();
 	virtual bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
 	virtual bool Key_Hook_Event(cPlayer *Player,const StringClass &Key);
 	template<class T> static void Register_Chat_Command(const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL) {
@@ -117,6 +121,9 @@ public:
 		DAChatCommandManager::Register_Chat_Command<T>(Triggers,Parameters,AccessLevel,ChatType);
 	}
 };
+#define Register_Simple_Chat_Command(ClassName,Triggers) DAChatCommandRegistrant<ClassName> ClassName##Registrant(Triggers); //This has to be named as such so it doesn't break the various functions named Register_Chat_Command.
+#define Register_Full_Chat_Command(ClassName,Triggers,Parameters,AccessLevel,ChatType) DAChatCommandRegistrant<ClassName> ClassName##Registrant(Triggers,Parameters,AccessLevel,ChatType);
+
 
 template <class T> class DAKeyHookRegistrant {
 public:
@@ -124,5 +131,6 @@ public:
 		DAChatCommandManager::Register_Key_Hook<T>(Triggers);
 	}
 };
+#define Register_Simple_Key_Hook(ClassName,Triggers) DAKeyHookRegistrant<ClassName> ClassName##Registrant(Triggers); //This has to be named as such so it doesn't break the various functions named Register_Key_Hook.
 
 #endif

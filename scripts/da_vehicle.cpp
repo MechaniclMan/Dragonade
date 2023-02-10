@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,61 +28,96 @@
 #include "RefineryGameObj.h"
 #include "GameObjManager.h"
 
-DAVehicleManager DAVehicleManager::Instance;
 static const char *ObserverName = "DAVehicleObserverClass";
 
 void DAVehicleObserverClass::Init() {
-	LastDriver = 0;
-	LastPlayer = 0;
-	LastDriverExitTime = 0;
+	VehicleOwner = 0;
 	LastExitTime = 0;
-	Team = Get_Vehicle()->Get_Definition().Get_Default_Player_Type();
-	GiveSteal = true;
+	LastTheftTime = 0;
+	Team = -2;
+	Start_Timer(1,0.0f);
 }
 
 void DAVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
-	if (Number == 1) { //This is done in a timer instead of the Vehicle_Enter event to make sure that everything has a chance to check for vehicle stealing before the new team is set.
+	if (Team == -2) {
 		Team = Get_Vehicle()->Get_Player_Type();
 	}
-	else {
-		GiveSteal = true;
+	if (!VehicleOwner && Get_Vehicle()->Get_Lock_Owner()) {
+		VehicleOwner = ((SoldierGameObj*)Get_Vehicle()->Get_Lock_Owner())->Get_Player();
 	}
 }
 
-void DAVehicleObserverClass::Vehicle_Enter(SoldierGameObj *Soldier,int Seat) {
-	if (GiveSteal && Team != -2 && Team != Soldier->Get_Player_Type()) { //Reward players for stealing vehicles. 20 second timer to prevent exploits.
-		Soldier->Get_Player()->Increment_Score(Get_Vehicle()->Get_Defense_Object()->Get_Death_Points());
-		GiveSteal = false;
-		Start_Timer(2,20.0f);
-	}
-	Start_Timer(1,0.1f);
+void DAVehicleObserverClass::Vehicle_Exit(cPlayer *Player,int Seat) {
+	Reset_Last_Exit_Time();
 }
 
-void DAVehicleObserverClass::Vehicle_Exit(SoldierGameObj *Soldier,int Seat) {
-	if (Seat == 0) {
-		LastDriver = Soldier->Get_Player();
-		LastDriverExitTime = The_Game()->Get_Game_Duration_S();
-	}
-	LastPlayer = Soldier->Get_Player();
+cPlayer *DAVehicleObserverClass::Get_Vehicle_Owner() {
+	return VehicleOwner;
+}
+
+void DAVehicleObserverClass::Set_Vehicle_Owner(cPlayer *Player) {
+	VehicleOwner = Player;
+}
+
+int DAVehicleObserverClass::Get_Team() {
+	return Team;
+}
+
+void DAVehicleObserverClass::Set_Team(int team) {
+	Team = team;
+}
+
+void DAVehicleObserverClass::Reset_Last_Exit_Time() {
 	LastExitTime = The_Game()->Get_Game_Duration_S();
+}
+
+unsigned int DAVehicleObserverClass::Get_Time_Since_Last_Exit() {
+	return The_Game()->Get_Game_Duration_S()-LastExitTime;
+}
+
+void DAVehicleObserverClass::Reset_Last_Theft_Time() {
+	LastTheftTime = The_Game()->Get_Game_Duration_S();
+}
+
+unsigned int DAVehicleObserverClass::Get_Time_Since_Last_Theft() {
+	return The_Game()->Get_Game_Duration_S()-LastTheftTime;
 }
 
 const char *DAVehicleObserverClass::Get_Name() {
 	return ObserverName;
 }
 
+void DAAirDroppedVehicleObserverClass::Init() {
+	Start_Timer(1,15.0f);
+	((VehicleGameObj*)Get_Owner())->Set_Is_Scripts_Visible(false);
+}
+
+bool DAAirDroppedVehicleObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
+	return false;
+}
+
+void DAAirDroppedVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
+	((VehicleGameObj*)Get_Owner())->Set_Is_Scripts_Visible(true);
+	Fix_Stuck_Objects(((PhysicalGameObj*)Get_Owner())->Get_Position(),5.0f);
+	Fix_Stuck_Objects(((PhysicalGameObj*)Get_Owner())->Get_Position(),10.0f);
+	Set_Delete_Pending();
+}
+
 void DAVehicleManager::Init() {
+	static DAVehicleManager Instance;
+
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::VEHICLE,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::VEHICLE | DAObjectEvent::BUILDING,INT_MAX);
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEPURCHASEREQUEST,INT_MAX);
+	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MIN); //Theft stuff needs to trigger after all other vehicle enter events.
 
 	static DefaultPurchaseEvent Instance2;
 	Instance2.Register_Event(DAEvent::VEHICLEPURCHASEREQUEST,INT_MIN);
 }
 
-bool DAVehicleManager::Check_Limit_For_Player(SoldierGameObj *Player) {
-	return !((unsigned int)Get_Ground_Vehicle_Count(Player->Get_Player_Type()) >= Get_Vehicle_Limit());
+bool DAVehicleManager::Check_Limit_For_Player(cPlayer *Player) {
+	return !((unsigned int)Get_Ground_Vehicle_Count(Player->Get_Team()) >= Get_Vehicle_Limit());
 }
 
 DAVehicleObserverClass *DAVehicleManager::Get_Vehicle_Data(GameObject *obj) {
@@ -95,21 +130,55 @@ DAVehicleObserverClass *DAVehicleManager::Get_Vehicle_Data(GameObject *obj) {
 	return 0;
 }
 
-void DAVehicleManager::Disable_Flip_Kill() {
-	Instance.Register_Event(DAEvent::VEHICLEFLIP);
+void DAVehicleManager::Air_Drop_Vehicle(int Team,VehicleGameObj *Vehicle,const Vector3 &Position,float Facing) {
+	Vehicle->Set_Player_Type(Team);
+	GameObject *Cin = Create_Object("Invisible_Object",Position);
+	Commands->Set_Facing(Cin,Facing);
+	Commands->Attach_Script(Cin,"Test_Cinematic",StringFormat("%s_Air_Drop.txt",Team?"GDI":"Nod")); //Create the cinematic	
+	Commands->Send_Custom_Event(Vehicle,Cin,10004,Vehicle->Get_ID(),0); //Insert vehicle into cinematic at slot 4
+	PhysicalGameObj *Flare = Create_Object("SignalFlare_Gold_Phys3",Position);
+	if (Flare) {
+		Flare->Peek_Physical_Object()->Set_Collision_Group(TERRAIN_ONLY_COLLISION_GROUP);
+		Commands->Send_Custom_Event(Flare,Cin,10008,Flare->Get_ID(),0); //Insert flare into cinematic at slot 8
+	}
+	Vehicle->Add_Observer(new DAAirDroppedVehicleObserverClass);
 }
 
-void DAVehicleManager::Enable_Flip_Kill() {
-	Instance.Unregister_Event(DAEvent::VEHICLEFLIP);
+VehicleGameObj *DAVehicleManager::Air_Drop_Vehicle(int Team,const VehicleGameObjDef *Vehicle,const Vector3 &Position,float Facing) {
+	VehicleGameObj *Veh = (VehicleGameObj*)Create_Object(Vehicle,Vector3(0,0,0));
+	if (Veh) {
+		Air_Drop_Vehicle(Team,Veh,Position,Facing);
+		return Veh;
+	}
+	return 0;
+}
+
+VehicleGameObj *DAVehicleManager::Air_Drop_Vehicle(int Team,unsigned int Vehicle,const Vector3 &Position,float Facing) {
+	VehicleGameObj *Veh = (VehicleGameObj*)Create_Object(Vehicle,Vector3(0,0,0));
+	if (Veh) {
+		Air_Drop_Vehicle(Team,Veh,Position,Facing);
+		return Veh;
+	}
+	return 0;
+}
+
+VehicleGameObj *DAVehicleManager::Air_Drop_Vehicle(int Team,const char *Vehicle,const Vector3 &Position,float Facing) {
+	VehicleGameObj *Veh = (VehicleGameObj*)Create_Object(Vehicle,Vector3(0,0,0));
+	if (Veh) {
+		Air_Drop_Vehicle(Team,Veh,Position,Facing);
+		return Veh;
+	}
+	return 0;
 }
 
 void DAVehicleManager::Settings_Loaded_Event() {
+	EnableTheftMessage = DASettingsManager::Get_Bool("EnableVehicleTheftMessage",true);
 	Set_Vehicle_Limit((unsigned int)DASettingsManager::Get_Int("VehicleLimit",8));
 	if (DASettingsManager::Get_Bool("DisableVehicleFlipKill",false)) {
-		Disable_Flip_Kill();
+		Register_Event(DAEvent::VEHICLEFLIP);
 	}
 	else {
-		Enable_Flip_Kill();
+		Unregister_Event(DAEvent::VEHICLEFLIP);
 	}
 }
 
@@ -124,7 +193,7 @@ void DAVehicleManager::Object_Created_Event(GameObject *obj) {
 					obj->Set_Delete_Pending();
 				}
 				else {
-					((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false); //Fix defenses shooting at harvester on some maps.
+					((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false); //Fix defenses shooting at harvesters on some maps.
 				}
 			}
 		}
@@ -132,7 +201,7 @@ void DAVehicleManager::Object_Created_Event(GameObject *obj) {
 }
 
 //Limit checking is done here for per-player and per-team limits(NYI)
-int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
+int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
 	AirFactoryGameObj *AF = (AirFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_HELIPAD);
 	NavalFactoryGameObj *NF = (NavalFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_NAVAL_FACTORY);
@@ -162,7 +231,7 @@ int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,S
 		if (!VF->Is_Available()) {
 			return 3;
 		}
-		else if (!Check_Limit_For_Player(Purchaser)) {
+		else if (!Check_Limit_For_Player(Player)) {
 			return 4;
 		}
 		else {
@@ -174,31 +243,31 @@ int DAVehicleManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,S
 
 //Default vehicle purchase handler.
 //Seperate from the above so the vehicle purchase event can be overloaded.
-int DAVehicleManager::DefaultPurchaseEvent::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
+int DAVehicleManager::DefaultPurchaseEvent::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
 	VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
 	AirFactoryGameObj *AF = (AirFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_HELIPAD);
 	NavalFactoryGameObj *NF = (NavalFactoryGameObj*)Base->Find_Building(BuildingConstants::TYPE_NAVAL_FACTORY);
 	if (AF && Item->Get_Type() == VEHICLE_TYPE_FLYING) { //Flying vehicle
-		if (Purchaser->Get_Player()->Purchase_Item((int)Cost)) {
-			AF->Create_Vehicle(Item->Get_ID(),Purchaser);
+		if (Player->Purchase_Item((int)Cost)) {
+			AF->Create_Vehicle(Item->Get_ID(),Player->Get_GameObj());
 			return 0;
 		}
 		return 2;
 	}
 	else if (NF && Item->Get_Type() == VEHICLE_TYPE_BOAT || Item->Get_Type() == VEHICLE_TYPE_SUB) { //Naval vehicle
-		if (Purchaser->Get_Player()->Purchase_Item((int)Cost)) {
-			NF->Create_Vehicle(Item->Get_ID(),Purchaser);
+		if (Player->Purchase_Item((int)Cost)) {
+			NF->Create_Vehicle(Item->Get_ID(),Player->Get_GameObj());
 			return 0;
 		}
 		return 2;
 	}
 	else if (VF) { //Ground vehicle
-		if (Purchaser->Get_Player()->Purchase_Item((int)Cost)) {
+		if (Player->Purchase_Item((int)Cost)) {
 			float Delay = 5.0f;
 			if (!Base->Is_Base_Powered()) {
 				Delay *= Get_Build_Time_Multiplier(Base->Get_Player_Type());
 			}
-			VF->Request_Vehicle(Item->Get_ID(),Delay,Purchaser);
+			VF->Request_Vehicle(Item->Get_ID(),Delay,Player->Get_GameObj());
 			return 0;
 		}
 		return 2;
@@ -210,16 +279,20 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 	if (Victim->As_VehicleGameObj()) {
 		StringClass Message;
 		if (!((VehicleGameObj*)Victim)->Are_Transitions_Enabled() || !((VehicleGameObj*)Victim)->Get_Definition().Get_Seat_Count()) { //Harvesters/Defenses/AI Vehicles
-			if (Victim->Get_Player_Type() == 0 || Victim->Get_Player_Type() == 1) {
+			if (Victim->Get_Player_Type() != -2) {
 				StringClass VictimName;
+				StringClass Header;
 				if (Is_Harvester_Preset(Victim)) {
 					VictimName = "the " + DATranslationManager::Translate_With_Team_Name(Victim);
+					Header = "_HARVKILL";
 				}
 				else if (((VehicleGameObj*)Victim)->Is_Turret()) {
 					VictimName = a_or_an_Prepend(DATranslationManager::Translate_With_Team_Name(Victim));
+					Header = "_BUILDINGKILL";
 				}
 				else {
 					VictimName = a_or_an_Prepend(DATranslationManager::Translate(Victim));
+					Header = "_BOTKILL";
 				}
 				if (!Killer) { //No killer
 					VictimName[0] = (char)toupper(VictimName[0]);
@@ -255,18 +328,18 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 						}
 					}
 				}
-				DALogManager::Write_Log("_VEHKILL","%s",Message);
+				DALogManager::Write_Log(Header,"%s",Message);
 			}
 		}
 		else {
 			DAVehicleObserverClass *Data = Get_Vehicle_Data(Victim);
-			if (!Killer || (Data->Get_Last_Driver()?Data->Get_Last_Driver()->Get_GameObj():0) != Killer || DADamageLog::Get_Percent_Other_Team_Damage(Victim,Data->Get_Team())) {
+			if (!Killer || (Data->Get_Vehicle_Owner()?Data->Get_Vehicle_Owner()->Get_GameObj():0) != Killer || DADamageLog::Get_Percent_Other_Team_Damage(Victim,Data->Get_Team())) {
 				//If this vehicle was killed entirely by its own team then don't display a kill message. This is done so the other team can't tell you're massing by the kill messages.
 				cPlayer *Owner = 0;
 				if (((VehicleGameObj*)Victim)->Get_Occupant(0)) {
 					Owner = ((VehicleGameObj*)Victim)->Get_Occupant(0)->Get_Player();
 				}
-				else if (cPlayer *Player = Get_Last_Driver(Victim)) {
+				else if (cPlayer *Player = Get_Vehicle_Owner(Victim)) {
 					if (Player->Is_Active()) {
 						Owner = Player;
 					}
@@ -351,3 +424,36 @@ bool DAVehicleManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 	return false;
 }
 
+void DAVehicleManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	DAVehicleObserverClass *VehicleData = Get_Vehicle_Data(Vehicle);
+	if (VehicleData->Get_Team() != -2 && VehicleData->Get_Team() != Player->Get_Team()) {
+		if (EnableTheftMessage) {
+			if (VehicleData->Get_Vehicle_Owner() && VehicleData->Get_Vehicle_Owner()->Is_Active()) {
+				DA::Color_Message_With_Team_Color(Player->Get_Team(),"%ls has stolen %ls %s!",Player->Get_Name(),Make_Possessive(VehicleData->Get_Vehicle_Owner()->Get_Name()),DATranslationManager::Translate(Vehicle));
+			}
+			else {
+				DA::Color_Message_With_Team_Color(Player->Get_Team(),"%ls has stolen %s!",Player->Get_Name(),a_or_an_Prepend(DATranslationManager::Translate(Vehicle)));
+			}
+		}
+		if (VehicleData->Get_Time_Since_Last_Theft() >= 10) { //Reward players for stealing vehicles. 10 second timer to prevent exploits.
+			Player->Increment_Score(Vehicle->Get_Defense_Object()->Get_Death_Points());
+		}
+		VehicleData->Reset_Last_Theft_Time();
+	}
+	if (Seat == 0) {
+		VehicleData->Set_Vehicle_Owner(Player);
+	}
+	VehicleData->Set_Team(Player->Get_Team());
+}
+
+
+
+class DAAirDroppedVehicleScript : public ScriptImpClass {
+	virtual void Created(GameObject *obj) {
+		Commands->Enable_Vehicle_Transitions(obj,false);
+		((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false);
+		Commands->Set_Shield_Type(obj,"Blamo");
+		Set_Skin(obj,"Blamo");
+	}
+};
+ScriptRegistrant<DAAirDroppedVehicleScript> DAAirDroppedVehicleScriptRegistrant("DAAirDroppedVehicleScript","");

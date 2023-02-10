@@ -135,7 +135,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <ExceptionHandling>
       </ExceptionHandling>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
@@ -211,7 +211,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_disable.cpp" />
     <ClCompile Include="da_domination.cpp" />
     <ClCompile Include="da_donate.cpp" />
-    <ClCompile Include="da_dropweapons.cpp" />
+    <ClCompile Include="da_loot.cpp" />
     <ClCompile Include="da_event.cpp" />
     <ClCompile Include="da_game.cpp" />
     <ClCompile Include="da_gamelog.cpp" />
@@ -224,6 +224,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_log.cpp" />
     <ClCompile Include="da_marathon.cpp" />
     <ClCompile Include="da_nodemanager.cpp" />
+    <ClCompile Include="da_parachutes.cpp" />
     <ClCompile Include="da_plugin.cpp" />
     <ClCompile Include="da_pointsdistribution.cpp" />
     <ClCompile Include="da_radio.cpp" />
@@ -464,7 +465,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_disable.h" />
     <ClInclude Include="da_domination.h" />
     <ClInclude Include="da_donate.h" />
-    <ClInclude Include="da_dropweapons.h" />
+    <ClInclude Include="da_loot.h" />
     <ClInclude Include="da_event.h" />
     <ClInclude Include="da_game.h" />
     <ClInclude Include="da_gamefeature.h" />
@@ -478,6 +479,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_killmessages.h" />
     <ClInclude Include="da_log.h" />
     <ClInclude Include="da_nodemanager.h" />
+    <ClInclude Include="da_parachutes.h" />
     <ClInclude Include="da_player.h" />
     <ClInclude Include="da_plugin.h" />
     <ClInclude Include="da_pointsdistribution.h" />
@@ -799,6 +801,9 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
   <ItemGroup>
     <ProjectReference Include="..\console\console.vcxproj">
       <Project>{6b42dca1-eb62-4830-ade6-c90883561c79}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\MemoryManager\MemoryManager.vcxproj">
+      <Project>{2fef1c76-9e4a-4921-b2d3-e536da918810}</Project>
     </ProjectReference>
     <ProjectReference Include="..\shaders\shaders.vcxproj">
       <Project>{e03cf210-508a-41e5-9b29-5ea732746623}</Project>

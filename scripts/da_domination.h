@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Domination Game Mode
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,8 +27,8 @@
 class DAControlNodeClass : public DASpawnNodeClass {
 public:
 	virtual void Timer_Expired(int Number,unsigned int Data);
-	virtual void Captured_Callback();
-	virtual void Set_Contested_Callback();
+	virtual void Capture_Event();
+	virtual void Contested_Event();
 	virtual const char *Get_Type() const {
 		return ControlNodeType;
 	}
@@ -39,8 +39,8 @@ protected:
 class DATiberiumNodeClass : public DABaseNodeClass {
 public:
 	virtual void Timer_Expired(int Number,unsigned int Data);
-	virtual void Captured_Callback();
-	virtual void Set_Contested_Callback();
+	virtual void Capture_Event();
+	virtual void Contested_Event();
 	virtual const char *Get_Type() const {
 		return TiberiumNodeType;
 	}

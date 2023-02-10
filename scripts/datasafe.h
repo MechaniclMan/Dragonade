@@ -230,7 +230,7 @@ private:
 	SCRIPTS_API static REF_DECL2(ReturnIndex,int);
 };
 
-extern char ErrorVal[1024];
+SCRIPTS_API extern char ErrorVal[1024];
 template<class T>
 class SafeDataClass
 {

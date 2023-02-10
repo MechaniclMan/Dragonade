@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -136,6 +136,15 @@ void DAEventManager::Stop_Timer(DAEventClass *Base,int Number,unsigned int Data)
 	}
 }
 
+bool DAEventManager::Is_Timer(DAEventClass *Base,int Number,unsigned int Data) {
+	for (int i = Timers.Count()-1;i >= 0;i--) {
+		if (Timers[i]->Base == Base && Timers[i]->Number == Number && (!Data || Timers[i]->Data == Data)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 void DAEventManager::Clear_Timers(DAEventClass *Base) {
 	for (int i = Timers.Count()-1;i >= 0;i--) {
 		if (Timers[i]->Base == Base) {
@@ -184,14 +193,21 @@ bool DAEventManager::Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar
 		StringClass Command = Parser.Get_String(); //Get the command from the first token.
 		DATokenClass Text(Parser); //Build the token class from the remaining string.
 		Command.ToLower();
-		for (int i = 0;i < Events[DAEvent::CHATCOMMAND].Count();i++) {
-			if (!Events[DAEvent::CHATCOMMAND][i]->Base->Chat_Command_Event(Player,Type,Command,Text,ReceiverID)) {
-				return false;
-			}
+		if (!Chat_Command_Event(Player,Type,Command,Text,ReceiverID)) {
+			return false;
 		}
 	}
 	for (int i = 0;i < Events[DAEvent::CHAT].Count();i++) {
 		if (!Events[DAEvent::CHAT][i]->Base->Chat_Event(Player,Type,Message,ReceiverID)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool DAEventManager::Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID) {
+	for (int i = 0;i < Events[DAEvent::CHATCOMMAND].Count();i++) {
+		if (!Events[DAEvent::CHATCOMMAND][i]->Base->Chat_Command_Event(Player,Type,Command,Text,ReceiverID)) {
 			return false;
 		}
 	}
@@ -258,7 +274,7 @@ void DAEventManager::Level_Loaded_Event() {
 		Events[DAEvent::LEVELLOADED][i]->Base->Level_Loaded_Event();
 	}
 	if (DamageTable) {
-		delete DamageTable;
+		delete[] DamageTable;
 	}
 	DamageTable = new DADamageTableStruct[ArmorWarheadManager::Get_Num_Warhead_Types()];
 	for (AmmoDefinitionClass *Def = (AmmoDefinitionClass*)DefinitionMgrClass::Get_First(CID_Ammo);Def;Def = (AmmoDefinitionClass*)DefinitionMgrClass::Get_Next(Def,CID_Ammo)) {
@@ -312,101 +328,101 @@ void DAEventManager::DA_Log_Event(const char *Header,const char *Output) {
 	}
 }
 
-int DAEventManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data) {
+int DAEventManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data) {
 	DefinitionClass *Def = Find_Definition(Preset);
 	if (Def) { //Check the class ID and pass to the proper purchase function. This allows any type of preset to be in any menu.
 		if (Def->Get_Class_ID() == CID_Vehicle) {
-			return Vehicle_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return Vehicle_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_PowerUp) {
-			return PowerUp_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return PowerUp_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_Soldier) {
 			float NewCost = (float)Cost;
 			for (int i = 0;i < Events[DAEvent::CHARACTERPURCHASEREQUEST].Count();i++) {
-				int Return = Events[DAEvent::CHARACTERPURCHASEREQUEST][i]->Base->Character_Purchase_Request_Event(Base,Purchaser,NewCost,(SoldierGameObjDef*)Def);
+				int Return = Events[DAEvent::CHARACTERPURCHASEREQUEST][i]->Base->Character_Purchase_Request_Event(Base,Soldier->Get_Player(),NewCost,(SoldierGameObjDef*)Def);
 				NewCost = Round(NewCost);
 				if (Return != -1) {
 					if (!Return) {
-						Character_Purchase_Event(Purchaser,NewCost,(SoldierGameObjDef*)Def);
+						Character_Purchase_Event(Soldier->Get_Player(),NewCost,(SoldierGameObjDef*)Def);
 					}
 					return Return;
 				}
 			}
 		}
 		else {
-			return Custom_Purchase_Request_Event(Base,Purchaser,Cost,Preset);
+			return Custom_Purchase_Request_Event(Base,Soldier,Cost,Preset);
 		}
 	}
 	return -1;
 }
 
-int DAEventManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data) {
+int DAEventManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data) {
 	DefinitionClass *Def = Find_Definition(Preset);
 	if (Def) {
 		if (Def->Get_Class_ID() == CID_Soldier) {
-			return Character_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return Character_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_PowerUp) {
-			return PowerUp_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return PowerUp_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_Vehicle) {
 			float NewCost = (float)Cost;
 			for (int i = 0;i < Events[DAEvent::VEHICLEPURCHASEREQUEST].Count();i++) {
-				int Return = Events[DAEvent::VEHICLEPURCHASEREQUEST][i]->Base->Vehicle_Purchase_Request_Event(Base,Purchaser,NewCost,(VehicleGameObjDef*)Def);
+				int Return = Events[DAEvent::VEHICLEPURCHASEREQUEST][i]->Base->Vehicle_Purchase_Request_Event(Base,Soldier->Get_Player(),NewCost,(VehicleGameObjDef*)Def);
 				NewCost = Round(NewCost);
 				if (Return != -1) {
 					if (!Return) {
-						Vehicle_Purchase_Event(Purchaser,NewCost,(VehicleGameObjDef*)Def);
+						Vehicle_Purchase_Event(Soldier->Get_Player(),NewCost,(VehicleGameObjDef*)Def);
 					}
 					return Return;
 				}
 			}
 		}
 		else {
-			return Custom_Purchase_Request_Event(Base,Purchaser,Cost,Preset);
+			return Custom_Purchase_Request_Event(Base,Soldier,Cost,Preset);
 		}
 	}
 	return -1;
 }
 
-int DAEventManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset,const char *Data) {
+int DAEventManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset,const char *Data) {
 	DefinitionClass *Def = Find_Definition(Preset);
 	if (Def) {
 		if (Def->Get_Class_ID() == CID_Vehicle) {
-			return Vehicle_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return Vehicle_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_Soldier) {
-			return Character_Purchase_Request_Event(Base,Purchaser,Cost,Preset,0);
+			return Character_Purchase_Request_Event(Base,Soldier,Cost,Preset,0);
 		}
 		else if (Def->Get_Class_ID() == CID_PowerUp) {
 			float NewCost = (float)Cost;
 			for (int i = 0;i < Events[DAEvent::POWERUPPURCHASEREQUEST].Count();i++) {
-				int Return = Events[DAEvent::POWERUPPURCHASEREQUEST][i]->Base->PowerUp_Purchase_Request_Event(Base,Purchaser,NewCost,(PowerUpGameObjDef*)Def);
+				int Return = Events[DAEvent::POWERUPPURCHASEREQUEST][i]->Base->PowerUp_Purchase_Request_Event(Base,Soldier->Get_Player(),NewCost,(PowerUpGameObjDef*)Def);
 				NewCost = Round(NewCost);
 				if (Return != -1) {
 					if (!Return) {
-						PowerUp_Purchase_Event(Purchaser,NewCost,(PowerUpGameObjDef*)Def);
+						PowerUp_Purchase_Event(Soldier->Get_Player(),NewCost,(PowerUpGameObjDef*)Def);
 					}
 					return Return;
 				}
 			}
 		}
 		else {
-			return Custom_Purchase_Request_Event(Base,Purchaser,Cost,Preset);
+			return Custom_Purchase_Request_Event(Base,Soldier,Cost,Preset);
 		}
 	}
 	return -1;
 }
 
-int DAEventManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,unsigned int Cost,unsigned int Preset) {
+int DAEventManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Soldier,unsigned int Cost,unsigned int Preset) {
 	float NewCost = (float)Cost;
 	for (int i = 0;i < Events[DAEvent::CUSTOMPURCHASEREQUEST].Count();i++) {
-		int Return = Events[DAEvent::CUSTOMPURCHASEREQUEST][i]->Base->Custom_Purchase_Request_Event(Base,Purchaser,NewCost,Preset);
+		int Return = Events[DAEvent::CUSTOMPURCHASEREQUEST][i]->Base->Custom_Purchase_Request_Event(Base,Soldier->Get_Player(),NewCost,Preset);
 		NewCost = Round(NewCost);
 		if (Return != -1) {
 			if (!Return) {
-				Custom_Purchase_Event(Purchaser,NewCost,Preset);
+				Custom_Purchase_Event(Soldier->Get_Player(),NewCost,Preset);
 			}
 			return Return;
 		}
@@ -414,33 +430,33 @@ int DAEventManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,Sold
 	return 3;
 }
 
-void DAEventManager::Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Def) {
+void DAEventManager::Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Def) {
 	for (int i = 0;i < Events[DAEvent::CHARACTERPURCHASE].Count();i++) {
-		Events[DAEvent::CHARACTERPURCHASE][i]->Base->Character_Purchase_Event(Purchaser,Cost,Def);
+		Events[DAEvent::CHARACTERPURCHASE][i]->Base->Character_Purchase_Event(Player,Cost,Def);
 	}
 }
 
-void DAEventManager::Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Def) {
+void DAEventManager::Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Def) {
 	for (int i = 0;i < Events[DAEvent::VEHICLEPURCHASE].Count();i++) {
-		Events[DAEvent::VEHICLEPURCHASE][i]->Base->Vehicle_Purchase_Event(Purchaser,Cost,Def);
+		Events[DAEvent::VEHICLEPURCHASE][i]->Base->Vehicle_Purchase_Event(Player,Cost,Def);
 	}
 }
 
-void DAEventManager::PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Def) {
+void DAEventManager::PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Def) {
 	for (int i = 0;i < Events[DAEvent::POWERUPPURCHASE].Count();i++) {
-		Events[DAEvent::POWERUPPURCHASE][i]->Base->PowerUp_Purchase_Event(Purchaser,Cost,Def);
+		Events[DAEvent::POWERUPPURCHASE][i]->Base->PowerUp_Purchase_Event(Player,Cost,Def);
 	}
 }
 
-void DAEventManager::Custom_Purchase_Event(SoldierGameObj *Purchaser,float Cost,unsigned int ID) {
+void DAEventManager::Custom_Purchase_Event(cPlayer *Player,float Cost,unsigned int ID) {
 	for (int i = 0;i < Events[DAEvent::CUSTOMPURCHASE].Count();i++) {
-		Events[DAEvent::CUSTOMPURCHASE][i]->Base->Custom_Purchase_Event(Purchaser,Cost,ID);
+		Events[DAEvent::CUSTOMPURCHASE][i]->Base->Custom_Purchase_Event(Player,Cost,ID);
 	}
 }
 
-bool DAEventManager::Refill_Event(SoldierGameObj *Purchaser) {
+bool DAEventManager::Refill_Event(SoldierGameObj *Soldier) {
 	for (int i = 0;i < Events[DAEvent::REFILL].Count();i++) {
-		if (!Events[DAEvent::REFILL][i]->Base->Refill_Event(Purchaser)) {
+		if (!Events[DAEvent::REFILL][i]->Base->Refill_Event(Soldier->Get_Player())) {
 			return false;
 		}
 	}
@@ -480,11 +496,11 @@ void DAEventManager::Transition_Check_Event(TransitionInstanceClass *Transition,
 	if (Seat != -1) {
 		int SeatRef = Seat;
 		for (int i = 0;i < Events[DAEvent::VEHICLEENTRYREQUEST].Count();i++) {
-			if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Soldier,SeatRef)) {
+			if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Soldier->Get_Player(),SeatRef)) {
 				return;
 			}
 		}
-		if (Vehicle->Get_Occupant(SeatRef) || SeatRef >= SeatCount || SeatRef < 0) {
+		if (SeatRef >= SeatCount || SeatRef < 0 || Vehicle->Get_Occupant(SeatRef)) {
 			AddOccupantSeat = Seat; //Use the seat we picked before if an event returned an invalid one.
 		}
 		else {
@@ -502,32 +518,40 @@ void DAEventManager::Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *
 }
 
 bool DAEventManager::PowerUp_Grant_Request_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	for (int i = 0;i < Events[DAEvent::POWERUPGRANTREQUEST].Count();i++) {
-		if (!Events[DAEvent::POWERUPGRANTREQUEST][i]->Base->PowerUp_Grant_Request_Event((SoldierGameObj*)Grantee,PowerUp,PowerUpObj)) {
-			return false;
+	if (Is_Player(Grantee)) {
+		for (int i = 0;i < Events[DAEvent::POWERUPGRANTREQUEST].Count();i++) {
+			if (!Events[DAEvent::POWERUPGRANTREQUEST][i]->Base->PowerUp_Grant_Request_Event(((SoldierGameObj*)Grantee)->Get_Player(),PowerUp,PowerUpObj)) {
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
 void DAEventManager::PowerUp_Grant_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	for (int i = 0;i < Events[DAEvent::POWERUPGRANT].Count();i++) {
-		Events[DAEvent::POWERUPGRANT][i]->Base->PowerUp_Grant_Event((SoldierGameObj*)Grantee,PowerUp,PowerUpObj);
+	if (Is_Player(Grantee)) {
+		for (int i = 0;i < Events[DAEvent::POWERUPGRANT].Count();i++) {
+			Events[DAEvent::POWERUPGRANT][i]->Base->PowerUp_Grant_Event(((SoldierGameObj*)Grantee)->Get_Player(),PowerUp,PowerUpObj);
+		}
 	}
 }
 
-bool DAEventManager::Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon) {
-	for (int i = 0;i < Events[DAEvent::ADDWEAPONREQUEST].Count();i++) {
-		if (!Events[DAEvent::ADDWEAPONREQUEST][i]->Base->Add_Weapon_Request_Event(Soldier,Weapon)) {
-			return false;
+bool DAEventManager::Add_Weapon_Request_Event(WeaponBagClass *Bag,const WeaponDefinitionClass *Weapon) {
+	if (Is_Player(Bag->Get_Owner())) {
+		for (int i = 0;i < Events[DAEvent::ADDWEAPONREQUEST].Count();i++) {
+			if (!Events[DAEvent::ADDWEAPONREQUEST][i]->Base->Add_Weapon_Request_Event(((SoldierGameObj*)Bag->Get_Owner())->Get_Player(),Weapon)) {
+				return false;
+			}
 		}
 	}
 	return true;
 }
 
-void DAEventManager::Add_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon) {
-	for (int i = 0;i < Events[DAEvent::ADDWEAPON].Count();i++) {
-		Events[DAEvent::ADDWEAPON][i]->Base->Add_Weapon_Event(Soldier,Weapon);
+void DAEventManager::Add_Weapon_Event(WeaponBagClass *Bag,WeaponClass *Weapon) {
+	if (Is_Player(Bag->Get_Owner())) {
+		for (int i = 0;i < Events[DAEvent::ADDWEAPON].Count();i++) {
+			Events[DAEvent::ADDWEAPON][i]->Base->Add_Weapon_Event(((SoldierGameObj*)Bag->Get_Owner())->Get_Player(),Weapon);
+		}
 	}
 }
 
@@ -535,7 +559,7 @@ void DAEventManager::Remove_Weapon_Event(WeaponBagClass *Bag,int Index) {
 	if (!IsSoldierReInit && Is_Player(Bag->Get_Owner()) && Index < Bag->Get_Count()) {
 		WeaponClass *Weapon = Bag->Peek_Weapon(Index);
 		for (int i = 0;i < Events[DAEvent::REMOVEWEAPON].Count();i++) {
-			Events[DAEvent::REMOVEWEAPON][i]->Base->Remove_Weapon_Event((SoldierGameObj*)Bag->Get_Owner(),Weapon);
+			Events[DAEvent::REMOVEWEAPON][i]->Base->Remove_Weapon_Event(((SoldierGameObj*)Bag->Get_Owner())->Get_Player(),Weapon);
 		}
 	}
 }
@@ -543,7 +567,7 @@ void DAEventManager::Remove_Weapon_Event(WeaponBagClass *Bag,int Index) {
 void DAEventManager::Clear_Weapons_Event(WeaponBagClass *Bag) {
 	if (!IsSoldierReInit && Is_Player(Bag->Get_Owner())) {
 		for (int i = 0;i < Events[DAEvent::CLEARWEAPONS].Count();i++) {
-			Events[DAEvent::CLEARWEAPONS][i]->Base->Clear_Weapons_Event((SoldierGameObj*)Bag->Get_Owner());
+			Events[DAEvent::CLEARWEAPONS][i]->Base->Clear_Weapons_Event(((SoldierGameObj*)Bag->Get_Owner())->Get_Player());
 		}
 	}
 }
@@ -601,7 +625,7 @@ void DAEventManager::Soldier_Re_Init_Event(SoldierGameObj *Soldier,const Soldier
 	if (Soldier->Get_Player()) {
 		IsSoldierReInit = true;
 		for (int i = 0;i < Events[DAEvent::CHANGECHARACTER].Count();i++) {
-			Events[DAEvent::CHANGECHARACTER][i]->Base->Change_Character_Event(Soldier,SoldierDef);
+			Events[DAEvent::CHANGECHARACTER][i]->Base->Change_Character_Event(Soldier->Get_Player(),SoldierDef);
 		}
 	}
 }
@@ -612,7 +636,7 @@ bool DAEventManager::Request_Vehicle_Event(VehicleFactoryGameObj *Factory,unsign
 		return false;
 	}
 	for (int i = 0;i < Events[DAEvent::REQUESTVEHICLE].Count();i++) {
-		if (!Events[DAEvent::REQUESTVEHICLE][i]->Base->Request_Vehicle_Event(Factory,VehicleDef,Owner,Delay)) {
+		if (!Events[DAEvent::REQUESTVEHICLE][i]->Base->Request_Vehicle_Event(Factory,VehicleDef,Owner?Owner->Get_Player():0,Delay)) {
 			return false;
 		}
 	}
@@ -644,7 +668,7 @@ void DAEventManager::Object_Created_Event(void *Data,GameObject *obj) {
 					const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
 					bool Allow = true;
 					for (int i = 0;i < Events[DAEvent::ADDWEAPONREQUEST].Count();i++) {
-						if (!Events[DAEvent::ADDWEAPONREQUEST][i]->Base->Add_Weapon_Request_Event((SoldierGameObj*)obj,WeaponDef)) {
+						if (!Events[DAEvent::ADDWEAPONREQUEST][i]->Base->Add_Weapon_Request_Event(((SoldierGameObj*)obj)->Get_Player(),WeaponDef)) {
 							Bag->Remove_Weapon(Bag->Get_Index());
 							Bag->Select_Next();
 							Allow = false;
@@ -653,7 +677,7 @@ void DAEventManager::Object_Created_Event(void *Data,GameObject *obj) {
 					}
 					if (Allow) {
 						for (int i = 0;i < Events[DAEvent::ADDWEAPON].Count();i++) {
-							Events[DAEvent::ADDWEAPON][i]->Base->Add_Weapon_Event((SoldierGameObj*)obj,Weapon);
+							Events[DAEvent::ADDWEAPON][i]->Base->Add_Weapon_Event(((SoldierGameObj*)obj)->Get_Player(),Weapon);
 						}
 					}
 				}
@@ -802,13 +826,13 @@ bool DAEventManager::Damage_Request_Event(DefenseObjectClass *Defense,OffenseObj
 		else if (Offense->Get_Warhead() == 9) { //Tiberium damage
 			LastDamageEvent.Type = DADamageType::TIBERIUM;
 			if (Is_Player(Victim)) {
-				((SoldierGameObj*)Victim)->Get_DA_Player()->Set_Last_Tib_Damage_Time(GetTickCount());
+				((SoldierGameObj*)Victim)->Get_DA_Player()->Reset_Last_Tib_Damage_Time();
 			}
 		}
 		else if (Offense->Get_Warhead() == 0) {
 			if (Is_Player(Victim)) {
 				if (Offense->Get_Damage() < 2.0f) {
-					if (GetTickCount()-((SoldierGameObj*)Victim)->Get_DA_Player()->Get_Last_Tib_Damage_Time() <= 3000) { //Tiberium burn damage
+					if (((SoldierGameObj*)Victim)->Get_DA_Player()->Get_Time_Since_Last_Tib_Damage() <= 3000) { //Tiberium burn damage
 						LastDamageEvent.Type = DADamageType::TIBERIUM;
 					}
 					else { //Burn damage
@@ -882,6 +906,10 @@ bool DAEventManager::Vehicle_Flip_Event(VehicleGameObj *Vehicle) {
 	return true;
 }
 
+void DAEventManager::DAEventObserverClass::Detach(GameObject *obj) {
+	delete this;
+}
+
 void DAEventManager::DAEventObserverClass::Killed(GameObject *obj,GameObject *Killer) {
 	//Console_InputF("msg kill %s %s %f %u %d %s",obj->Get_Definition().Get_Name(),Killer?Killer->Get_Definition().Get_Name():"None",LastDamageEvent.Damage,LastDamageEvent.Warhead,LastDamageEvent.Type,LastDamageEvent.Bone);
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::KILLDEALT].Count();i++) {
@@ -903,13 +931,17 @@ void DAEventManager::DAEventObserverClass::Custom(GameObject *obj,int Message,in
 		}
 	}
 	if (Message == CUSTOM_EVENT_VEHICLE_ENTERED) {
-		for (int i = 0;i < Events[DAEvent::VEHICLEENTER].Count();i++) {
-			Events[DAEvent::VEHICLEENTER][i]->Base->Vehicle_Enter_Event((VehicleGameObj*)obj,(SoldierGameObj*)Sender,Param);
+		if (Is_Player(Sender)) {
+			for (int i = 0;i < Events[DAEvent::VEHICLEENTER].Count();i++) {
+				Events[DAEvent::VEHICLEENTER][i]->Base->Vehicle_Enter_Event((VehicleGameObj*)obj,((SoldierGameObj*)Sender)->Get_Player(),Param);
+			}
 		}
 	}
 	else if (Message == CUSTOM_EVENT_VEHICLE_EXITED) {
-		for (int i = 0;i < Events[DAEvent::VEHICLEEXIT].Count();i++) {
-			Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event((VehicleGameObj*)obj,(SoldierGameObj*)Sender,Param);
+		if (Is_Player(Sender)) {	
+			for (int i = 0;i < Events[DAEvent::VEHICLEEXIT].Count();i++) {
+				Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event((VehicleGameObj*)obj,((SoldierGameObj*)Sender)->Get_Player(),Param);
+			}
 		}
 	}
 }
@@ -917,7 +949,7 @@ void DAEventManager::DAEventObserverClass::Custom(GameObject *obj,int Message,in
 void DAEventManager::DAEventObserverClass::Poked(GameObject *obj,GameObject *Poker) {
 	for (int i = 0;i < ObjectEvents[DAObjectEvent::POKE].Count();i++) {
 		if (ObjectEvents[DAObjectEvent::POKE][i]->Check_Object_Type(obj)) {
-			ObjectEvents[DAObjectEvent::POKE][i]->Base->Poke_Event((PhysicalGameObj*)obj,(SoldierGameObj*)Poker);
+			ObjectEvents[DAObjectEvent::POKE][i]->Base->Poke_Event(((SoldierGameObj*)Poker)->Get_Player(),(PhysicalGameObj*)obj);
 		}
 	}
 }
@@ -957,7 +989,7 @@ void DAEventManager::DAEventObserverClass::Destroyed(GameObject *obj) {
 		for (int j = 0;j < Seats;j++) {
 			if (Vehicle->Get_Occupant(j)) {
 				for (int i = 0;i < Events[DAEvent::VEHICLEEXIT].Count();i++) {
-					Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event(Vehicle,Vehicle->Get_Occupant(j),j);
+					Events[DAEvent::VEHICLEEXIT][i]->Base->Vehicle_Exit_Event(Vehicle,Vehicle->Get_Occupant(j)->Get_Player(),j);
 				}
 			}
 		}
@@ -1014,6 +1046,26 @@ void DAEventManager::Init() {
 
 	static DAEventConnectionAcceptanceFilterClass ConnFilter;
 	addConnectionAcceptanceFilter(&ConnFilter);
+
+	DAHookManager::Disable_Function((unsigned long)AddHostHook); //Prevent plugins from overwriting our TT hooks.
+	DAHookManager::Disable_Function((unsigned long)AddPlayerJoinHook);
+	DAHookManager::Disable_Function((unsigned long)AddPlayerLeaveHook);
+	DAHookManager::Disable_Function((unsigned long)AddPreLoadLevelHook);
+	DAHookManager::Disable_Function((unsigned long)AddLoadLevelHook);
+	DAHookManager::Disable_Function((unsigned long)AddGameOverHook);
+	DAHookManager::Disable_Function((unsigned long)AddConsoleOutputHook);
+	DAHookManager::Disable_Function((unsigned long)AddLogFileHook);
+	DAHookManager::Disable_Function((unsigned long)AddThinkHook);
+	DAHookManager::Disable_Function((unsigned long)AddRefillHook);
+	DAHookManager::Disable_Function((unsigned long)AddRadioHook);
+	DAHookManager::Disable_Function((unsigned long)AddStockDamageHook);
+	DAHookManager::Disable_Function((unsigned long)AddTtDamageHook);
+}
+
+void DAEventManager::Shutdown() {
+	if (DamageTable) {
+		delete[] DamageTable;
+	}
 }
 
 

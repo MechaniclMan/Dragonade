@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Damage Log
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,6 +22,10 @@
 
 static const char *ObserverName = "DADamageLogObserverClass";
 
+void DADamageLogObserverClass::Init() {
+	Start_Timer(1,30.0f);
+}
+
 void DADamageLogObserverClass::Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
 	if (Damager != Get_Owner() && Damage) {
 		DADamageEventStruct *Event = new DADamageEventStruct;
@@ -37,10 +41,6 @@ void DADamageLogObserverClass::Damage_Received(ArmedGameObj *Damager,float Damag
 	}
 }
 
-void DADamageLogObserverClass::Init() {
-	Start_Timer(1,30.0f);
-}
-
 void DADamageLogObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;) {
 		if (The_Game()->Get_Game_Duration_S()-z->Data()->Time > 30) {
@@ -54,8 +54,8 @@ void DADamageLogObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	Start_Timer(1,30.0f);
 }
 
-void DADamageLogObserverClass::Vehicle_Enter(SoldierGameObj *Soldier,int Seat) {
-	if (Soldier->Get_Player_Type() != DAVehicleManager::Get_Team(Get_Owner())) {
+void DADamageLogObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
+	if (Player->Get_Team() != DAVehicleManager::Get_Team(Get_Owner())) {
 		Clear_Damage();
 	}
 }
@@ -79,6 +79,10 @@ void DADamageLogObserverClass::Clear_Damage() {
 		delete z->Data();
 	}
 	DamageEvents.Remove_All();
+}
+
+DADamageLogObserverClass::~DADamageLogObserverClass() {
+	Clear_Damage();
 }
 
 float DADamageLogObserverClass::Compile_Damage_Table_Team(DADamageTableStruct *DamageTable,int Team) {

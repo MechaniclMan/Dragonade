@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,7 @@
 #include "da_translation.h"
 #include "da_settings.h"
 #include "da_log.h"
+#include "da_chatcommand.h"
 #include "cScTextObj.h"
 #include "SCAnnouncement.h"
 #include "WeaponBagClass.h"
@@ -33,17 +34,21 @@ WideStringClass DAPlayerManager::DisallowedNickCharacters;
 DynamicVectorClass<WideStringClass> DAPlayerManager::DisallowedNicks;
 
 
-DAPlayerClass::DAPlayerClass(cPlayer *Player,const char *serial,float version) {
+DAPlayerClass::DAPlayerClass(cPlayer *Player) {
 	Player->Set_DA_Player(this);
 	Owner = Player;
-	Serial = serial;
-	Version = version;
+	Serial = Get_Client_Serial_Hash(Get_ID());
+	Version = Get_Client_Version(Get_ID());
+	Revision = Get_Client_Revision(Get_ID());
 	AccessLevel = DAAccessLevel::NONE;
 	Muted = false;
 	C4Locked = false;
 	BeaconLocked = false;
 	VehicleLimit = Get_Vehicle_Limit();
 	C4Limit = Get_Mine_Limit();
+	CharacterDiscount = 1.0f;
+	VehicleDiscount = 1.0f;
+	PowerUpDiscount = 1.0f;
 	Loaded = false;
 	LastTibDamageTime = 0;
 }
@@ -80,6 +85,16 @@ void DAPlayerObserverClass::Stop_Timer(int Number,unsigned int Data) {
 		}
 	}
 }
+
+bool DAPlayerObserverClass::Is_Timer(int Number,unsigned int Data) {
+	for (int i = Timers.Count()-1;i >= 0;i--) {
+		if (Timers[i]->Number == Number && (!Data || Timers[i]->Data == Data)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 
 void DAPlayerObserverClass::Clear_Timers() {
 	for (int i = Timers.Count()-1;i >= 0;i--) {
@@ -248,6 +263,26 @@ void DAPlayerClass::Remove_Tags_With_Flag(DAPlayerFlags::Flag Flag) {
 	Update_Tag();
 }
 
+const DynamicVectorClass<DAPlayerObserverClass*> &DAPlayerClass::Get_Observers() {
+	return Observers;
+}
+
+void DAPlayerClass::Set_Access_Level(DAAccessLevel::Level Level) {
+	AccessLevel = Level;
+}
+
+DAAccessLevel::Level DAPlayerClass::Get_Access_Level() {
+	return AccessLevel;
+}
+
+void DAPlayerClass::Mute(bool mute) {
+	Muted = mute;
+}
+
+bool DAPlayerClass::Is_Muted() {
+	return Muted;
+}
+
 void DAPlayerClass::Beacon_Lock(bool lock) {
 	BeaconLocked = lock;
 	if (lock) {
@@ -265,6 +300,10 @@ void DAPlayerClass::Beacon_Lock(bool lock) {
 	else {
 		DA::Page_Player(Get_ID(),"You are no longer beacon locked.");
 	}
+}
+
+bool DAPlayerClass::Is_Beacon_Locked() {
+	return BeaconLocked;
 }
 
 void DAPlayerClass::C4_Lock(bool lock) {
@@ -288,13 +327,119 @@ void DAPlayerClass::C4_Lock(bool lock) {
 	}
 }
 
+ bool DAPlayerClass::Is_C4_Locked() {
+	return C4Locked;
+}
+
+void DAPlayerClass::Set_Character_Discount(float Discount) {
+	if (Discount > 1.0f) {
+		CharacterDiscount = 1.0f;
+	}
+	else if (Discount < 0.0f) {
+		CharacterDiscount = 0.0f;
+	}
+	else {
+		CharacterDiscount = Discount;
+	}
+}
+
+void DAPlayerClass::Inc_Character_Discount(float Discount) {
+	Set_Character_Discount(CharacterDiscount - Discount);
+}
+
+float DAPlayerClass::Get_Character_Discount() {
+	return CharacterDiscount;
+}
+
+void DAPlayerClass::Set_Vehicle_Discount(float Discount) {
+	if (Discount > 1.0f) {
+		VehicleDiscount = 1.0f;
+	}
+	else if (Discount < 0.0f) {
+		VehicleDiscount = 0.0f;
+	}
+	else {
+		VehicleDiscount = Discount;
+	}
+}
+
+void DAPlayerClass::Inc_Vehicle_Discount(float Discount) {
+	Set_Vehicle_Discount(VehicleDiscount - Discount);
+}
+
+float DAPlayerClass::Get_Vehicle_Discount() {
+	return VehicleDiscount;
+}
+
+void DAPlayerClass::Set_PowerUp_Discount(float Discount) {
+	if (Discount > 1.0f) {
+		PowerUpDiscount = 1.0f;
+	}
+	else if (Discount < 0.0f) {
+		PowerUpDiscount = 0.0f;
+	}
+	else {
+		PowerUpDiscount = Discount;
+	}
+}
+
+void DAPlayerClass::Inc_PowerUp_Discount(float Discount) {
+	Set_PowerUp_Discount(VehicleDiscount - Discount);
+}
+
+float DAPlayerClass::Get_PowerUp_Discount() {
+	return PowerUpDiscount;
+}
+
+unsigned long DAPlayerClass::Get_Time_Since_Last_Tib_Damage() {
+	return GetTickCount()-LastTibDamageTime;
+}
+
+void DAPlayerClass::Reset_Last_Tib_Damage_Time() {
+	LastTibDamageTime = GetTickCount();
+}
+
+bool DAPlayerClass::Is_Loaded() {
+	return Loaded;
+}
+
+void DAPlayerClass::Set_Loaded(bool Load) {
+	Loaded = Load;
+}
+
+const StringClass &DAPlayerClass::Get_Serial() {
+	return Serial;
+}
+
+void DAPlayerClass::Set_Version(float Ver) {
+	Version = Ver;
+}
+
+float DAPlayerClass::Get_Version() {
+	return Version;
+}
+
+unsigned int DAPlayerClass::Get_Revision() {
+	return Revision;
+}
+
+void DAPlayerClass::Inc_Flood_Counter() {
+	FloodProtection.Add(GetTickCount());
+}
+
+void DAPlayerClass::Dec_Flood_Counter() {
+	FloodProtection.Delete(0);
+}
+
 bool DAPlayerClass::Is_Flooding() {
 	for (int i = FloodProtection.Count();i-- > 0;) {
 		if (GetTickCount()-FloodProtection[i] >= 10000) {
 			FloodProtection.Delete(i);
 		}
 	}
-	FloodProtection.Add(GetTickCount());
+	
+	Inc_Flood_Counter();
+
 	if (FloodProtection.Count() >= 7) {
 		Send_Announcement_Player(Get_ID(),"IDS_FLOOD_MSG");
 		return true;
@@ -304,6 +449,9 @@ bool DAPlayerClass::Is_Flooding() {
 
 void DAPlayerClass::Join() {
 	Get_Owner()->Set_DA_Player(this);
+	Serial = Get_Client_Serial_Hash(Get_ID());
+	Version = Get_Client_Version(Get_ID());
+	Revision = Get_Client_Revision(Get_ID());
 	for (int i = 0;i < Observers.Count();i++) {
 		if (Observers[i]->Has_Flag(DAPlayerFlags::PERSISTLEAVE)) {
 			Observers[i]->Join();
@@ -359,6 +507,9 @@ void DAPlayerClass::Level_Loaded() {
 		}
 	}
 	Update_Tag();
+	CharacterDiscount = 1.0f;
+	VehicleDiscount = 1.0f;
+	PowerUpDiscount = 1.0f;
 	Loaded = false;
 }
 
@@ -376,7 +527,7 @@ void DAPlayerClass::Name_Change() {
 
 bool DAPlayerClass::Chat(TextMessageEnum Type,const wchar_t *Message,int ReceiverID) {
 	if (Is_Muted() && Type != TEXT_MESSAGE_PRIVATE) {
-		cScTextObj *Text = Send_Client_Text(Message,Type,false,Get_ID(),ReceiverID,false,false);
+		cScTextObj *Text = Send_Client_Text(Message,Type,false,Get_ID(),ReceiverID,false,false); //Players will still see their own messages when muted.
 		Text->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION);
 		return false;
 	}
@@ -387,7 +538,10 @@ bool DAPlayerClass::Chat(TextMessageEnum Type,const wchar_t *Message,int Receive
 }
 
 bool DAPlayerClass::Radio(int PlayerType,int AnnouncementID,int IconID,AnnouncementEnum AnnouncementType) {
-	if (Is_Muted()) {
+	if (AnnouncementID < 8535 || AnnouncementID > 8564) { //Block invalid radio commands.
+		return false;
+	}
+	else if (Is_Muted()) {
 		SCAnnouncement *Radio = Send_Client_Announcement(PlayerType,Get_ID(),AnnouncementID,AnnouncementType,IconID,false,false);
 		Radio->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION);
 		return false;
@@ -405,6 +559,7 @@ void DAPlayerClass::Team_Change() {
 }
 
 int DAPlayerClass::Character_Purchase_Request(float &Cost,const SoldierGameObjDef *Item) {
+	Cost *= Get_Character_Discount();
 	for (int i = 0;i < Observers.Count();i++) {
 		int Return = Observers[i]->Character_Purchase_Request(Cost,Item);
 		if (Return != -1) {
@@ -415,6 +570,7 @@ int DAPlayerClass::Character_Purchase_Request(float &Cost,const SoldierGameObjDe
 }
 
 int DAPlayerClass::Vehicle_Purchase_Request(float &Cost,const VehicleGameObjDef *Item) {
+	Cost *= Get_Vehicle_Discount();
 	for (int i = 0;i < Observers.Count();i++) {
 		int Return = Observers[i]->Vehicle_Purchase_Request(Cost,Item);
 		if (Return != -1) {
@@ -425,6 +581,7 @@ int DAPlayerClass::Vehicle_Purchase_Request(float &Cost,const VehicleGameObjDef 
 }
 
 int DAPlayerClass::PowerUp_Purchase_Request(float &Cost,const PowerUpGameObjDef *Item) {
+	Cost *= Get_PowerUp_Discount();
 	if (Item->GrantWeapon) {
 		WeaponDefinitionClass *WeapDef = (WeaponDefinitionClass*)Find_Definition(Item->GrantWeaponID);
 		if (WeapDef) {
@@ -531,15 +688,13 @@ void DAPlayerClass::PowerUp_Grant(const PowerUpGameObjDef *PowerUp,PowerUpGameOb
 }
 
 bool DAPlayerClass::Add_Weapon_Request(const WeaponDefinitionClass *Weapon) {
-	if (Weapon) {
-		if (Is_C4_Locked() && Weapon->Style == STYLE_C4) {
-			if (((AmmoDefinitionClass*)Find_Definition(Weapon->PrimaryAmmoDefID))->AmmoType != 2) {
-				return false;
-			}
-		}
-		else if (Is_Beacon_Locked() && Weapon->Style == STYLE_BEACON) {
+	if (Is_C4_Locked() && Weapon->Style == STYLE_C4) {
+		if (((AmmoDefinitionClass*)Find_Definition(Weapon->PrimaryAmmoDefID))->AmmoType != 2) {
 			return false;
 		}
+	}
+	else if (Is_Beacon_Locked() && Weapon->Style == STYLE_BEACON) {
+		return false;
 	}
 	for (int i = 0;i < Observers.Count();i++) {
 		if (!Observers[i]->Add_Weapon_Request(Weapon)) {
@@ -582,9 +737,9 @@ void DAPlayerClass::C4_Detonate(C4GameObj *C4) {
 	}
 }
 
-void DAPlayerClass::Change_Character(const SoldierGameObjDef *SoldierDef) {
+void DAPlayerClass::Change_Character(const SoldierGameObjDef *Soldier) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Change_Character(SoldierDef);
+		Observers[i]->Change_Character(Soldier);
 	}
 }
 
@@ -648,9 +803,9 @@ void DAPlayerClass::Custom(GameObject *Sender,int Type,int Param) {
 	}
 }
 
-void DAPlayerClass::Poked(SoldierGameObj *Poker) {
+void DAPlayerClass::Poked(cPlayer *Player) {
 	for (int i = 0;i < Observers.Count();i++) {
-		Observers[i]->Poked(Poker);
+		Observers[i]->Poked(Player);
 	}
 }
 
@@ -688,201 +843,14 @@ void DAPlayerClass::Think() {
 	}
 }
 
-	
+void DAPlayerClass::DAPlayerTagStruct::Set_Flags(DAPlayerFlags::Flag Flag) {
+	Flags = Flag;
+}
 
+bool DAPlayerClass::DAPlayerTagStruct::Has_Flag(DAPlayerFlags::Flag Flag) {
+	return (Flags & Flag) == Flag;
+}
 
-class LegacyTagConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "tag"; }
-	const char *Get_Help() { return "TAG <playerid> <tag> - Legacy command to set the custom name tag on a player. Persists through leaving or multiple maps; defaults to position 0"; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Parser(ArgumentsString,' ');
-		int ID = 0;
-		Parser.Get_Int(ID);
-		cPlayer *Player = Find_Player(ID);
-		if (Player) {
-			Player->Get_DA_Player()->Remove_Tags_With_Flag(DAPlayerFlags::LEGACYTAG);
-			if (Parser.Get_Remaining_String()) {
-				Player->Get_DA_Player()->Add_Tag(Parser.Get_Remaining_String(),0,DAPlayerFlags::LEGACYTAG | DAPlayerFlags::PERSISTLEAVE | DAPlayerFlags::PERSISTMAP);
-			}
-		}
-	}
-};
-
-class AddTagConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "addtag"; }
-	const char *Get_Help() { return "ADDTAG <playerid> <persist on leave> <persist on map> <position> <tag> - Add a custom name tag to a player. Persist on map/leave determines if this tag should be removed when the player leaves the game or a new map loads. Position determintes the tag's position relative to the player's other tags."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Parser(ArgumentsString,' ');
-		int ID = 0;
-		Parser.Get_Int(ID);
-		const char *PersistLeave = Parser.Get_String();
-		const char *PersistMap = Parser.Get_String();
-		int Position;
-		Parser.Get_Int(Position);
-		const char *Tag = Parser.Get_Remaining_String();
-		cPlayer *Player = Find_Player(ID);
-		if (Player && Tag) {
-			DAPlayerFlags::Flag Flags = (DAPlayerFlags::Flag)0;
-			if (!_stricmp(PersistLeave,"1") || !_stricmp(PersistLeave,"true") || !_stricmp(PersistLeave,"yes")) {
-				Flags |= DAPlayerFlags::PERSISTLEAVE;
-			}
-			if (!_stricmp(PersistMap,"1") || !_stricmp(PersistMap,"true") || !_stricmp(PersistMap,"yes")) {
-				Flags |= DAPlayerFlags::PERSISTMAP;
-			}
-			Player->Get_DA_Player()->Add_Tag(Tag,Position,Flags);
-		}
-	}
-};
-
-class RemoveTagConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "removetag"; }
-	const char *Get_Help() { return "REMOVETAG <playerid> <tag> - Removes the given tag from the player."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Parser(ArgumentsString,' ');
-		int ID = 0;
-		Parser.Get_Int(ID);
-		const char *Tag = Parser.Get_Remaining_String();
-		cPlayer *Player = Find_Player(ID);
-		if (Player && Tag) {
-			Player->Get_DA_Player()->Remove_Tag(Tag);
-		}
-	}
-};
-
-class SetAccessLevelConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "setaccesslevel"; }
-	const char *Get_Alias() { return "sal"; }
-	const char *Get_Help() { return "SETACCESSLEVEL <playerid> <0-6> - Sets the given player's access level."; }
-	void Activate(const char *ArgumentsString) {
-		DATokenParserClass Parser(ArgumentsString,' ');
-		int ID = 0;
-		Parser.Get_Int(ID);
-		int Level = 0;
-		Parser.Get_Int(Level);
-		cPlayer *Player = Find_Player(ID);
-		if (Player) {
-			Player->Get_DA_Player()->Set_Access_Level((DAAccessLevel::Level)Level);
-		}
-	}
-};
-
-class MuteConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "mute"; }
-	const char *Get_Help() { return "MUTE <playerid> - Mute a player, preventing them from speaking in chat or using radio commands."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Mute(true);
-		}
-	}
-};
-
-class UnMuteConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "unmute"; }
-	const char *Get_Help() { return "UNMUTE <playerid> - Unmute a player."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Mute(false);
-		}
-	}
-};
-
-class MuteToggleConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "mutetoggle"; }
-	const char *Get_Help() { return "MUTETOGGLE <playerid> - Mute or unmute a player, preventing them from speaking in chat or using radio commands."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Mute(!Player->Get_DA_Player()->Is_Muted());
-		}
-	}
-};
-
-class BeaconLockConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "beaconlock"; }
-	const char *Get_Alias() { return "beaconmute"; }
-	const char *Get_Help() { return "BEACONLOCK <playerid> - Prevent a player from deploying beacons."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Beacon_Lock(true);
-		}
-	}
-};
-
-class UnBeaconLockConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "unbeaconlock"; }
-	const char *Get_Alias() { return "unbeaconmute"; }
-	const char *Get_Help() { return "UNBEACONLOCK <playerid> - Re-allow a player to deploy beacons."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Beacon_Lock(false);
-		}
-	}
-};
-
-class BeaconLockToggleConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "beaconlocktoggle"; }
-	const char *Get_Alias() { return "beaconmutetoggle"; }
-	const char *Get_Help() { return "BEACONLOCKTOGGLE <playerid> - Prevent or re-allow a player from deploying beacons."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->Beacon_Lock(!Player->Get_DA_Player()->Is_Beacon_Locked());
-		}
-	}
-};
-
-class C4LockConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "c4lock"; }
-	const char *Get_Alias() { return "c4mute"; }
-	const char *Get_Help() { return "C4LOCK <playerid> - Prevent a player from using remote and proximity C4."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->C4_Lock(true);
-		}
-	}
-};
-
-class UnC4LockConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "unc4lock"; }
-	const char *Get_Alias() { return "unc4mute"; }
-	const char *Get_Help() { return "UNC4LOCK <playerid> - Re-allow a player to use remote and proximity C4."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->C4_Lock(false);
-		}
-	}
-};
-
-class C4LockToggleConsoleCommand : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "c4locktoggle"; }
-	const char *Get_Alias() { return "c4mutetoggle"; }
-	const char *Get_Help() { return "C4LOCKTOGGLE <playerid> - Prevent or re-allow a player from using remote and proximity C4."; }
-	void Activate(const char *ArgumentsString) {
-		cPlayer *Player = Find_Player(atoi(ArgumentsString));
-		if (Player) {
-			Player->Get_DA_Player()->C4_Lock(!Player->Get_DA_Player()->Is_C4_Locked());
-		}
-	}
-};
 
 void DAPlayerManager::Init() {
 	static DAPlayerManager Instance;
@@ -924,23 +892,13 @@ void DAPlayerManager::Init() {
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::CUSTOM,DAObjectEvent::PLAYER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::POKE,DAObjectEvent::PLAYER,INT_MAX);
-	
-	Delete_Console_Function("tag");
-	ConsoleFunctionList.Add(new LegacyTagConsoleCommand);
-	ConsoleFunctionList.Add(new AddTagConsoleCommand);
-	ConsoleFunctionList.Add(new RemoveTagConsoleCommand);
-	ConsoleFunctionList.Add(new SetAccessLevelConsoleCommand);
-	ConsoleFunctionList.Add(new MuteConsoleCommand);
-	ConsoleFunctionList.Add(new UnMuteConsoleCommand);
-	ConsoleFunctionList.Add(new MuteToggleConsoleCommand);
-	ConsoleFunctionList.Add(new BeaconLockConsoleCommand);
-	ConsoleFunctionList.Add(new UnBeaconLockConsoleCommand);
-	ConsoleFunctionList.Add(new BeaconLockToggleConsoleCommand);
-	ConsoleFunctionList.Add(new C4LockConsoleCommand);
-	ConsoleFunctionList.Add(new UnC4LockConsoleCommand);
-	ConsoleFunctionList.Add(new C4LockToggleConsoleCommand);
-	Sort_Function_List();
-	Verbose_Help_File();
+}
+
+void DAPlayerManager::Shutdown() {
+	for (int i = 0;i < Players.Count();i++) {
+		delete Players[i];
+	}
+	Players.Delete_All();
 }
 
 void DAPlayerManager::Add_Data_Factory(DAPlayerDataFactoryClass *Factory) {
@@ -977,10 +935,10 @@ bool DAPlayerManager::Radio_Event(cPlayer *Player,int PlayerType,int Announcemen
 void DAPlayerManager::Level_Loaded_Event() {
 	for (int i = 0;i < Players.Count();i++) {
 		DAPlayerClass *DAPlayer = Players[i];
-		if (Check_Player(DAPlayer)) {
+		if (Check_Player(DAPlayer)) { //Trigger loaded event if they're still ingame.
 			DAPlayer->Level_Loaded();
 		}
-		else {
+		else { //Delete player class if they left.
 			delete DAPlayer;
 			Players.Delete(i);
 			i--;
@@ -1004,11 +962,13 @@ void DAPlayerManager::Settings_Loaded_Event() {
 	}
 	DisallowedNicks.Add(L"Host");
 	DisallowedNicks.Add(The_Game()->Owner);
-	
+	if (!DA::Get_Message_Nick().Is_Empty()) {
+		DisallowedNicks.Add(WideStringClass(DA::Get_Message_Nick()));
+	}
 	WideStringClass MessagePrefix = DA::Get_Message_Prefix();
 	if (!MessagePrefix.Is_Empty()) {
 		for (int i = 0;i < MessagePrefix.Get_Length();i++) {
-			if (MessagePrefix[i] == '(' || MessagePrefix[i] == ')' ||MessagePrefix[i] == '[' ||MessagePrefix[i] == ']' ||MessagePrefix[i] == ':') {
+			if (MessagePrefix[i] == '(' || MessagePrefix[i] == ')' || MessagePrefix[i] == '[' || MessagePrefix[i] == ']' || MessagePrefix[i] == ':') {
 				MessagePrefix.RemoveSubstring(i,1);
 				i--;
 			}
@@ -1019,7 +979,10 @@ void DAPlayerManager::Settings_Loaded_Event() {
 
 ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(ConnectionRequest &Request,WideStringClass &RefusalMessage) {
 	cGameData *TheGame = The_Game();
-	if (TheGame->Is_Passworded() && Request.password.Compare(TheGame->Get_Password()) != 0) {
+	if (Request.clientSerialHash.Is_Empty()) {
+		return ConnectionAcceptanceFilter::STATUS_INDETERMINATE;
+	}
+	else if (TheGame->Is_Passworded() && Request.password.Compare(TheGame->Get_Password()) != 0) {
 		RefusalMessage = L"Invalid password.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
@@ -1031,17 +994,14 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 		RefusalMessage = L"Game is full.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
-	else if (Request.clientSerialHash.Is_Empty()) {
-		return ConnectionAcceptanceFilter::STATUS_INDETERMINATE;
-	}
 	else if (Request.clientSerialHash.Get_Length() != 32) {
 		RefusalMessage = L"Invalid serial.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
-	/*else if (Request.clientVersion < ScriptsVersion){
-		RefusalMessage = L"TT Scripts 4.0 are required to play in this server. Go to http://scripts.black-cell.net to download them.";
+	else if (Request.clientVersion == 4.0f && Request.clientRevisionNumber < 5276) {
+		RefusalMessage = L"Your version of Scripts 4.0 is outdated. Please launch your game through the TT launcher to automatically download the latest version.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
-	}*/
+	}
 	else {
 		CheckFirst:
 		for (wchar_t *DisallowedPtr = DisallowedNickFirstCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
@@ -1075,8 +1035,7 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 			RefusalMessage = L"Name too short.";
 			return ConnectionAcceptanceFilter::STATUS_REFUSING;
 		}
-		else if (Find_Player(Request.clientName)) {
-			cPlayer *Player = Find_Player(Request.clientName);
+		else if (cPlayer *Player = Find_Player(Request.clientName)) {
 			if (Request.clientAddress.sin_addr.s_addr == (unsigned int)Player->Get_Ip_Address() && Request.clientSerialHash == Player->Get_DA_Player()->Get_Serial()) { //Client reconnecting before their ghost has timed out.
 				Evict_Client(Player->Get_ID(),L"Ghost");
 			}
@@ -1093,13 +1052,11 @@ void DAPlayerManager::Player_Join_Event(cPlayer *Player) {
 	for (int i = 0;i < Players.Count();i++) {
 		DAPlayerClass *DAPlayer = Players[i];
 		if (DAPlayer->Get_Owner() == Player) {
-			DAPlayer->Set_Serial(Get_Client_Serial_Hash(Player->Get_ID()));
-			DAPlayer->Set_Version(Get_Client_Version(Player->Get_ID()));
-			DAPlayer->Join();
+			DAPlayer->Join(); //Trigger join event if they already exist.
 			return;
 		}
 	}
-	DAPlayerClass *DAPlayer = new DAPlayerClass(Player,Get_Client_Serial_Hash(Player->Get_ID()),Get_Client_Version(Player->Get_ID()));
+	DAPlayerClass *DAPlayer = new DAPlayerClass(Player); //Create new player class if they don't.
 	for (int i = 0;i < DataFactories.Count();i++) {
 		DAPlayer->Add_Data(DataFactories[i]->Create_Data());
 	}
@@ -1118,102 +1075,102 @@ void DAPlayerManager::Name_Change_Event(cPlayer *Player) {
 	Player->Get_DA_Player()->Name_Change();
 }
 
-int DAPlayerManager::Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item) {
-	if (!Purchaser->Get_Defense_Object()->Get_Health()) {
+int DAPlayerManager::Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item) {
+	if (!Player->Get_GameObj()->Get_Defense_Object()->Get_Health() || Player->Get_GameObj()->Get_Vehicle()) {
 		return 3;
 	}
-	return Purchaser->Get_DA_Player()->Character_Purchase_Request(Cost,Item);
+	return Player->Get_DA_Player()->Character_Purchase_Request(Cost,Item);
 }
 
-int DAPlayerManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const VehicleGameObjDef *Item) {
-	if (!Purchaser->Get_Defense_Object()->Get_Health()) {
+int DAPlayerManager::Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item) {
+	if (!Player->Get_GameObj()->Get_Defense_Object()->Get_Health()) { //Make it so players can't buy something if they died while in the PT screen.
 		return 3;
 	}
-	return Purchaser->Get_DA_Player()->Vehicle_Purchase_Request(Cost,Item);
+	return Player->Get_DA_Player()->Vehicle_Purchase_Request(Cost,Item);
 }
 
-int DAPlayerManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item) {
-	if (!Purchaser->Get_Defense_Object()->Get_Health()) {
+int DAPlayerManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) {
+	if (!Player->Get_GameObj()->Get_Defense_Object()->Get_Health()) {
 		return 3;
 	}
-	return Purchaser->Get_DA_Player()->PowerUp_Purchase_Request(Cost,Item);
+	return Player->Get_DA_Player()->PowerUp_Purchase_Request(Cost,Item);
 }
 
-int DAPlayerManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,unsigned int ID) {
-	if (!Purchaser->Get_Defense_Object()->Get_Health()) {
+int DAPlayerManager::Custom_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,unsigned int ID) {
+	if (!Player->Get_GameObj()->Get_Defense_Object()->Get_Health()) {
 		return 3;
 	}
-	return Purchaser->Get_DA_Player()->Custom_Purchase_Request(Cost,ID);
+	return Player->Get_DA_Player()->Custom_Purchase_Request(Cost,ID);
 }
 
-void DAPlayerManager::Character_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const SoldierGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Purchaser->Get_Player()->Get_Name(),DATranslationManager::Translate(Item));
-	Purchaser->Get_DA_Player()->Character_Purchase(Cost,Item);
+void DAPlayerManager::Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item) {
+	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	Player->Get_DA_Player()->Character_Purchase(Cost,Item);
 }
 
-void DAPlayerManager::Vehicle_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const VehicleGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Purchaser->Get_Player()->Get_Name(),DATranslationManager::Translate(Item));
-	Purchaser->Get_DA_Player()->Vehicle_Purchase(Cost,Item);
+void DAPlayerManager::Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item) {
+	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	Player->Get_DA_Player()->Vehicle_Purchase(Cost,Item);
 }
 
-void DAPlayerManager::PowerUp_Purchase_Event(SoldierGameObj *Purchaser,float Cost,const PowerUpGameObjDef *Item) {
-	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Purchaser->Get_Player()->Get_Name(),DATranslationManager::Translate(Item));
-	Purchaser->Get_DA_Player()->PowerUp_Purchase(Cost,Item);
+void DAPlayerManager::PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item) {
+	DALogManager::Write_Log("_PURCHASE","Purchase: %ls - %s",Player->Get_Name(),DATranslationManager::Translate(Item));
+	Player->Get_DA_Player()->PowerUp_Purchase(Cost,Item);
 }
 
-void DAPlayerManager::Custom_Purchase_Event(SoldierGameObj *Purchaser,float Cost,unsigned int ID) {
-	Purchaser->Get_DA_Player()->Custom_Purchase(Cost,ID);
+void DAPlayerManager::Custom_Purchase_Event(cPlayer *Player,float Cost,unsigned int ID) {
+	Player->Get_DA_Player()->Custom_Purchase(Cost,ID);
 }
 
 void DAPlayerManager::Team_Change_Event(cPlayer *Player) {
 	Player->Get_DA_Player()->Team_Change();
 }
 
-bool DAPlayerManager::Suicide_Event(cPlayer *Player) {
+bool DAPlayerManager::Suicide_Event(cPlayer *Player) { //Default suicide event.
 	Player->Set_Money(0.0f);
 	Player->Mark_As_Modified();
 	Player->Destroy_GameObj();
-	Send_Client_Text(WideStringFormat(L"%s committed suicide.",Player->Get_Name()),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
+	DA::Host_Message("%ls committed suicide.",Player->Get_Name());
 	return false;
 }
 
-bool DAPlayerManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int &Seat) {
-	return Soldier->Get_DA_Player()->Vehicle_Entry_Request(Vehicle,Seat);
+bool DAPlayerManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
+	return Player->Get_DA_Player()->Vehicle_Entry_Request(Vehicle,Seat);
 }
 
-void DAPlayerManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
-	Soldier->Get_DA_Player()->Vehicle_Enter(Vehicle,Seat);
+void DAPlayerManager::Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	Player->Get_DA_Player()->Vehicle_Enter(Vehicle,Seat);
 }
 
-void DAPlayerManager::Vehicle_Exit_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier,int Seat) {
-	Soldier->Get_DA_Player()->Vehicle_Exit(Vehicle,Seat);
+void DAPlayerManager::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	Player->Get_DA_Player()->Vehicle_Exit(Vehicle,Seat);
 }
 
-bool DAPlayerManager::PowerUp_Grant_Request_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	if (!Soldier->Get_Defense_Object()->Get_Health()) {
+bool DAPlayerManager::PowerUp_Grant_Request_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
+	if (!Player->Get_GameObj()->Get_Defense_Object()->Get_Health()) { //Fix bug where players can pickup powerups when they're dead.
 		return false;
 	}
-	return Soldier->Get_DA_Player()->PowerUp_Grant_Request(PowerUp,PowerUpObj);
+	return Player->Get_DA_Player()->PowerUp_Grant_Request(PowerUp,PowerUpObj);
 }
 
-void DAPlayerManager::PowerUp_Grant_Event(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	Soldier->Get_DA_Player()->PowerUp_Grant(PowerUp,PowerUpObj);
+void DAPlayerManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
+	Player->Get_DA_Player()->PowerUp_Grant(PowerUp,PowerUpObj);
 }
 
-bool DAPlayerManager::Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon) {
-	return Soldier->Get_DA_Player()->Add_Weapon_Request(Weapon);
+bool DAPlayerManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
+	return Player->Get_DA_Player()->Add_Weapon_Request(Weapon);
 }
 
-void DAPlayerManager::Add_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon) {
-	Soldier->Get_DA_Player()->Add_Weapon(Weapon);
+void DAPlayerManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	Player->Get_DA_Player()->Add_Weapon(Weapon);
 }
 
-void DAPlayerManager::Remove_Weapon_Event(SoldierGameObj *Soldier,WeaponClass *Weapon) {
-	Soldier->Get_DA_Player()->Remove_Weapon(Weapon);
+void DAPlayerManager::Remove_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	Player->Get_DA_Player()->Remove_Weapon(Weapon);
 }
 
-void DAPlayerManager::Clear_Weapons_Event(SoldierGameObj *Soldier) {
-	Soldier->Get_DA_Player()->Clear_Weapons();
+void DAPlayerManager::Clear_Weapons_Event(cPlayer *Player) {
+	Player->Get_DA_Player()->Clear_Weapons();
 }
 
 bool DAPlayerManager::C4_Detonate_Request_Event(C4GameObj *C4,SmartGameObj *Triggerer) {
@@ -1229,10 +1186,10 @@ void DAPlayerManager::C4_Detonate_Event(C4GameObj *C4,SmartGameObj *Triggerer) {
 	}
 }
 
-void DAPlayerManager::Change_Character_Event(SoldierGameObj *Soldier,const SoldierGameObjDef *SoldierDef) {
-	Soldier->Get_DA_Player()->Change_Character(SoldierDef);
+void DAPlayerManager::Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier) {
+	Player->Get_DA_Player()->Change_Character(Soldier);
 }
-	
+
 void DAPlayerManager::Think() {
 	for (int i = 0;i < Players.Count();i++) {
 		Players[i]->Think();
@@ -1281,6 +1238,224 @@ void DAPlayerManager::Custom_Event(GameObject *obj,int Type,int Param,GameObject
 	((SoldierGameObj*)obj)->Get_DA_Player()->Custom(Sender,Type,Param);
 }
 
-void DAPlayerManager::Poke_Event(PhysicalGameObj *obj,SoldierGameObj *Poker) {
-	((SoldierGameObj*)obj)->Get_DA_Player()->Poked(Poker);
+void DAPlayerManager::Poke_Event(cPlayer *Player,PhysicalGameObj *obj) {
+	((SoldierGameObj*)obj)->Get_DA_Player()->Poked(Player);
 }
+
+
+class DALegacyTagConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "tag"; }
+	const char *Get_Help() { return "TAG <playerid> <tag> - Legacy command to set the custom name tag on a player. Persists through leaving or multiple maps; defaults to position 0"; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int ID = 0;
+		Parser.Get_Int(ID);
+		cPlayer *Player = Find_Player(ID);
+		if (Player) {
+			Player->Get_DA_Player()->Remove_Tags_With_Flag(DAPlayerFlags::LEGACYTAG);
+			if (Parser.Get_Remaining_String()) {
+				Player->Get_DA_Player()->Add_Tag(Parser.Get_Remaining_String(),0,DAPlayerFlags::LEGACYTAG | DAPlayerFlags::PERSISTLEAVE | DAPlayerFlags::PERSISTMAP);
+			}
+		}
+	}
+};
+Register_Console_Function(DALegacyTagConsoleFunctionClass);
+
+class DAAddTagConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "addtag"; }
+	const char *Get_Help() { return "ADDTAG <playerid> <persist on leave> <persist on map> <position> <tag> - Add a custom name tag to a player. Persist on map/leave determines if this tag should be removed when the player leaves the game or a new map loads. Position determintes the tag's position relative to the player's other tags."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int ID = 0;
+		Parser.Get_Int(ID);
+		const char *PersistLeave = Parser.Get_String();
+		const char *PersistMap = Parser.Get_String();
+		int Position;
+		Parser.Get_Int(Position);
+		const char *Tag = Parser.Get_Remaining_String();
+		cPlayer *Player = Find_Player(ID);
+		if (Player && Tag) {
+			DAPlayerFlags::Flag Flags = (DAPlayerFlags::Flag)0;
+			if (!_stricmp(PersistLeave,"1") || !_stricmp(PersistLeave,"true") || !_stricmp(PersistLeave,"yes")) {
+				Flags |= DAPlayerFlags::PERSISTLEAVE;
+			}
+			if (!_stricmp(PersistMap,"1") || !_stricmp(PersistMap,"true") || !_stricmp(PersistMap,"yes")) {
+				Flags |= DAPlayerFlags::PERSISTMAP;
+			}
+			Player->Get_DA_Player()->Add_Tag(Tag,Position,Flags);
+		}
+	}
+};
+Register_Console_Function(DAAddTagConsoleFunctionClass);
+
+class DARemoveTagConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "removetag"; }
+	const char *Get_Help() { return "REMOVETAG <playerid> <tag> - Removes the given tag from the player."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int ID = 0;
+		Parser.Get_Int(ID);
+		const char *Tag = Parser.Get_Remaining_String();
+		cPlayer *Player = Find_Player(ID);
+		if (Player && Tag) {
+			Player->Get_DA_Player()->Remove_Tag(Tag);
+		}
+	}
+};
+Register_Console_Function(DARemoveTagConsoleFunctionClass);
+
+class DASetAccessLevelConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "setaccesslevel"; }
+	const char *Get_Alias() { return "sal"; }
+	const char *Get_Help() { return "SETACCESSLEVEL <playerid> <0-6> - Sets the given player's access level."; }
+	void Activate(const char *ArgumentsString) {
+		DATokenParserClass Parser(ArgumentsString,' ');
+		int ID = 0;
+		Parser.Get_Int(ID);
+		int Level = 0;
+		Parser.Get_Int(Level);
+		cPlayer *Player = Find_Player(ID);
+		if (Player) {
+			Player->Get_DA_Player()->Set_Access_Level((DAAccessLevel::Level)Level);
+		}
+	}
+};
+Register_Console_Function(DASetAccessLevelConsoleFunctionClass);
+
+class DAMuteConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "mute"; }
+	const char *Get_Help() { return "MUTE <playerid> - Mute a player, preventing them from speaking in chat or using radio commands."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Mute(true);
+		}
+	}
+};
+Register_Console_Function(DAMuteConsoleFunctionClass);
+
+class DAUnMuteConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "unmute"; }
+	const char *Get_Help() { return "UNMUTE <playerid> - Unmute a player."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Mute(false);
+		}
+	}
+};
+Register_Console_Function(DAUnMuteConsoleFunctionClass);
+
+class DAMuteToggleConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "mutetoggle"; }
+	const char *Get_Help() { return "MUTETOGGLE <playerid> - Mute or unmute a player, preventing them from speaking in chat or using radio commands."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Mute(!Player->Get_DA_Player()->Is_Muted());
+		}
+	}
+};
+Register_Console_Function(DAMuteToggleConsoleFunctionClass);
+
+class DABeaconLockConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "beaconlock"; }
+	const char *Get_Alias() { return "beaconmute"; }
+	const char *Get_Help() { return "BEACONLOCK <playerid> - Prevent a player from deploying beacons."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Beacon_Lock(true);
+		}
+	}
+};
+Register_Console_Function(DABeaconLockConsoleFunctionClass);
+
+class DAUnBeaconLockConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "unbeaconlock"; }
+	const char *Get_Alias() { return "unbeaconmute"; }
+	const char *Get_Help() { return "UNBEACONLOCK <playerid> - Re-allow a player to deploy beacons."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Beacon_Lock(false);
+		}
+	}
+};
+Register_Console_Function(DAUnBeaconLockConsoleFunctionClass);
+
+class DABeaconLockToggleConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "beaconlocktoggle"; }
+	const char *Get_Alias() { return "beaconmutetoggle"; }
+	const char *Get_Help() { return "BEACONLOCKTOGGLE <playerid> - Prevent or re-allow a player from deploying beacons."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Beacon_Lock(!Player->Get_DA_Player()->Is_Beacon_Locked());
+		}
+	}
+};
+Register_Console_Function(DABeaconLockToggleConsoleFunctionClass);
+
+class DAC4LockConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "c4lock"; }
+	const char *Get_Alias() { return "c4mute"; }
+	const char *Get_Help() { return "C4LOCK <playerid> - Prevent a player from using remote and proximity C4."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->C4_Lock(true);
+		}
+	}
+};
+Register_Console_Function(DAC4LockConsoleFunctionClass);
+
+class DAUnC4LockConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "unc4lock"; }
+	const char *Get_Alias() { return "unc4mute"; }
+	const char *Get_Help() { return "UNC4LOCK <playerid> - Re-allow a player to use remote and proximity C4."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->C4_Lock(false);
+		}
+	}
+};
+Register_Console_Function(DAUnC4LockConsoleFunctionClass);
+
+class DAC4LockToggleConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "c4locktoggle"; }
+	const char *Get_Alias() { return "c4mutetoggle"; }
+	const char *Get_Help() { return "C4LOCKTOGGLE <playerid> - Prevent or re-allow a player from using remote and proximity C4."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->C4_Lock(!Player->Get_DA_Player()->Is_C4_Locked());
+		}
+	}
+};
+Register_Console_Function(DAC4LockToggleConsoleFunctionClass);
+
+
+
+class DAVoteYesKeyHookClass : public DAKeyHookClass {
+	void Activate(cPlayer *Player) {
+		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote yes",-1)) {
+			Console_Output("%ls: !vote yes\n",Player->Get_Name());
+			Player->Get_DA_Player()->Inc_Flood_Counter();
+			Player->Get_DA_Player()->Inc_Flood_Counter();
+		}
+	}
+};
+Register_Simple_Key_Hook(DAVoteYesKeyHookClass,"VoteYes");
+
+class DAVoteNoKeyHookClass : public DAKeyHookClass {
+	void Activate(cPlayer *Player) {
+		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote no",-1)) {
+			Console_Output("%ls: !vote no\n",Player->Get_Name());
+			Player->Get_DA_Player()->Inc_Flood_Counter();
+			Player->Get_DA_Player()->Inc_Flood_Counter();
+		}
+	}
+};
+Register_Simple_Key_Hook(DAVoteNoKeyHookClass,"VoteNo");

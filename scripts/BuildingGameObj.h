@@ -14,6 +14,7 @@
 //Added Get_Position that returns position.
 //Added Get_State.
 //Added Get_Base.
+//Made CanRepairBuildings public.
 #ifndef TT_INCLUDE__BUILDINGGAMEOBJ_H
 #define TT_INCLUDE__BUILDINGGAMEOBJ_H
 
@@ -114,6 +115,7 @@ public:
 	virtual	SuperWeaponGameObj *		As_SuperWeaponGameObj (void)			{ return NULL; }
 	int Get_State() { return CurrentState; }
 	BaseControllerClass *Get_Base() { return BaseController; }
+	static REF_DECL2(CanRepairBuildings,bool);
 
 protected:
 	BuildingMonitorClass *					BuildingMonitor;
@@ -132,7 +134,6 @@ protected:
 	RefMultiListClass<LightPhysClass>				PowerOffLights;
 #ifndef TTLE_EXPORTS
 	AABoxClass										BoundingBox;
-	static REF_DECL2(CanRepairBuildings,bool);
 #endif
 	void											Initialize_Building(void);	
 	void											Reset_Components(void);

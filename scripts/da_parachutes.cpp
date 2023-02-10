@@ -1,0 +1,103 @@
+/*	Renegade Scripts.dll
+    Dragonade Parachutes Game Feature
+	Copyright 2013 Whitedragon, Tiberian Technologies
+
+	This file is part of the Renegade scripts.dll
+	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
+	the terms of the GNU General Public License as published by the Free
+	Software Foundation; either version 2, or (at your option) any later
+	version. See the file COPYING for more details.
+	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
+	Only the source code to the module(s) containing the licenced code has to be released.
+*/
+
+#include "general.h"
+#include "scripts.h"
+#include "engine.h"
+#include "engine_DA.h"
+#include "MoveablePhysClass.h"
+#include "da.h"
+#include "da_settings.h"
+#include "da_parachutes.h"
+
+void DAParachutesObserverClass::Init() {
+	Get_Owner()->Get_Position(&StartPos);
+	LastPos = StartPos;
+	Start_Timer(1,0.1f);
+}
+
+void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
+	Vector3 Pos;
+	Get_Owner()->Get_Position(&Pos);
+	if (Number == 1) { //Check if parachute should be deployed.
+		if (Pos.Z < LastPos.Z) { //Check if they're falling.
+			if (StartPos.Z - Pos.Z >= 10) { //Deploy parachute after 10 meters.
+				Parachute = Create_Object("Soldier Powerups",((PhysicalGameObj*)Get_Owner())->Get_Transform()); //Powerups fall slower than infantry.
+				Commands->Set_Model(Parachute,"X5D_Parachute");
+				Commands->Attach_To_Object_Bone(obj,Parachute,"Origin");
+				Start_Timer(2,0.1f);
+			}
+			else {
+				Start_Timer(1,0.1f);
+			}
+			LastPos = Pos;
+		}
+		else {
+			Set_Delete_Pending();
+		}
+	}
+	else if (Number == 2) { //Check if landed.
+		((SoldierGameObj*)Get_Owner())->Get_Human_State()->Set_Jump_Transform(((SoldierGameObj*)Get_Owner())->Get_Transform()); //Reset beginning of fall to current position to prevent fall damage.
+		if (Pos.Z >= LastPos.Z) {
+			if (Parachute) {
+				Parachute->Set_Delete_Pending();
+			}
+			Set_Delete_Pending();
+		}
+		else {
+			LastPos = Pos;
+			Start_Timer(2,0.1f);
+		}
+	}
+}
+
+bool DAParachutesObserverClass::Vehicle_Entry_Request(VehicleGameObj *Vehicle,int &Seat) {
+	if (Parachute) { //Block vehicle entry if the parachute is deployed.
+		return false;
+	}
+	Set_Delete_Pending();
+	return true;
+}
+
+void DAParachutesObserverClass::Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
+	Set_Delete_Pending();
+}
+
+DAParachutesObserverClass::~DAParachutesObserverClass() {
+	if (Parachute) {
+		DAGameObjManager::Set_GameObj_Delete_Pending(Parachute);
+	}
+}
+
+void DAParachutesGameFeatureClass::Init() {
+	Register_Event(DAEvent::SETTINGSLOADED);
+	Register_Event(DAEvent::VEHICLEEXIT);
+	Register_Chat_Command((DAECC)&DAParachutesGameFeatureClass::Parachute_Chat_Command,"!parachute|!para|!p");
+}
+
+void DAParachutesGameFeatureClass::Settings_Loaded_Event() {
+	SingleSeat = DASettingsManager::Get_Bool("EnableSingleSeatParachutes",false);
+}
+
+void DAParachutesGameFeatureClass::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat) {
+	if (Vehicle->Get_Definition().Get_Type() == VEHICLE_TYPE_FLYING && (Vehicle->Get_Definition().Get_Seat_Count() > 1 || SingleSeat)) {
+		Player->Get_GameObj()->Add_Observer(new DAParachutesObserverClass);
+	}
+}
+
+bool DAParachutesGameFeatureClass::Parachute_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+	DA::Page_Player(Player,"Your parachute will automatically deploy when you exit the appropriate vehicle. No command is needed");
+	return false;
+}
+
+Register_Game_Feature(DAParachutesGameFeatureClass,"Parachutes","EnableParachutes",0);

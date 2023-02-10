@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade C4 and Beacon Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -36,6 +36,30 @@ void DAC4BeaconManager::Init() {
 
 void DAC4BeaconManager::Settings_Loaded_Event() {
 	Console_InputF("mlimit %d",DASettingsManager::Get_Int("C4Limit",Get_Mine_Limit()));
+	if (DASettingsManager::Get_Bool("BlockFakeBeacons",false)) {
+		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::BEACON,INT_MAX);
+	}
+	else {
+		Unregister_Object_Event(DAObjectEvent::CREATED);
+	}
+}
+
+void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
+	BeaconGameObj *Beacon = (BeaconGameObj*)obj;
+	if (Beacon->Get_Owner()) {
+		BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),Beacon->Get_Player_Type()?0:1);
+		if (Building) {
+			ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
+			float DamageRadius = Explosion->DamageRadius*Explosion->DamageRadius;
+			float Distance = 0.0f;
+			Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
+			if (Distance > DamageRadius) {
+				Set_Bullets(Beacon->Get_Owner(),Beacon->Get_WeaponDef()->Get_Name(),2);
+				Beacon->Set_Delete_Pending();
+				DA::Page_Player(Beacon->Get_Owner(),"Beacons may only be deployed where they would damage an enemy building.");
+			}
+		}
+	}
 }
 
 void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
@@ -110,26 +134,26 @@ void DAC4BeaconManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Kille
 }
 
 //Default powerup purchase handler.
-int DAC4BeaconManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const PowerUpGameObjDef *Item) {
+int DAC4BeaconManager::PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item) {
 	//The normal protection against buying a weapon twice doesn't work if the PT data on the server has been changed.
 	if (Item->GrantWeapon) {
-		WeaponBagClass *Bag = Purchaser->Get_Weapon_Bag();
+		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
 		for (int i = 1;i < Bag->Get_Count();i++) {
 			if (Bag->Peek_Weapon(i)->Get_ID() == Item->GrantWeaponID && Bag->Peek_Weapon(i)->Get_Total_Rounds()) {
 				return 4;
 			}
 		}
 	}
-	if (Purchaser->Get_Player()->Purchase_Item((int)Cost)) {
-		Item->Grant(Purchaser);
+	if (Player->Purchase_Item((int)Cost)) {
+		Item->Grant(Player->Get_GameObj());
 		return 0;
 	}
 	return 2;
 }
 
 
-
-class C4ChatCommand : public DAChatCommandClass {
+#include "da_player.h"
+class DAC4ChatCommandClass: public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 		int Remote = 0,Prox = 0;
 		int Team = Player->Get_Team();
@@ -147,4 +171,4 @@ class C4ChatCommand : public DAChatCommandClass {
 		return false;
 	}
 };
-DAChatCommandRegistrant<C4ChatCommand> C4ChatCommandRegistrant("!c4|!mine|!mines|!mlimit|!minelimit|C4Count");
+Register_Simple_Chat_Command(DAC4ChatCommandClass,"!c4|!mine|!mines|!mlimit|!minelimit|C4Count");

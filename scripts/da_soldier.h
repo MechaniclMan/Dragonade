@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Soldier Manager
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ private:
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
-	int Character_Purchase_Request_Event(BaseControllerClass *Base,SoldierGameObj *Purchaser,float &Cost,const SoldierGameObjDef *Item);
+	int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
 
 	//Settings
 	HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> GrantWeapons;

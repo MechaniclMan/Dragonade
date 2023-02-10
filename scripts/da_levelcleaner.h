@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Singleplayer Level Cleaner
-	Copyright 2012 Whitedragon, Tiberian Technologies
+	Copyright 2013 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
