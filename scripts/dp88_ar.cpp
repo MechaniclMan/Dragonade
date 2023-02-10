@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,23 +30,25 @@ Game Controller
 
 dp88_AR_GameController::dp88_AR_GameController()
 {
-	created = false;
+  created = false;
 
-	team0_countryID = 0;
-	team1_countryID = 0;
+  team0_countryID = 0;
+  team1_countryID = 0;
 
-	TD_Waiting_Console = 0;
-
-	mirageTank_disguisePresets[0] = 0;
-	mirageTank_disguisePresets[1] = 0;
-	mirageTank_disguisePresets[2] = 0;
+  mirageTank_disguisePresets[0] = 0;
+  mirageTank_disguisePresets[1] = 0;
+  mirageTank_disguisePresets[2] = 0;
 }
+
+// -------------------------------------------------------------------------------------------------
 
 dp88_AR_GameController::~dp88_AR_GameController()
 {}
 
 void dp88_AR_GameController::Created( GameObject *obj )
 {
+  dp88_Camo_Controller::Created(obj);
+
 	//Console_Output ( "Created dp88_AR_GameController\n" );
 	created = true;
 	
@@ -607,7 +609,7 @@ void dp88_AR_Deployable_Infantry::Timer_Expired ( GameObject* obj, int number )
 // Ugly hack to clean up when player purchases new character
 void dp88_AR_Deployable_Infantry::Detach(GameObject *obj)
 {
-	if ( Exe != 4 )	// Don't call destroyed if called from LE, it will crash!
+	if ( Exe != EXE_LEVELEDIT )	// Don't call destroyed if called from LE, it will crash!
 		Destroyed(obj);
 	JFW_Key_Hook_Base::Detach(obj);
 }
@@ -863,6 +865,7 @@ void dp88_Ore_Miner::Created ( GameObject *obj )
   m_oreValue      = 0;
 
   m_bUseAI        = ( Get_Int_Parameter ( "Use_AI" ) == 1 ) ? true : false;
+  m_resourceName  = Get_Parameter("Resource_Name");
   m_oreCapacity   = Get_Int_Parameter("Ore_Capacity");
   m_oreMiningTime = Get_Float_Parameter("Ore_Mining_Time");
   m_oreDumpTime   = Get_Float_Parameter("Ore_Dump_Time");
@@ -878,11 +881,11 @@ void dp88_Ore_Miner::Created ( GameObject *obj )
   m_animSounds[MINER_ANIM_MINING]   = Get_Parameter("Mining_Sound");
   m_animSounds[MINER_ANIM_DUMPING]  = Get_Parameter("Dump_Sound");
 
-  for ( int i = MINER_ANIM_IDLE; i < MINER_ANIM_DUMPING; ++i )
+  for ( int i = MINER_ANIM_IDLE; i <= MINER_ANIM_DUMPING; ++i )
   {
-    if (m_animations[i] != NULL && strlen(m_animations[i]) < 0)
+    if (m_animations[i] != NULL && strlen(m_animations[i]) <= 0)
       m_animations[i] = NULL;
-    if (m_animSounds[i] != NULL && strlen(m_animSounds[i]) < 0)
+    if (m_animSounds[i] != NULL && strlen(m_animSounds[i]) <= 0)
       m_animSounds[i] = NULL;
   }
 
@@ -952,9 +955,17 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
       else if ( Get_Vehicle_Driver(obj) != NULL )
       {
         if ( m_oreMined < m_oreCapacity )
-          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "The ore field is depleted, find another ore field or dock at the Refinery to smelt the ore you have collected so far..." );
+        {
+          StringClass str;
+          str.Format("The %s field is depleted, find another %s field or dock at the Refinery to process the %s you have collected so far...",m_resourceName,m_resourceName,m_resourceName);
+          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, str);
+        }
         else
-          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Fully loaded with ore, dock at the Refinery to smelt the ore into credits" );
+        {
+          StringClass str;
+          str.Format("Fully loaded with %s, dock at the Refinery to process the %s into credits",m_resourceName,m_resourceName);
+          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG,str);
+        }
       }
     }
   }
@@ -966,7 +977,11 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
   {
     // Inform driver we are unloading
     if ( Get_Vehicle_Driver(obj) != NULL )
-      Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Unloading ore, please stand by..." );
+    {
+      StringClass str;
+      str.Format("Unloading %s, please stand by...", m_resourceName);
+      Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, str);
+    }
 
     // Set AI state
     if ( m_bUseAI )
@@ -974,7 +989,7 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
 
     // Send a timed event to notify us when the ore unload is completed and
     // call the DockedAtRefinery() event
-    Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 0, m_oreDumpTime );
+    Commands->Send_Custom_Event(obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 0, m_oreDumpTime);
     DockedAtRefinery(obj);
   }
 
@@ -987,8 +1002,11 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
     if ( Get_Vehicle_Driver(obj) != NULL )
     {
       StringClass message(true);
-      message.Format ("Ore unloaded successfully, you have earned %d credits for each player and %d points for yourself", m_oreValue, m_oreValue/10 );
+      StringClass s = m_resourceName;
+      s[0] = (char)toupper(s[0]);
+      message.Format ("%s unloaded successfully, you have earned %d credits for each player and %d points for yourself",s.Peek_Buffer(), m_oreValue, m_oreValue/10 );
       Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, message );
+
       Commands->Give_Points(Get_Vehicle_Driver(obj),(float)m_oreValue/10.0f,false);
     }
 
@@ -1083,7 +1101,11 @@ void dp88_Ore_Miner::EnteredOreField ( GameObject *obj, GameObject* oreField )
     Commands->Action_Reset ( obj, 101.0f );
   }
   else if ( Get_Vehicle_Driver(obj) != NULL )
-    Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Collecting ore..." );
+  {
+    StringClass str;
+    str.Format("Collecting %s...",m_resourceName);
+    Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, str );
+  }
   else
     return;
 
@@ -1171,11 +1193,11 @@ void dp88_Ore_Miner::DockAtRefinery ( GameObject *obj )
 
 void dp88_Ore_Miner::DockedAtRefinery ( GameObject *obj )
 {
-  UpdateAnimation(obj, MINER_ANIM_DUMPING);
-
   // If we are using AI then reset the action now that we have arrived
   if (m_bUseAI)
     Commands->Action_Reset ( obj, 101.0f );
+
+  UpdateAnimation(obj, MINER_ANIM_DUMPING);
 
   // Immobilize the vehicle and disable engine sounds
   if ( obj->As_VehicleGameObj() )
@@ -1214,13 +1236,14 @@ void dp88_Ore_Miner::UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId )
 
   pObj->As_PhysicalGameObj()->Clear_Animation();
 
-  if ( animId < sizeof(m_animations) && m_animations[animId] != NULL )
+  if ( animId < countof(m_animations) && m_animations[animId] != NULL )
   {
-    bool bLooping = (animId == MINER_ANIM_DUMPING) ? true : false;
-    Commands->Set_Animation(pObj,m_animations[animId],bLooping,0,0,-1,false);
+    bool bLooping = (animId == MINER_ANIM_MINING) ? true : false;
+    Commands->Set_Animation(pObj,m_animations[animId],bLooping,NULL,0,-1,false);
   }
 
-  if ( animId < sizeof(m_animSounds) && m_animSounds[animId] != NULL && animId != MINER_ANIM_DUMPING )
+  // Mining sound is played after each full load
+  if (animId < countof(m_animSounds) && m_animSounds[animId] != NULL)
     Commands->Create_Sound(m_animSounds[animId],Commands->Get_Position(pObj),pObj);
 }
 
@@ -1237,7 +1260,8 @@ ScriptRegistrant<dp88_Ore_Miner> dp88_Ore_Miner_Registrant(
   "Dump_Sound:string,"
   "Mining_Animation:String,"
   "Mining_Sound:string,"
-  "Idle_Animation:string"
+  "Idle_Animation:string,"
+  "Resource_Name=ore:string"
 );
 
 
@@ -1511,7 +1535,11 @@ bool dp88_AR_Chrono_Miner::CanChronoshiftToLocation ( GameObject* obj, Vector3& 
   MoveablePhysClass* mphys = ( obj->As_PhysicalGameObj() ) ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 
   // Can we move to this position without getting stuck?
-  return mphys->Can_Teleport( Matrix3D(location) );
+  if (mphys)
+  {
+	return mphys->Can_Teleport( Matrix3D(location) );
+  }
+  return false;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1583,7 +1611,7 @@ Ore Field
 void dp88_Ore_Field::Created ( GameObject* pObj )
 {
   m_myObjId = Commands->Get_ID(pObj);
-
+  m_pZoneObserver = NULL;
 
   m_oreValue = Get_Int_Parameter("Ore_Value");
   m_oreCapacity = Get_Int_Parameter("Ore_Capacity");
@@ -1594,7 +1622,7 @@ void dp88_Ore_Field::Created ( GameObject* pObj )
 
 
   m_strAnimation = Get_Parameter("Animation_Name");
-  if ( strlen(m_strAnimation) <= 0 )
+  if ( strlen(m_strAnimation) <= 0 || !pObj->As_PhysicalGameObj())
     m_strAnimation = NULL;
   else
   {
@@ -1611,24 +1639,30 @@ void dp88_Ore_Field::Created ( GameObject* pObj )
     m_zoneStepY = Get_Float_Parameter("Zone_Anim_Step_Y");
   }
 
-
-  // Create the miner script zone
-  Matrix3 rotation(true);
-  rotation.Rotate_Z(Commands->Get_Facing(pObj));
-
-  // Define the bounding box and create the zone
-  OBBoxClass zoneBoundingBox ( Commands->Get_Position(pObj), m_zoneSizeFull, rotation );
-  if ( GameObject* pMinerZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
+  if (!pObj->As_ScriptZoneGameObj())
   {
-    m_minerZoneId = Commands->Get_ID(pMinerZone);
-
-    // Attach observer to the script zone
-    m_pZoneObserver = new dp88_Ore_Field_Observer(this);
-    pMinerZone->Add_Observer(m_pZoneObserver);
-
-    return;
+	// Create the miner script zone
+	Matrix3 rotation(true);
+	rotation.Rotate_Z(Commands->Get_Facing(pObj));
+	
+	// Define the bounding box and create the zone
+	OBBoxClass zoneBoundingBox ( Commands->Get_Position(pObj), m_zoneSizeFull, rotation );
+	if ( GameObject* pMinerZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
+	{
+	    m_minerZoneId = Commands->Get_ID(pMinerZone);
+	
+	    // Attach observer to the script zone
+	    m_pZoneObserver = new dp88_Ore_Field_Observer(this);
+	    pMinerZone->Add_Observer(m_pZoneObserver);
+	
+	    return;
+	}
   }
-
+  else
+  {
+	  m_minerZoneId = Commands->Get_ID(pObj);
+	  return;
+  }
 
   m_pZoneObserver = NULL;
   Console_Output ( "[%d:%s:%s] Critical Error: Unable to create the miner script zone. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
@@ -1781,16 +1815,22 @@ void dp88_Ore_Extractor::Timer_Expired ( GameObject* pObj, int number )
 
 void dp88_Ore_Extractor::Animation_Complete ( GameObject* pObj, const char* animationName )
 {
-  if ( (m_strAnimation == NULL && animationName == NULL) || _stricmp(m_strAnimation,animationName) == 0 )
+  if ( (m_strAnimation == NULL || animationName == NULL) || _stricmp(m_strAnimation,animationName) == 0 )
   {
     // Populate ore field with additional ore
     GameObject* pOreField = Commands->Find_Object(m_oreFieldId);
     if ( !pOreField )
+	{
       Destroy_Script();
+	  return;
+	}
 
     dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(pOreField, "dp88_Ore_Field"));
     if ( !pOreFieldScript )
+	{
       Destroy_Script();
+	  return;
+	}
 
     pOreFieldScript->AddOre(m_nOreUnits);
 
@@ -1860,6 +1900,10 @@ void dp88_Aircraft_LandingZone_Aircraft::Created ( GameObject *obj )
 {
   driverID = 0;
   landingZoneCount = 0;
+  if (Get_Int_Parameter("require_landing_zone") >= 1)
+  {
+	  Commands->Enable_Vehicle_Transitions(obj,false);
+  }
 }
 
 void dp88_Aircraft_LandingZone_Aircraft::Killed ( GameObject *obj, GameObject* killer )
@@ -1881,7 +1925,13 @@ void dp88_Aircraft_LandingZone_Aircraft::Custom ( GameObject *obj, int type, int
 
     // Play landing animation if this is the first zone we have entered
     if ( landingZoneCount == 1 )
+	{
+	  if (Get_Int_Parameter("require_landing_zone") >= 1)
+	  {
+		  Commands->Enable_Vehicle_Transitions(obj,true);
+	  }
       Commands->Set_Animation( obj,Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_first_frame"), Get_Float_Parameter("landing_anim_last_frame"), false );
+	}
   }
 
   else if ( type == CUSTOM_TRANSITION_VTOL_LAND_ZONE && param == 0 )
@@ -1890,7 +1940,13 @@ void dp88_Aircraft_LandingZone_Aircraft::Custom ( GameObject *obj, int type, int
 
     // Play take off animation if this is the last zone we were in (landing anim in reverse...)
     if ( landingZoneCount == 0 )
+	{
+	  if (Get_Int_Parameter("require_landing_zone") >= 1)
+	  {
+		  Commands->Enable_Vehicle_Transitions(obj,false);
+	  }
       Commands->Set_Animation( obj, Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_last_frame"), Get_Float_Parameter("landing_anim_first_frame"), false );
+	}
   }
 
   else if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && driverID == NULL )
@@ -2247,8 +2303,7 @@ void dp88_RemoteControlConsole::Timer_Expired ( GameObject *obj, int number )
 			CreateDummy ( pilot, Commands->Get_Position(pilot), Commands->Get_Facing(pilot) );
 
 			Commands->Control_Enable ( pilot, true );
-			Commands->Set_Position ( pilot, Commands->Get_Position ( vehicle ) );
-			Soldier_Transition_Vehicle ( pilot );
+			Force_Vehicle_Entry(pilot,vehicle);
 
 			// Play control established sound
 			Create_2D_Sound_Player(pilot, Get_Parameter("connectionEstablishedSound") );
@@ -3159,7 +3214,7 @@ void dp88_AR_Prism_Tower::Custom ( GameObject *obj, int type, int param, GameObj
 void dp88_AR_Prism_Tower::Timer_Expired ( GameObject *obj, int number )
 {
   // Piggy back our assistance polling and charge refilling on the existing think timer
-  if ( number == TIMER_CUSTOMAI_THINK )
+  if ( number == TIMER_AI_THINK )
   {
     /* Send out assistance requests to ensure other towers don't time out on the 'last seen' check
     *
@@ -3431,7 +3486,7 @@ Script Registrants
 --------------------------*/
 
 // Game Controller
-ScriptRegistrant<dp88_AR_GameController> dp88_AR_GameController_Registrant( "dp88_AR_GameController", "enableCountry_Russia=1:int,enableCountry_Cuba=1:int,enableCountry_Iraq=1:int,enableCountry_Libya=1:int,enableCountry_America=1:int,enableCountry_France=1:int,enableCountry_Germany=1:int,enableCountry_GreatBritain=1:int,enableCountry_Korea=1:int,MirageTank_disguisePreset_1=mt_tree:string,MirageTank_disguisePreset_2=null:string,MirageTank_disguisePreset_3=null:string,warminer_refToOre=0:int,warminer_oreToRef=0:int,warminer_unloadOre=0:int,chronominer_refToOre=0:int,chronominer_unloadOre=0:int" );
+ScriptRegistrant<dp88_AR_GameController> dp88_AR_GameController_Registrant( "dp88_AR_GameController", "enableCountry_Russia=1:int,enableCountry_Cuba=1:int,enableCountry_Iraq=1:int,enableCountry_Libya=1:int,enableCountry_America=1:int,enableCountry_France=1:int,enableCountry_Germany=1:int,enableCountry_GreatBritain=1:int,enableCountry_Korea=1:int,MirageTank_disguisePreset_1=mt_tree:string,MirageTank_disguisePreset_2=null:string,MirageTank_disguisePreset_3=null:string,Camouflage=u:string" );
 
 // Unit scripts
 //ScriptRegistrant<dp88_AR_Vehicle> dp88_AR_Vehicle_Registrant( "dp88_AR_Vehicle", "TD_attack_animName=modelfile.animfile:string,TD_attack_firstFrame=0.0:float,TD_attack_lastFrame=30.0:float,CLEG_Resistance=10:int" );

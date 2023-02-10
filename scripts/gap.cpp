@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -216,9 +216,14 @@ void RA_Gap_Generator_Building::Created(GameObject *obj)
 		Commands->Send_Custom_Event(obj, GapControl, 2222, 3, 3);
 	}
 	shroudID = 0;
+	sizeID = 0;
 	Vector3 position = Commands->Get_Position(obj);
 	GameObject *object = Commands->Create_Object(Get_Parameter("ShroudPreset"), position);
+	Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
 	shroudID = Commands->Get_ID(object);
+	GameObject *object2 = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+	Commands->Set_Player_Type(object2,Commands->Get_Player_Type(obj));
+	sizeID = Commands->Get_ID(object2);
 	Commands->Start_Timer(obj, this, 2, Get_Int_Parameter("Timer_Number"));
 }
 
@@ -235,6 +240,11 @@ void RA_Gap_Generator_Building::Timer_Expired(GameObject *obj, int number)
 				Commands->Destroy_Object(Commands->Find_Object(shroudID));
 				shroudID = 0;
 			}
+			if (sizeID)
+			{
+				Commands->Destroy_Object(Commands->Find_Object(sizeID));
+				sizeID = 0;
+			}
 		}
 		Commands->Start_Timer(obj, this, 2, Get_Int_Parameter("Timer_Number"));
 	}
@@ -249,13 +259,18 @@ void RA_Gap_Generator_Building::Killed(GameObject *obj, GameObject *killer)
 		Commands->Destroy_Object(Commands->Find_Object(shroudID));
 		shroudID = 0;
 	}
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
 }
 
 //////////RA_Gap_Generator_Vehicle/////////
 
 void RA_Gap_Generator_Vehicle::Created(GameObject *obj)
 {
-	shroudID = 0;
+	sizeID = 0;
 	GameObject *GapControl = Find_Object_By_Preset(2, Get_Parameter("Gap_Controller"));
 	if (!Commands->Get_Player_Type(obj))
 	{
@@ -277,8 +292,17 @@ void RA_Gap_Generator_Vehicle::Custom(GameObject *obj, int type, int param, Game
 		{
 			Vector3 position = Commands->Get_Bone_Position(obj, "ROOTTRANSFORM");
 			GameObject *object = Commands->Create_Object(Get_Parameter("ShroudPreset"), position);
+			Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
 			Commands->Attach_To_Object_Bone(object, obj, "ROOTTRANSFORM");
 			shroudID = Commands->Get_ID(object);
+		}
+		if (!sizeID)
+		{
+			Vector3 position = Commands->Get_Bone_Position(obj, "ROOTTRANSFORM");
+			GameObject *object = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+			Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
+			Commands->Attach_To_Object_Bone(object, obj, "ROOTTRANSFORM");
+			sizeID = Commands->Get_ID(object);
 		}
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -288,6 +312,11 @@ void RA_Gap_Generator_Vehicle::Custom(GameObject *obj, int type, int param, Game
 		{
 			Commands->Destroy_Object(Commands->Find_Object(shroudID));
 			shroudID = 0;
+		}
+		if (sizeID)
+		{
+			Commands->Destroy_Object(Commands->Find_Object(sizeID));
+			sizeID = 0;
 		}
 	}
 }
@@ -301,6 +330,11 @@ void RA_Gap_Generator_Vehicle::Destroyed(GameObject *obj)
 		Commands->Destroy_Object(Commands->Find_Object(shroudID));
 		shroudID = 0;
 	}
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
 }
 
 //////////RA_Gap_Generator_Ignored/////////
@@ -309,6 +343,6 @@ void RA_Gap_Generator_Vehicle::Destroyed(GameObject *obj)
 
 /********************************************************************/
 ScriptRegistrant<RA_Global_Gap_Controller> RA_Global_Gap_Controller_Registrant("RA_Global_Gap_Controller","Update_Delay=2.0:float,Timer_Number=687:int");
-ScriptRegistrant<RA_Gap_Generator_Building> RA_Gap_Generator_Building_Registrant("RA_Gap_Generator_Building","Timer_Number=876:int,Stealth_Range=50:int,Gap_Controller=RA_Game_Manager:string,Team=1:int,ShroudPreset:string");
-ScriptRegistrant<RA_Gap_Generator_Vehicle> RA_Gap_Generator_Vehicle_Registrant("RA_Gap_Generator_Vehicle","Stealth_Range=50:int,Gap_Controller=RA_Game_Manager:string,ShroudPreset:string");
+ScriptRegistrant<RA_Gap_Generator_Building> RA_Gap_Generator_Building_Registrant("RA_Gap_Generator_Building","Timer_Number=876:int,Stealth_Range=50:int,Gap_Controller=RA_Game_Manager:string,Team=1:int,ShroudPreset:string,SizePreset:string");
+ScriptRegistrant<RA_Gap_Generator_Vehicle> RA_Gap_Generator_Vehicle_Registrant("RA_Gap_Generator_Vehicle","Stealth_Range=50:int,Gap_Controller=RA_Game_Manager:string,ShroudPreset:string,SizePreset:string");
 ScriptRegistrant<RA_Gap_Generator_Ignored> RA_Gap_Generator_Ignored_Registrant("RA_Gap_Generator_Ignored","");

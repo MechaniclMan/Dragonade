@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -268,8 +268,8 @@ void JFW_2D_Sound_Damage_Range_Team_String::Created(GameObject *obj)
 	enabled = true;
 }
 
-extern REF_DECL2(NodHouseColor, Vector3);
-extern REF_DECL2(GDIHouseColor, Vector3);
+extern REF_DECL(Vector3, NodHouseColor);
+extern REF_DECL(Vector3, GDIHouseColor);
 void JFW_2D_Sound_Damage_Range_Team_String::Damaged(GameObject *obj,GameObject *damager,float amount)
 {
 	if (Commands->Get_Health(obj) <= Get_Float_Parameter("MinHealth"))

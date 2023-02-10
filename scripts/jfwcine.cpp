@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -297,7 +297,7 @@ void JFW_Cinematic_Attack::Created(GameObject *obj)
 	int targetid = Get_Int_Parameter("ID");
 	float range = Get_Float_Parameter("Range");
 	float deviation = Get_Float_Parameter("Deviation");
-	int primary = Get_Int_Parameter("Primary");
+	bool primary = Get_Bool_Parameter("Primary");
 	params.Set_Basic(this,(float)priority,40016);
 	params.Set_Attack(Commands->Find_Object(targetid),range,deviation,primary);
 	params.AttackCheckBlocked = false;
@@ -446,7 +446,7 @@ void JFW_Cinematic_Attack_Position::Created(GameObject *obj)
 	Vector3 position = Get_Vector3_Parameter("Position");
 	float range = Get_Float_Parameter("Range");
 	float deviation = Get_Float_Parameter("Deviation");
-	int primary = Get_Int_Parameter("Primary");
+	bool primary = Get_Bool_Parameter("Primary");
 	params.Set_Basic(this,(float)priority,40016);
 	params.Set_Attack(position,range,deviation,primary);
 	Commands->Action_Attack(obj,params);
@@ -479,15 +479,27 @@ void JFW_Cinematic_Attack_Command::Custom(GameObject *obj,int type,int param,Gam
 
 void JFW_Cinematic::Created(GameObject *obj)
 {
-	Commands->Enable_Hibernation(obj,0);
 	Lines = 0;
 	memset(Slots,0,sizeof(Slots));
-	SyncTime = Commands->Get_Sync_Time();
-	f1 = 0;
-	PrimaryKilled = false;
-	CameraControl = false;
 	Load_Control_File(Get_Parameter("ControlFilename"));
-	Parse_Commands(obj);
+
+    int start_paused_param = Get_Parameter_Index("StartPaused");
+    StartPaused = start_paused_param < Get_Parameter_Count() ? Get_Bool_Parameter(start_paused_param) : false;
+
+    if (!StartPaused)
+    {
+        Start_Cinematic(obj);
+    }
+}
+
+void JFW_Cinematic::Start_Cinematic(GameObject* obj)
+{
+    Commands->Enable_Hibernation(obj,0);
+    SyncTime = Commands->Get_Sync_Time();
+    f1 = 0;
+    PrimaryKilled = false;
+    CameraControl = false;
+    Parse_Commands(obj);
 }
 
 void JFW_Cinematic::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -497,6 +509,11 @@ void JFW_Cinematic::Custom(GameObject *obj,int type,int param,GameObject *sender
 		PrimaryKilled = true;
 		Parse_Commands(obj);
 	}
+    if (type == 99000 && StartPaused)
+    {
+        StartPaused = false;
+        Start_Cinematic(obj);
+    }
 	if ((type >= 10000) && ((type - 10000) <= 39))
 	{
 		if (!Slots[type - 10000])
@@ -901,6 +918,10 @@ void JFW_Cinematic::Parse_Command(char *command)
 	{
 		Command_Set_Screen_Fade_Opacity(command);
 	}
+    else if (Title_Match(&command,"Show_Message"))
+    {
+        Command_Show_Message(command);
+    }
 }
 
 void JFW_Cinematic::Command_Create_Object(char *command)
@@ -1016,7 +1037,7 @@ void JFW_Cinematic::Command_Play_Animation(char *command)
 {
 	int slot = atoi(Get_First_Parameter(command));
 	char *animation = Get_Next_Parameter();
-	bool loop = atoi(Get_Next_Parameter());
+	bool loop = atoi(Get_Next_Parameter()) != 0;
 	char *subobject = Get_Next_Parameter();
 	bool blended = atoi(Get_Next_Parameter()) == 1;
 	if ((slot < 0) || (slot >= 40))
@@ -1235,7 +1256,7 @@ void JFW_Cinematic::Command_Set_Primary(char *command)
 		{
 			Commands->Enable_Hibernation(obj,false);
 			char params[20];
-			sprintf(params,"%d",CallbackID);
+			sprintf(params,"%u",CallbackID);
 			Commands->Attach_Script(obj,"JFW_Cinematic_Primary_Killed",params);
 		}
 	}
@@ -1262,7 +1283,7 @@ void JFW_Cinematic::Command_Move_Slot(char *command)
 
 void JFW_Cinematic::Command_Sniper_Control(char *command)
 {
-	bool sniper = atoi(Get_First_Parameter(command));
+	bool sniper = atoi(Get_First_Parameter(command)) != 0;
 	float zoom = (float)atof(Get_Next_Parameter());
 	Commands->Cinematic_Sniper_Control(sniper != 0,zoom);
 }
@@ -1289,7 +1310,7 @@ void JFW_Cinematic::Command_Shake_Camera(char *command)
 void JFW_Cinematic::Command_Enable_Shadow(char *command)
 {
 	int slot = atoi(Get_First_Parameter(command));
-	bool enable = atoi(Get_Next_Parameter());
+	bool enable = atoi(Get_Next_Parameter()) != 0;
 	if ((slot < 0) || (slot >= 40))
 	{
 		slot = -1;
@@ -1327,6 +1348,30 @@ void JFW_Cinematic::Command_Set_Screen_Fade_Opacity(char *command)
 	Commands->Set_Screen_Fade_Opacity(opacity,transition);
 }
 
+void JFW_Cinematic::Command_Show_Message(char* command)
+{
+    char* message = Get_First_Parameter(command);
+    char* team_c = Get_Next_Parameter();
+    char* r_c = Get_Next_Parameter();
+    char* g_c = Get_Next_Parameter();
+    char* b_c = Get_Next_Parameter();
+
+    int team = team_c && team_c[0] ? atoi(team_c) : 2;
+    int r,g,b;
+    if (r_c && g_c && b_c && r_c[0] && g_c[0] && b_c[0])
+    {
+        r = atoi(r_c);
+        g = atoi(g_c);
+        b = atoi(b_c);
+    }
+    else
+    {
+        r = g = b = 255;
+    }
+
+    Send_Message_Team(team, r, g, b, message);
+}
+
 JFW_Cinematic::~JFW_Cinematic()
 {
 	while (Lines)
@@ -1353,6 +1398,6 @@ ScriptRegistrant<JFW_Timer_Play_Random_Cinematic> JFW_Timer_Play_Random_Cinemati
 ScriptRegistrant<JFW_Random_Timer_Play_Random_Cinematic> JFW_Random_Timer_Play_Random_Cinematic_Registrant("JFW_Random_Timer_Play_Random_Cinematic","TimeMin:float,TimeMax:float,TimerNum:int,Repeat:int,Script_Name1:string,Script_Name2:string,Script_Name3:string,Script_Name4:string,Script_Name5:string,Location:vector3,Facing:float");
 ScriptRegistrant<JFW_Cinematic_Attack_Position> JFW_Cinematic_Attack_Position_Registrant("JFW_Cinematic_Attack_Position","Priority=96:int,Position:vector3,Range:float,Deviation:float,Primary:int");
 ScriptRegistrant<JFW_Cinematic_Attack_Command> JFW_Cinematic_Attack_Command_Registrant("JFW_Cinematic_Attack_Command","AttackDuration=1.0:float");
-ScriptRegistrant<JFW_Cinematic> JFW_Cinematic_Registrant("JFW_Cinematic","ControlFilename=:string");
+ScriptRegistrant<JFW_Cinematic> JFW_Cinematic_Registrant("JFW_Cinematic","ControlFilename=:string,StartPaused=0:int");
 ScriptRegistrant<JFW_Cinematic> Test_Cinematic_Registrant("Test_Cinematic","ControlFilename=:string");
 ScriptRegistrant<JFW_Cinematic_Kill_Object> JFW_Cinematic_Kill_Object_Registrant("JFW_Cinematic_Kill_Object","");

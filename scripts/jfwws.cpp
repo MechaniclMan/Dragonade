@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -167,7 +167,7 @@ void JFW_Tiberium_Refinery::Timer_Expired(GameObject *obj,int number)
 void JFW_GrantMoney_Powerup::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	float scoreamount = Get_Float_Parameter("ScoreAmount");
-	int entireteam = Get_Int_Parameter("Entire_Team");
+	bool entireteam = Get_Bool_Parameter("Entire_Team");
 	int randomizer = Get_Int_Parameter("Randomizer");
 	if (!randomizer)
 	{
@@ -182,7 +182,7 @@ void JFW_GrantMoney_Powerup::Custom(GameObject *obj,int type,int param,GameObjec
 void JFW_GrantScore_Powerup::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	float scoreamount = Get_Float_Parameter("ScoreAmount");
-	int entireteam = Get_Int_Parameter("Entire_Team");
+	bool entireteam = Get_Bool_Parameter("Entire_Team");
 	int randomizer = Get_Int_Parameter("Randomizer");
 	if (!randomizer)
 	{
@@ -237,7 +237,7 @@ void JFW_Play_Sound::Custom(GameObject *obj,int type,int param,GameObject *sende
 void JFW_Play_Sound::Timer_Expired(GameObject *obj,int number)
 {
 	const char *soundpreset = Get_Parameter("Sound_Preset");
-	bool is3d = Get_Int_Parameter("Is_3D");
+	bool is3d = Get_Bool_Parameter("Is_3D");
 	int sound;
 	Vector3 position = Commands->Get_Position(obj);
 	Vector3 position2 = Get_Vector3_Parameter("Offset");
@@ -496,7 +496,7 @@ void JFW_BuildingStateSoundSpeaker::Timer_Expired(GameObject *obj,int number)
 {
 	if (destroyed)
 	{
-		bool is3d = Get_Int_Parameter("Is_3D_Destroyed");
+		bool is3d = Get_Bool_Parameter("Is_3D_Destroyed");
 		Vector3 pos = Commands->Get_Position(obj);
 		Vector3 offset = Get_Vector3_Parameter("Offset_Destroyed");
 		pos.X += offset.X;
@@ -517,7 +517,7 @@ void JFW_BuildingStateSoundSpeaker::Timer_Expired(GameObject *obj,int number)
 	}
 	else
 	{
-		bool is3d = Get_Int_Parameter("Is_3D");
+		bool is3d = Get_Bool_Parameter("Is_3D");
 		Vector3 pos = Commands->Get_Position(obj);
 		Vector3 offset = Get_Vector3_Parameter("Offset");
 		pos.X += offset.X;

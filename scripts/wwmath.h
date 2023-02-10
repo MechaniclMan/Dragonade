@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,10 +38,15 @@
 const int ARC_TABLE_SIZE=1024;
 const int SIN_TABLE_SIZE=1024;
 #ifndef EXTERNAL
-SCRIPTS_API extern REF_ARR_DECL3(_FastAcosTable,float,ARC_TABLE_SIZE);
-SCRIPTS_API extern REF_ARR_DECL3(_FastAsinTable,float,ARC_TABLE_SIZE);
-SCRIPTS_API extern REF_ARR_DECL3(_FastSinTable,float,SIN_TABLE_SIZE);
-SCRIPTS_API extern REF_ARR_DECL3(_FastInvSinTable,float,SIN_TABLE_SIZE);
+SCRIPTS_API extern REF_ARR_DECL(float, _FastAcosTable, ARC_TABLE_SIZE);
+SCRIPTS_API extern REF_ARR_DECL(float, _FastAsinTable, ARC_TABLE_SIZE);
+SCRIPTS_API extern REF_ARR_DECL(float, _FastSinTable, SIN_TABLE_SIZE);
+SCRIPTS_API extern REF_ARR_DECL(float, _FastInvSinTable, SIN_TABLE_SIZE);
+#else
+extern float _FastAcosTable[ARC_TABLE_SIZE];
+extern float _FastAsinTable[ARC_TABLE_SIZE];
+extern float _FastSinTable[SIN_TABLE_SIZE];
+extern float _FastInvSinTable[SIN_TABLE_SIZE];
 #endif
 class SCRIPTS_API WWMath
 {
@@ -210,24 +215,33 @@ TT_INLINE bool WWMath::Is_Valid_Double(double x)
 
 TT_INLINE long WWMath::Float_To_Long(float f)
 {
+#if defined(_M_IX86)
 	long i;
 	__asm {
 		fld [f]
 		fistp [i]
 	}
 	return i;
+#elif defined(_M_AMD64)
+    return _mm_cvtt_ss2si(_mm_load_ss(&f));
+#endif
 }
 
 TT_INLINE long WWMath::Float_To_Long(double f)	
 {
+#if defined(_M_IX86)
 	long retval;
 	__asm fld	qword ptr [f]
 	__asm fistp dword ptr [retval]
 	return retval;
+#elif defined(_M_AMD64)
+    return _mm_cvttsd_si32(_mm_load_pd(&f));
+#endif
 }
 
 TT_INLINE float WWMath::Cos(float val)
 {
+#if defined(_M_IX86)
 	float retval;
 	__asm {
 		fld [val]
@@ -235,10 +249,14 @@ TT_INLINE float WWMath::Cos(float val)
 		fstp [retval]
 	}
 	return retval;
+#elif defined(_M_AMD64)
+    return ::cos(val);
+#endif
 }
 
 TT_INLINE float WWMath::Sin(float val)
 {
+#if defined(_M_IX86)
 	float retval;
 	__asm {
 		fld [val]
@@ -246,9 +264,11 @@ TT_INLINE float WWMath::Sin(float val)
 		fstp [retval]
 	}
 	return retval;
+#elif defined(_M_AMD64)
+    return ::sin(val);
+#endif
 }
 
-#ifndef EXTERNAL
 TT_INLINE float WWMath::Fast_Sin(float val)
 {
 	val*=float(SIN_TABLE_SIZE) / (2.0f * WWMATH_PI);
@@ -293,17 +313,16 @@ TT_INLINE float WWMath::Fast_Acos(float val)
 	float frac=val-(float)idx0;
 	idx0+=ARC_TABLE_SIZE/2;
 	idx1+=ARC_TABLE_SIZE/2;
-	assert((idx0 >= 0) && (idx0 < ARC_TABLE_SIZE));
-	assert((idx1 >= 0) && (idx1 < ARC_TABLE_SIZE));
+	TT_ASSERT((idx0 >= 0) && (idx0 < ARC_TABLE_SIZE));
+	TT_ASSERT((idx1 >= 0) && (idx1 < ARC_TABLE_SIZE));
 	return (1.0f - frac) * _FastAcosTable[idx0] + frac * _FastAcosTable[idx1];
 }
-#endif
+
 TT_INLINE float WWMath::Acos(float val)
 {
 	return (float)acos(val);
 }
 
-#ifndef EXTERNAL
 TT_INLINE float WWMath::Fast_Asin(float val)
 {
 	if (WWMath::Fabs(val) > 0.975f) {
@@ -315,11 +334,10 @@ TT_INLINE float WWMath::Fast_Asin(float val)
 	float frac=val-(float)idx0;
 	idx0+=ARC_TABLE_SIZE/2;
 	idx1+=ARC_TABLE_SIZE/2;
-	assert((idx0 >= 0) && (idx0 < ARC_TABLE_SIZE));
-	assert((idx1 >= 0) && (idx1 < ARC_TABLE_SIZE));
+	TT_ASSERT((idx0 >= 0) && (idx0 < ARC_TABLE_SIZE));
+	TT_ASSERT((idx1 >= 0) && (idx1 < ARC_TABLE_SIZE));
 	return (1.0f - frac) * _FastAsinTable[idx0] + frac * _FastAsinTable[idx1];
 }
-#endif
 TT_INLINE float WWMath::Asin(float val)
 {
 	return (float)asin(val);
@@ -327,6 +345,7 @@ TT_INLINE float WWMath::Asin(float val)
 
 TT_INLINE float WWMath::Sqrt(float val)
 {
+#if defined(_M_IX86)
 	float retval;
 	__asm {
 		fld [val]
@@ -334,6 +353,9 @@ TT_INLINE float WWMath::Sqrt(float val)
 		fstp [retval]
 	}
 	return retval;
+#elif defined(_M_AMD64)
+    return ::sqrtf(val);
+#endif
 }
 
 TT_INLINE int WWMath::Float_To_Int_Chop(const float& f)
@@ -356,6 +378,7 @@ TT_INLINE int WWMath::Float_To_Int_Floor (const float& f)
 	int imask = ( (1<<(31-(exponent))))-1;
 	int mantissa = (a&((1<<23)-1));
 	int r = ((unsigned int)(mantissa|(1<<23))<<8)>>(31-exponent);
+#pragma warning(suppress: 6290) //warning C6290: Bitwise operation on logical result: ! has higher precedence than &. Use && or (!(x & y)) instead
 	r = ((r & expsign) ^ (sign)) + ((!((mantissa<<8)&imask)&(expsign^((a-1)>>31)))&sign);
 	return r;
 }

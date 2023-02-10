@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -35,17 +35,17 @@ class GameObjManager
 
 public:
 
-	static SCRIPTS_API REF_DECL3(GameObjList, SList<BaseGameObj>);
-	static SCRIPTS_API REF_DECL3(BuildingGameObjList, SList<BuildingGameObj>);
-	static SCRIPTS_API REF_DECL3(StarGameObjList, SList<SoldierGameObj>);
-	static SCRIPTS_API REF_DECL3(SmartGameObjList, SList<SmartGameObj>);
-	static SHADERS_API SList<C4GameObj> C4GameObjList;
-	static SHADERS_API SList<BeaconGameObj> BeaconGameObjList;
-	static SHADERS_API SList<SoldierGameObj> SoldierGameObjList;
-	static SHADERS_API SList<VehicleGameObj> VehicleGameObjList;
-	static SHADERS_API SList<ScriptZoneGameObj> ScriptZoneGameObjList;
+	static SCRIPTS_API REF_DECL(SList<BaseGameObj>, GameObjList);
+	static SCRIPTS_API REF_DECL(SList<BuildingGameObj>, BuildingGameObjList);
+	static SCRIPTS_API REF_DECL(SList<SoldierGameObj>, StarGameObjList);
+	static SCRIPTS_API REF_DECL(SList<SmartGameObj>, SmartGameObjList);
+	static SHARED_API SList<C4GameObj> C4GameObjList;
+	static SHARED_API SList<BeaconGameObj> BeaconGameObjList;
+	static SHARED_API SList<SoldierGameObj> SoldierGameObjList;
+	static SHARED_API SList<VehicleGameObj> VehicleGameObjList;
+	static SHARED_API SList<ScriptZoneGameObj> ScriptZoneGameObjList;
 #ifndef TTLE_EXPORTS
-	static REF_DECL2(CinematicFreezeActive, bool);
+	static REF_DECL(bool, CinematicFreezeActive);
 #endif
 
 public:

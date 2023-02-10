@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -45,7 +45,7 @@ public:
 
 	void Add_Callback(Callback callback, uint32 userData)
 	{
-		AUDIO_CALLBACK_STRUCT callbackStruct = {callback, userData};
+		AUDIO_CALLBACK_STRUCT<Callback> callbackStruct = {callback, userData};
 		Add(callbackStruct);
 	}
 

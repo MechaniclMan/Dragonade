@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -230,6 +230,7 @@ class JFW_Fire_Weapon_Custom : public ScriptImpClass {
 *   The name of a sound preset to play when switching to the alternative weapon
 */
 class JFW_Vehicle_Weapon_Switcher : public JFW_Key_Hook_Base {
+public:
 	bool switching;
 	bool newweap;
 	int pilotID;
@@ -240,6 +241,8 @@ class JFW_Vehicle_Weapon_Switcher : public JFW_Key_Hook_Base {
 	void Killed(GameObject *obj,GameObject *killer);
 	void Timer_Expired(GameObject *obj,int number);
 	void KeyHook();
+	JFW_Vehicle_Weapon_Switcher() {old_weapon = 0;}
+	~JFW_Vehicle_Weapon_Switcher() {SAFE_DELETE_ARRAY(old_weapon);}
 };
 
 /*!

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #include "engine_vector.h"
 #include "engine_string.h"
 #include "chunkclass.h"
+#include "Crc32.h"
 class FileClass {
 public:
 	virtual ~FileClass()
@@ -61,31 +62,71 @@ public:
 }; // 0004
 
 class Straw;
-
+class Pipe;
 struct INIEntry : public Node<INIEntry *>
 {
-	char* Entry;
-	char* Value;
-	~INIEntry();
-};
-
+public:
+	char* Entry; // 000C
+	char* Value; // 0010
+	~INIEntry()
+	{
+		delete[] Entry;
+		Entry = 0;
+		delete[] Value;
+		Value = 0;
+	}
+	INIEntry(char *entry, char *value) : Entry(entry), Value(value)
+	{
+	}
+	int Index_ID()
+	{
+		return CRC_String(Entry,0);
+	}
+}; // 0014
 struct INISection : public Node<INISection *>
 {
-	char* Section;
-	List<INIEntry *> EntryList;
-	IndexClass<int,INIEntry *> EntryIndex;
-	~INISection();
-	SCRIPTS_API int Count() const;
-	SCRIPTS_API INIEntry *Peek_Entry(int Index);
-	SCRIPTS_API INIEntry *Find_Entry(const char *Entry);
-};
-
+public:
+	char* Section; // 000C
+	List<INIEntry *> EntryList; // 0010
+	IndexClass<int,INIEntry *> EntryIndex; // 002C
+	~INISection()
+	{
+		delete[] Section;
+		EntryList.Delete();
+	}
+	INIEntry *Find_Entry(const char *entry)
+	{
+		if (entry)
+		{
+			/*int crc = CRC_String(entry,0);
+			if (EntryIndex.Is_Present(crc))
+			{
+				return EntryIndex[crc];
+			}*/
+			for (INIEntry *i = EntryList.First();i && i->Is_Valid();i = i->Next()) {
+				if (!_stricmp(entry,i->Entry)) {
+					return i;
+				}
+			}
+		}
+		return 0;
+	}
+	INISection(char *section) : Section(section)
+	{
+	}
+	int Index_ID()
+	{
+		return CRC_String(Section,0);
+	}
+}; // 0040
 class SCRIPTS_API INIClass {
 	List<INISection *> *SectionList;
 	IndexClass<int,INISection *> *SectionIndex;
 	char *Filename;
 public:
+	static void Strip_Comments(char* buffer);
 	static int CRC(char *string);
+	void DuplicateCRCError(const char *function,const char* message,const char* entry);
 	INIClass();
 	INIClass(FileClass &file);
 	void Initialize();
@@ -106,13 +147,40 @@ public:
 	int Entry_Count(char const *section) const;
 	const char *Get_Entry(char const *section,int index) const;
 	INIEntry *Find_Entry(const char* section,const char* entry) const;
+	INISection *Find_Section(const char* section) const;
 	virtual ~INIClass();
 	int Load(Straw& ffile);
 	int Load(FileClass& file);
+	int Load(char* filename);
 	int Save(FileClass& file);
+	int Save(Pipe& pipe);
 	int Section_Count() const;
-	const char *Get_File_Name() const;
-	INISection *Get_Section(const char *Section) const;
+	bool Is_Present(const char *section,const char *entry) const
+	{
+		if (entry)
+		{
+			return Find_Entry(section,entry) != 0;
+		}
+		else
+		{
+			return Find_Section(section) != 0;
+		}
+	}
+	bool Section_Present(const char *section) const
+	{
+		return Find_Section(section) != 0;
+	}
+	List<INISection *> &Get_Section_List()
+	{
+		return *SectionList;
+	}
+	IndexClass<int,INISection *>&Get_Section_Index()
+	{
+		return *SectionIndex;
+	}
+	const char *Get_File_Name() {
+		return Filename;
+	}
 };
 
 class SCRIPTS_API file_auto_ptr
@@ -136,7 +204,7 @@ public:
 csave.Begin_Micro_Chunk(id); \
 csave.Write(&value,sizeof(value)); \
 csave.End_Micro_Chunk();
-#if (PARAM_EDITING_ON) || (DDBEDIT)
+#if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
 #define WRITE_SAFE_MICRO_CHUNK(csave,id,value,type) WRITE_MICRO_CHUNK(csave,id,value)
 #else
 #define WRITE_SAFE_MICRO_CHUNK(csave,id,value,type) \
@@ -146,7 +214,7 @@ csave.End_Micro_Chunk();
 #endif
 #define WRITE_MICRO_CHUNK_STRING(cload,id,string) \
 csave.Begin_Micro_Chunk(id); \
-csave.Write((void *)string,strlen(string)+1); \
+csave.Write((void *)string,(int)strlen(string)+1); \
 csave.End_Micro_Chunk();
 #define WRITE_MICRO_CHUNK_WWSTRING(csave,id,string) \
 csave.Begin_Micro_Chunk(id); \
@@ -164,7 +232,7 @@ csave.End_Chunk();
 case id: \
 cload.Read(&value,sizeof(value)); \
 break;
-#if (PARAM_EDITING_ON) || (DDBEDIT)
+#if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
 #define READ_SAFE_MICRO_CHUNK(csave,id,value,type) READ_MICRO_CHUNK(csave,id,value)
 #else
 #define READ_SAFE_MICRO_CHUNK(cload,id,value,type) \
@@ -201,7 +269,7 @@ unsigned int SCRIPTS_API Get_Registry_Int(const char *entry,int defaultvalue); /
 #ifndef WWCONFIG
 #ifndef PACKAGEEDITOR
 #ifndef EXTERNAL
-extern SCRIPTS_API REF_DECL2(_TheFileFactory, FileFactoryClass*);
+extern SCRIPTS_API REF_DECL(FileFactoryClass*, _TheFileFactory);
 #endif
 #endif
 #endif

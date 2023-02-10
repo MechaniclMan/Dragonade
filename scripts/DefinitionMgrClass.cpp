@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,40 +16,14 @@
 #include "Definition.h"
 #include "SaveLoadSystemClass.h"
 #include "HashTemplateIterator.h"
-#if !defined(DDBEDIT) && !defined(TDBEDIT)
-RENEGADE_FUNCTION
-DefinitionClass* DefinitionMgrClass::Find_Definition(uint32 id, bool twiddle)
-AT3(DefinitionMgrClass::Real_Find_Definition,DefinitionMgrClass::Real_Find_Definition,0x007166AD);
-
-RENEGADE_FUNCTION
-void DefinitionMgrClass::Unregister_Definition(DefinitionClass *definition)
-AT3(DefinitionMgrClass::Real_Unregister_Definition,DefinitionMgrClass::Real_Unregister_Definition,0x007174A3);
-
-RENEGADE_FUNCTION
-void DefinitionMgrClass::Register_Definition(DefinitionClass *definition)
-AT3(DefinitionMgrClass::Real_Register_Definition,DefinitionMgrClass::Real_Register_Definition,0x00717209);
-#else
-DefinitionClass* DefinitionMgrClass::Find_Definition(uint32 id, bool twiddle)
-{
-	return Real_Find_Definition(id,twiddle);
-}
-
-void DefinitionMgrClass::Unregister_Definition(DefinitionClass *definition)
-{
-	Real_Unregister_Definition(definition);
-}
-
-void DefinitionMgrClass::Register_Definition(DefinitionClass *definition)
-{
-	Real_Register_Definition(definition);
-}
+#ifdef TT_EXPORTS
+#include "AntiCheat.h"
 #endif
 DefinitionMgrClass _TheDefinitionMgr;
 int DefinitionMgrClass::_DefinitionCount = 0;
 DefinitionClass **DefinitionMgrClass::_SortedDefinitionArray = 0;
 HashTemplateClass<StringClass,DynamicVectorClass<DefinitionClass *> *>* DefinitionMgrClass::DefinitionHash;
 int DefinitionMgrClass::_MaxDefinitionCount = 0;
-DefinitionMgrDelegate* DefinitionMgrClass::delegate;
 
 uint32 Get_Super_Class_ID(uint32 _class){
 	int result;
@@ -57,7 +31,7 @@ uint32 Get_Super_Class_ID(uint32 _class){
 	return ((((result < 0) ? (_class-1) : result) >> 12) << 12) + 0x1000;
 }
 
-DefinitionClass* DefinitionMgrClass::Real_Find_Definition(uint32 id, bool twiddle)
+DefinitionClass* DefinitionMgrClass::Find_Definition(uint32 id, bool twiddle)
 {
 	DefinitionClass *definition = 0;
 	int start = 0;
@@ -113,7 +87,7 @@ DefinitionClass* DefinitionMgrClass::Real_Find_Definition(uint32 id, bool twiddl
 	return definition;
 }
 
-void DefinitionMgrClass::Real_Unregister_Definition(DefinitionClass *definition)
+void DefinitionMgrClass::Unregister_Definition(DefinitionClass *definition)
 {
 	if (definition)
 	{
@@ -131,7 +105,7 @@ void DefinitionMgrClass::Real_Unregister_Definition(DefinitionClass *definition)
 	}
 }
 
-void DefinitionMgrClass::Real_Register_Definition(DefinitionClass *definition)
+void DefinitionMgrClass::Register_Definition(DefinitionClass *definition)
 {
 	if (definition)
 	{
@@ -327,9 +301,9 @@ void DefinitionMgrClass::Free_Definitions()
 	_SortedDefinitionArray = 0;
 	_MaxDefinitionCount = 0;
 	_DefinitionCount = 0;
-
-	if (delegate)
-		delegate->onFreeDefinitions();
+#ifdef TT_EXPORTS
+	AntiCheatMgr::OnFreeDefinitions();
+#endif
 }
 
 void DefinitionMgrClass::Prepare_Definition_Array()
@@ -338,7 +312,7 @@ void DefinitionMgrClass::Prepare_Definition_Array()
 	{
 		int newmaxdefcount = _MaxDefinitionCount + 1000;
 		DefinitionClass **newarray = new DefinitionClass *[newmaxdefcount];
-		memcpy(newarray,_SortedDefinitionArray,4 * _DefinitionCount);
+		memcpy(newarray,_SortedDefinitionArray,_DefinitionCount * sizeof(DefinitionClass *));
 		if (_SortedDefinitionArray)
 		{
 			delete[] _SortedDefinitionArray;
@@ -471,11 +445,10 @@ bool DefinitionMgrClass::Load_Objects(ChunkLoadClass& cload)
 	}
 	if (_DefinitionCount > 0)
 	{
-		qsort(_SortedDefinitionArray,_DefinitionCount,4,fnCompareDefinitionsCallback);
+		qsort(_SortedDefinitionArray,_DefinitionCount,sizeof(DefinitionClass *),fnCompareDefinitionsCallback);
 	}
 	for (int i = 0;i < _DefinitionCount;i++)
 	{
-		#pragma warning(suppress: 6385)
 		_SortedDefinitionArray[i]->m_DefinitionMgrLink = i;
 	}
 	return true;

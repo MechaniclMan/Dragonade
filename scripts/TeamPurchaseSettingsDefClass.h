@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -146,6 +146,7 @@ public:
 #endif
 private:
 	TEAM team;
+	int costs[4];
 	int presetids[4];
 	unsigned int stringids[4];
 	StringClass textures[4];

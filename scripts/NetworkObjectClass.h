@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -116,7 +116,7 @@ public:
 	virtual void		Get_Description(StringClass & description)		{}
 	void					Set_Unreliable_Override(bool flag)					{UnreliableOverride = flag;}
 	bool					Get_Unreliable_Override(void)							{return UnreliableOverride;}
-#ifndef DDBEDIT
+#if !defined(DDBEDIT) && !defined(W3DVIEWER)
 	static void			Set_Is_Server(bool flag)								{ IsServer = flag; }
 #endif
 	void					Set_Cached_Priority (float priority);
@@ -160,8 +160,8 @@ private:
 	float					CachedPriority; // 04AC
 	float					CachedPriority_2[MAX_CLIENT_COUNT]; // 04B0
 	bool					UnreliableOverride; // 06B0
-#ifndef DDBEDIT
-	static REF_DECL3(IsServer, bool);
+#if !defined(DDBEDIT) && !defined(W3DVIEWER)
+	static REF_DECL(bool, IsServer);
 #endif
 }; // 06B1
 

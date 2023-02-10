@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Donate Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -41,7 +41,7 @@ bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DAToken
 	if ((int)The_Game()->Get_Game_Duration_S() < TimeLimit) {
 		DA::Page_Player(Player,"You cannot use donate during the first %d seconds of a game.",TimeLimit);
 	}
-	else if (Text.Size() < 2) { //Distributive donate
+	else if (!Text.Size() || (Text.Size() == 1 && Text.Is_Int(1))) { //Distributive donate
 		int Amount = 0;
 		if (!Text.As_Int(1,Amount)) {
 			Amount = (int)Player->Get_Money();
@@ -71,7 +71,9 @@ bool DADonateGameFeatureClass::Donate_Chat_Command(cPlayer *Player,const DAToken
 	}
 	else { //Player donate
 		int Amount = 0;
-		Text.As_Int(2,Amount);
+		if (!Text.As_Int(2,Amount)) {
+			Amount = (int)Player->Get_Money();
+		}
 		if (Amount < 1) {
 			return true;
 		}

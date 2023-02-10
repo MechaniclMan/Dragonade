@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Hook Functions
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,7 +28,7 @@ public:
 	}
 	static void Write(unsigned long Address,unsigned char *Patch,int Size) {
 		DWORD OldProtect;
-		HANDLE h = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION,false,GetCurrentProcessId());
+		HANDLE h = GetCurrentProcess();
 		VirtualProtectEx(h,(void*)Address,Size,PAGE_EXECUTE_READWRITE,&OldProtect);
 		if (!WriteProcessMemory(h,(void*)Address,Patch,Size,0)) {
 			Console_Output("Error: Hook at address 0x%x could not be installed: %d. Some features may be disabled.\n",Address,GetLastError());
@@ -38,7 +38,7 @@ public:
 	}
 	static void Read(unsigned long Address,unsigned char *Buffer,int Size) {
 		DWORD OldProtect;
-		HANDLE h = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_VM_OPERATION,false,GetCurrentProcessId());
+		HANDLE h = GetCurrentProcess();
 		VirtualProtectEx(h,(void*)Address,Size,PAGE_EXECUTE_READWRITE,&OldProtect);
 		if (!ReadProcessMemory(h,(void*)Address,(void*)Buffer,Size,0)) {
 			Console_Output("Error: Hook at address 0x%x could not be installed: %d. Some features may be disabled.\n",Address,GetLastError());

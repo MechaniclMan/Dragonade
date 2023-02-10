@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Singleplayer Vehicle Spawner Game Mode Framework
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -65,7 +65,7 @@ void DAVehicleSpawnPointClass::Spawn_Vehicle(unsigned int DefID,SoldierGameObj *
 
 void DAVehicleSpawnPointClass::Spawn_Vehicle(const VehicleGameObjDef *Def,SoldierGameObj *Owner) {
 	VehicleGameObj *Vehicle = (VehicleGameObj*)Create_Object(Def,Position);
-	Vehicle->Set_Facing(Facing);
+	Commands->Set_Facing(Vehicle,Facing);
 	Vehicle->Lock_Vehicle(Owner,30.0f);
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
 		DASpawnManager->Set_Next_Spawn_Location(Owner,Get_Group());

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,7 +61,7 @@ inline void get_far_extent_branchless(const Vector3& normal, const Vector3& exte
 	*reinterpret_cast<int*>(&posfarpt->Z) = (*(reinterpret_cast<const int*>(&extent.Z))) ^ ((*(reinterpret_cast<const int*>(&normal.Z))) & 0x80000000);
 }
 
-class SHADERS_API CollisionMath
+class SHARED_API CollisionMath
 {
 public:
 	static bool		Intersection_Test(const Vector3& min, const Vector3& max, const LineSegClass& line);

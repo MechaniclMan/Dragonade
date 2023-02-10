@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -474,6 +474,21 @@ class JFW_Send_Self_Custom_On_Key : public JFW_Key_Hook_Base {
 	void KeyHook();
 };
 
+/*!
+* \brief Send a custom to itself
+* \author jonwil
+* \ingroup scripts_customgenerators
+*
+* Attach this script to an object to make it send a custom message to itself at the point at which
+* this script is attached. The custom can optionally be delayed by a set number of seconds.
+*
+* \param Message
+*   The ID of the custom message to send
+* \param Param
+*   The parameter value to be sent with the custom message
+* \param Delay
+*   The number of seconds to wait before sending the custom message
+*/
 class JFW_Startup_Custom_Self : public ScriptImpClass {
 	void Created(GameObject *obj);
 };

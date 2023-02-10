@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,6 +21,7 @@ public:
 	virtual bool								Is_Valid_Config (StringClass &message);
 	int		Get_Phys_Def_ID( void ) const	{ return PhysDefID; }
 	int		Get_Orator_Type( void ) const	{ return OratorType; }
+	StringClass Get_Animation() const {return Animation;}
 	DECLARE_EDITABLE( PhysicalGameObjDef, DamageableGameObjDef );
 	int											Type;					
 	int											RadarBlipType;
@@ -32,6 +33,7 @@ public:
 	bool										AllowInnateConversations;
 	int											OratorType;
 	bool										UseCreationEffect;
+	char                                        TeamVisibility;
 	friend	class								PhysicalGameObj;
 	friend class PresetDump;
 };

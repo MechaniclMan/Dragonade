@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -11,7 +11,7 @@
 */
 #ifndef TT_INCLUDE_COLTYPE_H
 #define TT_INCLUDE_COLTYPE_H
-enum
+typedef enum
 {
 	COLLISION_TYPE_ALL = 0x01,
 	COLLISION_TYPE_0 = 0x02,
@@ -28,5 +28,5 @@ enum
 	COLLISION_TYPE_VEHICLE = COLLISION_TYPE_4,
 	COLLISION_TYPE_USER1 = COLLISION_TYPE_5,
 	COLLISION_TYPE_USER2 = COLLISION_TYPE_6,
-};
+} Collision_Type;
 #endif

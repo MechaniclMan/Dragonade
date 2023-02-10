@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,4 +14,4 @@
 
 
 
-REF_DEF3(cGameType::GameType, int, 0x00856518, 0x00855700, 0x0085E494);
+REF_DEF3(int, cGameType::GameType, 0x00856518, 0x00855700, 0x0085E494);

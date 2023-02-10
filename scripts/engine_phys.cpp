@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,6 +24,9 @@
 #include "engine_obj2.h"
 #include "SmartGameObj.h"
 #include "VehicleGameObj.h"
+#include "AnimControlClass.h"
+#include "boxrenderobjclass.h"
+#include "PhysicsSceneClass.h"
 const char SCRIPTS_API *Get_Model(GameObject *obj)
 {
 	if (!obj)
@@ -54,12 +57,12 @@ float SCRIPTS_API Get_Animation_Frame(GameObject *obj)
 	{
 		return 0;
 	}
-	unsigned char *x = (unsigned char *)o->Get_Anim_Control();
-	if (!x)
+	AnimControlClass *c = o->Get_Anim_Control();
+	if (!c)
 	{
 		return 0;
 	}
-	float a = (float)*(float *)(x+0x14);
+	float a = c->Get_Current_Frame();
 	return a;
 }
 
@@ -188,4 +191,38 @@ SCRIPTS_API const char* Get_Animation_Name ( GameObject* pObj )
     return pAcc->Get_Animation_Name();
   else
     return NULL;
+}
+
+void SCRIPTS_API Wake_Up_Objects_In_OBBox(OBBoxClass &BoundingBox)
+{
+	MultiListClass<PhysClass> list;
+	PhysicsSceneClass::Get_Instance()->Collect_Objects(BoundingBox, false, true, &list);
+    for (auto it = list.Iterator(); !it.Is_Done(); it.Next())
+    {
+		if (it->As_MoveablePhysClass())
+		{
+			Matrix3D m = it->Get_Transform();
+			m.Adjust_Z_Translation(0.001f);
+			it->Set_Transform(m);
+		}
+	}
+}
+void SCRIPTS_API Wake_Up_Objects_In_Box(GameObject *obj,const char *box)
+{
+	if (!obj || !obj->As_PhysicalGameObj() || !obj->As_PhysicalGameObj()->Peek_Model())
+	{
+		return;
+	}
+	RenderObjClass *o = obj->As_PhysicalGameObj()->Peek_Model();
+	StringClass str = o->Get_Name();
+	str += '.';
+	str += box;
+	RenderObjClass *boxobj = o->Get_Sub_Object_By_Name(str);
+	if (!boxobj || boxobj->Class_ID() != RenderObjClass::CLASSID_OBBOX)
+	{
+		return;
+	}
+	OBBoxClass &BoundingBox = ((OBBoxRenderObjClass *)boxobj)->Get_Box();
+	Wake_Up_Objects_In_OBBox(BoundingBox);
+	boxobj->Release_Ref();
 }

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -137,11 +137,11 @@ void JFW_Give_Money::Custom(GameObject *obj,int type,int param,GameObject *sende
 {
 	int msg;
 	int amount;
-	int team;
+	bool team;
 	msg = Get_Int_Parameter("Message");
 	if (msg == type)
 	{
-		team = Get_Int_Parameter("Entire_Team");
+		team = Get_Bool_Parameter("Entire_Team");
 		amount = Get_Int_Parameter("Amount");
 		Commands->Give_Money(sender,(float)amount,team);
 	}

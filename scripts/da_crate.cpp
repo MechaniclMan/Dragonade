@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Crate Classes
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -132,9 +132,9 @@ void DACrateClass::Settings_Loaded() {
 	Modifiers.Delete_All();
 	INISection *Section = DASettingsManager::Get_Section(Get_Section());
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			if (_stricmp(Section->Peek_Entry(i)->Entry,"Enable") && _stricmp(Section->Peek_Entry(i)->Entry,"Odds")) {
-				DACrateModifierClass *Mod = DACrateManager::Create_Crate_Modifier(Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			if (_stricmp(i->Entry,"Enable") && _stricmp(i->Entry,"Odds")) {
+				DACrateModifierClass *Mod = DACrateManager::Create_Crate_Modifier(i->Entry,i->Value);
 				if (Mod) {
 					if (Mod->Is_Multiplicative()) { //Apply additive modifiers before multiplicative ones.
 						Modifiers.Add(Mod);

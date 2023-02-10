@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -26,14 +26,12 @@ public:
 	{
 		IS_ANIMATED = 0x00000001,
 	};
-	void Real_Init(const ProjectorManagerDefClass & def,RenderObjClass * model);
-	SHADERS_API void Init(const ProjectorManagerDefClass & def,RenderObjClass * model);
+	void Init(const ProjectorManagerDefClass & def,RenderObjClass * model);
 	void Update_From_Model(RenderObjClass * model);
 	void Set_Flag(int flag,bool onoff) {(onoff ? Flags |= flag : Flags &= ~flag);}
 	bool Get_Flag(int flag) {return ((Flags & flag) == flag);}
 protected:
-	void Real_Free(void);
-	SHADERS_API void Free(void);
+	void Free(void);
 	uint16 Flags;
 	uint16 ProjectorBoneIndex;
 	TexProjectClass *Projector;

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -55,6 +55,7 @@ void DAN_CnC_Crate::Custom(GameObject *obj,int type,int param,GameObject *sender
 		int Number[49]; // This number MUST be the sum of what Chance[] holds.
 		// This loop cycles through Params[] and looks for enabled Powerups
 		// It then puts the powerup 'ID' in Number as many times as the number in Chance[]
+		memset(Number,0,sizeof(Number));
 		for (int x = 0; x < 9; x++)
 		{
 			if (Params[x] >= 1)

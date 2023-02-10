@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Made BeaconPlacementEndsGame and FriendlyFirePermitted public.
 #ifndef TT_INCLUDE__COMBATMANAGER_H
 #define TT_INCLUDE__COMBATMANAGER_H
 #include "engine_string.h"
@@ -60,20 +58,18 @@ class CombatManager
 {
 public:
 #ifndef TTLE_EXPORTS
-	SHADERS_API static void Init(bool render_available);
-	static void RealInit(bool render_available);
-	static void Real_Shutdown();
-	SHADERS_API static void Shutdown();
-	SHADERS_API static void Scene_Init();
+	static void Init(bool render_available);
+	static void Shutdown();
+	static void Scene_Init();
 	static void Pre_Load_Level(bool);
-	static bool Load_Level_Threaded(char const*, bool);
+	static void Load_Level_Threaded(char const*, bool);
 	static bool Is_Load_Level_Complete();
 	static bool Is_Loading_Level();
 	static void Post_Load_Level();
 	static void Unload_Level();
 	static void Generate_Control();
-	static void SHADERS_API Think();
-	static void SHADERS_API Render();
+	static void Think();
+	static void Render();
 	static void Handle_Input();
 	static bool Save(ChunkSaveClass&);
 	static bool Load(ChunkLoadClass&);
@@ -159,40 +155,40 @@ public:
 #ifndef TTLE_EXPORTS
 	static const ReferencerClass& getTheStarReference() { return TheStar; }
 #endif
-	static REF_DECL3(IAmServer, bool);
-	static REF_DECL3(AreObserversActive, bool);
-	static REF_DECL3(IsFirstLoad, bool);
+	static REF_DECL(bool, IAmServer);
+	static REF_DECL(bool, AreObserversActive);
+	static REF_DECL(bool, IsFirstLoad);
 #ifndef TTLE_EXPORTS
-	static REF_DECL2(IAmClient, bool);
-	static REF_DECL2(IAmOnlyClient, bool);
-	static REF_DECL2(IAmOnlyServer, bool);
-	static REF_DECL2(MyId, int);
-	static REF_DECL2(SyncTime, uint);
-	static REF_DECL2(IsGamePaused, bool);
-	static REF_DECL2(IsLevelInitialized, bool);
-	static REF_DECL2(FriendlyFirePermitted, bool);
-	static REF_DECL2(BeaconPlacementEndsGame, bool);
-	static REF_DECL2(FirstPerson, bool);
-	static REF_DECL2(FirstPersonDefault, bool);
-	static REF_DECL2(MainCamera, CCameraClass*);
-	static REF_DECL2(BackgroundScene, SimpleSceneClass*);
-	static REF_DECL2(SoundEnvironment, SoundEnvironmentClass*);
-	static REF_DECL2(DazzleLayer, DazzleLayerClass*);
-	static REF_DECL2(MessageWindow, MessageWindowClass*);
-	static REF_DECL2(TheStar, ReferencerClass);
-	static REF_DECL2(IsStarDeterminingTarget, bool);
-	static REF_DECL2(EnableSkeletonSliderDemo, bool);
-	static REF_DECL2(DifficultyLevel, int);
-	static REF_DECL2(AutoTransitions, bool);
-	static REF_DECL2(StarDamageDirection, int);
-	static REF_DECL2(StarKillerID, int);
-	static REF_DECL2(NetworkHandler, CombatNetworkHandlerClass*);
-	static REF_DECL2(MiscHandler, CombatMiscHandlerClass*);
-	static REF_DECL2(StartScript, StringClass);
-	static REF_DECL2(RespawnScript, StringClass);
-	static REF_DECL2(ReloadCount, int);
-	static REF_DECL2(HitReticleEnabled, bool);
-	static REF_DECL2(IsGameplayPermitted, bool);
+	static REF_DECL(bool, IAmClient);
+	static REF_DECL(bool, IAmOnlyClient);
+	static REF_DECL(bool, IAmOnlyServer);
+	static REF_DECL(int, MyId);
+	static REF_DECL(uint, SyncTime);
+	static REF_DECL(bool, IsGamePaused);
+	static REF_DECL(bool, IsLevelInitialized);
+	static REF_DECL(bool, FriendlyFirePermitted);
+	static REF_DECL(bool, BeaconPlacementEndsGame);
+	static REF_DECL(bool, FirstPerson);
+	static REF_DECL(bool, FirstPersonDefault);
+	static REF_DECL(CCameraClass*, MainCamera);
+	static REF_DECL(SimpleSceneClass*, BackgroundScene);
+	static REF_DECL(SoundEnvironmentClass*, SoundEnvironment);
+	static REF_DECL(DazzleLayerClass*, DazzleLayer);
+	static REF_DECL(MessageWindowClass*, MessageWindow);
+	static REF_DECL(ReferencerClass, TheStar);
+	static REF_DECL(bool, IsStarDeterminingTarget);
+	static REF_DECL(bool, EnableSkeletonSliderDemo);
+	static REF_DECL(int, DifficultyLevel);
+	static REF_DECL(bool, AutoTransitions);
+	static REF_DECL(int, StarDamageDirection);
+	static REF_DECL(int, StarKillerID);
+	static REF_DECL(CombatNetworkHandlerClass*, NetworkHandler);
+	static REF_DECL(CombatMiscHandlerClass*, MiscHandler);
+	static REF_DECL(StringClass, StartScript);
+	static REF_DECL(StringClass, RespawnScript);
+	static REF_DECL(int, ReloadCount);
+	static REF_DECL(bool, HitReticleEnabled);
+	static REF_DECL(bool, IsGameplayPermitted);
 	typedef enum {
 		COMBAT_MODE_NONE,
 		COMBAT_MODE_FIRST_PERSON,
@@ -204,16 +200,16 @@ public:
 		COMBAT_MODE_CORPSE,
 		COMBAT_MODE_SNAP_SHOT,
 	};
-	static REF_DECL2(CombatMode, int);
-	static REF_DECL2(AutosaveRequested, bool);
+	static REF_DECL(int, CombatMode);
+	static REF_DECL(bool, AutosaveRequested);
 	static void Set_Combat_Mode(int);
 	static void Update_Combat_Mode();
-	static REF_DECL2(LastRoundTripPingMs, int);
-	static REF_DECL2(AvgRoundTripPingMs, int);
-	static REF_DECL2(LastLSDName, StringClass);
-	static REF_DECL2(LoadProgress, int);
-	static REF_DECL2(MultiplayRenderingAllowed, bool);
-	static REF_DECL2(_TheCombatDazzleHandler, CombatDazzleClass);
+	static REF_DECL(int, LastRoundTripPingMs);
+	static REF_DECL(int, AvgRoundTripPingMs);
+	static REF_DECL(StringClass, LastLSDName);
+	static REF_DECL(int, LoadProgress);
+	static REF_DECL(bool, MultiplayRenderingAllowed);
+	static CombatDazzleClass _TheCombatDazzleHandler;
 #endif
 };
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,7 +21,6 @@
 #include "engine_obj.h"
 #include "engine_game.h"
 #include "engine_def.h"
-#include "CollisionMath.h"
 #include "PhysicsSceneClass.h"
 #include "AirFactoryGameObj.h"
 #include "AirFactoryGameObjDef.h"
@@ -31,48 +30,6 @@
 RENEGADE_FUNCTION
 GameObject *Create_Library_Object(const char *preset)
 AT2(0x006C6420,0x006C5CC0);
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void SoldierGameObj::Toggle_Fly_Mode()
-AT2(0x006CFC80,0x006CF520);
-RENEGADE_FUNCTION
-void AirFactoryGameObj::Create_Vehicle(int defintion_id,SoldierGameObj * player)
-AT2(0x006EDC80,0x006ED240);
-RENEGADE_FUNCTION
-int AirFactoryGameObj::Get_Team_Vehicle_Count() const
-AT2(0x006F16B0,0x006F0C70);
-RENEGADE_FUNCTION
-bool AirFactoryGameObj::Is_Available_For_Purchase() const
-AT2(0x0070B6F0,0x0070ACB0);
-RENEGADE_FUNCTION
-SCRIPTS_API bool SoldierGameObj::Is_In_Elevator()
-AT2(0x006C9610,0x006C8EB0);
-RENEGADE_FUNCTION
-void NavalFactoryGameObj::Create_Vehicle(int defintion_id,SoldierGameObj * player)
-AT2(0x0073EE30,0x0073E6D0);
-RENEGADE_FUNCTION
-int NavalFactoryGameObj::Get_Team_Vehicle_Count() const
-AT2(0x0073FB80,0x0073F420);
-RENEGADE_FUNCTION
-bool NavalFactoryGameObj::Is_Available_For_Purchase() const
-AT2(0x007408E0,0x00740180);
-RENEGADE_FUNCTION
-bool NavalFactoryGameObj::Can_Spawn(int definition_id)
-AT2(0x007425B0,0x00741E50);
-
-RENEGADE_FUNCTION
-bool VehicleFactoryGameObj::Request_Vehicle(int defintion_id, float generation_time,SoldierGameObj * player)
-AT2(0x006EE1A0,0x006ED760);
-RENEGADE_FUNCTION
-int VehicleFactoryGameObj::Get_Team_Vehicle_Count() const
-AT2(0x006EE060,0x006ED620);
-RENEGADE_FUNCTION
-bool VehicleFactoryGameObj::Is_Available_For_Purchase() const
-AT2(0x006EE010,0x006ED5D0);
-RENEGADE_FUNCTION
-void SoldierGameObj::Re_Init(const SoldierGameObjDef &)
-AT2(0x006C7410,0x006C6CB0);
-#endif
 ScriptZoneGameObj *ScriptZoneGameObj::Find_Closest_Zone(Vector3 &Location,ZoneConstants::ZoneType Type)
 {
 	float closest = 999999;
@@ -92,19 +49,21 @@ ScriptZoneGameObj *ScriptZoneGameObj::Find_Closest_Zone(Vector3 &Location,ZoneCo
 	}
 	return closestzone;
 }
+
 bool ScriptZoneGameObj::Inside_Me(PhysicalGameObj *obj)
 {
-	if (obj && obj->Peek_Physical_Object())
-	{
-		Vector3 v;
-		obj->Get_Position(&v);
-		return CollisionMath::Overlap_Test(BoundingBox,v) == CollisionMath::INSIDE;
-	}
-	else
-	{
-		return false;
-	}
+    if (obj && obj->Peek_Physical_Object())
+    {
+        Vector3 v;
+        obj->Get_Position(&v);
+		return Point_In_Zone(v);
+    }
+    else
+    {
+        return false;
+    }
 }
+
 RENEGADE_FUNCTION
 void GrantSupplies(GameObject *obj)
 AT2(0x00470AC0,0x00470230);
@@ -258,7 +217,6 @@ GameObject SCRIPTS_API *Get_Vehicle_Gunner(GameObject *obj)
 	return o->Get_Actual_Gunner();
 }
 
-#ifndef SHADERS_EXPORTS
 void SCRIPTS_API Force_Occupant_Exit(GameObject *obj,int seat)
 {
 	if (!obj || !obj->As_VehicleGameObj())
@@ -326,7 +284,6 @@ void SCRIPTS_API Force_Occupants_Exit_Team(GameObject *obj,int team)
 		}
 	}
 }
-#endif
 
 GameObject SCRIPTS_API *Get_Vehicle_Return(GameObject *obj)
 {
@@ -440,25 +397,6 @@ OBBoxClass SCRIPTS_API *Get_Zone_Box(GameObject *obj)
 	return &o->Get_Bounding_Box();
 }
 
-bool SCRIPTS_API PointInZone(GameObject *obj,const Vector3 &v)
-{
-	if (!obj)
-	{
-		return false;
-	}
-	GameObject *o = obj->As_ScriptZoneGameObj();
-	if (!o)
-	{
-		return false;
-	}
-	unsigned int x = CollisionMath::Overlap_Test(*Get_Zone_Box(o),v);
-	if (x == 2)
-	{
-		return true;
-	}
-	return false;
-}
-
 bool SCRIPTS_API IsInsideZone(GameObject *zone,GameObject *obj)
 {
 	if (!obj)
@@ -470,12 +408,12 @@ bool SCRIPTS_API IsInsideZone(GameObject *zone,GameObject *obj)
 		return false;
 	}
 	GameObject *o = obj->As_SmartGameObj();
-	GameObject *o2 = zone->As_ScriptZoneGameObj();
+	ScriptZoneGameObj *o2 = zone->As_ScriptZoneGameObj();
 	if ((o) && (o2))
 	{
 		Vector3 v;
 		((PhysicalGameObj *)o)->Get_Position(&v);
-		return PointInZone(o2,v);
+		return o2->Point_In_Zone(v);
 	}
 	return false;
 }
@@ -522,19 +460,6 @@ GameObject SCRIPTS_API *Create_Zone(const char *preset,OBBoxClass &box)
 	Set_Zone_Box(obj,box);
 	obj->Start_Observers();
 	return obj;
-}
-
-void SCRIPTS_API Set_Vehicle_Is_Visible(GameObject *obj,bool visible)
-{
-	if(!obj)
-	{
-		return;
-	}
-	VehicleGameObj *b = obj->As_VehicleGameObj();
-	if (b)
-	{
-		b->Set_Is_Scripts_Visible(visible);
-	}
 }
 
 void SCRIPTS_API Set_Vehicle_Gunner(GameObject *obj,int seat)
@@ -660,11 +585,6 @@ SCRIPTS_API bool SmartGameObj::Is_Obj_Visible(PhysicalGameObj* object)
 		collisionTest.CollidedPhysObj == object->Peek_Physical_Object();
 }
 
-SCRIPTS_API const SmartGameObjDef & SmartGameObj::Get_Definition( void ) const
-{
-	return (const SmartGameObjDef &)BaseGameObj::Get_Definition();
-}
-
 bool SCRIPTS_API ActionClass::Is_Acting( void )
 {
 	return ( ActionCode != NULL );
@@ -681,9 +601,9 @@ bool SCRIPTS_API Is_Spy(GameObject *obj)
 
 SCRIPTS_API bool Is_Stealth_Enabled(GameObject *obj)
 {
-	if (obj && obj->As_SmartGameObj())
+	if (obj && obj->As_SoldierGameObj())
 	{
-		return obj->As_SmartGameObj()->Is_Stealth_Enabled();
+		return obj->As_SoldierGameObj()->Is_Stealth_Enabled();
 	}
 	return false;
 }
@@ -732,4 +652,16 @@ SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team)
 		return Return;
 }
 
-REF_DEF2(SmartGameObj::GlobalSightRangeScale,float,0x00811E64,0x0081103C);
+SCRIPTS_API GameObject* Create_Object_Attach_To_Object(GameObject* host, const char* preset, const char* bone = NULL)
+{
+  GameObject* obj = Commands->Create_Object_At_Bone(host, "preset", (NULL != bone) ? bone : "origin");
+  if ( NULL != obj )
+  {
+    Commands->Set_Facing(obj, Commands->Get_Facing(host));
+    Commands->Attach_To_Object_Bone(obj, host, (NULL != bone) ? bone : "origin");
+  }
+
+  return obj;
+}
+
+REF_DEF2(float, SmartGameObj::GlobalSightRangeScale, 0x00811E64, 0x0081103C);

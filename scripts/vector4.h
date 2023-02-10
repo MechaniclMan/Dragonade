@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ public:
 	TT_INLINE Vector4() {};
 	TT_INLINE Vector4(const Vector4& v) { X = v.X; Y = v.Y; Z = v.Z; W = v.W; };
 	TT_INLINE Vector4(float x, float y, float z, float w) {	X = x; Y = y; Z = z; W = w;	};
-	TT_INLINE explicit Vector4(const float v[4]) { assert(v != NULL); X = v[0]; Y = v[1]; Z = v[2]; W = v[3]; };
+	TT_INLINE explicit Vector4(const float v[4]) { TT_ASSERT(v != NULL); X = v[0]; Y = v[1]; Z = v[2]; W = v[3]; };
 
 	// conversion constructors
 	//TT_INLINE explicit Vector4(const Vector2& v) { X = v.X; Y = v.Y; Z = 0.0f; W = 0.0f; };

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,23 +13,51 @@
 #define TT_INCLUDE__UNDERGROUNDEFFECTCLASS_H
 
 #include "MaterialEffectClass.h"
+#include "Vector3.h"
 class ChunkSaveClass;
 class ChunkLoadClass;
+class Vector3;
+class MatrixMapperClass;
+
 class UndergroundEffectClass : public MaterialEffectClass
 {
 public:
-	UndergroundEffectClass(void);
-	~UndergroundEffectClass(void);
-	virtual void		Timestep(float dt);
-	virtual void		Render_Push(RenderInfoClass & rinfo,PhysClass * obj);
-	virtual void		Render_Pop(RenderInfoClass & rinfo);
-	void					Set_Underground(bool onoff);
-	void					Set_Visible(bool onoff);
-	bool					Is_Underground_Enabled(void)					{ return IsUnderground; }
-	bool					Is_Visible(void)								{ return IsVisible; }
+    UndergroundEffectClass(void);
+    ~UndergroundEffectClass(void);
+
+    virtual void            Timestep(float dt);
+    virtual void            Render_Push(RenderInfoClass & rinfo,PhysClass * obj);
+    virtual void            Render_Pop(RenderInfoClass & rinfo);
+
+    void                    Set_Underground(bool onoff);
+    void                    Set_Visible(bool onoff);
+    bool                    Is_Underground() { return IsUnderground; }
+    bool                    Is_Visible() { return IsVisible; }
+    void                    Set_Fade_Distance(float d) { FadeDistance = d; }
+    float                   Get_Fade_Distance() const { return FadeDistance; }
+    void                    Set_Color(Vector3 &color) {Color = color;}
+    Vector3 &               Get_Color() {return Color;}
+
+    static const char*      Get_Underground_Shader_Name() { return UndergroundShaderName; };
+    static void             Set_Underground_Shader_Name(const char* new_name);
+
 protected:
-	bool					IsUnderground;
-	bool					IsVisible;
+
+    bool                    IsUnderground;
+    bool                    WasUnderground;
+    bool                    IsVisible;
+    float                   FadeDistance;
+    float                   CurrentFraction;
+    bool                    RenderStealthMaterial;
+    float                   IntensityScale;
+    MaterialPassClass*      MaterialPass;
+    MatrixMapperClass*      Mapper;
+    Vector3                 Color;
+
+    static char             UndergroundShaderName[64];
+
+
+    void                    Update_Target_Fraction(void);
 };
 
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -270,6 +270,31 @@ void SCRIPTS_API Damage_All_Objects_Area(float Damage,const char *Warhead,const 
 			if ((Commands->Get_Distance(ObjPosition,TestPosition) <= Distance) && (Commands->Get_ID(o2) != Commands->Get_ID(Host)))
 			{
 				Commands->Apply_Damage(o2,Damage,Warhead,Damager);
+			}
+		}
+		x = x->Next();
+	}
+}
+
+void SCRIPTS_API Damage_All_Objects_Area_By_Team(float Damage,const char *Warhead,const Vector3 &Position,float Distance,GameObject *Damager,bool Soldiers,bool Vehicles,int Team) 
+{
+	SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();
+	while (x) 
+	{
+		SmartGameObj *o = x->Data();
+		if (o)
+		{
+			if (o->Get_Player_Type() == Team || Team == 2)
+			{
+				if (o->As_SoldierGameObj() && Soldiers || o->As_VehicleGameObj() && Vehicles)
+				{
+					Vector3 ObjPosition = Commands->Get_Position(o);
+					Vector3 TestPosition = Position;
+					if (Commands->Get_Distance(ObjPosition,TestPosition) <= Distance)
+					{
+						Commands->Apply_Damage(o,Damage,Warhead,Damager);
+					}
+				}
 			}
 		}
 		x = x->Next();
@@ -736,6 +761,28 @@ float SCRIPTS_API Get_Max_Hitpoints ( GameObject* obj )
 float SCRIPTS_API Get_Hitpoints ( GameObject* obj )
 {
   return Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);
+}
+
+bool SCRIPTS_API Is_Valid_Armor_Type(const char* name)
+{
+  // Note: This really belongs in ArmorWarheadManager but I couldn't figure out how to get scripts.dll
+  // to link to it since ArmorWarheadManager is compiled in bandtest.dll. Feel free to move it into there
+  // and improve it to simply iterate the array property...
+  unsigned int id = ArmorWarheadManager::Get_Armor_Type(name);
+
+  // 0 could mean armor index 0 OR not found, disambiguate by re-checking against the name for ID 0
+  return (id != 0 || _stricmp(name, ArmorWarheadManager::Get_Armor_Name(0)) == 0);
+}
+
+bool SCRIPTS_API Is_Valid_Warhead_Type(const char* name)
+{
+  // Note: This really belongs in ArmorWarheadManager but I couldn't figure out how to get scripts.dll
+  // to link to it since ArmorWarheadManager is compiled in bandtest.dll. Feel free to move it into there
+  // and improve it to simply iterate the array property...
+  unsigned int id = ArmorWarheadManager::Get_Warhead_Type(name);
+  
+  // 0 could mean warhead index 0 OR not found, disambiguate by re-checking against the name for ID 0
+  return (id != 0 || _stricmp(name, ArmorWarheadManager::Get_Warhead_Name(0)) == 0);
 }
 
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,6 +61,8 @@
 #include "TransitionGameObj.h"
 #include "WarFactoryGameObjDef.h"
 #include "WarFactoryGameObj.h"
+#include "SamSiteGameObj.h"
+#include "SamSiteGameObjDef.h"
 
 SCRIPTS_API const AirFactoryGameObjDef &
 AirFactoryGameObj::Get_Definition (void) const
@@ -116,9 +118,9 @@ RepairBayGameObj::Get_Definition (void) const
 {
 	return (const RepairBayGameObjDef &)BaseGameObj::Get_Definition ();
 }
-SCRIPTS_API const SamSiteGameObjDef & SamSiteGameObj::Get_Definition( void ) const
+SCRIPTS_API const SAMSiteGameObjDef & SAMSiteGameObj::Get_Definition( void ) const
 {
-	return (const SamSiteGameObjDef &)BaseGameObj::Get_Definition();
+	return (const SAMSiteGameObjDef &)BaseGameObj::Get_Definition();
 }
 SCRIPTS_API const SoldierGameObjDef & SoldierGameObj::Get_Definition( void ) const
 {
@@ -152,6 +154,11 @@ VehicleFactoryGameObj::Get_Definition (void) const
 SCRIPTS_API const ScriptZoneGameObjDef & ScriptZoneGameObj::Get_Definition( void ) const
 {
 	return (const ScriptZoneGameObjDef &)BaseGameObj::Get_Definition();
+}
+
+SCRIPTS_API const SmartGameObjDef & SmartGameObj::Get_Definition( void ) const
+{
+	return (const SmartGameObjDef &)BaseGameObj::Get_Definition();
 }
 
 unsigned char NetworkObjectClass::Get_Object_Dirty_Bits(int clientId)
@@ -254,23 +261,18 @@ void DefenseObjectClass::Mark_Owner_Dirty()
 	}
 }
 
-SCRIPTS_API REF_DEF3(GameObjManager::BuildingGameObjList, SList<BuildingGameObj>, 0x00856FE8, 0x008561D0, 0x0085BED0);
-SCRIPTS_API REF_DEF3(GameObjManager::GameObjList, SList<BaseGameObj>, 0x00856FF8, 0x008561E0, 0x0085BEE0);
-SCRIPTS_API REF_DEF3(GameObjManager::StarGameObjList, SList<SoldierGameObj>, 0x00856FC8, 0x008561B0, 0x0085BEB0);
-SCRIPTS_API REF_DEF3(GameObjManager::SmartGameObjList, SList<SmartGameObj>, 0x00856FD8, 0x008561C0, 0x0085BEC0);
+SCRIPTS_API REF_DEF3(SList<BuildingGameObj>, GameObjManager::BuildingGameObjList, 0x00856FE8, 0x008561D0, 0x0085BED0);
+SCRIPTS_API REF_DEF3(SList<BaseGameObj>, GameObjManager::GameObjList, 0x00856FF8, 0x008561E0, 0x0085BEE0);
+SCRIPTS_API REF_DEF3(SList<SoldierGameObj>, GameObjManager::StarGameObjList, 0x00856FC8, 0x008561B0, 0x0085BEB0);
+SCRIPTS_API REF_DEF3(SList<SmartGameObj>, GameObjManager::SmartGameObjList, 0x00856FD8, 0x008561C0, 0x0085BEC0);
 
-#ifdef SHADERS_EXPORTS
-SHADERS_API SList<C4GameObj> GameObjManager::C4GameObjList;
-SHADERS_API SList<BeaconGameObj> GameObjManager::BeaconGameObjList;
-SHADERS_API SList<SoldierGameObj> GameObjManager::SoldierGameObjList;
-SHADERS_API SList<VehicleGameObj> GameObjManager::VehicleGameObjList;
-SHADERS_API SList<ScriptZoneGameObj> GameObjManager::ScriptZoneGameObjList;
+#ifdef SHARED_EXPORTS
+SHARED_API SList<C4GameObj> GameObjManager::C4GameObjList;
+SHARED_API SList<BeaconGameObj> GameObjManager::BeaconGameObjList;
+SHARED_API SList<SoldierGameObj> GameObjManager::SoldierGameObjList;
+SHARED_API SList<VehicleGameObj> GameObjManager::VehicleGameObjList;
+SHARED_API SList<ScriptZoneGameObj> GameObjManager::ScriptZoneGameObjList;
 #endif
-
-SCRIPTS_API const BaseGameObjDef &	BaseGameObj::Get_Definition( void ) const 
-{
-	return *Definition;
-};
 
 SCRIPTS_API const DamageableGameObjDef & DamageableGameObj::Get_Definition( void ) const 
 {
@@ -325,19 +327,6 @@ SCRIPTS_API const RefineryGameObjDef & RefineryGameObj::Get_Definition( void ) c
 }
 
 #ifndef TTLE_EXPORTS
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-bool PowerUpGameObjDef::Grant(SmartGameObj *, PowerUpGameObj *, bool) const
-AT2(0x006F09F0,0x006EFFB0);
-#endif
-
-RENEGADE_FUNCTION
-Vector3 SCRIPTS_API Get_Color_For_Team(int teamId)
-AT2(0x006D99E0,0x006D9280);
-Vector3 DamageableGameObj::Get_Team_Color(void)
-{
-	return Get_Color_For_Team(PlayerType);
-}
 
 int SCRIPTS_API Get_Object_Type(GameObject *obj)
 {
@@ -365,23 +354,6 @@ void SCRIPTS_API Set_Object_Type(GameObject *obj,int type)
 		return;
 	}
 	o2->Set_Player_Type(type);
-}
-
-void SCRIPTS_API Get_Object_Color(GameObject *obj, unsigned int *red, unsigned int *green, unsigned int *blue)
-{
-	if (!obj)
-	{
-		return;
-	}
-	DamageableGameObj *o = obj->As_DamageableGameObj();
-	if (!o)
-	{
-		return;
-	}
-	Vector3 v = o->Get_Team_Color();
-	*red = (unsigned int)(v.X*255);
-	*green = (unsigned int)(v.Y*255);
-	*blue = (unsigned int)(v.Z*255);
 }
 
 GameObject SCRIPTS_API *Find_Smart_Object_By_Team(int Team)
@@ -904,20 +876,6 @@ int SCRIPTS_API Get_Powerup_Grant_Sound(GameObject *obj)
 		return o->Get_Definition().Get_Grant_Sound();
 	}
 	return 0;
-}
-
-void SCRIPTS_API Grant_Powerup(GameObject *obj,const char *Preset_Name)
-{
-	if (!obj)
-	{
-		return;
-	}
-	SmartGameObj *o = obj->As_SmartGameObj();
-	if (o)
-	{
-		PowerUpGameObjDef *def = (PowerUpGameObjDef *)Find_Named_Definition(Preset_Name);
-		def->Grant(o,0,true);
-	}
 }
 
 

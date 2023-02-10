@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Object Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -62,12 +62,11 @@ void DAGameObjObserverClass::Set_Delete_Pending() {
 	DAGameObjManager::Set_Observer_Delete_Pending(this);
 }
 
+void (*Old_Enable_Stealth) (GameObject * object, bool onoff);
+
 void Enable_Stealth(GameObject *obj,bool Enable) {
 	if (obj->As_SmartGameObj() && ((SmartGameObj*)obj)->Is_Stealth_Enabled() != Enable) {
-		WideStringClass Send;
-		Send.Format(L"j\n1\n%d\n%d\n",obj->Get_ID(),Enable);
-		Send_Client_Text(Send,TEXT_MESSAGE_PUBLIC,false,-2,-1,true,true);
-		((SmartGameObj*)obj)->Enable_Stealth(Enable);
+		Old_Enable_Stealth(obj,Enable);
 		if (obj->As_SoldierGameObj()) {
 			if (Enable) {
 				const BaseGameObjDef *Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
@@ -96,7 +95,7 @@ void Enable_Stealth(GameObject *obj,bool Enable) {
 void DAGameObjManager::Init() {
 	static DAGameObjManager Instance;
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
-	Instance.Register_Event(DAEvent::PLAYERJOIN);
+	Instance.Register_Event(DAEvent::PLAYERLOADED);
 	Instance.Register_Event(DAEvent::VEHICLEENTRYREQUEST,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEEXIT,INT_MAX);
@@ -112,9 +111,11 @@ void DAGameObjManager::Init() {
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::ALL,INT_MAX);
 
+	Old_Enable_Stealth = Commands->Enable_Stealth;
 	Commands->Enable_Stealth = Enable_Stealth;
 }
 
+#pragma warning(disable: 4740)
 bool DAGameObjManager::Is_DAGameObjObserverClass(GameObjObserverClass *Observer) {
 	Observer->Owner();
 	_asm {
@@ -194,7 +195,7 @@ void DAGameObjManager::Think() {
 	ObserversDeletePending.Delete_All();
 }
 
-void DAGameObjManager::Player_Join_Event(cPlayer *Player) {
+void DAGameObjManager::Player_Loaded_Event(cPlayer *Player) {
 	for (int i = 0;i < InvisibleGameObjs.Count();i++) {
 		InvisibleGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
 	}

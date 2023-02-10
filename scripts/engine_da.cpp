@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,96 +61,52 @@
 #include "cPurchaseResponseEvent.h"
 #include "CombatManager.h"
 #include "cPlayerKill.h"
+#include "cPlayer.h"
 
-RENEGADE_FUNCTION
-uint Send_Object_Update(NetworkObjectClass*,int)
-AT2(0x00461820,0x004612F0);
-
-RENEGADE_FUNCTION
-void VehicleGameObj::Add_Occupant(SoldierGameObj*)
-AT2(0x0067AB20,0x0067AB20);
 RENEGADE_FUNCTION
 void VehicleGameObj::Add_Occupant(SoldierGameObj*,int)
-AT2(0x0067AB70,0x0067AB70);
-RENEGADE_FUNCTION
-void VehicleGameObj::Remove_Occupant(SoldierGameObj*)
-AT2(0x0067AD00,0x0067AD00);
-RENEGADE_FUNCTION
-void VehicleGameObj::Create_And_Destroy_Transitions()
-AT2(0x00678710,0x00678710);
+AT2(0,0x0067AB70);
 
-RENEGADE_FUNCTION
-void TransitionInstanceClass::Start(SoldierGameObj *Soldier)
-AT2(0x006D4570,0x006D4570);
-
-REF_DEF2(SpawnerList, DynamicVectorClass<SpawnerClass*>, 0x008564A8, 0x008564A8);
+REF_DEF2(DynamicVectorClass<SpawnerClass*>,SpawnerList,0,0x008564A8);
 
 RENEGADE_FUNCTION
 WeaponClass *WeaponBagClass::Add_Weapon(const WeaponDefinitionClass *,int,bool) 
-AT2(0x006F3000,0x006F3000);
-RENEGADE_FUNCTION
-WeaponClass *WeaponBagClass::Add_Weapon(const char*,int,bool) 
-AT2(0x006F31C0,0x006F31C0);
-RENEGADE_FUNCTION
-WeaponClass *WeaponBagClass::Add_Weapon(int,int,bool) 
-AT2(0x006F31F0,0x006F31F0);
+AT2(0,0x006F3000);
 RENEGADE_FUNCTION
 void WeaponBagClass::Remove_Weapon(int) 
-AT2(0x006F2EF0,0x006F2EF0);
+AT2(0,0x006F2EF0);
 RENEGADE_FUNCTION
 void WeaponBagClass::Clear_Weapons() 
-AT2(0x006F2F50,0x6F2F50);
-RENEGADE_FUNCTION
-void WeaponBagClass::Select_Next() 
-AT2(0x006F3260,0x006F3260);
-RENEGADE_FUNCTION
-void WeaponBagClass::Select_Prev() 
-AT2(0x006F32F0,0x006F32F0);
-RENEGADE_FUNCTION
-void WeaponBagClass::Select_Weapon_ID(int)
-AT2(0x006F3490,0x006F3490);
-RENEGADE_FUNCTION
-void WeaponBagClass::Select_Weapon_Name(const char *)
-AT2(0x006F3520,0x006F3520);
-RENEGADE_FUNCTION
-void WeaponBagClass::Select_Weapon(WeaponClass*)
-AT2(0x006F3640,0x006F3640);
+AT2(0,0x6F2F50);
 RENEGADE_FUNCTION
 void WeaponBagClass::Select_Index(int)
-AT2(0x006F36C0,0x006F36C0);
+AT2(0,0x006F36C0);
 RENEGADE_FUNCTION
-void WeaponBagClass::Deselect()
-AT2(0x006F3720,0x006F3720);
+void WeaponBagClass::Select_Next() 
+AT2(0,0x006F3260);
+RENEGADE_FUNCTION
+void WeaponBagClass::Select_Prev() 
+AT2(0,0x006F32F0);
 
 RENEGADE_FUNCTION
-void PhysClass::Set_Model_By_Name(const char *) 
-AT2(0x00640350,0x00640350);
-RENEGADE_FUNCTION
-void PhysClass::Set_Facing(float) 
-AT2(0x00640E80,0x00640E80);
-RENEGADE_FUNCTION
 void PhysicalGameObj::Attach_To_Object_Bone(PhysicalGameObj *,const char *)
-AT2(0x006A5270,0x006A5270);
+AT2(0,0x006A5270);
 
 RENEGADE_FUNCTION
 void BuildingGameObj::Find_Closest_Poly(const Vector3&,float*) 
-AT2(0x00684ED0,0x00684ED0);
+AT2(0,0x00684ED0);
 
-REF_DEF2(CombatManager::FriendlyFirePermitted,bool,0x008550E4,0x008550E4);
-REF_DEF2(CombatManager::BeaconPlacementEndsGame,bool,0x008550E5,0x008550E5);
-REF_DEF2(BuildingGameObj::CanRepairBuildings,bool,0x00810474,0x00810474);
+REF_DEF2(bool,CombatManager::FriendlyFirePermitted,0,0x008550E4);
+REF_DEF2(bool,CombatManager::BeaconPlacementEndsGame,0,0x008550E5);
+REF_DEF2(bool,BuildingGameObj::CanRepairBuildings,0,0x00810474);
 
 RENEGADE_FUNCTION
 bool cGameData::Set_Max_Players(int)
-AT2(0x00472080,0x00472080);
-
-RENEGADE_FUNCTION
-void SmartGameObj::Enable_Stealth(bool)
-AT2(0x0069F7A0,0x0069F7A0);
+AT2(0,0x00472080);
 
 RENEGADE_FUNCTION
 bool BeaconGameObj::Is_In_Enemy_Base()
-AT2(0x00709A90,0x00709A90);
+AT2(0,0x00709A90);
 
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
@@ -835,31 +791,10 @@ void Create_2D_WAV_Sound_Player_By_ID(int ID,const char *Sound) {
 	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
 }
 
-void Set_Obj_Radar_Blip_Shape_Player_By_ID(int ID,GameObject *obj,int Shape) {
-	WideStringClass Send;
-	Send.Format(L"j\n39\n%d\n%d\n",Commands->Get_ID(obj),Shape);
-	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
-}
-
-void Set_Obj_Radar_Blip_Color_Player_By_ID(int ID,GameObject *obj,int Color) {
-	WideStringClass Send;
-	Send.Format(L"j\n40\n%d\n%d\n",Commands->Get_ID(obj),Color);
-	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
-}
-
 PhysicalGameObj *Create_Object(const char *Preset,const Vector3 &Position) {
 	DefinitionClass *Def = Find_Named_Definition(Preset);
 	if (Def) {
-		PhysicalGameObj *obj = (PhysicalGameObj*)Def->Create();
-		if (obj->As_PhysicalGameObj()) {
-			obj->Set_Position(Position);
-			obj->Start_Observers();
-			return obj;
-		}
-		else {
-			obj->Set_Delete_Pending();
-			return 0;
-		}
+		return Create_Object(Def,Position);
 	}
 	return 0;
 }
@@ -867,16 +802,7 @@ PhysicalGameObj *Create_Object(const char *Preset,const Vector3 &Position) {
 PhysicalGameObj *Create_Object(const char *Preset,const Matrix3D &Transform) {
 	DefinitionClass *Def = Find_Named_Definition(Preset);
 	if (Def) {
-		PhysicalGameObj *obj = (PhysicalGameObj*)Def->Create();
-		if (obj->As_PhysicalGameObj()) {
-			obj->Set_Transform(Transform);
-			obj->Start_Observers();
-			return obj;
-		}
-		else {
-			obj->Set_Delete_Pending();
-			return 0;
-		}
+		return Create_Object(Def,Transform);
 	}
 	return 0;
 }
@@ -884,16 +810,7 @@ PhysicalGameObj *Create_Object(const char *Preset,const Matrix3D &Transform) {
 PhysicalGameObj *Create_Object(int Preset,const Vector3 &Position) {
 	DefinitionClass *Def = Find_Definition(Preset);
 	if (Def) {
-		PhysicalGameObj *obj = (PhysicalGameObj*)Def->Create();
-		if (obj->As_PhysicalGameObj()) {
-			obj->Set_Position(Position);
-			obj->Start_Observers();
-			return obj;
-		}
-		else {
-			obj->Set_Delete_Pending();
-			return 0;
-		}
+		return Create_Object(Def,Position);
 	}
 	return 0;
 }
@@ -901,16 +818,7 @@ PhysicalGameObj *Create_Object(int Preset,const Vector3 &Position) {
 PhysicalGameObj *Create_Object(int Preset,const Matrix3D &Transform) {
 	DefinitionClass *Def = Find_Definition(Preset);
 	if (Def) {
-		PhysicalGameObj *obj = (PhysicalGameObj*)Def->Create();
-		if (obj->As_PhysicalGameObj()) {
-			obj->Set_Transform(Transform);
-			obj->Start_Observers();
-			return obj;
-		}
-		else {
-			obj->Set_Delete_Pending();
-			return 0;
-		}
+		return Create_Object(Def,Transform);
 	}
 	return 0;
 }
@@ -939,6 +847,66 @@ PhysicalGameObj *Create_Object(const DefinitionClass *Def,const Matrix3D &Transf
 		obj->Set_Delete_Pending();
 		return 0;
 	}
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,const char *Preset,const Vector3 &Position) {
+	DefinitionClass *Def = Find_Named_Definition(Preset);
+	if (Def) {
+		return Create_Commando(Player,Def,Position);
+	}
+	return 0;
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,const char *Preset,const Matrix3D &Transform) {
+	DefinitionClass *Def = Find_Named_Definition(Preset);
+	if (Def) {
+		return Create_Commando(Player,Def,Transform);
+	}
+	return 0;
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,int Preset,const Vector3 &Position) {
+	DefinitionClass *Def = Find_Definition(Preset);
+	if (Def) {
+		return Create_Commando(Player,Def,Position);
+	}
+	return 0;
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,int Preset,const Matrix3D &Transform) {
+	DefinitionClass *Def = Find_Definition(Preset);
+	if (Def) {
+		return Create_Commando(Player,Def,Transform);
+	}
+	return 0;
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const Vector3 &Position) {
+	if (!Def || Def->Get_Class_ID() != CID_Soldier) {
+		return 0;
+	}
+	SoldierGameObj *obj = (SoldierGameObj*)Def->Create();
+	Player->Owner = obj;
+	obj->Set_Control_Owner(Player->Get_ID());
+	obj->Set_Player_Data(Player);
+	obj->Set_Player_Type(Player->Get_Player_Type());
+	obj->Set_Position(Position);
+	obj->Start_Observers();
+	return obj;
+}
+
+SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const Matrix3D &Transform) {
+	if (!Def || Def->Get_Class_ID() != CID_Soldier) {
+		return 0;
+	}
+	SoldierGameObj *obj = (SoldierGameObj*)Def->Create();
+	Player->Owner = obj;
+	obj->Set_Control_Owner(Player->Get_ID());
+	obj->Set_Player_Data(Player);
+	obj->Set_Player_Type(Player->Get_Player_Type());
+	obj->Set_Transform(Transform);
+	obj->Start_Observers();
+	return obj;
 }
 
 //This function should only be called from a pre level loaded event. Calling it anywhere else will cause clients to crash.
@@ -991,31 +959,66 @@ bool Is_Starting_Weapon(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp
 	return Is_Starting_Weapon(&Soldier->Get_Definition(),PowerUp);
 }
 
-void WeaponBagClass::Remove_Weapon(const WeaponDefinitionClass *WeaponDef) {
-	for (int x = 1;x < WeaponList.Count();x++) {
-		if (WeaponList[x]->Get_Definition() == WeaponDef) {
-			Remove_Weapon(x);
-			return;
-		}
+void WeaponBagClass::Remove_Weapon(const WeaponDefinitionClass *Weapon) {
+	 int Pos = Get_Weapon_Position(Weapon);
+	 if (Pos) {
+		Remove_Weapon(Pos);
 	}
 }
 
 void WeaponBagClass::Remove_Weapon(const char *Weapon) {
-	for (int x = 1;x < WeaponList.Count();x++) {
-		if (!_stricmp(WeaponList[x]->Get_Definition()->Get_Name(),Weapon)) {
-			Remove_Weapon(x);
-			return;
-		}
+	int Pos = Get_Weapon_Position(Weapon);
+	 if (Pos) {
+		Remove_Weapon(Pos);
 	}
 }
 
-void WeaponBagClass::Remove_Weapon(unsigned int WeaponDefID) {
-	for (int x = 1;x < WeaponList.Count();x++) {
-		if (WeaponList[x]->Get_Definition()->Get_ID() == WeaponDefID) {
-			Remove_Weapon(x);
-			return;
-		}
+void WeaponBagClass::Remove_Weapon(unsigned int Weapon) {
+	int Pos = Get_Weapon_Position(Weapon);
+	 if (Pos) {
+		Remove_Weapon(Pos);
 	}
+}
+
+WeaponClass *WeaponBagClass::Add_Weapon(const char *Weapon,int Rounds,bool Owned) {
+	WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Find_Named_Definition(Weapon,true);
+	if (Def && Def->Get_Class_ID() == CID_Weapon) {
+		return Add_Weapon(Def,Rounds,Owned);
+	}
+	return 0;
+}
+
+WeaponClass *WeaponBagClass::Add_Weapon(int Weapon,int Rounds,bool Owned) {
+	WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Find_Definition(Weapon,true);
+	if (Def && Def->Get_Class_ID() == CID_Weapon) {
+		return Add_Weapon(Def,Rounds,Owned);
+	}
+	return 0;
+}
+
+void WeaponBagClass::Select_Weapon_Name(const char *Weapon) {
+   int Pos = Get_Weapon_Position(Weapon);
+   if (Pos) {
+	   Select_Index(Pos);
+   }
+}
+
+void WeaponBagClass::Select_Weapon_ID(int ID) {
+   int Pos = Get_Weapon_Position(ID);
+   if (Pos) {
+	   Select_Index(Pos);
+   }
+}
+
+void WeaponBagClass::Select_Weapon(WeaponClass *Weapon) {
+   int Pos = Get_Weapon_Position(Weapon);
+   if (Pos) {
+	   Select_Index(Pos);
+   }
+}
+
+void WeaponBagClass::Deselect() {
+   Select_Index(0);
 }
 
 WeaponClass *WeaponBagClass::Find_Weapon(const WeaponDefinitionClass *WeaponDef) {
@@ -1205,11 +1208,19 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 
 PUSH_MEMORY_MACROS
 #undef new
+
 void Send_Purchase_Response(int ID,int Type) {
 	cPurchaseResponseEvent *Event = (cPurchaseResponseEvent*)operator new(sizeof(cPurchaseResponseEvent));
 	Event->Constructor();
 	Event->Init(Type,ID);
 }
+
+void Send_Player_Kill_Message(int Killer,int Victim) {
+	cPlayerKill *Event = (cPlayerKill*)operator new(sizeof(cPlayerKill));
+	Event->Constructor();
+	Event->Init(Killer,Victim);
+}
+
 POP_MEMORY_MACROS
 
 StringClass Clean_Model_Name(StringClass Model) {
@@ -1278,12 +1289,6 @@ void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDistance,flo
 	WideStringClass Send;
 	Send.Format(L"j\n3\n%f\n%f\n%f\n",StartDistance,EndDistance,Transition);
 	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
-}
-
-void Send_Player_Kill_Message(int Killer,int Victim) {
-	cPlayerKill *Event = (cPlayerKill*)operator new(sizeof(cPlayerKill));
-	Event->Constructor();
-	Event->Init(Killer,Victim);
 }
 
 bool Exit_Vehicle(SoldierGameObj *Soldier) {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -59,7 +59,7 @@ public:
 	virtual int Get_Weapon_Control_Owner(void)	{ return Get_Control_Owner(); }
 	virtual void Set_Control_Owner(int control_owner)		{ ControlOwner = control_owner; }
 	PlayerDataClass * Get_Player_Data( void )						{ return PlayerData; }
-	void Set_Player_Data( PlayerDataClass * player_data );
+	void Set_Player_Data( PlayerDataClass * player_data ) { PlayerData = player_data; }
 	SCRIPTS_API bool Has_Player(void);
 	SCRIPTS_API bool Is_Human_Controlled(void);
 	bool Is_Controlled_By_Me(void);
@@ -96,6 +96,8 @@ public:
 	void				Grant_Stealth_Powerup(float seconds);
 	float				Remaining_Stealth_Powerup_Time(void);
 	StealthEffectClass * Peek_Stealth_Effect(void);
+	bool                 Get_Stealth_Active() { return StealthActive; }
+	void                 Set_Stealth_Active(bool active) { StealthActive = active; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_FREQUENT,true);}
 #ifndef TTLE_EXPORTS
 	static	float	Get_Global_Sight_Range_Scale( void )			{ return GlobalSightRangeScale; }
 	static	void	Set_Global_Sight_Range_Scale( float scale )	{ GlobalSightRangeScale = scale; }
@@ -105,6 +107,7 @@ public:
 	bool						ControlEnabled;
 	void						Alloc_Stealth_Effect(void);
 	bool						StealthEnabled;
+	bool                        StealthActive;
 	float						StealthPowerupTimer;
 	float						StealthFiringTimer;
 	StealthEffectClass *	StealthEffect;
@@ -117,7 +120,7 @@ private:
 	LogicalListenerClass* Listener;
 	void Register_Listener(void);
 #ifndef TTLE_EXPORTS
-	static REF_DECL2(GlobalSightRangeScale,float);
+	static REF_DECL(float, GlobalSightRangeScale);
 #endif
 };
 

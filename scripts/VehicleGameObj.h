@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,7 @@
 #include "PhysClass.h"
 #include "VehicleGameObjDef.h"
 #include "SoldierGameObj.h"
+#include "UndergroundEffectClass.h"
 
 class AudibleSoundClass;
 class VehicleGameObjDef;
@@ -132,6 +133,9 @@ public:
 	void Set_Can_Be_Stolen(bool onoff) { CanBeStolen = onoff; Set_Object_Dirty_Bit(BIT_RARE, true); }
 	bool Can_Be_Stolen() const { return CanBeStolen; }
 	void Set_Owner(SoldierGameObj *obj) {Owner = obj;}
+	void Set_Can_Drive(bool onoff) {CanDrive = onoff; Set_Object_Dirty_Bit(BIT_RARE, true);}
+	bool Can_Drive() {return CanDrive;}
+	void Set_Color(Vector3 &color) {if (UndergroundEffect){UndergroundEffect->Set_Color(color);Set_Object_Dirty_Bit( NetworkObjectClass::BIT_RARE, true );}}
 	SoldierGameObj *Get_Owner()
 	{
 		if (Owner.Get_Ptr())
@@ -194,8 +198,8 @@ public:
 #endif
 protected:
 #ifndef TTLE_EXPORTS
-	static REF_DECL2(DefaultDriverIsGunner,bool);
-	static REF_DECL1(CameraLockedToTurret,bool);
+	static REF_DECL(bool,DefaultDriverIsGunner);
+	static REF_DECL(bool,CameraLockedToTurret);
 #endif
 	Sound3DClass			*Sound; //2416
 	int						EngineSoundState; //2420
@@ -231,7 +235,10 @@ protected:
 	UndergroundEffectClass *UndergroundEffect;
 	ReferencerClass     Owner; //Owner for SSGM vehicle locking. When this is set, only this player can enter the vehicle.
 	bool HasUpdatedTargeting;
+	bool CanDrive; //used to identify if it should apply analog control or not, for EMP purposes
 
+	void		Remove_Transitions( TransitionDataClass::StyleType transition_type );
+	void		Create_New_Transitions( TransitionDataClass::StyleType transition_type );
 	void		Destroy_Transitions( void );
 	void		Update_Transitions( void );
 	SCRIPTS_API void Create_And_Destroy_Transitions( void );

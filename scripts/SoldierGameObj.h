@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -194,6 +194,8 @@ public:
 	bool Can_Drive_Vehicles() { return CanDriveVehicles; }
 	void Set_Block_Action_Key(bool onoff) { BlockActionKey = onoff; Set_Object_Dirty_Bit(BIT_RARE, true); }
 	bool Block_Action_Key() { return BlockActionKey; }
+	void Set_Freeze(bool onoff) {Freeze = onoff; Set_Object_Dirty_Bit(BIT_RARE, true);}
+	bool Is_Frozen() {return Freeze;}
 
 	cPlayer *Get_Player() {
 		return (cPlayer*)Get_Player_Data();
@@ -257,6 +259,7 @@ protected:
 	PersistantSurfaceEmitterClass * WaterWake; //3376
 	DynamicVectorClass<RenderObjClass*>	RenderObjList; //3380
 	bool                        BlockActionKey;
+	bool Freeze; //used to detect that this soldier is frozen (cant fire, move, jump, climb ladders, etc)
 	void						Add_RenderObj( RenderObjClass * obj );
 	RenderObjClass *		Find_RenderObj( const char * name );
 	void						Reset_RenderObjs( void );

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -303,8 +303,7 @@ public:
 	static void Suicide_Event(int ID);
 	static void Team_Change_Request_Event(int ID);
 
-	static void Transition_Check_Event(TransitionInstanceClass *Transition,SoldierGameObj *Soldier);
-	static void Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier);
+	static bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat);
 	static bool PowerUp_Grant_Request_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	static void PowerUp_Grant_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj);
 	static bool Add_Weapon_Request_Event(WeaponBagClass *Bag,const WeaponDefinitionClass *Weapon);
@@ -374,7 +373,6 @@ private:
 	static DynamicVectorClass<DAObjectEventStruct*> ObjectEvents[DAObjectEvent::MAX];
 	static DynamicVectorClass<DAEventTimerStruct*> Timers;
 	static bool IsSoldierReInit;
-	static int AddOccupantSeat;
 };
 
 class DAEventClass abstract {

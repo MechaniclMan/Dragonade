@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -25,14 +25,11 @@
 #include "VehicleFactoryGameObjDef.h"
 #include "HarvesterClass.h"
 #include "DefinitionMgrClass.h"
-REF_DEF2(CombatManager::IAmServer, bool, 0x00855EC8, 0x008550B0);
+REF_DEF2(bool, CombatManager::IAmServer,0x00855EC8, 0x008550B0);
 RENEGADE_FUNCTION
 void *Game_Mode_Find(const char *)
 AT2(0x004372B0,0x00437350);
 #ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void BuildingGameObj::Collect_Building_Components()
-AT2(0x006843E0,0x00683C80);
 RENEGADE_FUNCTION
 void BaseControllerClass::On_Vehicle_Generated(VehicleGameObj* vehicle)
 AT2(0x006EEF00,0x006EE4C0);
@@ -69,11 +66,6 @@ void BaseControllerClass::Set_Base_Destroyed(bool newBaseDestroyed)
 RENEGADE_FUNCTION
 void BaseControllerClass::Destroy_Base()
 AT2(0x006EF840,0x006EEE00);
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void BaseControllerClass::Enable_Radar(bool Enable)
-AT3(0x006EFD00,0x006EF2C0,0x00558ED0);
-#endif
 void BaseControllerClass::Set_Beacon_Destroyed_Base(bool BeaconDestroyed)
 {
 	BeaconDestroyedBase = BeaconDestroyed;
@@ -136,15 +128,15 @@ AT2(0x006EF1D0, 0x006EE790);
 
 
 
-REF_DEF2(cGameData::HostedGameNumber, int, 0x0082F120, 0x0082E308);
-REF_DEF2(cGameData::WinText, WideStringClass, 0x0082F108, 0x0082E2F0);
-REF_DEF2(PrivateMessageColor, Vector3, 0x0082FC20, 0x0082EE08);
-REF_DEF2(PublicMessageColor, Vector3, 0x0082FBA0, 0x0082ED88);
-REF_DEF2(GDIHouseColor, Vector3, 0x0085CAA8, 0x0085BC90);
-REF_DEF2(NodHouseColor, Vector3, 0x0085CA98, 0x0085BC80);
-REF_DEF2(IsMapVTOL, bool, 0x0085E31C, 0x0085D4F4);
-REF_DEF2(IsListed, bool, 0x0082FD94, 0x0082EF7C);
-REF_DEF2(GameMode, unsigned int, 0x0081F5F0, 0x0081E7D8);
+REF_DEF2(int, cGameData::HostedGameNumber, 0x0082F120, 0x0082E308);
+REF_DEF2(WideStringClass, cGameData::WinText, 0x0082F108, 0x0082E2F0);
+REF_DEF2(Vector3, PrivateMessageColor, 0x0082FC20, 0x0082EE08);
+REF_DEF2(Vector3, PublicMessageColor, 0x0082FBA0, 0x0082ED88);
+REF_DEF2(Vector3, GDIHouseColor, 0x0085CAA8, 0x0085BC90);
+REF_DEF2(Vector3, NodHouseColor, 0x0085CA98, 0x0085BC80);
+REF_DEF2(bool, IsMapVTOL, 0x0085E31C, 0x0085D4F4);
+REF_DEF2(bool, IsListed, 0x0082FD94, 0x0082EF7C);
+REF_DEF2(unsigned int, GameMode, 0x0081F5F0, 0x0081E7D8);
 
 void SCRIPTS_API Power_Base(int team,bool powered)
 {

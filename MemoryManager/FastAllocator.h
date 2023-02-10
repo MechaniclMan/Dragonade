@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,6 +24,7 @@
 #define FASTALLOC_STATS
 #endif
 #include "TSList.h"
+#include <string.h>
 
 DECLSPEC_RESTRICT void*	SystemAllocate(size_t size);
 void					SystemFree(void* memory);
@@ -209,6 +210,7 @@ ExternalMemoryCount(0)
 {
 	for (int i = 0; i < NUM_ALLOCATORS; ++i)
 	{
+#pragma warning(suppress: 6297) //warning c6297: Result of shift cast to larger size
 		allocators[i].Init(1 << (i + MIN_ALLOC_BIT));
 		allocators[i].Grow(); // let's do the first growing here so that we don't fight over allocating
 	};
@@ -311,6 +313,7 @@ DECLSPEC_RESTRICT inline void* FastAllocatorGeneral::Reallocate(void* _memory, s
 inline size_t FastAllocatorGeneral::GetAllocationSize(void* memory) const
 {
 	size_t index = *(((size_t*)memory) - 1);
+#pragma warning(suppress: 6297) //warning c6297: Result of shift cast to larger size
 	return (index < NUM_ALLOCATORS) ? size_t(1 << (index + MIN_ALLOC_BIT)) : index;
 };
 

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Squads Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -217,49 +217,49 @@ void DASquadMemberClass::Update_Radar(GameObject *Member) {
 
 void DASquadMemberClass::Set_Radar_Soldier(GameObject *Member) {
 	if (Member) {
-		Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
+		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
 	}
 	else {
 		for (int i = 0;i < Squad->Size();i++) {
 			Member = Squad->Get_Member(i)->Get_GameObj();
-			Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
+			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
 		}
 	}
 }
 
 void DASquadMemberClass::Set_Radar_Vehicle_Driver(GameObject *Member) {
 	if (Member) {
-		Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
+		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
 	}
 	else {
 		for (int i = 0;i < Squad->Size();i++) {
 			Member = Squad->Get_Member(i)->Get_GameObj();
-			Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
+			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
 		}
 	}
 }
 
 void DASquadMemberClass::Set_Radar_Vehicle_Passenger(GameObject *Member) {
 	if (Member) {
-		Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
+		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
 	}
 	else {
 		for (int i = 0;i < Squad->Size();i++) {
 			Member = Squad->Get_Member(i)->Get_GameObj();
-			Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
+			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
+			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
 		}
 	}
 }
 
 void DASquadMemberClass::Reset_Radar(GameObject *Member) {
-	Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_HUMAN);
-	Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),Get_Team());
+	//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_HUMAN);
+	//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),Get_Team());
 }
 
 

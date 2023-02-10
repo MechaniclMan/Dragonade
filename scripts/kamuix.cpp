@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -208,7 +208,7 @@ void Kamuix_Zone_Destroy_Building::Entered(GameObject *obj,GameObject *enterer)
 
 void Kamuix_Control_Spawner::Killed(GameObject *obj,GameObject *enterer)
 {
-	Commands->Enable_Spawner(Get_Int_Parameter("ID"),Get_Int_Parameter("Enable"));
+	Commands->Enable_Spawner(Get_Int_Parameter("ID"),Get_Bool_Parameter("Enable"));
 }
 
 void Kamuix_Rebuild_Structure_Zone::Entered(GameObject *obj,GameObject *enterer)

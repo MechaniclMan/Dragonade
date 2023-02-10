@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -58,13 +58,13 @@ enum {
 	W3D_CHUNK_DEFORM_SET							=0x00000059,
 	W3D_CHUNK_DEFORM_KEYFRAME				=0x0000005A,
 	W3D_CHUNK_DEFORM_DATA				=0x0000005B,
+	W3D_CHUNK_TANGENTS				=0x00000060,
+	W3D_CHUNK_BINORMALS,
 	W3D_CHUNK_PS2_SHADERS							=0x00000080,
 	W3D_CHUNK_AABTREE									=0x00000090,
 	W3D_CHUNK_AABTREE_HEADER,
 	W3D_CHUNK_AABTREE_POLYINDICES,
 	W3D_CHUNK_AABTREE_NODES,
-	W3D_CHUNK_TANGENTS = 0x01000001,
-	W3D_CHUNK_BINORMALS = 0x01000002,
 	W3D_CHUNK_HIERARCHY									=0x00000100,
 	W3D_CHUNK_HIERARCHY_HEADER,
 	W3D_CHUNK_PIVOTS,
@@ -142,6 +142,9 @@ enum {
 	W3D_CHUNK_SOUNDROBJ								=0x00000A00,
 	W3D_CHUNK_SOUNDROBJ_HEADER,
 	W3D_CHUNK_SOUNDROBJ_DEFINITION,
+	W3D_CHUNK_SECONDARY_VERTICES					=0x00000C00,
+	W3D_CHUNK_SECONDARY_VERTEX_NORMALS,
+    W3D_CHUNK_LIGHTMAP_UV,
 };
 struct W3dChunkHeader
 {
@@ -604,6 +607,9 @@ static const char* SURFACE_TYPE_STRINGS[32] =
 #define W3D_VERTEX_CHANNEL_TEXCOORD		0x00000004
 #define W3D_VERTEX_CHANNEL_COLOR			0x00000008
 #define W3D_VERTEX_CHANNEL_BONEID		0x00000010
+#define W3D_VERTEX_CHANNEL_TANGENT		0x00000020
+#define W3D_VERTEX_CHANNEL_BINORMAL		0x00000040
+#define W3D_VERTEX_CHANNEL_SMOOTHSKIN		0x00000080
 #define W3D_FACE_CHANNEL_FACE				0x00000001
 #define SORT_LEVEL_NONE						0
 #define MAX_SORT_LEVEL						32
@@ -630,11 +636,13 @@ struct W3dMeshHeader3Struct
 	W3dVectorStruct		SphCenter;
 	float					SphRadius;
 };
+
 struct W3dVertInfStruct
 {
-	uint16					BoneIdx;
-	uint8						Pad[6];
+    uint16 BoneIdx[2];
+    uint16 Weight[2];
 };
+
 struct W3dMeshAABTreeHeader
 {
 	uint32					NodeCount;
@@ -708,6 +716,8 @@ enum
 	ANIM_CHANNEL_ADAPTIVEDELTA_Y,
 	ANIM_CHANNEL_ADAPTIVEDELTA_Z,
 	ANIM_CHANNEL_ADAPTIVEDELTA_Q,
+
+    ANIM_CHANNEL_VIS,
 };
 enum
 {
@@ -1050,5 +1060,12 @@ struct W3dSoundRObjHeaderStruct
 	char					Name[16];
 	uint32				Flags;
 	uint32				Padding[8];
+};
+struct W3dCollectionHeaderStruct
+{
+	unsigned long Version;
+	char Name[W3D_NAME_LEN];
+	unsigned long RenderObjectCount;
+	unsigned long pad[2];
 };
 #endif

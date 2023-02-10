@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Disable List
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -105,15 +105,13 @@ void DADisableListManager::Settings_Loaded_Event() {
 	DisableList.Delete_All();
 	INISection *Section = DASettingsManager::Get_Section("Disable_List");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			if (!_stricmp(Entry->Value,"1") || !_stricmp(Entry->Value,"true")) {
-				for (DefinitionClass *Def = DefinitionMgrClass::Get_First();Def;Def = DefinitionMgrClass::Get_Next(Def)) {
-					if (!_stricmp(Def->Get_Name(),Entry->Entry)) {
-						Hide_Preset_By_Name(0,Def->Get_Name(),true);
-						Hide_Preset_By_Name(1,Def->Get_Name(),true);
-						DisableList.Add(Def);
-					}
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			if (!_stricmp(i->Value,"1") || !_stricmp(i->Value,"true")) {
+				DefinitionClass *Def = Find_Named_Definition(i->Entry);
+				if (Def) {
+					Hide_Preset_By_Name(0,Def->Get_Name(),true);
+					Hide_Preset_By_Name(1,Def->Get_Name(),true);
+					DisableList.Add(Def);
 				}
 			}
 		}
@@ -182,13 +180,11 @@ void DADisableListManager::Settings_Loaded_Event() {
 		INISection *Section = DASettingsManager::Get_Section(SectionName);
 		if (Section) {
 			DACharacterDisableListStruct Disable;
-			for (int i = 0;i < Section->Count();i++) {
-				INIEntry *Entry = Section->Peek_Entry(i);
-				if (!_stricmp(Entry->Value,"1") || !_stricmp(Entry->Value,"true")) {
-					for (DefinitionClass *Def = DefinitionMgrClass::Get_First();Def;Def = DefinitionMgrClass::Get_Next(Def)) {
-						if ((Def->Get_Class_ID() == CID_PowerUp || Def->Get_Class_ID() == CID_Weapon) && !_stricmp(Def->Get_Name(),Entry->Entry)) {
-							Disable.DisableList.Add(Def);
-						}
+			for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+				if (!_stricmp(i->Value,"1") || !_stricmp(i->Value,"true")) {
+					DefinitionClass *Def = Find_Named_Definition(i->Entry);
+					if (Def->Get_Class_ID() == CID_PowerUp || Def->Get_Class_ID() == CID_Weapon) {
+						Disable.DisableList.Add(Def);
 					}
 				}
 			}

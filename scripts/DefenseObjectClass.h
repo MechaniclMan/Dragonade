@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,13 +9,11 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Exported Set_Health, Add_Health, Set_Shield_Strength, and Add_Shield_Strength
 #ifndef TT_INCLUDE__DEFENSEOBJECTCLASS_H
 #define TT_INCLUDE__DEFENSEOBJECTCLASS_H
 #include "DataSafe.h"
 #include "ReferencerClass.h"
-#pragma warning(disable: 4510 4610 4512)
+
 class OffenseObjectClass;
 class SmartGameObj;
 class DamageableGameObj;
@@ -60,7 +58,6 @@ public:
 	bool			Would_Damage( const OffenseObjectClass	& offense, float scale = 1.0f );
 	bool			Is_Soft( void );
 	void			Set_Can_Object_Die( bool onoff )	{ CanObjectDie = onoff; }
-	bool			Get_Can_Object_Die()	{ return CanObjectDie; }
 	virtual	void	Import( BitStreamClass & packet );
 	virtual	void	Export( BitStreamClass & packet );
 	static void Set_Precision(void);
@@ -70,6 +67,7 @@ public:
 	void				SCRIPTS_API Mark_Owner_Dirty( void );
 	void Set_Damage_Points(float points) {DamagePoints = points;}
 	void Set_Death_Points(float points) {DeathPoints = points;}
+	bool Get_Can_Object_Die() { return CanObjectDie; }
 private:
 	safe_float		Health;
 	safe_float		HealthMax;

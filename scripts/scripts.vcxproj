@@ -21,12 +21,14 @@
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>false</WholeProgramOptimization>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -71,7 +73,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <OmitFramePointers>true</OmitFramePointers>
-      <AdditionalIncludeDirectories>.;..\MemoryManager;..\shaders\dep\dxsdk_nov07\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\MemoryManager;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>MEMORY_MANAGER;NDEBUG;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_SECURE_SCL=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <ExceptionHandling>
@@ -89,13 +91,14 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <Culture>0x0c09</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;winmm.lib;shaders.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -109,6 +112,7 @@
       <BaseAddress>0x11000000</BaseAddress>
       <TargetMachine>MachineX86</TargetMachine>
       <AdditionalLibraryDirectories>..\bin\release</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -129,7 +133,7 @@
       <Optimization>Disabled</Optimization>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <AdditionalIncludeDirectories>.;..\MemoryManager;..\shaders\dep\dxsdk_nov07\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..\MemoryManager;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>D3D_DEBUG_INFO;DEBUG;MEMORY_MANAGER;SCRIPTS_EXPORTS;WIN32;_CRT_SECURE_NO_DEPRECATE;_HAS_EXCEPTIONS=0;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <MinimalRebuild>false</MinimalRebuild>
@@ -155,7 +159,7 @@
       <Culture>0x0c09</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>ws2_32.lib;winmm.lib;shaders.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -193,7 +197,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="aow_intruders.cpp" />
     <ClCompile Include="cAMpaScripts.cpp" />
     <ClCompile Include="CommandLineParser.cpp" />
     <ClCompile Include="Crc32.cpp" />
@@ -253,7 +256,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_vehicleshells.cpp" />
     <ClCompile Include="da_vehiclespawn.cpp" />
     <ClCompile Include="da_vehiclequeue.cpp" />
-    <ClCompile Include="definition.cpp" />
     <ClCompile Include="DefinitionFactoryClass.cpp" />
     <ClCompile Include="DefinitionFactoryMgrClass.cpp" />
     <ClCompile Include="dllmain.cpp" />
@@ -303,14 +305,12 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="jfwws.cpp" />
     <ClCompile Include="jfwzone.cpp" />
     <ClCompile Include="JMGRenetBusters.cpp" />
-    <ClCompile Include="jmgrp2.cpp" />
     <ClCompile Include="kak.cpp" />
     <ClCompile Include="kamuix.cpp" />
     <ClCompile Include="LoopedAnimationController.cpp" />
     <ClCompile Include="mdb.cpp" />
     <ClCompile Include="mdbdef.cpp" />
     <ClCompile Include="mdbevf.cpp" />
-    <ClCompile Include="mpf_domination.cpp" />
     <ClCompile Include="neo.cpp" />
     <ClCompile Include="nh.cpp" />
     <ClCompile Include="nhp.cpp" />
@@ -319,6 +319,8 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="PointerRemapClass.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="ra2.cpp" />
+    <ClCompile Include="Random2Class.cpp" />
+    <ClCompile Include="Random3Class.cpp" />
     <ClCompile Include="RandomClass.cpp" />
     <ClCompile Include="ra_legacy.cpp" />
     <ClCompile Include="reborn.cpp" />
@@ -334,48 +336,10 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="SimpleFileFactoryClass.cpp" />
     <ClCompile Include="straw.cpp" />
     <ClCompile Include="survival.cpp" />
-    <ClCompile Include="tcw_building.cpp" />
-    <ClCompile Include="tcw_center_point.cpp" />
-    <ClCompile Include="tcw_coop.cpp" />
-    <ClCompile Include="tcw_coop_cruising.cpp" />
-    <ClCompile Include="tcw_defence.cpp" />
-    <ClCompile Include="tcw_domination.cpp" />
-    <ClCompile Include="tcw_frost.cpp" />
-    <ClCompile Include="tcw_functions.cpp" />
-    <ClCompile Include="tcw_game.cpp" />
-    <ClCompile Include="tcw_mcv_escort.cpp" />
-    <ClCompile Include="tcw_mission01.cpp" />
-    <ClCompile Include="tcw_mission03.cpp" />
-    <ClCompile Include="tcw_nod_incursion.cpp" />
-    <ClCompile Include="tcw_paul.cpp" />
-    <ClCompile Include="tcw_player.cpp" />
-    <ClCompile Include="tcw_powerup.cpp" />
-    <ClCompile Include="tcw_sp_m01.cpp" />
-    <ClCompile Include="tcw_sp_scripts.cpp" />
-    <ClCompile Include="tcw_superweapons.cpp" />
-    <ClCompile Include="tcw_TCWSoldierObj.cpp" />
-    <ClCompile Include="tcw_technology.cpp" />
-    <ClCompile Include="tcw_vehicle.cpp" />
-    <ClCompile Include="tcw_zone.cpp" />
     <ClCompile Include="tda.cpp" />
     <ClCompile Include="tfx.cpp" />
     <ClCompile Include="ThreadClass.cpp" />
-    <ClCompile Include="TwiddlerClass.cpp" />
-    <ClCompile Include="z.cpp" />
-    <ClCompile Include="z_am01.cpp" />
-    <ClCompile Include="z_am02.cpp" />
-    <ClCompile Include="z_buildingrevive.cpp" />
-    <ClCompile Include="z_cargo.cpp" />
-    <ClCompile Include="z_center_point.cpp" />
-    <ClCompile Include="z_cold_fever.cpp" />
-    <ClCompile Include="z_coop.cpp" />
-    <ClCompile Include="z_darkdawn.cpp" />
-    <ClCompile Include="z_domination.cpp" />
-    <ClCompile Include="z_endgame.cpp" />
-    <ClCompile Include="z_escort.cpp" />
-    <ClCompile Include="z_eveninglight.cpp" />
-    <ClCompile Include="z_fever.cpp" />
-    <ClCompile Include="z_hostagemode.cpp" />
+    <ClCompile Include="WeaponManager.cpp" />
     <ClCompile Include="agtfix.cpp" />
     <ClCompile Include="cGameType.cpp" />
     <ClCompile Include="ChunkClasses.cpp" />
@@ -387,7 +351,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="HashTemplateKeyClass.cpp" />
-    <ClCompile Include="HTreeClass.cpp" />
     <ClCompile Include="Iterator.cpp" />
     <ClCompile Include="LineSegClass.cpp" />
     <ClCompile Include="Matrix3.cpp" />
@@ -397,21 +360,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="ReferencerClass.cpp" />
     <ClCompile Include="SysTimeClass.cpp" />
     <ClCompile Include="wwmath.cpp" />
-    <ClCompile Include="z_intro.cpp" />
-    <ClCompile Include="z_joipa.cpp" />
-    <ClCompile Include="z_joipa_return.cpp" />
-    <ClCompile Include="z_lockdown.cpp" />
-    <ClCompile Include="z_m00.cpp" />
-    <ClCompile Include="z_m01.cpp" />
-    <ClCompile Include="z_mediterranean.cpp" />
-    <ClCompile Include="z_misc.cpp" />
-    <ClCompile Include="z_nod_invasion.cpp" />
-    <ClCompile Include="z_prototype.cpp" />
-    <ClCompile Include="z_reconnaissance.cpp" />
-    <ClCompile Include="z_ship.cpp" />
-    <ClCompile Include="z_siege.cpp" />
-    <ClCompile Include="z_uberaow.cpp" />
-    <ClCompile Include="z_zones.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="scripts.rc" />
@@ -423,7 +371,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="AirFactoryGameObjDef.h" />
     <ClInclude Include="AirStripGameObj.h" />
     <ClInclude Include="AirStripGameObjDef.h" />
-    <ClInclude Include="aow_intruders.h" />
     <ClInclude Include="ArmedGameObj.h" />
     <ClInclude Include="ArmedGameObjDef.h" />
     <ClInclude Include="ArmorWarheadManager.h" />
@@ -580,7 +527,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="jfwws.h" />
     <ClInclude Include="jfwzone.h" />
     <ClInclude Include="JMGRenetBuster.h" />
-    <ClInclude Include="jmgrp2.h" />
     <ClInclude Include="kak.h" />
     <ClInclude Include="kamuix.h" />
     <ClInclude Include="LoopedAnimationController.h" />
@@ -589,7 +535,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="mdbevf.h" />
     <ClInclude Include="MixFileFactoryClass.h" />
     <ClInclude Include="MoveablePhysDefClass.h" />
-    <ClInclude Include="mpf_domination.h" />
     <ClInclude Include="NavalFactoryGameObj.h" />
     <ClInclude Include="NavalFactoryGameObjDef.h" />
     <ClInclude Include="neo.h" />
@@ -618,6 +563,8 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="ra2.h" />
     <ClInclude Include="Random2Class.h" />
+    <ClInclude Include="Random3Class.h" />
+    <ClInclude Include="RandomClass.h" />
     <ClInclude Include="RawFileClass.h" />
     <ClInclude Include="ra_legacy.h" />
     <ClInclude Include="reborn.h" />
@@ -658,29 +605,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="straw.h" />
     <ClInclude Include="survival.h" />
     <ClInclude Include="SysTimeClass.h" />
-    <ClInclude Include="tcw_building.h" />
-    <ClInclude Include="tcw_center_point.h" />
-    <ClInclude Include="tcw_coop.h" />
-    <ClInclude Include="tcw_coop_cruising.h" />
-    <ClInclude Include="tcw_defence.h" />
-    <ClInclude Include="tcw_domination.h" />
-    <ClInclude Include="tcw_frost.h" />
-    <ClInclude Include="tcw_functions.h" />
-    <ClInclude Include="tcw_game.h" />
-    <ClInclude Include="tcw_mcv_escort.h" />
-    <ClInclude Include="tcw_mission01.h" />
-    <ClInclude Include="tcw_mission03.h" />
-    <ClInclude Include="tcw_nod_incursion.h" />
-    <ClInclude Include="tcw_paul.h" />
-    <ClInclude Include="tcw_player.h" />
-    <ClInclude Include="tcw_powerup.h" />
-    <ClInclude Include="tcw_sp_m01.h" />
-    <ClInclude Include="tcw_sp_scripts.h" />
-    <ClInclude Include="tcw_superweapons.h" />
-    <ClInclude Include="tcw_TCWSoldierObj.h" />
-    <ClInclude Include="tcw_technology.h" />
-    <ClInclude Include="tcw_vehicle.h" />
-    <ClInclude Include="tcw_zone.h" />
     <ClInclude Include="tda.h" />
     <ClInclude Include="TeamPurchaseSettingsDefClass.h" />
     <ClInclude Include="tfx.h" />
@@ -700,21 +624,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="weaponmgr.h" />
     <ClInclude Include="WidgetUserClass.h" />
     <ClInclude Include="WWAudioClass.h" />
-    <ClInclude Include="z.h" />
-    <ClInclude Include="z_am01.h" />
-    <ClInclude Include="z_am02.h" />
-    <ClInclude Include="z_buildingrevive.h" />
-    <ClInclude Include="z_cargo.h" />
-    <ClInclude Include="z_center_point.h" />
-    <ClInclude Include="z_cold_fever.h" />
-    <ClInclude Include="z_coop.h" />
-    <ClInclude Include="z_darkdawn.h" />
-    <ClInclude Include="z_domination.h" />
-    <ClInclude Include="z_endgame.h" />
-    <ClInclude Include="z_escort.h" />
-    <ClInclude Include="z_eveninglight.h" />
-    <ClInclude Include="z_fever.h" />
-    <ClInclude Include="z_hostagemode.h" />
     <ClInclude Include="AABoxClass.h" />
     <ClInclude Include="action.h" />
     <ClInclude Include="agtfix.h" />
@@ -790,36 +699,13 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="VehicleGameObj.h" />
     <ClInclude Include="VehicleGameObjDef.h" />
     <ClInclude Include="wwmath.h" />
-    <ClInclude Include="z_intro.h" />
-    <ClInclude Include="z_joipa.h" />
-    <ClInclude Include="z_joipa_return.h" />
-    <ClInclude Include="z_lockdown.h" />
-    <ClInclude Include="z_m00.h" />
-    <ClInclude Include="z_m01.h" />
-    <ClInclude Include="z_mediterranean.h" />
-    <ClInclude Include="z_misc.h" />
-    <ClInclude Include="z_nod_invasion.h" />
-    <ClInclude Include="z_prototype.h" />
-    <ClInclude Include="z_reconnaissance.h" />
-    <ClInclude Include="z_ship.h" />
-    <ClInclude Include="z_siege.h" />
-    <ClInclude Include="z_uberaow.h" />
-    <ClInclude Include="z_zones.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tcw_readme.txt" />
-    <None Include="z_coop.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\console\console.vcxproj">
-      <Project>{6b42dca1-eb62-4830-ade6-c90883561c79}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\MemoryManager\MemoryManager.vcxproj">
       <Project>{2fef1c76-9e4a-4921-b2d3-e536da918810}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\shaders\shaders.vcxproj">
-      <Project>{e03cf210-508a-41e5-9b29-5ea732746623}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    <ProjectReference Include="..\shared\shared.vcxproj">
+      <Project>{6636e311-e860-4f52-9d23-fe38e38d6020}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,7 +27,7 @@ public:
 	void											Update_Visibility_Status(void);
 	virtual int									Get_Vis_Object_ID(void);
 	virtual bool								Is_Simulation_Disabled(void)				{ return _DisableDynamicPhysSimulation; }
-	virtual bool								Is_Rendering_Disabled(void)				{ return _DisableDynamicPhysRendering; }
+	virtual bool								Is_Rendering_Disabled(void)				{ return _DisableDynamicPhysRendering || PhysClass::Is_Rendering_Disabled(); }
 	static void									Disable_All_Simulation(bool onoff)		{ _DisableDynamicPhysSimulation = onoff; }
 	static void									Disable_All_Rendering(bool onoff)		{ _DisableDynamicPhysRendering = onoff; }
 	virtual bool								Save (ChunkSaveClass &csave);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -67,7 +67,10 @@ public:
 		CheckDynamicObjs(true)
 	{
 		REF_PTR_SET(Mesh,mesh);
-		BoundingBox = Mesh->Get_Bounding_Box();
+		if (mesh)
+		{
+			BoundingBox = Mesh->Get_Bounding_Box();
+		}
 	}
 	~PhysMeshIntersectionTestClass(void)
 	{

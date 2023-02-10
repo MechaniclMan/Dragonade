@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -71,10 +71,12 @@ class SH_UndergroundVehicle : public ScriptImpClass
 protected:
 
 	Collision_Group_Type	original_group;		// needed to undo underground state
+	ArmorType				original_skin;		// ^
 	ArmorType				original_armor;		// ^
 	bool					underground;		// "am I currently underground?"
 	bool					could_fire;			// "could I fire before I went underground?"
 	bool					dig_pending;		// "is there a dig animation pending completion?"
+    bool                    surface_pending;
 	unsigned int			lock_state;			// stack of "can I set underground?"
 	int						lock_state_index;	// index of topmost ^that
 
@@ -86,6 +88,20 @@ protected:
 
 	void SetStateLocked(bool onoff)
 	{
+		GameObject* owner = Owner();
+		if (owner->As_VehicleGameObj())
+		{
+			if (onoff)
+			{
+				Vector3 v(0.9f,0,0);
+				owner->As_VehicleGameObj()->Set_Color(v);
+			}
+			else
+			{
+				Vector3 v(1,1,1);
+				owner->As_VehicleGameObj()->Set_Color(v);
+			}
+		}
 		// set the top-most state
 		if (onoff) lock_state |= (1 << lock_state_index);
 		else lock_state &= ~(1 << lock_state_index);
@@ -104,14 +120,24 @@ protected:
 	{
 		// pop off the topmost state
 		--lock_state_index;
-
+		
+		SetStateLocked(IsStateLocked()); //use this to update the color
 		// paranoia check
-		assert("LockState popped too many times" && lock_state_index > 0);
+		//TT_ASSERT("LockState popped too many times" && lock_state_index >= 0);
 	};
 
 	void EnterUndergroundMode(bool force = false)
 	{
-		if (underground || (IsStateLocked() && !force)) return; // already entered or state locked and not forced
+		if (underground || dig_pending || surface_pending) return; // already entered or state locked and not forced
+		if (IsStateLocked() && !force)
+		{
+			unsigned int red;
+			unsigned int green;
+			unsigned int blue;
+			Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+			Send_Message_Player(Get_Vehicle_Driver(Owner()),red,green,blue,Get_Parameter("DigMessage"));
+			return;
+		}
 
 		// stash away the owner
 		GameObject* owner = Owner();
@@ -128,11 +154,27 @@ protected:
 		// only movable objects can play
 		if (!movable_phys) return;
 
-		if (movable_phys->Is_Immovable()) return;
+        // can't dig while EMP'd
+		VehicleGameObj* vehicle = owner->As_VehicleGameObj();
+		if (vehicle && !vehicle->Can_Drive()) return;
+
+		// backup the original group for when we undig
+		original_group = movable_phys->Get_Collision_Group();
+
+		// go into transition mode
+		movable_phys->Set_Collision_Group(UNDERGROUND_TRANSITION_COLLISION_GROUP);
+
+		// check to see if we can dig
+		const Matrix3D& new_tm = movable_phys->Get_Transform();
+		if (!movable_phys->Can_Teleport(new_tm) && !force)
+		{
+			// we can't, so back to our original group and abort
+			movable_phys->Set_Collision_Group(original_group);
+			return;
+		};
 
 		// no weapon firing is allowed
 		{
-			VehicleGameObj* vehicle = owner->As_VehicleGameObj();
 			if (vehicle)
 			{
 				could_fire = vehicle->Get_Scripts_Can_Fire();
@@ -142,6 +184,7 @@ protected:
 
 		// nobody gets in or out...
 		Commands->Enable_Vehicle_Transitions(owner, false);
+        Commands->Create_Explosion(Get_Parameter("DigExplosion"), Commands->Get_Position(owner), owner);
 
 		// defuse attached C4
 		Defuse_Attached_C4(owner);
@@ -152,6 +195,7 @@ protected:
 		if (*animation)
 		{
 			dig_pending = true;
+            movable_phys->Set_Immovable(true);
 			Commands->Set_Animation(owner, animation, false, 0, 0, -1, false);
 		}
 		else
@@ -166,78 +210,98 @@ protected:
 		MoveablePhysClass* movable_phys = physical_object->Peek_Physical_Object()->As_MoveablePhysClass();
 
 		// we aren't visible to AI
-		Set_Vehicle_Is_Visible(obj, false);
+		Commands->Set_Is_Visible(obj, false);
 
 		// become invulnerable
+		original_skin = physical_object->Get_Defense_Object()->Get_Skin();
 		original_armor = physical_object->Get_Defense_Object()->Get_Shield_Type();
+		Set_Skin(obj, "Blamo");
 		Commands->Set_Shield_Type(obj, "Blamo");
 
-		// backup the original group for when we undig
-		original_group = movable_phys->Get_Collision_Group();
-
 		// switch to the underground collision group
+        movable_phys->Set_Immovable(false);
 		movable_phys->Set_Collision_Group(UNDERGROUND_COLLISION_GROUP);
 
-		// inform netcode of the dirty things we've done with the object
-		physical_object->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+        // clear animation
+        physical_object->Clear_Animation();
 
 		// you are now underground, congrats
 		underground = true;
 	};
 
-	void ExitUndergroundMode(bool force = false)
-	{
-		if (!underground || (IsStateLocked() && !force)) return; // already left or state locked and not forced
-
-		// stash away the owner
-		GameObject* owner = Owner();
-
-		// pull out the physical object
-		PhysicalGameObj* physical_object = owner->As_PhysicalGameObj();
-
-		// only physical objects can play
-		if (!physical_object) return;
-
-		// pull out the movable phys
-		MoveablePhysClass* movable_phys = physical_object->Peek_Physical_Object()->As_MoveablePhysClass();
-
-		// only movable objects can play
-		if (!movable_phys) return;
-
-		// restore the original collision group
-		movable_phys->Set_Collision_Group(original_group);
-
-		// check to see if we can surface
-		const Matrix3D& new_tm = movable_phys->Get_Transform();
-		if (!movable_phys->Can_Teleport(new_tm, true) && !force)
+    void ExitUndergroundMode(bool force = false)
+    {
+        if (!underground || dig_pending || surface_pending) return; // already left or state locked and not forced
+		if (IsStateLocked() && !force)
 		{
-			// we can't, so back to underground we go
-			movable_phys->Set_Collision_Group(UNDERGROUND_COLLISION_GROUP);
+			unsigned int red;
+			unsigned int green;
+			unsigned int blue;
+			Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+			Send_Message_Player(Get_Vehicle_Driver(Owner()),red,green,blue,Get_Parameter("SurfaceMessage"));
 			return;
-		};
+		}
 
-		// weapon firing is now allowed
-		{
-			VehicleGameObj* vehicle = owner->As_VehicleGameObj();
-			if (vehicle) vehicle->Set_Scripts_Can_Fire(could_fire);
-		};
+        GameObject* owner = Owner();
 
-		// you are now free the move about the cabin
-		Commands->Enable_Vehicle_Transitions(owner, true);
+        PhysicalGameObj* physical_object = owner->As_PhysicalGameObj();
+        if (!physical_object) return;
 
-		// but the AI can see everything you do
-		Set_Vehicle_Is_Visible(owner, true);
-		Commands->Set_Animation(owner,Get_Parameter("SurfaceAnimation"),false,0,0,-1,false);
+        MoveablePhysClass* movable_phys = physical_object->Peek_Physical_Object()->As_MoveablePhysClass();
+        if (!movable_phys) return;
 
-		// and are no longer invulnerable
-		physical_object->Get_Defense_Object()->Set_Shield_Type(original_armor);
+        movable_phys->Set_Collision_Group(UNDERGROUND_TRANSITION_COLLISION_GROUP);
 
-		// inform netcode of the dirty things we've done with the physical object
-		physical_object->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE, true);
+        // check to see if we can surface
+        const Matrix3D& new_tm = movable_phys->Get_Transform();
+        if (!movable_phys->Can_Teleport(new_tm) && !force)
+        {
+            // we can't, so back to underground we go
+            movable_phys->Set_Collision_Group(UNDERGROUND_COLLISION_GROUP);
+            return;
+        };
 
-		// no longer mark us as underground
-		underground = false;
-	};
+        Commands->Set_Is_Visible(owner, true);
+        Commands->Create_Explosion(Get_Parameter("SurfaceExplosion"), Commands->Get_Position(owner), owner);
+
+        // no longer invulnerable
+        physical_object->Get_Defense_Object()->Set_Skin(original_skin);
+        physical_object->Get_Defense_Object()->Set_Shield_Type(original_armor);
+
+        const char* animation = Get_Parameter("SurfaceAnimation");
+        if (*animation)
+        {
+            surface_pending = true;
+            movable_phys->Set_Immovable(true);
+            Commands->Set_Animation(owner, animation, false, 0, 0, -1, false);
+        }
+        else
+        {
+            physical_object->Clear_Animation();
+            CompleteSurface(owner);
+        }
+    }
+
+    void CompleteSurface(GameObject* obj)
+    {
+        PhysicalGameObj* physical_object = obj->As_PhysicalGameObj();
+        MoveablePhysClass* movable_phys = physical_object->Peek_Physical_Object()->As_MoveablePhysClass();
+
+        // restore the original collision group
+        movable_phys->Set_Immovable(false);
+        movable_phys->Set_Collision_Group(original_group);
+
+        // weapon firing is now allowed
+        {
+            VehicleGameObj* vehicle = obj->As_VehicleGameObj();
+            if (vehicle) vehicle->Set_Scripts_Can_Fire(could_fire);
+        };
+
+        Commands->Enable_Vehicle_Transitions(obj, true);
+
+        // no longer mark us as underground
+        underground = false;
+    };
 
 public:
 
@@ -248,6 +312,8 @@ public:
 
 		// make sure we are in the default state for our attached object
 		underground = false;
+		dig_pending = false;
+        surface_pending = false;
 		lock_state = 0;
 		lock_state_index = 0;
 
@@ -299,16 +365,22 @@ public:
 		};
 	};
 
-	void Animation_Complete(GameObject *obj, const char *animation_name)
-	{
-		VehicleGameObj* vehicle = obj ? obj->As_VehicleGameObj() : NULL;
-		if (vehicle && dig_pending && !_stricmp(animation_name,Get_Parameter("DigAnimation")))
-		{
-			dig_pending = false;
+    void Animation_Complete(GameObject *obj, const char *animation_name)
+    {
+        VehicleGameObj* vehicle = obj ? obj->As_VehicleGameObj() : NULL;
+        if (!vehicle) return;
 
-			CompleteDig(obj);
-		}
-	};
+        if (dig_pending && !_stricmp(animation_name, Get_Parameter("DigAnimation")))
+        {
+            dig_pending = false;
+            CompleteDig(obj);
+        }
+        else if (surface_pending && !_stricmp(animation_name, Get_Parameter("SurfaceAnimation")))
+        {
+            surface_pending = false;
+            CompleteSurface(obj);
+        }
+    };
 };
 
 class SH_UndergroundKey: public JFW_Key_Hook_Base
@@ -332,5 +404,5 @@ public:
 
 REGISTER_SCRIPT(SH_UndergroundDigZone, "");
 REGISTER_SCRIPT(SH_UndergroundNoDigZone, "");
-REGISTER_SCRIPT(SH_UndergroundVehicle, "DefaultLockState=0:int,DigAnimation:string,SurfaceAnimation:string");
+REGISTER_SCRIPT(SH_UndergroundVehicle, "DefaultLockState=0:int,DigAnimation:string,SurfaceAnimation:string,Velocity:float,DigExplosion:string,SurfaceExplosion:string,DigMessage:string,SurfaceMessage:string");
 REGISTER_SCRIPT(SH_UndergroundKey, "Key=Key:string");

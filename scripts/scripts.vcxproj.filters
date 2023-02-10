@@ -17,15 +17,6 @@
       <UniqueIdentifier>{d65ff58e-d3f3-467a-90b7-c1a953cb3424}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
     </Filter>
-    <Filter Include="Scripts\Coop Sources">
-      <UniqueIdentifier>{4c69a5cc-f538-49bd-aeb1-5024c4c18e48}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scripts\Tib. Crystal War">
-      <UniqueIdentifier>{71351b9b-0c37-4800-9e03-3a27579051ff}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Scripts\UberAOW">
-      <UniqueIdentifier>{801d5c01-d34a-4efe-8732-24c88360c57e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Engine">
       <UniqueIdentifier>{fb772dcb-3042-4c30-9947-c6543e48698c}</UniqueIdentifier>
     </Filter>
@@ -112,9 +103,6 @@
     <ClCompile Include="JMGRenetBusters.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
-    <ClCompile Include="jmgrp2.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
     <ClCompile Include="kak.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
@@ -175,9 +163,6 @@
     <ClCompile Include="tfx.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
-    <ClCompile Include="z_hostagemode.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
     <ClCompile Include="cGameType.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -197,9 +182,6 @@
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="HashTemplateKeyClass.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="HTreeClass.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Iterator.cpp">
@@ -226,46 +208,7 @@
     <ClCompile Include="wwmath.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="z_m01.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_intro.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_m00.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_coop.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_am01.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_am02.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_cargo.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_darkdawn.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_endgame.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_fever.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_lockdown.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_siege.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
     <ClCompile Include="ThreadClass.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="definition.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="DefinitionFactoryClass.cpp">
@@ -289,94 +232,16 @@
     <ClCompile Include="straw.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="z_escort.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_buildingrevive.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_zones.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_ship.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_eveninglight.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_joipa.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_joipa_return.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_reconnaissance.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="z_nod_invasion.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
     <ClCompile Include="CommandLineParser.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
-    <ClCompile Include="tcw_building.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_game.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_player.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_powerup.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_technology.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_vehicle.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="z_uberaow.cpp">
-      <Filter>Scripts\UberAOW</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_coop.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_domination.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_center_point.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_coop_cruising.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_defence.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_zone.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
     <ClCompile Include="iran_scripts.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_superweapons.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="z_domination.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
     <ClCompile Include="da_domination.cpp">
       <Filter>DA Game Modes</Filter>
     </ClCompile>
     <ClCompile Include="LoopedAnimationController.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="TwiddlerClass.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="RandomClass.cpp">
@@ -442,9 +307,6 @@
     <ClCompile Include="da_translation.cpp">
       <Filter>DA Core</Filter>
     </ClCompile>
-    <ClCompile Include="z_cold_fever.cpp">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClCompile>
     <ClCompile Include="engine_weap.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -452,9 +314,6 @@
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="engine_dmg.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="engine_io.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="engine_math.cpp">
@@ -470,9 +329,6 @@
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="engine_script.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="engine_string.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="engine_threading.cpp">
@@ -583,51 +439,6 @@
     <ClCompile Include="da_deathmatch.cpp">
       <Filter>DA Game Modes</Filter>
     </ClCompile>
-    <ClCompile Include="aow_intruders.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_nod_incursion.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_TCWSoldierObj.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_sp_scripts.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_sp_m01.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_paul.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="z_prototype.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="z_mediterranean.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="z_misc.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="z_center_point.cpp">
-      <Filter>Scripts</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_mission01.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_mission03.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_mcv_escort.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_functions.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
-    <ClCompile Include="tcw_frost.cpp">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClCompile>
     <ClCompile Include="da_gamelog.cpp">
       <Filter>DA Game Features</Filter>
     </ClCompile>
@@ -639,9 +450,6 @@
     </ClCompile>
     <ClCompile Include="da_vehiclequeue.cpp">
       <Filter>DA Game Features</Filter>
-    </ClCompile>
-    <ClCompile Include="mpf_domination.cpp">
-      <Filter>Scripts</Filter>
     </ClCompile>
     <ClCompile Include="da_loot.cpp">
       <Filter>DA Game Features</Filter>
@@ -683,6 +491,21 @@
       <Filter>DA Core</Filter>
     </ClCompile>
     <ClCompile Include="engine_tdb.cpp">
+      <Filter>DA Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="engine_io.cpp">
+      <Filter>DA Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Random2Class.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Random3Class.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="WeaponManager.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="engine_string.cpp">
       <Filter>DA Engine</Filter>
     </ClCompile>
   </ItemGroup>
@@ -891,9 +714,6 @@
     <ClInclude Include="DefinitionFactoryMgrClass.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="DefinitionMgrClass.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="DynamicPhysClass.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -995,9 +815,6 @@
     </ClInclude>
     <ClInclude Include="WWAudioClass.h">
       <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="z_cold_fever.h">
-      <Filter>Scripts\Coop Sources</Filter>
     </ClInclude>
     <ClInclude Include="ConPublic.h">
       <Filter>Engine</Filter>
@@ -1182,9 +999,6 @@
     <ClInclude Include="GameDefinition.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="GameData.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="ExtendedNetworkObject.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -1287,9 +1101,6 @@
     <ClInclude Include="cAMpaScripts.h">
       <Filter>Scripts</Filter>
     </ClInclude>
-    <ClInclude Include="z_hostagemode.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
     <ClInclude Include="dan.h">
       <Filter>Scripts</Filter>
     </ClInclude>
@@ -1368,9 +1179,6 @@
     <ClInclude Include="JMGRenetBuster.h">
       <Filter>Scripts</Filter>
     </ClInclude>
-    <ClInclude Include="jmgrp2.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
     <ClInclude Include="kak.h">
       <Filter>Scripts</Filter>
     </ClInclude>
@@ -1424,117 +1232,6 @@
     </ClInclude>
     <ClInclude Include="tfx.h">
       <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="z_domination.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="z.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_zones.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_am01.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_am02.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_buildingrevive.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_cargo.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_coop.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_darkdawn.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_endgame.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_escort.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_eveninglight.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_fever.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_intro.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_joipa.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_joipa_return.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_lockdown.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_m00.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_m01.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_nod_invasion.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_reconnaissance.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_ship.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="z_siege.h">
-      <Filter>Scripts\Coop Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_building.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_zone.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_center_point.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_coop.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_coop_cruising.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_defence.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_domination.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_game.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_player.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_powerup.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_superweapons.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_technology.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_vehicle.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="z_uberaow.h">
-      <Filter>Scripts\UberAOW</Filter>
     </ClInclude>
     <ClInclude Include="engine_da.h">
       <Filter>DA Engine</Filter>
@@ -1680,51 +1377,6 @@
     <ClInclude Include="engine_game.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-    <ClInclude Include="aow_intruders.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_paul.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_nod_incursion.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_TCWSoldierObj.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_sp_scripts.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_sp_m01.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="z_prototype.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="z_mediterranean.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="z_misc.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="z_center_point.h">
-      <Filter>Scripts</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_mission01.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_mission03.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_mcv_escort.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_functions.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
-    <ClInclude Include="tcw_frost.h">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </ClInclude>
     <ClInclude Include="da_gamelog.h">
       <Filter>DA Game Features</Filter>
     </ClInclude>
@@ -1739,9 +1391,6 @@
     </ClInclude>
     <ClInclude Include="cPurchaseResponseEvent.h">
       <Filter>DA Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="mpf_domination.h">
-      <Filter>Scripts</Filter>
     </ClInclude>
     <ClInclude Include="ArmedGameObjDef.h">
       <Filter>DA Engine</Filter>
@@ -1851,14 +1500,18 @@
     <ClInclude Include="VehicleFactoryGameObjDef.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="z_coop.txt">
-      <Filter>Scripts\Coop Sources</Filter>
-    </None>
-    <None Include="tcw_readme.txt">
-      <Filter>Scripts\Tib. Crystal War</Filter>
-    </None>
+    <ClInclude Include="Random3Class.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomClass.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="DefinitionMgrClass.h">
+      <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="GameData.h">
+      <Filter>DA Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="scripts.rc">

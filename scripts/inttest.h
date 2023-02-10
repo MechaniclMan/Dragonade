@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -58,10 +58,6 @@ inline bool AABoxIntersectionTestClass::Cull(const AABoxClass & cull_box)
 	if (WWMath::Fabs(dc.X) > r.X) return true;
 	if (WWMath::Fabs(dc.Y) > r.Y) return true;
 	if (WWMath::Fabs(dc.Z) > r.Z) return true;
-}
-inline bool AABoxIntersectionTestClass::Intersect_Triangle(const TriClass & tri)
-{
-	return CollisionMath::Intersection_Test(Box,tri);
 }
 class OBBoxIntersectionTestClass : public IntersectionTestClass
 {
@@ -134,10 +130,6 @@ inline bool OBBoxIntersectionTestClass::Cull(const AABoxClass & cull_box)
 	if (WWMath::Fabs(dc.Y) > r.Y) return true;
 	if (WWMath::Fabs(dc.Z) > r.Z) return true;
 	return false;
-}
-inline bool OBBoxIntersectionTestClass::Intersect_Triangle(const TriClass & tri)
-{
-	return CollisionMath::Intersection_Test(Box,tri);
 }
 inline void OBBoxIntersectionTestClass::update_bounding_box(void)
 {

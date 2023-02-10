@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,7 +22,7 @@ void JFW_Custom_Toggle_Radar::Custom(GameObject *obj,int type,int param,GameObje
 	msg = Get_Int_Parameter("Message");
 	if (msg == type)
 	{
-		Commands->Enable_Radar(param);
+		Commands->Enable_Radar(param != 0);
 	}
 }
 
@@ -422,7 +422,7 @@ void JFW_Enable_Spawner_On_Custom::Custom(GameObject *obj,int type,int param,Gam
 {
 	if (type == Get_Int_Parameter("Message"))
 	{
-		Commands->Enable_Spawner(Get_Int_Parameter("ID"),Get_Int_Parameter("Enable"));
+		Commands->Enable_Spawner(Get_Int_Parameter("ID"),Get_Bool_Parameter("Enable"));
 	}
 }
 
@@ -440,7 +440,7 @@ void JFW_Set_Animation_On_Custom::Custom(GameObject *obj,int type,int param,Game
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),Get_Int_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),Get_Bool_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -459,7 +459,7 @@ void JFW_Set_Model_Animation_On_Custom::Custom(GameObject *obj,int type,int para
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),Get_Int_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),Get_Bool_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -488,7 +488,7 @@ void JFW_Enable_Disable_Animation_On_Custom::Custom(GameObject *obj,int type,int
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("Animation"),true,subobject,firstframe,-1,Get_Int_Parameter("Blended"));
+			Commands->Set_Animation(obj,Get_Parameter("Animation"),true,subobject,firstframe,-1,Get_Bool_Parameter("Blended"));
 		}
 	}
 	if (type == Get_Int_Parameter("Disable"))
@@ -515,7 +515,7 @@ void JFW_Custom_Toggle_Visible::Custom(GameObject *obj,int type,int param,GameOb
 {
 	if (type == Get_Int_Parameter("Message"))
 	{
-		Commands->Set_Is_Rendered(obj,Get_Int_Parameter("Visible"));
+		Commands->Set_Is_Rendered(obj,Get_Bool_Parameter("Visible"));
 	}
 }
 
@@ -774,7 +774,7 @@ void JFW_Create_Destroy_Object_On_Custom_Animate::Custom(GameObject *obj,int typ
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(object,Get_Parameter("Animation"),Get_Int_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+			Commands->Set_Animation(object,Get_Parameter("Animation"),Get_Bool_Parameter("Loop"),subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 		}
 	}
 	if (type == Get_Int_Parameter("DestroyMessage"))
@@ -820,7 +820,7 @@ void JFW_Create_Destroy_Object_On_Custom_Animate_2::Custom(GameObject *obj,int t
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(object,Get_Parameter("CreateAnimation"),Get_Int_Parameter("CreateLoop"),subobject,firstframe,Get_Float_Parameter("CreateLastFrame"),Get_Int_Parameter("CreateBlended"));
+			Commands->Set_Animation(object,Get_Parameter("CreateAnimation"),Get_Bool_Parameter("CreateLoop"),subobject,firstframe,Get_Float_Parameter("CreateLastFrame"),Get_Bool_Parameter("CreateBlended"));
 		}
 	}
 	if (type == Get_Int_Parameter("DestroyMessage"))
@@ -837,7 +837,7 @@ void JFW_Create_Destroy_Object_On_Custom_Animate_2::Custom(GameObject *obj,int t
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(Commands->Find_Object(ObjectID),Get_Parameter("DestroyAnimation"),false,subobject,firstframe,Get_Float_Parameter("DestroyLastFrame"),Get_Int_Parameter("DestroyBlended"));
+			Commands->Set_Animation(Commands->Find_Object(ObjectID),Get_Parameter("DestroyAnimation"),false,subobject,firstframe,Get_Float_Parameter("DestroyLastFrame"),Get_Bool_Parameter("DestroyBlended"));
 			Commands->Start_Timer(obj,this,timertime,timernumber);
 		}
 	}
@@ -1254,7 +1254,7 @@ void JFW_Fog_Custom::Custom(GameObject *obj,int type,int param,GameObject *sende
 		}
 		else
 		{
-			bool fogenable = Get_Int_Parameter("Fog_Enable");
+			bool fogenable = Get_Bool_Parameter("Fog_Enable");
 			Commands->Set_Fog_Enable(fogenable);
 			if (fogenable)
 			{
@@ -1268,7 +1268,7 @@ void JFW_Fog_Custom::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
 	{
-		bool fogenable = Get_Int_Parameter("Fog_Enable");
+		bool fogenable = Get_Bool_Parameter("Fog_Enable");
 		Commands->Set_Fog_Enable(fogenable);
 		if (fogenable)
 		{
@@ -1398,7 +1398,7 @@ void JFW_Enable_Stealth_On_Custom::Custom(GameObject *obj,int type,int param,Gam
 {
 	if (type == Get_Int_Parameter("Message"))
 	{
-		Commands->Enable_Stealth(obj,Get_Int_Parameter("Enable"));
+		Commands->Enable_Stealth(obj,Get_Bool_Parameter("Enable"));
 	}
 }
 
@@ -1469,7 +1469,7 @@ void JFW_Enable_Team_Radar_On_Custom::Custom(GameObject *obj,int type,int param,
 {
 	if (type == Get_Int_Parameter("Message"))
 	{
-		Enable_Team_Radar(Get_Int_Parameter("Player_Type"),Get_Int_Parameter("Enable"));
+		Enable_Team_Radar(Get_Int_Parameter("Player_Type"),Get_Bool_Parameter("Enable"));
 	}
 }
 
@@ -1596,7 +1596,9 @@ void JFW_Send_Self_Custom_On_Key::KeyHook()
 void JFW_Startup_Custom_Self::Created(GameObject *obj)
 {
 	int msg = Get_Int_Parameter("Message");
-	Commands->Send_Custom_Event(obj,obj,msg,0,0);
+  int param = (Get_Parameter_Count()>1)?Get_Int_Parameter("Param"):0; // Added 06-10-13 by danpaul88
+  int delay = (Get_Parameter_Count()>1)?Get_Int_Parameter("Delay"):0; // Added 06-10-13 by danpaul88
+	Commands->Send_Custom_Event(obj,obj,msg,param,(float)delay);
 	Destroy_Script();
 }
 
@@ -1710,7 +1712,7 @@ ScriptRegistrant<JFW_Shader_Custom_Poke> JFW_Shader_Custom_Poke_Registrant("JFW_
 ScriptRegistrant<JFW_Kill_All_Buildings_Customs> JFW_Kill_All_Buildings_Customs_Registrant("JFW_Kill_All_Buildings_Customs","Message:int,Count:int,Player_Type:int");
 ScriptRegistrant<JFW_Send_Self_Custom_On_Key> JFW_Send_Self_Custom_On_Key_Registrant("JFW_Send_Self_Custom_On_Key","Key=Key:string,Message=0:int,Once=1:int");
 ScriptRegistrant<JFW_Custom_Send_Random_Custom> JFW_Custom_Send_Random_Custom_Registrant("JFW_Custom_Send_Random_Custom","RecieveMessage:int,SendMessage:int,SendParam:int,SendID:int,Percentage:int");
-ScriptRegistrant<JFW_Startup_Custom_Self> JFW_Startup_Custom_Self_Registrant("JFW_Startup_Custom_Self","Message:int");
+ScriptRegistrant<JFW_Startup_Custom_Self> JFW_Startup_Custom_Self_Registrant("JFW_Startup_Custom_Self","Message:int,Param=0:int,Delay=0:int");
 ScriptRegistrant<JFW_Set_Skin_Custom> JFW_Set_Skin_Custom_Registrant("JFW_Set_Skin_Custom","Message:int,Armour:string");
 ScriptRegistrant<JFW_Set_Armor_Custom> JFW_Set_Armor_Custom_Registrant("JFW_Set_Armor_Custom","Message:int,Armour:string");
 ScriptRegistrant<JFW_Send_Custom_On_Damage> JFW_Send_Custom_On_Damage_Registrant("JFW_Send_Custom_On_Damage","Message1:int,ID1:int,Message2:int,ID2:int,Health:float");

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -68,11 +68,11 @@ private:
 protected:
 	friend class GenericMultiListIterator;
 	friend class MultiListObjectClass;
-	SHADERS_API bool					Internal_Add(MultiListObjectClass *obj, bool onlyonce = true);
-	SHADERS_API bool					Internal_Add_Tail(MultiListObjectClass *obj, bool onlyonce = true);
-	SHADERS_API bool					Internal_Add_After(MultiListObjectClass *obj, const MultiListObjectClass* existing_list_member, bool onlyonce = true);
-	SHADERS_API bool					Internal_Remove(MultiListObjectClass *obj);
-	SHADERS_API MultiListObjectClass*	Internal_Remove_List_Head();
+	SHARED_API bool					Internal_Add(MultiListObjectClass *obj, bool onlyonce = true);
+	SHARED_API bool					Internal_Add_Tail(MultiListObjectClass *obj, bool onlyonce = true);
+	SHARED_API bool					Internal_Add_After(MultiListObjectClass *obj, const MultiListObjectClass* existing_list_member, bool onlyonce = true);
+	SHARED_API bool					Internal_Remove(MultiListObjectClass *obj);
+	SHARED_API MultiListObjectClass*	Internal_Remove_List_Head();
 
 	inline MultiListObjectClass* Internal_Get_List_Head() const
 	{

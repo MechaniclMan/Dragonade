@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -89,7 +89,7 @@ public:
 	bool								Intersects(const OBBoxClass & obbox)
 	{
 		CastResultStruct result;
-		PhysOBBoxCollisionTestClass boxtest(obbox,Vector3(0,0,0),&result,0x0F,1);
+		PhysOBBoxCollisionTestClass boxtest(obbox,Vector3(0,0,0),&result,TERRAIN_COLLISION_GROUP,COLLISION_TYPE_ALL);
 		Cast_OBBox(boxtest);
 		return result.StartBad;
 	}

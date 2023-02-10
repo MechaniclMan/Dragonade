@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,9 +12,6 @@
 #ifndef _FASTCRITICALSECTION_H_
 #define _FASTCRITICALSECTION_H_
 #include "platform.h"
-#pragma warning(push)
-
-
 class FastCriticalSection
 {
 protected:
@@ -54,6 +51,4 @@ public:
 		};
 	};
 };
-
-#pragma warning(pop)
 #endif

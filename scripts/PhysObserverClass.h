@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -36,12 +36,12 @@ public:
 	virtual ExpirationReactionType	Object_Expired(PhysClass * observed_obj)					{ return EXPIRATION_APPROVED; }
 	virtual void							Object_Removed_From_Scene(PhysClass * observed_obj)	{ };
 	virtual void							Object_Shattered_Something(PhysClass * observed_obj, PhysClass * shattered_obj, int surface_type) { };
-};
+}; // 0004
 class	CombatPhysObserverClass : public PhysObserverClass {
 public:
 	virtual	DamageableGameObj *	As_DamageableGameObj( void )	{ return NULL; }
 	virtual	PhysicalGameObj *		As_PhysicalGameObj( void )		{ return NULL; }
 	virtual	BuildingGameObj *		As_BuildingGameObj( void )		{ return NULL; }
-};
+}; // 0004
 
 #endif

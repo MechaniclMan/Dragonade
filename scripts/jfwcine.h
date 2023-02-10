@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -91,9 +91,11 @@ class JFW_Cinematic : public ScriptImpClass {
 	float f2;
 	bool PrimaryKilled;
 	bool CameraControl;
+    bool StartPaused;
 	char *CurrentLine;
 	ControlLine *Lines;
 	void Created(GameObject *obj);
+    void Start_Cinematic(GameObject* obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Timer_Expired(GameObject *obj,int number);
 	void Save(ScriptSaver &saver);
@@ -128,6 +130,7 @@ class JFW_Cinematic : public ScriptImpClass {
 	void Command_Enable_Letterbox(char *command);
 	void Command_Set_Screen_Fade_Color(char *command);
 	void Command_Set_Screen_Fade_Opacity(char *command);
+    void Command_Show_Message(char* command);
 public:
 	JFW_Cinematic() {Lines = 0; CurrentLine = 0;}
 	~JFW_Cinematic();

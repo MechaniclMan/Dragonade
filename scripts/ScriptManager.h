@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,14 +30,14 @@ public:
 	static SimpleDynVecClass<ScriptClass *> PendingDestroyList;
 	static SimpleDynVecClass<ScriptClass *> ActiveScriptList;
 	static ScriptCommandsClass EngineCommands;
-	static SHADERS_API void Init();
-	static SHADERS_API void Shutdown();
-	static SHADERS_API void Destroy_Pending();
+	static SHARED_API void Init();
+	static SHARED_API void Shutdown();
+	static SHARED_API void Destroy_Pending();
 	static void Load_Scripts(char const *name);
-	static SHADERS_API ScriptClass *Create_Script(char const *name);
+	static SHARED_API ScriptClass *Create_Script(char const *name);
 	static void Request_Destroy_Script(ScriptClass *script);
-	static SHADERS_API bool Save(ChunkSaveClass &saver);
-	static SHADERS_API bool Load(ChunkLoadClass &loader);
+	static SHARED_API bool Save(ChunkSaveClass &saver);
+	static SHARED_API bool Load(ChunkLoadClass &loader);
 	static ScriptCommandsClass Get_Script_Commands();
 };
 #endif

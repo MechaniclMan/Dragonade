@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -108,6 +108,7 @@ public:
    void Set_Dock_Entrance(Vector3 &location) {dockEntrance = location;}
    void Set_Tiberium_Region(OBBoxClass &region) {tiberiumRegion = region;}
    void Set_Harvest_Anim(const char *anim) {harvestAnimation = anim;}
+   void Stop();
 };
 
 #endif

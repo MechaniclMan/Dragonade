@@ -1,5 +1,5 @@
 /*	  Renegade Scripts.dll
-		Copyright 2011 Tiberian Technologies
+		Copyright 2013 Tiberian Technologies
  
 		This file is part of the Renegade scripts.dll
 		The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,7 @@
 #include "engine.h"
 #include "PhysClass.h"
 #include "PhysicalGameObj.h"
-#pragma warning(disable: 4996)
+
 
 Xpert_Teleport_Zone_Random::Xpert_Teleport_Zone_Random() : NextLocation(0)
 {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,8 +12,10 @@
 #ifndef TT_INCLUDE__HTREECLASS_H
 #define TT_INCLUDE__HTREECLASS_H
 #include "Matrix3D.h"
-#include "engine_3dre.h"
-
+class HAnimClass;
+class HAnimComboClass;
+class ChunkLoadClass;
+enum WW3DErrorType;
 struct PivotClass
 {
 	char Name[16]; //0
@@ -55,62 +57,54 @@ class HTreeClass
 private:
 	char Name[16]; //0
 	int NumPivots; //16
-	PivotClass* Pivots; //20
+	PivotClass* Pivot; //20
 	float ScaleFactor; //24
 
 public:
-
-	HTreeClass();
-	HTreeClass(const HTreeClass& that);
-	~HTreeClass();
-
 	static HTreeClass* Create_Interpolated(const HTreeClass* base, const HTreeClass* a, const HTreeClass* b, float weightA, float weightB);
-
-	void			Init_Default();
-
+	HTreeClass(const HTreeClass& that);
+	HTreeClass();
+	~HTreeClass();
 	WW3DErrorType	Load_W3D(ChunkLoadClass& cload);
-	void			Free();
-
-
-	const char* Get_Name() const;
-	const Matrix3D& HTreeClass::Get_Transform(int pivot) const;
-	void Get_Bone_Control(int, Matrix3D&) const;
-
+	void			Init_Default();
+	const char *Get_Name() const
+	{
+		return Name;
+	}
 	int Num_Pivots() const
 	{
 		return NumPivots;
 	}
-
-	int Get_Parent_Index(int boneidx) const
+	int Get_Bone_Index(const char *) const;
+	const char *Get_Bone_Name(int) const;
+	int Get_Parent_Index(int boneidx) const;
+	void Base_Update(const Matrix3D& root);
+	void Anim_Update(Matrix3D  const&, HAnimClass *, float);
+	void Blend_Update(Matrix3D  const&, HAnimClass *, float, HAnimClass *, float, float);
+	void Combo_Update(Matrix3D  const&, HAnimComboClass *);
+	const Matrix3D& Get_Transform(int pivot) const
 	{
-		if (Pivots[boneidx].Parent)
-		{
-			return Pivots[boneidx].Parent->Index;
-		}
-		else
-		{
-			return 0;
-		}
+		return this->Pivot[pivot].Transform;
 	}
-
-	void Base_Update(Matrix3D& root)
+	bool Get_Visibility(int pivot) const
 	{
-		Pivots->Transform = root;
-		Pivots->IsVisible = true;
-		for (int i = 1;i < NumPivots;i++)
-		{
-			Matrix3D::Multiply(Pivots[i].Parent->Transform,Pivots[i].BaseTransform,&Pivots[i].Transform);
-			Pivots[i].IsVisible = true;
-			if (Pivots[i].IsCaptured)
-			{
-				Pivots[i].Capture_Update();
-			}
-		}
+		return this->Pivot[pivot].IsVisible;
 	}
-
+	const Matrix3D& Get_Root_Transform() const
+	{
+		return this->Pivot[0].Transform;
+	}
+	void Capture_Bone(int boneindex);
+	void Release_Bone(int boneindex);
+	bool Is_Bone_Captured(int boneindex);
+	void Control_Bone(int boneindex, Matrix3D const &relative_tm, bool world_space_translation);
+	bool Simple_Evaluate_Pivot(HAnimClass *motion, int pivot_index, float frame,const Matrix3D &obj_tm, Matrix3D *end_tm) const;
+	bool Simple_Evaluate_Pivot(int pivot_index,const Matrix3D &obj_tm, Matrix3D *end_tm) const;
+	void Scale(float factor);
+	void			Free();
+	void Get_Bone_Control(int, Matrix3D&) const;
 private:
 	HTreeClass& operator = (const HTreeClass& that); // unimplemented
-
 	WW3DErrorType read_pivots(ChunkLoadClass& cload, bool create_root);
 };
 

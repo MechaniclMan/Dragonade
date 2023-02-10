@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -29,7 +29,7 @@ void MDB_Base_Defense_Popup_No_VTOL::Created(GameObject *obj)
 	LastSeen = 0;
 	MaxDis = Get_Float_Parameter("MaxAttackDistance");
 	ReturnTime = Get_Int_Parameter("ReturnTime");
-	AdjustInf = Get_Int_Parameter("Adjust_Aim_For_Infantry");
+	AdjustInf = Get_Bool_Parameter("Adjust_Aim_For_Infantry");
 	Commands->Start_Timer(obj,this,3.0f,2);
 }
 
@@ -349,7 +349,7 @@ void MDB_Base_Defense_Popup::Created(GameObject *obj)
 	LastSeen = 0;
 	MaxDis = Get_Float_Parameter("MaxAttackDistance");
 	ReturnTime = Get_Int_Parameter("ReturnTime");
-	AdjustInf = Get_Int_Parameter("Adjust_Aim_For_Infantry");
+	AdjustInf = Get_Bool_Parameter("Adjust_Aim_For_Infantry");
 	Commands->Start_Timer(obj,this,3.0f,2);
 }
 
@@ -501,7 +501,7 @@ void MDB_Base_Defense::Created(GameObject *obj)
 	var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
 	MaxDis = Get_Float_Parameter("MaxAttackDistance");
 	LastSeen = 0;
-	AdjustInf = Get_Int_Parameter("Adjust_Aim_For_Infantry");
+	AdjustInf = Get_Bool_Parameter("Adjust_Aim_For_Infantry");
 	Commands->Start_Timer(obj,this,Commands->Get_Random(5.0f,15.0f),1);
 }
 
@@ -597,7 +597,7 @@ void MDB_Base_Defense_No_VTOL::Created(GameObject *obj)
 	var.Set_Attack(V[Commands->Get_Random_Int(0,4)],0.0,0.0,true);
 	MaxDis = Get_Float_Parameter("MaxAttackDistance");
 	LastSeen = 0;
-	AdjustInf = Get_Int_Parameter("Adjust_Aim_For_Infantry");
+	AdjustInf = Get_Bool_Parameter("Adjust_Aim_For_Infantry");
 	Commands->Start_Timer(obj,this,Commands->Get_Random(5.0f,15.0f),1);
 }
 

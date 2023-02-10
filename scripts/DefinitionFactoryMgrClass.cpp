@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,10 +15,10 @@
 #pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
 #pragma init_seg(lib) // Move this files static initializers up a level
 #pragma warning(default: 4073)
-#if (TDBEDIT || DDBEDIT)
+#if (TDBEDIT || DDBEDIT || W3DVIEWER)
 DefinitionFactoryClass *DefinitionFactoryMgrClass::_FactoryListHead;
 #else
-REF_DEF3(DefinitionFactoryMgrClass::_FactoryListHead,DefinitionFactoryClass *,0x00830450,0x0082F638,0x008B5DF4);
+REF_DEF3(DefinitionFactoryClass *, DefinitionFactoryMgrClass::_FactoryListHead, 0x00830450, 0x0082F638, 0x008B5DF4);
 #endif
 void DefinitionFactoryMgrClass::Register_Factory(DefinitionFactoryClass* factory)
 {

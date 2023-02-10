@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,12 +9,14 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+
 // Include files
 #include "general.h"
 #include "dp88_veterancy.h"
 #include "dp88_custom_timer_defines.h"
 #include "VehicleGameObjDef.h"
 #include "ScriptableGameObj.h"
+#include "GameData.h"
 
 /******************************
 Initialise static pointer lists to null
@@ -22,7 +24,7 @@ Initialise static pointer lists to null
 
 dp88_veterancyUnit* dp88_veterancyUnit::playerData[128] = { NULL };
 dp88_veterancyUnit* dp88_veterancyUnit::AIUnitData[256] = { NULL };
-
+dp88_veterancyUnit::PointsCarryOverData dp88_veterancyUnit::carryOverData;
 
 
 /******************************
@@ -45,101 +47,99 @@ void dp88_veterancyUnit::Created ( GameObject* obj )
   vehicleEliteRequirement     = 0;
   chevronObjId                = NULL;
   promotionChevronObjId       = NULL;
+  chevronVisible              = true;
 
   rookieWeapon[0]             = '\0';
   rookieSkinType[0]           = '\0';
   rookieShieldType[0]         = '\0';
 
-  hasVeteranWeaponPowerup     = (strcmp ( Get_Parameter( "veteran_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "veteran_weaponPowerup" ) )) ? true : false; 
-  hasEliteWeaponPowerup       = (strcmp ( Get_Parameter( "elite_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "elite_weaponPowerup" ) )) ? true : false; 
+  hasVeteranWeaponPowerup     = (strlen(Get_Parameter("veteran_weaponPowerup")) > 0 && Is_Valid_Preset ( Get_Parameter( "veteran_weaponPowerup" ) )) ? true : false; 
+  hasEliteWeaponPowerup       = (strlen(Get_Parameter("elite_weaponPowerup")) > 0 && Is_Valid_Preset ( Get_Parameter( "elite_weaponPowerup" ) )) ? true : false; 
 
   pilotId                     = NULL;
-  dead                        = false;
+  deregistered                 = false;
 
 
 
-	// If unit is a soldier...
-	if ( obj->As_SoldierGameObj() )
-	{
-		infantryVeteranRequirement = Get_Int_Parameter ( "veteran_pointsRequired" );
-		infantryEliteRequirement = Get_Int_Parameter ( "elite_pointsRequired" );
+  // Store default weapon / skin / armour types
+  strcpy_s ( rookieSkinType, sizeof( rookieSkinType ), Get_Skin ( obj ) );
+  strcpy_s ( rookieShieldType, sizeof( rookieShieldType ), Get_Shield_Type ( obj ) );
 
-		// If unit is a player...
-		if ( Get_Player_ID ( obj ) >= 0 )
-		{
-			int playerId = Get_Player_ID ( obj );
-
-			/* Keep 60% of the existing points (will be 0 unless player swapped character) */
-			if ( playerData[playerId] != NULL )
-			{
-				infantryVeterancyPoints = playerData[playerId]->infantryVeterancyPoints * 0.60f;
-				vehicleVeterancyPoints = playerData[playerId]->vehicleVeterancyPoints * 0.60f;
-
-				/* Clear old chevrons */
-				playerData[playerId]->clearChevrons();
-
-				/* Trigger infantry promotions if applicable */
-				if ( infantryVeterancyPoints >= infantryEliteRequirement && infantryEliteRequirement > 0 )
-					promoteToElite();
-				else if ( infantryVeterancyPoints >= infantryVeteranRequirement && infantryVeteranRequirement > 0 )
-					promoteToVeteran();
-			}
-
-			/* Set player data array for this player ID to point to this object */
-			playerData[playerId] = this;
-
-
-			// Install a keyhook for getting your current veterancy data
-			InstallHook( "ShowVeterancyPoints", obj );
-		}
-
-
-		// Else (if unit is a bot)
-		else
-		{
-			/* Register AI Unit Data in first available position */
-			for ( int i = 0; i < 256; i++ )
-			{
-				if ( AIUnitData[i] == NULL )
-				{
-					AIUnitData[i] = this;
-					break;
-				}
-			}
-		}
-	}
+  if ( Get_Current_Weapon ( obj ) )
+    strcpy_s ( rookieWeapon, sizeof( rookieWeapon ), Get_Current_Weapon ( obj ) );
+  else
+    strcpy_s ( rookieWeapon, sizeof( rookieWeapon ), "none" );
 
 
 
+  // If unit is a soldier...
+  if ( obj->As_SoldierGameObj() )
+  {
+    infantryVeteranRequirement = Get_Int_Parameter ( "veteran_pointsRequired" );
+    infantryEliteRequirement = Get_Int_Parameter ( "elite_pointsRequired" );
 
-	// Else if unit is a vehicle
-	else if ( obj->As_VehicleGameObj() )
-	{
-		vehicleVeteranRequirement = Get_Int_Parameter ( "veteran_pointsRequired" );
-		vehicleEliteRequirement = Get_Int_Parameter ( "elite_pointsRequired" );
+    // If unit is a player...
+    int playerId = Get_Player_ID ( obj );
+    if ( playerId >= 0 )
+    {
+      /* Set player data array for this player ID to point to this object */
+      playerData[playerId] = this;
 
-		/* Register AI Unit Data in first available position (even if we are not
-		actually an AI unit, it does not really matter)*/
-		for ( int i = 0; i < 256; i++ )
-		{
-			if ( AIUnitData[i] == NULL )
-			{
-				AIUnitData[i] = this;
-				break;
-			}
-		}
-	}
+      /* Keep 60% of the existing points (will be 0 unless player swapped character) */
+      if ( carryOverData.playerId == playerId && The_Game()->Get_Game_Duration_S() == carryOverData.gameTime )
+      {
+        carryOverData.playerId = -1;
+        carryOverData.gameTime = UINT_MAX;
+        infantryVeterancyPoints = carryOverData.infantryVeterancyPoints;
+        vehicleVeterancyPoints = carryOverData.vehicleVeterancyPoints;
+
+        /* Trigger infantry promotions if applicable */
+        if ( infantryVeterancyPoints >= infantryEliteRequirement && infantryEliteRequirement > 0 )
+          promoteToElite();
+        else if ( infantryVeterancyPoints >= infantryVeteranRequirement && infantryVeteranRequirement > 0 )
+          promoteToVeteran();
+      }
+
+      // Install a keyhook for getting your current veterancy data
+      InstallHook( "ShowVeterancyPoints", obj );
+    }
+
+
+    // Else (if unit is a bot)
+    else
+    {
+      /* Register AI Unit Data in first available position */
+      for ( int i = 0; i < 256; ++i )
+      {
+        if ( AIUnitData[i] == NULL )
+        {
+          AIUnitData[i] = this;
+          break;
+        }
+      }
+    }
+  }
 
 
 
-	// Store default weapon / skin / armour types
-	strcpy_s ( rookieSkinType, sizeof( rookieSkinType ), Get_Skin ( obj ) );
-	strcpy_s ( rookieShieldType, sizeof( rookieShieldType ), Get_Shield_Type ( obj ) );
 
-	if ( Get_Current_Weapon ( obj ) )
-		strcpy_s ( rookieWeapon, sizeof( rookieWeapon ), Get_Current_Weapon ( obj ) );
-	else
-		strcpy_s ( rookieWeapon, sizeof( rookieWeapon ), "none" );
+  // Else if unit is a vehicle
+  else if ( obj->As_VehicleGameObj() )
+  {
+    vehicleVeteranRequirement = Get_Int_Parameter ( "veteran_pointsRequired" );
+    vehicleEliteRequirement = Get_Int_Parameter ( "elite_pointsRequired" );
+
+    /* Register AI Unit Data in first available position (even if we are not
+    actually an AI unit, it does not really matter)*/
+    for ( int i = 0; i < 256; i++ )
+    {
+      if ( AIUnitData[i] == NULL )
+      {
+        AIUnitData[i] = this;
+        break;
+      }
+    }
+  }
 }
 
 
@@ -183,178 +183,205 @@ us if they are registered as a veterancy unit and deregister from
 static pointer arrays */
 void dp88_veterancyUnit::Killed( GameObject *obj, GameObject *killer )
 {
-	dead = true;
-
-	/* Clear chevrons */
-	if ( chevronObjId != NULL && Commands->Find_Object ( chevronObjId ) != NULL )
-		Commands->Destroy_Object ( Commands->Find_Object ( chevronObjId ) );
-	if ( promotionChevronObjId != NULL && Commands->Find_Object ( promotionChevronObjId ) != NULL )
-		Commands->Destroy_Object ( Commands->Find_Object ( promotionChevronObjId ) );
-
-	/* Remove from static pointer arrays */
-	if ( Get_Player_ID ( obj ) >= 0 )
-		playerData[Get_Player_ID ( obj )] = NULL;
-	else
-	{
-		/* Find this unit and remove it */
-		for ( int i = 0; i < 256; i++ )
-		{
-			if ( AIUnitData[i] == this )
-			{
-				AIUnitData[i] = NULL;
-				break;
-			}
-		}
-	}
-
-	
-	// Remove keyhook
-		RemoveHook();
+  Deregister(obj);
 }
 
 
 /* Destroyed event :: Clean up any remaining chevrons and remove from
 static pointer arrays if necessary. */
-void dp88_veterancyUnit::Destroyed( GameObject *obj )
+void dp88_veterancyUnit::Destroyed(GameObject *obj)
 {
-	/* Clear chevrons */
-	clearChevrons ();
+  // If we are not already deregistered that means we have some points to carry over
+  if ( !deregistered && Get_Player_ID(obj) >= 0 )
+  {
+    carryOverData.playerId = Get_Player_ID(obj);
+    carryOverData.gameTime = The_Game()->Get_Game_Duration_S();
+    carryOverData.infantryVeterancyPoints = infantryVeterancyPoints * 0.60f;
+    carryOverData.vehicleVeterancyPoints = vehicleVeterancyPoints * 0.60f;
+  }
 
-	/* Remove from static pointer arrays */
-	if ( Get_Player_ID ( obj ) >= 0 )
-		playerData[Get_Player_ID ( obj )] = NULL;
-	else
-	{
-		/* Find this unit and remove it */
-		for ( int i = 0; i < 256; i++ )
-		{
-			if ( AIUnitData[i] == this )
-			{
-				AIUnitData[i] = NULL;
-				break;
-			}
-		}
-	}
+  Deregister(obj);
+}
 
-	
-	// Remove keyhook
-		RemoveHook();
+
+void dp88_veterancyUnit::Detach(GameObject* obj)
+{
+  if ( Exe != EXE_LEVELEDIT )
+  {
+    // Safety net
+    Deregister(obj);
+  }
+
+  JFW_Key_Hook_Base::Detach(obj);
+}
+
+
+void dp88_veterancyUnit::Deregister(GameObject* obj)
+{
+  if ( !deregistered )
+  {
+    deregistered = true;
+
+    /* Clear chevrons */
+    clearChevrons();
+
+    /* Remove from static pointer arrays */
+    if ( Get_Player_ID(obj) >= 0 )
+    {
+      playerData[Get_Player_ID(obj)] = NULL;
+
+      // Remove keyhook
+      RemoveHook();
+    }
+    else
+    {
+      /* Find this unit and remove it */
+      for ( int i = 0; i < 256; ++i )
+      {
+        if ( AIUnitData[i] == this )
+        {
+          AIUnitData[i] = NULL;
+          break;
+        }
+      }
+    }
+  }
 }
 
 
 /* Custom event :: Process custom messages */
 void dp88_veterancyUnit::Custom( GameObject *obj, int type, int param, GameObject *sender )
 {
-	// Look for vehicle pilot entry
-	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && pilotId == NULL )
-	{
-		pilotId = Commands->Get_ID ( sender );
+  // Look for vehicle pilot entry
+  if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && pilotId == NULL )
+  {
+    pilotId = Commands->Get_ID ( sender );
 
-		// Get veterancy data for the unit that entered
-		dp88_veterancyUnit* vetUnit = getVeterancyData ( sender );
-		if ( vetUnit )
-		{
-			// Reset veterancy to rookie
-			demoteToRookie();
+    // Get veterancy data for the unit that entered
+    dp88_veterancyUnit* vetUnit = getVeterancyData ( sender );
+    if ( vetUnit )
+    {
+      // Reset veterancy to rookie
+      demoteToRookie();
 
-			// Apply promotions based upon driver veterancy points
-			if ( vetUnit->vehicleVeterancyPoints >= vehicleEliteRequirement && vehicleEliteRequirement > 0 )
-				promoteToElite();
-			else if ( vetUnit->vehicleVeterancyPoints >= vehicleVeteranRequirement && vehicleVeteranRequirement > 0 )
-				promoteToVeteran();
+      // Apply promotions based upon driver veterancy points
+      if ( vetUnit->vehicleVeterancyPoints >= vehicleEliteRequirement && vehicleEliteRequirement > 0 )
+        promoteToElite();
+      else if ( vetUnit->vehicleVeterancyPoints >= vehicleVeteranRequirement && vehicleVeteranRequirement > 0 )
+        promoteToVeteran();
 
-			// Set our drivers vehicle veterancy boundaries
-			vetUnit->vehicleVeteranRequirement = vehicleVeteranRequirement;
-			vetUnit->vehicleEliteRequirement = vehicleEliteRequirement;
-		}
-	}
-
-
-
-
-	// Look for vehicle pilot exit
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && pilotId != NULL && pilotId == Commands->Get_ID ( sender ) )
-	{
-		pilotId = NULL;
-
-		// Reset veterancy to rookie
-		demoteToRookie();
-
-		// Apply promotions based upon our own veterancy points
-		if ( vehicleVeterancyPoints >= vehicleEliteRequirement && vehicleEliteRequirement > 0 )
-			promoteToElite();
-		else if ( vehicleVeterancyPoints >= vehicleVeteranRequirement && vehicleVeteranRequirement > 0 )
-			promoteToVeteran();
-
-		// Get veterancy data for the unit that exited
-		dp88_veterancyUnit* vetUnit = getVeterancyData ( sender );
-		if ( vetUnit )
-		{
-			// Reset our old drivers vehicle veterancy boundaries
-			vetUnit->vehicleVeteranRequirement = 0;
-			vetUnit->vehicleEliteRequirement = 0;
-		}
-	}
+      // Set our drivers vehicle veterancy boundaries
+      vetUnit->vehicleVeteranRequirement = vehicleVeteranRequirement;
+      vetUnit->vehicleEliteRequirement = vehicleEliteRequirement;
+    }
+  }
 
 
 
 
-	/* Look for internal message to remove old weapon following a promotion
-	param = old veterancy level */
-	else if ( type == CUSTOM_VETERANCY_REMOVE_OLD_WEAPON )
-	{
-		/* For whatever reason removing a non-selected weapon changes the
-		selected weapon, so store the selected weapon here */
-		char currentWeapon[128];
-		strcpy_s ( currentWeapon, sizeof(currentWeapon), Get_Current_Weapon(obj) );
-		
-		if ( param == 1 && hasVeteranWeaponPowerup )
-			Remove_Weapon ( obj, Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) );
-		else
-			Remove_Weapon ( obj, rookieWeapon );
+  // Look for vehicle pilot exit
+  else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && pilotId != NULL && pilotId == Commands->Get_ID ( sender ) )
+  {
+    pilotId = NULL;
 
-		/* Reselect current weapon (also triggers the back model of the old
-		weapon to be removed so it doesn't crash on the next promotion) */
-		Commands->Select_Weapon ( obj, currentWeapon );
-	}
+    // Reset veterancy to rookie
+    demoteToRookie();
+
+    // Apply promotions based upon our own veterancy points
+    if ( vehicleVeterancyPoints >= vehicleEliteRequirement && vehicleEliteRequirement > 0 )
+      promoteToElite();
+    else if ( vehicleVeterancyPoints >= vehicleVeteranRequirement && vehicleVeteranRequirement > 0 )
+      promoteToVeteran();
+
+    // Get veterancy data for the unit that exited
+    dp88_veterancyUnit* vetUnit = getVeterancyData ( sender );
+    if ( vetUnit )
+    {
+      // Reset our old drivers vehicle veterancy boundaries
+      vetUnit->vehicleVeteranRequirement = 0;
+      vetUnit->vehicleEliteRequirement = 0;
+    }
+  }
+
+
+
+
+  /* Look for internal message to remove old weapon following a promotion
+  param = old veterancy level */
+  else if ( type == CUSTOM_VETERANCY_REMOVE_OLD_WEAPON )
+  {
+    /* For whatever reason removing a non-selected weapon changes the
+    selected weapon, so store the selected weapon here */
+    char currentWeapon[128];
+    strcpy_s ( currentWeapon, sizeof(currentWeapon), Get_Current_Weapon(obj) );
+    
+    if ( param == 1 && hasVeteranWeaponPowerup )
+      Remove_Weapon ( obj, Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) );
+    else
+      Remove_Weapon ( obj, rookieWeapon );
+
+    /* Reselect current weapon (also triggers the back model of the old
+    weapon to be removed so it doesn't crash on the next promotion) */
+    Commands->Select_Weapon ( obj, currentWeapon );
+  }
 }
 
 
 void dp88_veterancyUnit::Timer_Expired( GameObject *obj, int number )
 {
-	// Look for timer for clearing promotion chevrons
-	if ( number == TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON )
-	{
-		if ( promotionChevronObjId != NULL && Commands->Find_Object ( promotionChevronObjId ) != NULL )
-		{
-			Commands->Destroy_Object ( Commands->Find_Object ( promotionChevronObjId ) );
-			promotionChevronObjId = NULL;
-		}
-	}
+  // Look for timer for clearing promotion chevrons
+  if ( number == TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON )
+  {
+    if ( promotionChevronObjId != NULL && Commands->Find_Object ( promotionChevronObjId ) != NULL )
+    {
+      Commands->Destroy_Object ( Commands->Find_Object ( promotionChevronObjId ) );
+      promotionChevronObjId = NULL;
+    }
+  }
+
+  else if ( number == TIMER_VETERANCY_CHEVRON_VISIBILITY_THINK )
+  {
+    GameObject* chevron = (NULL != chevronObjId) ? Commands->Find_Object(chevronObjId) : NULL;
+    if ( NULL != chevron )
+    {
+      if ( chevronVisible )
+      {
+        if ( Is_Stealth(obj) || (obj->As_SoldierGameObj() && Get_Vehicle(obj)) )
+          Commands->Set_Is_Rendered(chevron, (chevronVisible = false));
+      }
+      else
+      {
+        if ( !Is_Stealth(obj) && !(obj->As_SoldierGameObj() && Get_Vehicle(obj)) )
+          Commands->Set_Is_Rendered(chevron, (chevronVisible = true));
+      }
+
+      Commands->Start_Timer(obj, this, 1.0f, TIMER_VETERANCY_CHEVRON_VISIBILITY_THINK);
+    }
+  }
 }
 
 
 void dp88_veterancyUnit::KeyHook()
 {
-	// Get GameObject
-	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
-		return;
+  // Get GameObject
+  GameObject* obj = Commands->Find_Object ( objectId );
+  if ( obj == NULL || deregistered )
+    return;
 
-	// Catch non player units somehow using a keyhook (LAN mode fucking up maybe?)
-	if ( Get_Player_ID( obj ) < 0 )
-	{
-		Console_Output ( "Error: Unit with no player ID used veterancy data keyhook!" );
-		return;
-	}
+  // Catch non player units somehow using a keyhook (LAN mode fucking up maybe?)
+  if ( Get_Player_ID( obj ) < 0 )
+  {
+    Console_Output ( "Error: Unit with no player ID used veterancy data keyhook!" );
+    return;
+  }
 
 
-	// Send infantry page
-	StringClass message;
-	const char *str = Get_Translated_Preset_Name (obj);
-	message.Format ( "You currently have %.2f infantry veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", infantryVeterancyPoints, str, infantryVeteranRequirement, infantryEliteRequirement );
-	delete[] str;
-	Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
+  // Send infantry page
+  StringClass message;
+  const char *str = Get_Translated_Preset_Name (obj);
+  message.Format ( "You currently have %.2f infantry veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", infantryVeterancyPoints, str, infantryVeteranRequirement, infantryEliteRequirement );
+  delete[] str;
+  Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
 
 
   // Send vehicle page
@@ -382,92 +409,72 @@ Chevron functions
 /* Create chevrons */
 void dp88_veterancyUnit::createChevrons()
 {
-	// Clear any existing chevrons
-	clearChevrons ();
+  // Clear any existing chevrons
+  bool startThinkTimer = (chevronObjId == NULL);
+  clearChevrons();
 
-	// Get GameObject
-	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
-		return;
+  // Get GameObject
+  GameObject* obj = Commands->Find_Object ( objectId );
+  if ( obj == NULL || deregistered )
+    return;
 
-	if ( obj->As_SoldierGameObj() )
-	{
-		// Generate name string for the unit promoted chevron
-		char promotionChevronPreset[27];
-		if ( currentLevel == 2 )			sprintf ( promotionChevronPreset, "chev_inf_elite_promotion" );
-		else								sprintf ( promotionChevronPreset, "chev_inf_veteran_promotion" );
+  GameObject* chevron = NULL;
 
-		// Create promoted chevron and record it's ID
-		GameObject* promotionChevron = Commands->Create_Object_At_Bone( obj, promotionChevronPreset, "Worldbox" );
-		Commands->Set_Facing( promotionChevron, Commands->Get_Facing( obj ) );
-		promotionChevronObjId = Commands->Get_ID( promotionChevron );
-		
-		// Start timer to destroy the promotion chevron
-		Commands->Start_Timer( obj, this, 2.5f, TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON );
+  if ( obj->As_SoldierGameObj() )
+  {
+    // Create promoted chevron and record it's ID
+    GameObject* promotionChevron = Create_Object_Attach_To_Object(obj, (2==currentLevel) ? "chev_inf_elite_promotion" : "chev_inf_veteran_promotion", "Worldbox");
+    promotionChevronObjId = Commands->Get_ID( promotionChevron );
 
+    // Start timer to destroy the promotion chevron
+    Commands->Start_Timer( obj, this, 2.5f, TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON );
 
-
-
-    // Generate name string for the unit chevron
-    char chevronPreset[17];
-    if ( currentLevel == 2 )    sprintf ( chevronPreset, "chev_inf_elite" );
-    else                        sprintf ( chevronPreset, "chev_inf_veteran" );
-
-    // Now create new chevron and record it's ID
-    GameObject* chevron = Commands->Create_Object_At_Bone( obj, chevronPreset, "Worldbox" );
-    Commands->Set_Facing( chevron, Commands->Get_Facing( obj ) );
-    Commands->Attach_To_Object_Bone( chevron, obj, "Worldbox" );
-    chevronObjId = Commands->Get_ID( chevron );
+    // Now create the main chevron
+    chevron = Create_Object_Attach_To_Object(obj, (2==currentLevel) ? "chev_inf_elite" : "chev_inf_veteran", "Worldbox");
   }
 
 
+  else if ( obj->As_VehicleGameObj() )
+  {
+    // Create promoted chevron and record it's ID
+    GameObject* promotionChevron = Create_Object_Attach_To_Object(obj, (2==currentLevel) ? "chev_veh_elite_promotion" : "chev_veh_veteran_promotion", "Worldbox");
+    promotionChevronObjId = Commands->Get_ID( promotionChevron );
 
-	else if ( obj->As_VehicleGameObj() )
-	{
-		// Generate name string for the unit promoted chevron
-		char promotionChevronPreset[27];
-		if ( currentLevel == 2 )			sprintf ( promotionChevronPreset, "chev_veh_elite_promotion" );
-		else								sprintf ( promotionChevronPreset, "chev_veh_veteran_promotion" );
+    // Start timer to destroy the promotion chevron
+    Commands->Start_Timer( obj, this, 2.5f, TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON );
 
-		// Create promoted chevron and record it's ID
-		GameObject* promotionChevron = Commands->Create_Object_At_Bone( obj, promotionChevronPreset, "chevBone" );
-		Commands->Set_Facing( promotionChevron, Commands->Get_Facing( obj ) );
-		promotionChevronObjId = Commands->Get_ID( promotionChevron );
-		
-		// Start timer to destroy the promotion chevron
-		Commands->Start_Timer( obj, this, 2.5f, TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON );
+    // Now create the main chevron
+    chevron = Create_Object_Attach_To_Object(obj, (2==currentLevel) ? "chev_veh_elite" : "chev_veh_veteran", "chevBone");
+  }
 
+  // Save the chevron ID, update its rendering state and start the think timer if required
+  if ( NULL != chevron )
+  {
+    chevronObjId = Commands->Get_ID( chevron );
+    Commands->Set_Is_Rendered(chevron, chevronVisible);
 
-
-
-		// Generate name string for the unit chevron
-		char chevronPreset[17];
-		if ( currentLevel == 2 )			sprintf ( chevronPreset, "chev_veh_elite" );
-		else								sprintf ( chevronPreset, "chev_veh_veteran" );
-	
-		// Now create new chevron and record it's ID
-		GameObject* chevron = Commands->Create_Object_At_Bone( obj, chevronPreset, "chevBone" );
-		Commands->Set_Facing( chevron, Commands->Get_Facing( obj ) );
-		Commands->Attach_To_Object_Bone( chevron, obj, "chevBone" );
-		chevronObjId = Commands->Get_ID( chevron );
-	}
+    if (startThinkTimer)
+    {
+      Commands->Start_Timer(obj, this, 1.0f, TIMER_VETERANCY_CHEVRON_VISIBILITY_THINK);
+    }
+  }
 }
 
 
 /* Clear chevrons */
 void dp88_veterancyUnit::clearChevrons()
 {
-	if ( chevronObjId != NULL && Commands->Find_Object ( chevronObjId ) != NULL )
-	{
-		Commands->Destroy_Object ( Commands->Find_Object ( chevronObjId ) );
-		chevronObjId = NULL;
-	}
+  if ( chevronObjId != NULL && Commands->Find_Object(chevronObjId) != NULL )
+  {
+    Commands->Destroy_Object( Commands->Find_Object(chevronObjId) );
+    chevronObjId = NULL;
+  }
 
-	if ( promotionChevronObjId != NULL && Commands->Find_Object ( promotionChevronObjId ) != NULL )
-	{
-		Commands->Destroy_Object ( Commands->Find_Object ( promotionChevronObjId ) );
-		promotionChevronObjId = NULL;
-	}
+  if ( promotionChevronObjId != NULL && Commands->Find_Object(promotionChevronObjId) != NULL )
+  {
+    Commands->Destroy_Object( Commands->Find_Object(promotionChevronObjId) );
+    promotionChevronObjId = NULL;
+  }
 }
 
 
@@ -514,7 +521,7 @@ void dp88_veterancyUnit::recieveVeterancyPoints ( float points )
 {
 	// Get GameObject
 	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
+	if ( obj == NULL || deregistered )
 		return;
 
 	// If unit is a soldier and is not driving a vehicle give infantry veterancy points
@@ -576,7 +583,7 @@ void dp88_veterancyUnit::promoteToVeteran()
 {
 	// Get GameObject
 	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
+	if ( obj == NULL || deregistered )
 		return;
 
 	// Set veterancy level
@@ -648,12 +655,14 @@ void dp88_veterancyUnit::promoteToVeteran()
 	}
 
 
-	/* Set new skin/armour type if applicable */
-	if ( strcmp ( Get_Parameter( "veteran_shieldType" ), "null" ) != 0 )
-		Commands->Set_Shield_Type ( obj, Get_Parameter( "veteran_shieldType" ) );
+  /* Set new skin/armour type if applicable */
+  const char* armourType = Get_Parameter("veteran_shieldType");
+  if ( strlen(armourType) > 0 && Is_Valid_Armor_Type(armourType) )
+    Commands->Set_Shield_Type(obj, armourType);
 
-	if ( strcmp ( Get_Parameter( "veteran_skinType" ), "null" ) != 0 )
-		Set_Skin( obj, Get_Parameter( "veteran_skinType" ) );
+  armourType = Get_Parameter("veteran_skinType");
+  if ( strlen(armourType) > 0 && Is_Valid_Armor_Type(armourType) )
+    Set_Skin(obj, armourType);
 
 
 
@@ -667,17 +676,17 @@ void dp88_veterancyUnit::promoteToVeteran()
 /* Promotion to elite function */
 void dp88_veterancyUnit::promoteToElite()
 {
-	// Get GameObject
-	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
-		return;
+  // Get GameObject
+  GameObject* obj = Commands->Find_Object ( objectId );
+  if ( obj == NULL || deregistered )
+    return;
 
-	// Set veterancy level
-	int oldLevel = currentLevel;
-	currentLevel = 2;
+  // Set veterancy level
+  int oldLevel = currentLevel;
+  currentLevel = 2;
 
-	// Create chevrons
-	createChevrons();
+  // Create chevrons
+  createChevrons();
 
   // Send page and promotion sound if unit is a player
   if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
@@ -713,82 +722,78 @@ void dp88_veterancyUnit::promoteToElite()
 
 
 
-	/* Work out which new weapon to give them (if there is no elite version then
-	give them the veteran version if they were promoted straight from rookie) */
-	char weaponPowerup[64] = "null";
-	if ( hasEliteWeaponPowerup )
-		strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "elite_weaponPowerup" ) );
-	else if ( oldLevel == 0 && hasVeteranWeaponPowerup )
-		strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "veteran_weaponPowerup" ) );
+  /* Work out which new weapon to give them (if there is no elite version then
+  give them the veteran version if they were promoted straight from rookie) */
+  char weaponPowerup[64] = {'\0'};
+  if ( hasEliteWeaponPowerup )
+    strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "elite_weaponPowerup" ) );
+  else if ( oldLevel == 0 && hasVeteranWeaponPowerup )
+    strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "veteran_weaponPowerup" ) );
 
 
-	/* Apply new weapon if applicable */
-	if ( strcmp ( weaponPowerup, "null" ) != 0 && Is_Valid_Preset ( weaponPowerup ) )
-	{
-		bool selectWeapon = false;
+  /* Apply new weapon if applicable */
+  if ( weaponPowerup[0] != '\0' && Is_Valid_Preset ( weaponPowerup ) )
+  {
+    bool selectWeapon = false;
 
-		/* Decide if we need to select this weapon once it is granted (if we
-		are using the weapon it replaces then we select it) */
-		if ( Get_Current_Weapon(obj) == NULL || 
-			( oldLevel == 0 && strcmp ( Get_Current_Weapon ( obj ), rookieWeapon ) == 0 )
-			|| ( oldLevel == 1 &&
-				( hasVeteranWeaponPowerup && strcmp ( Get_Current_Weapon ( obj ), Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) ) == 0 )
-				|| ( !hasVeteranWeaponPowerup && strcmp ( Get_Current_Weapon ( obj ), rookieWeapon ) == 0 ) ) )
-		{
-			selectWeapon = true;
-		}
-
-
-		/* Grant new weapon */
-		Commands->Give_PowerUp( obj, weaponPowerup, true );
-		if ( selectWeapon )
-			Commands->Select_Weapon ( obj, Get_Powerup_Weapon ( weaponPowerup ) );
-
-		/* If unit is an infantry unit remove old weapon - immediatly if not
-		currently selected or after a 0.1 second delay otherwise */
-		if ( obj->As_SoldierGameObj() )
-		{
-			if ( selectWeapon )
-			{
-				// Send custom after 0.1 seconds to clean up old weapon
-				Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_REMOVE_OLD_WEAPON, oldLevel, 0.1f );
-			}
-
-			// Remove immediatly
-			else
-				Remove_Weapon ( obj, (hasVeteranWeaponPowerup) ? Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) : rookieWeapon );
-		}
-	}
+    /* Decide if we need to select this weapon once it is granted (if we
+    are using the weapon it replaces then we select it) */
+    if ( Get_Current_Weapon(obj) == NULL || 
+      ( oldLevel == 0 && strcmp ( Get_Current_Weapon ( obj ), rookieWeapon ) == 0 )
+      || ( oldLevel == 1 &&
+        ( hasVeteranWeaponPowerup && strcmp ( Get_Current_Weapon ( obj ), Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) ) == 0 )
+        || ( !hasVeteranWeaponPowerup && strcmp ( Get_Current_Weapon ( obj ), rookieWeapon ) == 0 ) ) )
+    {
+      selectWeapon = true;
+    }
 
 
-	/* Work out which new armour to give them (if there is no elite version then
-	give them the veteran version if they were promoted straight from rookie) */
-	char shieldType[64] = "null";
-	if ( strcmp ( Get_Parameter( "elite_shieldType" ), "null" ) != 0 )
-		strcpy_s ( shieldType, sizeof(shieldType), Get_Parameter ( "elite_shieldType" ) );
-	else if ( oldLevel == 0 && strcmp ( Get_Parameter( "veteran_shieldType" ), "null" ) != 0 )
-		strcpy_s ( shieldType, sizeof(shieldType), Get_Parameter ( "veteran_shieldType" ) );
+    /* Grant new weapon */
+    Commands->Give_PowerUp( obj, weaponPowerup, true );
+    if ( selectWeapon )
+      Commands->Select_Weapon ( obj, Get_Powerup_Weapon ( weaponPowerup ) );
 
-	char skinType[64] = "null";
-	if ( strcmp ( Get_Parameter( "elite_skinType" ), "null" ) != 0 )
-		strcpy_s ( skinType, sizeof(skinType), Get_Parameter ( "elite_skinType" ) );
-	else if ( oldLevel == 0 && strcmp ( Get_Parameter( "veteran_skinType" ), "null" ) != 0 )
-		strcpy_s ( skinType, sizeof(skinType), Get_Parameter ( "veteran_skinType" ) );
+    /* If unit is an infantry unit remove old weapon - immediatly if not currently selected or after
+    a 0.1 second delay otherwise */
+    if ( obj->As_SoldierGameObj() )
+    {
+      if ( selectWeapon )
+      {
+        // Send custom after 0.1 seconds to clean up old weapon
+        Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_REMOVE_OLD_WEAPON, oldLevel, 0.1f );
+      }
+
+      // Remove immediatly
+      else
+        Remove_Weapon ( obj, (hasVeteranWeaponPowerup) ? Get_Powerup_Weapon ( Get_Parameter ( "veteran_weaponPowerup" ) ) : rookieWeapon );
+    }
+  }
 
 
-	/* Set new skin/armour type if applicable */
-	if ( strcmp ( shieldType, "null" ) != 0 )
-		Commands->Set_Shield_Type ( obj, shieldType );
+  /* Work out which new armour to give them (if there is no elite version then
+  give them the veteran version if they were promoted straight from rookie) */
+  const char* shieldType = Get_Parameter("elite_shieldType");
+  if ( oldLevel == 0 && !Is_Valid_Armor_Type(shieldType))
+    shieldType = Get_Parameter("veteran_shieldType");
+  
+  const char* skinType = Get_Parameter("elite_skinType");
+  if ( oldLevel == 0 && !Is_Valid_Armor_Type(skinType))
+    skinType = Get_Parameter("veteran_skinType");
 
-	if ( strcmp ( skinType, "null" ) != 0 )
-		Set_Skin( obj, skinType );
+
+  /* Set new skin/armour type if applicable */
+  if ( strlen(shieldType) > 0 && Is_Valid_Armor_Type(shieldType) )
+    Commands->Set_Shield_Type(obj, shieldType);
+  
+  if ( strlen(skinType) > 0 && Is_Valid_Armor_Type(skinType) )
+    Set_Skin(obj, skinType);
 
 
 
-	/* Send custom event for other scripts to watch for (parameter 2 = elite). Slight
-	delay to ensure all scripts are created before it is sent (for when we are insta-
-	promoted after buying a new character) */
-	Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_PROMOTED, 2, 0.1f );
+  /* Send custom event for other scripts to watch for (parameter 2 = elite). Slight
+  delay to ensure all scripts are created before it is sent (for when we are insta-
+  promoted after buying a new character) */
+  Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_PROMOTED, 2, 0.1f );
 }
 
 
@@ -796,29 +801,29 @@ void dp88_veterancyUnit::promoteToElite()
 fully on infantry as their original weapon is gone */
 void dp88_veterancyUnit::demoteToRookie()
 {
-	// Get GameObject
-	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( obj == NULL || dead )
-		return;
+  // Get GameObject
+  GameObject* obj = Commands->Find_Object ( objectId );
+  if ( obj == NULL || deregistered )
+    return;
 
-	// Set rookie level
-	currentLevel = 0;
+  // Set rookie level
+  currentLevel = 0;
 
-	// Reset skin & armour types
-	Set_Skin ( obj, rookieSkinType );
-	Commands->Set_Shield_Type ( obj, rookieShieldType );
+  // Reset skin & armour types
+  Set_Skin ( obj, rookieSkinType );
+  Commands->Set_Shield_Type ( obj, rookieShieldType );
 
-	/* Select default weapon (won't work on infantry as the weapon
-	was taken off them */
-	Commands->Select_Weapon ( obj, rookieWeapon );
+  /* Select default weapon (won't work on infantry as the weapon
+  was taken off them */
+  Commands->Select_Weapon ( obj, rookieWeapon );
 
-	/* Get rid of chevrons */
-	clearChevrons();
+  /* Get rid of chevrons */
+  clearChevrons();
 
 
 
-	/* Send custom event for other scripts to watch for (parameter 0 = rookie) */
-	Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_PROMOTED, 0, 0 );
+  /* Send custom event for other scripts to watch for (parameter 0 = rookie) */
+  Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_PROMOTED, 0, 0 );
 }
 
 
@@ -826,16 +831,16 @@ void dp88_veterancyUnit::demoteToRookie()
 
 // Script Registrants
 ScriptRegistrant<dp88_veterancyUnit> dp88_veterancyUnit_Registrant (
-	"dp88_veterancyUnit",
-	"pointsValue=0:int,"
-	"veteran_pointsRequired=0:int,"
-	"veteran_skinType=null:string,"
-	"veteran_shieldType=null:string,"
-	"veteran_weaponPowerup=null:string,"
-	"elite_pointsRequired=0:int,"
-	"elite_skinType=null:string,"
-	"elite_shieldType=null:string,"
-	"elite_weaponPowerup=null:string"
+  "dp88_veterancyUnit",
+  "pointsValue=0:int,"
+  "veteran_pointsRequired=0:int,"
+  "veteran_skinType:string,"
+  "veteran_shieldType:string,"
+  "veteran_weaponPowerup:string,"
+  "elite_pointsRequired=0:int,"
+  "elite_skinType:string,"
+  "elite_shieldType:string,"
+  "elite_weaponPowerup:string"
 );
 
 
@@ -1331,12 +1336,12 @@ void dp88_veterancyGrantPowerup::Custom( GameObject *obj, int type, int param, G
 ScriptRegistrant<dp88_veterancyGrantPowerup> dp88_veterancyGrantPowerup_Registrant(
   "dp88_veterancyGrantPowerup",
   "powerupPreset=presetname:string,"
-  "powerupPreset_veteran=null:string,"
-  "powerupPreset_elite=null:string");
+  "powerupPreset_veteran:string,"
+  "powerupPreset_elite:string");
 
 // Legacy registrant for existing AR presets
 ScriptRegistrant<dp88_veterancyGrantPowerup> dp88_AR_grantDefaultWeapon_Registrant(
   "dp88_AR_grantDefaultWeapon",
   "powerupPreset=presetname:string,"
-  "powerupPreset_veteran=null:string,"
-  "powerupPreset_elite=null:string");
+  "powerupPreset_veteran:string,"
+  "powerupPreset_elite:string");

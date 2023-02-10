@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -430,4 +430,8 @@ class RA_MAD_Tank_Devolved : public JFW_Key_Hook_Base {
 	void Destroyed(GameObject *obj);
 	void KeyHook();
 	public: void Register_Auto_Save_Variables();
+};
+
+class RA_Superweapon_Beacon : public ScriptImpClass {
+	void Created(GameObject *obj);
 };

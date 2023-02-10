@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -663,4 +663,13 @@ unsigned long ChunkSaveClass2::Write(IOVector4Struct& v)
 unsigned long ChunkSaveClass2::Write(IOQuaternionStruct& q)
 {
 	return Write(&q,sizeof(IOQuaternionStruct));
+}
+
+unsigned long ChunkSaveClass2::Write(const StringClass& string)
+{
+	uint16 length = (uint16)string.Get_Length();
+	int result = SimpleWrite(length);
+	result += Write((char*)string.Peek_Buffer(), length);
+	TT_ASSERT(result == (int)sizeof(uint16) + (int)length);
+	return result;
 }

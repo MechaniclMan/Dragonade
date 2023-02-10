@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,40 +13,48 @@
 
 #include "FileFactoryListClass.h"
 
-FileClass* FileFactoryListClass::Get_File
-   (const char* fileName)
+FileClass* FileFactoryListClass::Get_File(const char* fileName)
 {
-   FileClass* file = 0;
-   if (this->tempFactory)
-   {
-      file = this->tempFactory->Get_File (fileName);
-      if (file)
-      {
-         if (file->Is_Available (0))
-            return file;
+	FileClass* result = NULL; // The first file for which Is_Available returns true, or else the first file that is non-null, or otherwise null.
+	FileFactoryClass* resultFactory = NULL;
+	if (tempFactory)
+	{
+		result = tempFactory->Get_File(fileName);
+		resultFactory = tempFactory;
+	}
+	if (!result || !result->Is_Available())
+	{
+		for (int i = 0; i < factories.Count(); ++i)
+		{
+			TT_ASSERT(!result || !result->Is_Available());
+			FileFactoryClass* factory = factories[i];
+			FileClass* file = factory->Get_File(fileName);
+			if (file)
+			{
+				if (!result)
+				{
+					result = file;
+					resultFactory = factory;
+					if (file->Is_Available())
+						break;
+				}
+				else if (file->Is_Available())
+				{
+					TT_ASSERT(result && !result->Is_Available());
+					resultFactory->Return_File(result);
+					result = file;
+					resultFactory = factory;
+					break;
+				}
+				else
+				{
+					factory->Return_File(file);
+				}
+			}
+		}
+	}
 
-         this->tempFactory->Return_File (file);
-      }
-   }
-
-   for (sint32 u = 0; u < this->factories.Count(); ++u)
-   {
-      FileFactoryClass* factory = this->factories[u];
-
-      file = factory->Get_File (fileName);
-      if (!file)
-         continue;
-
-      if (file->Is_Available (0))
-         return file;
-
-      factory->Return_File (file);
-   }
-
-   if (this->factories.Count())
-      return this->factories[0]->Get_File (fileName);
-
-   return 0;
+	return result;
 }
 
 void FileFactoryListClass::Return_File
@@ -56,10 +64,18 @@ void FileFactoryListClass::Return_File
 }
 
 void FileFactoryListClass::Add_FileFactory
-   (FileFactoryClass* factory, const char* name)
+   (FileFactoryClass* factory, const char* name, bool addToBegin)
 {
-	factories.Add(factory);
-	fileNames.Add(name);
+	if (addToBegin)
+	{
+		factories.Add_Head(factory);
+		fileNames.Add_Head(name);
+	}
+	else
+	{
+		factories.Add(factory);
+		fileNames.Add(name);
+	}
 	searchStart = 0;
 }
 
@@ -76,11 +92,11 @@ void FileFactoryListClass::Remove_FileFactory(FileFactoryClass *factory)
 	}
 }
 
-#if !defined(WWCONFIG) && !defined(PACKAGEEDITOR)
+#if !defined(WWCONFIG) && !defined(PACKAGEEDITOR) && !defined(W3DVIEWER)
 #pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
 #pragma init_seg(lib) // Move this files static initializers up a level
 #pragma warning(default: 4073)
-REF_DEF3(FileFactoryListClass::Instance, FileFactoryListClass *, 0x0085DB70, 0x0085CD58, 0x0085CE48);
+REF_DEF3(FileFactoryListClass *, FileFactoryListClass::Instance, 0x0085DB70, 0x0085CD58, 0x0085CE48);
 #else
 FileFactoryListClass *FileFactoryListClass::Instance = 0;
 #endif

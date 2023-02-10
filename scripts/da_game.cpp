@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -118,8 +118,8 @@ void DAGameManager::Level_Loaded_Event() {
 	if (FirstMap) {
 		INISection *Section = DASettingsManager::Get_Section("Startup_Commands");
 		if (Section) {
-			for (int i = 0;i < Section->Count();i++) {
-				Console_InputF("%s %s",Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value);
+			for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+				Console_InputF("%s %s",i->Entry,i->Value);
 			}
 		}
 		DA::Host_Message("Running Dragonade %s with Scripts %.1f. Created by Black-Cell.net.",DA::Get_Version(),GetTTVersion());
@@ -245,22 +245,24 @@ void DAGameManager::Settings_Loaded_Event() {
 	DASettingsClass("server.ini").Get_String(Config,"Server","Config","svrcfg_cnc.ini");
 	DASettingsClass SvrCfg(StringFormat("data\\%s",Config));
 
-	The_Cnc_Game()->TimeLimit_Minutes = DASettingsManager::Get_Int("TimeLimitMinutes",SvrCfg.Get_Int("Settings","TimeLimitMinutes",30));
-	if (!The_Game()->Get_Game_Duration_S()) {
-		The_Cnc_Game()->Reset_Time_Remaining_Seconds();
-	}
-	The_Cnc_Game()->RadarMode = DASettingsManager::Get_Int("RadarMode",SvrCfg.Get_Int("Settings","RadarMode",1));
-	The_Cnc_Game()->IsLaddered = DASettingsManager::Get_Bool("IsLaddered",SvrCfg.Get_Bool("Settings","IsLaddered",true));
-	The_Cnc_Game()->CanRepairBuildings = DASettingsManager::Get_Bool("CanRepairBuildings",SvrCfg.Get_Bool("Settings","CanRepairBuildings",true));
-	BuildingGameObj::CanRepairBuildings = The_Cnc_Game()->CanRepairBuildings;
-	The_Cnc_Game()->SpawnWeapons = DASettingsManager::Get_Bool("SpawnWeapons",SvrCfg.Get_Bool("Settings","SpawnWeapons",true));
-	The_Cnc_Game()->IsFriendlyFirePermitted = DASettingsManager::Get_Bool("IsFriendlyFirePermitted",SvrCfg.Get_Bool("Settings","IsFriendlyFirePermitted",false));
-	CombatManager::FriendlyFirePermitted = The_Cnc_Game()->IsFriendlyFirePermitted;
-	The_Cnc_Game()->IsTeamChangingAllowed = DASettingsManager::Get_Bool("IsTeamChangingAllowed",SvrCfg.Get_Bool("Settings","IsTeamChangingAllowed",false));
-	The_Cnc_Game()->BaseDestructionEndsGame = DASettingsManager::Get_Bool("BaseDestructionEndsGame",SvrCfg.Get_Bool("Settings","BaseDestructionEndsGame",true));
-	The_Cnc_Game()->BeaconPlacementEndsGame = DASettingsManager::Get_Bool("BeaconPlacementEndsGame",SvrCfg.Get_Bool("Settings","BeaconPlacementEndsGame",true));
-	CombatManager::BeaconPlacementEndsGame = The_Cnc_Game()->BeaconPlacementEndsGame;
-	The_Cnc_Game()->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
+	cGameDataCnc *Game = The_Cnc_Game();
+
+	Game->Set_Time_Limit_Minutes(DASettingsManager::Get_Int("TimeLimitMinutes",SvrCfg.Get_Int("Settings","TimeLimitMinutes",30)));
+	Game->Set_Time_Remaining_Seconds((float)(Game->Get_Time_Limit_Minutes()*60)-Game->Get_Game_Duration_S());
+
+	Game->RadarMode = DASettingsManager::Get_Int("RadarMode",SvrCfg.Get_Int("Settings","RadarMode",1));
+	Game->IsLaddered = DASettingsManager::Get_Bool("IsLaddered",SvrCfg.Get_Bool("Settings","IsLaddered",true));
+	Game->CanRepairBuildings = DASettingsManager::Get_Bool("CanRepairBuildings",SvrCfg.Get_Bool("Settings","CanRepairBuildings",true));
+	BuildingGameObj::CanRepairBuildings = Game->CanRepairBuildings;
+	Game->SpawnWeapons = DASettingsManager::Get_Bool("SpawnWeapons",SvrCfg.Get_Bool("Settings","SpawnWeapons",true));
+	Game->IsFriendlyFirePermitted = DASettingsManager::Get_Bool("IsFriendlyFirePermitted",SvrCfg.Get_Bool("Settings","IsFriendlyFirePermitted",false));
+	CombatManager::FriendlyFirePermitted = Game->IsFriendlyFirePermitted;
+	Game->IsTeamChangingAllowed = DASettingsManager::Get_Bool("IsTeamChangingAllowed",SvrCfg.Get_Bool("Settings","IsTeamChangingAllowed",false));
+	Game->BaseDestructionEndsGame = DASettingsManager::Get_Bool("BaseDestructionEndsGame",SvrCfg.Get_Bool("Settings","BaseDestructionEndsGame",true));
+	Game->BeaconPlacementEndsGame = DASettingsManager::Get_Bool("BeaconPlacementEndsGame",SvrCfg.Get_Bool("Settings","BeaconPlacementEndsGame",true));
+	CombatManager::BeaconPlacementEndsGame = Game->BeaconPlacementEndsGame;
+	Game->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
+
 	Update_Game_Settings();
 }
 
@@ -414,11 +416,24 @@ public:
 	const char *Get_Name() { return "timeout"; }
 	const char *Get_Help() { return "TIMEOUT - Ends the game by time limit expired."; }
 	void Activate(const char *ArgumentsString) {
-		if (!The_Game()->Get_Time_Limit_Minutes()) {
-			The_Game()->Set_Time_Limit_Minutes(1u); //Needs a time limit or it won't timeout.
-		}
-		The_Game()->Set_Time_Remaining_Seconds(0); //Time out game by setting time remaining to 0.
+		cGameDataCnc *Game = The_Cnc_Game();
+		Game->Set_Time_Limit_Minutes(1); //Needs a time limit or it won't timeout.
+		Game->Set_Time_Remaining_Seconds(0); //Time out game by setting time remaining to 0.
 	}
 };
 Register_Console_Function(DATimeoutConsoleFunctionClass);
 
+class DATimeLConsoleFunctionClass : public ConsoleFunctionClass {
+public:
+	const char *Get_Name() { return "timel"; }
+	const char *Get_Help() { return "TIMEL <new limit> - Changes the time limit."; }
+	void Activate(const char *ArgumentsString) {
+		if (Is_Numeric(ArgumentsString)) {
+			cGameDataCnc *Game = The_Cnc_Game();
+			Game->Set_Time_Limit_Minutes(atoi(ArgumentsString));
+			Game->Set_Time_Remaining_Seconds((float)(Game->Get_Time_Limit_Minutes()*60)-Game->Get_Game_Duration_S());
+			Update_Game_Settings();
+		}
+	}
+};
+Register_Console_Function(DATimeLConsoleFunctionClass);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,10 +16,10 @@
 
 
 // Define building child types
-#define BUILDING_CHILD_TYPE_GENERIC				0
+#define BUILDING_CHILD_TYPE_GENERIC				    0
 #define BUILDING_CHILD_TYPE_MINOR_WEAKPOINT		1
 #define BUILDING_CHILD_TYPE_MAJOR_WEAKPOINT		2
-#define BUILDING_CHILD_TYPE_CAPTUREPOINT		3
+#define BUILDING_CHILD_TYPE_CAPTUREPOINT		  3
 
 
 /*------------------------
@@ -404,6 +404,9 @@ protected:
 // Money trickle function - gives the owning team X credits per second whilst alive
 class dp88_buildingScripts_functionMoneyTrickle : public dp88_buildingScripts_baseClass
 {
+public:
+  dp88_buildingScripts_functionMoneyTrickle() : isTimerRunning(false) {}
+
   void Created ( GameObject* obj );
   void Timer_Expired ( GameObject* obj, int number );
   void OnBuildingCaptured ( GameObject* obj, int team );
@@ -441,6 +444,9 @@ class dp88_buildingScripts_functionMoneyGrant : public dp88_buildingScripts_base
 // the building
 class dp88_buildingScripts_functionSpawnTeamZone : public dp88_buildingScripts_baseClass
 {
+public:
+  dp88_buildingScripts_functionSpawnTeamZone() : zoneId(NULL) {}
+
 	void Created ( GameObject* obj );
 	void OnBuildingOffline( GameObject* obj );
 	void OnBuildingOnline ( GameObject* obj );
@@ -486,6 +492,9 @@ private:
 */
 class dp88_buildingScripts_functionSpawnZone : public dp88_buildingScripts_baseClass
 {
+public:
+  dp88_buildingScripts_functionSpawnZone() : zoneId(NULL) {}
+
   void Created( GameObject *obj );
   void OnBuildingOffline( GameObject* obj );
   void OnBuildingOnline ( GameObject* obj );
@@ -514,6 +523,7 @@ class dp88_buildingScripts_capturePoint : public dp88_buildingScripts_baseClass
 protected:
   void Created( GameObject *obj );
   void Damaged ( GameObject *obj, GameObject *damager, float amount );
+  void OnBuildingCaptured ( GameObject* obj, int team );
   void OnBuildingDestroyed( GameObject *obj );
   void Timer_Expired( GameObject *obj, int number );
 

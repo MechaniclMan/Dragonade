@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -96,14 +96,8 @@ class Reborn_IsDeployableMech : public ScriptImpClass {
 
 class Reborn_IsDeployableTank : public ScriptImpClass {
 	int PilotID,mode;
-	bool enabled;
-	bool firststep;
-	float xpos;
-	float ypos;
-	float zpos;
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
-	void Timer_Expired(GameObject *obj,int number);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
 	public: void Register_Auto_Save_Variables();
@@ -111,14 +105,8 @@ class Reborn_IsDeployableTank : public ScriptImpClass {
 
 class Reborn_IsDeployableTank_2 : public ScriptImpClass {
 	int PilotID,mode;
-	bool enabled;
-	bool firststep;
-	float xpos;
-	float ypos;
-	float zpos;
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
-	void Timer_Expired(GameObject *obj,int number);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
 	public: void Register_Auto_Save_Variables();
@@ -126,14 +114,8 @@ class Reborn_IsDeployableTank_2 : public ScriptImpClass {
 
 class Reborn_IsDeployableTank_3 : public ScriptImpClass {
 	int PilotID,mode;
-	bool enabled;
-	bool firststep;
-	float xpos;
-	float ypos;
-	float zpos;
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
-	void Timer_Expired(GameObject *obj,int number);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
 	public: void Register_Auto_Save_Variables();

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -106,11 +106,11 @@ public:
 	friend class AudibleSoundClass;
 	friend class Sound3DClass;
 	friend class Listener3DClass;
-	SHADERS_API WWAudioClass (bool lite = false);
+	WWAudioClass (bool lite = false);
 	virtual ~WWAudioClass (void);
-	SHADERS_API static WWAudioClass *	Get_Instance (void)		{ return _theInstance; }
+	static WWAudioClass *	Get_Instance (void)		{ return _theInstance; }
 	void					Initialize (bool stereo = true, int bits = 16, int hertz = 44100);
-	SHADERS_API void					Initialize (const char *registry_subkey_name);
+	void					Initialize (const char *registry_subkey_name);
 	void					Shutdown (void);
 	HDIGDRIVER				Get_2D_Driver (void) const			{ return m_Driver2D; }
 	HPROVIDER				Get_3D_Driver (void) const			{ return m_Driver3D; }
@@ -166,48 +166,48 @@ public:
 	bool					Is_Cinematic_Sound_On (void) const							{ return m_IsCinematicSoundEnabled; }
 	void					Enable_New_Sounds (bool onoff)			{ m_AreNewSoundsEnabled = onoff; }
 	bool					Are_New_Sounds_Enabled (void)	const		{ return m_AreNewSoundsEnabled; }
-	SHADERS_API void					Temp_Disable_Audio (bool onoff);
-	SHADERS_API void					On_Frame_Update (unsigned int milliseconds = 0);
+	void					Temp_Disable_Audio (bool onoff);
+	void					On_Frame_Update (unsigned int milliseconds = 0);
 	void					Register_EOS_Callback (LPFNEOSCALLBACK callback, DWORD user_param);
 	void					UnRegister_EOS_Callback (LPFNEOSCALLBACK callback);
-	SHADERS_API void					Register_Text_Callback (LPFNTEXTCALLBACK callback, DWORD user_param);
+	void					Register_Text_Callback (LPFNTEXTCALLBACK callback, DWORD user_param);
 	void					UnRegister_Text_Callback (LPFNTEXTCALLBACK callback);
 	void					Fire_Text_Callback (AudibleSoundClass *sound_obj, const StringClass &text);
 	bool					Is_Sound_Cached (const char *string_id);
 	AudibleSoundClass *		Create_Sound_Effect (FileClass &file, const char *string_id);
-	SHADERS_API AudibleSoundClass *		Create_Sound_Effect (const char *filename);
+	AudibleSoundClass *		Create_Sound_Effect (const char *filename);
 	AudibleSoundClass *		Create_Sound_Effect (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes);
-	SHADERS_API Sound3DClass *		Create_3D_Sound (FileClass &file, const char *string_id, int classid_hint = CLASSID_3D);
-	SHADERS_API Sound3DClass *		Create_3D_Sound (const char *filename, int classid_hint = CLASSID_3D);
-	SHADERS_API Sound3DClass *		Create_3D_Sound (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes, int classid_hint = CLASSID_3D);
-	SHADERS_API void						Set_Background_Music (const char *filename);
-	SHADERS_API void						Fade_Background_Music (const char *filename, int fade_out_time, int fade_in_time);
+	Sound3DClass *		Create_3D_Sound (FileClass &file, const char *string_id, int classid_hint = CLASSID_3D);
+	Sound3DClass *		Create_3D_Sound (const char *filename, int classid_hint = CLASSID_3D);
+	Sound3DClass *		Create_3D_Sound (const char *string_id, unsigned char *raw_wave_data, unsigned long bytes, int classid_hint = CLASSID_3D);
+	void						Set_Background_Music (const char *filename);
+	void						Fade_Background_Music (const char *filename, int fade_out_time, int fade_in_time);
 	const char *			Get_Background_Music_Name (void)						{ return m_BackgroundMusicName; }
 	AudibleSoundClass *	Peek_Background_Music (void)							{ return m_BackgroundMusic; }
 	LogicalSoundClass *		Create_Logical_Sound (void);
-	SHADERS_API LogicalListenerClass *	Create_Logical_Listener (void);
+	LogicalListenerClass *	Create_Logical_Listener (void);
 	void							Add_Logical_Type (int id, LPCTSTR display_name);
 	void							Reset_Logical_Types (void);
 	int							Get_Logical_Type_Count (void) const	{ return m_LogicalTypes.Count (); }
 	int							Get_Logical_Type (int index, StringClass &name);
-	SHADERS_API int						Create_Instant_Sound (int definition_id, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	SHADERS_API int						Create_Instant_Sound (const char *def_name, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	SHADERS_API AudibleSoundClass *	Create_Continuous_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	SHADERS_API AudibleSoundClass *	Create_Continuous_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	SHADERS_API AudibleSoundClass *	Create_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
-	SHADERS_API AudibleSoundClass *	Create_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	int						Create_Instant_Sound (int definition_id, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	int						Create_Instant_Sound (const char *def_name, const Matrix3D &tm, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Continuous_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Continuous_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Sound (int definition_id, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
+	AudibleSoundClass *	Create_Sound (const char *def_name, RefCountClass *user_obj = NULL, uint32 user_data = 0, int classid_hint = CLASSID_3D);
 	SoundSceneObjClass *	Find_Sound_Object (uint32 sound_obj_id);
 	SoundSceneClass *	Get_Sound_Scene (void) const		{ return m_SoundScene; }
 	bool					Set_Cache_Size (int kbytes = DEF_CACHE_SIZE)	{ m_MaxCacheSize = (kbytes * 1024); }
 	int					Get_Cache_Size (void) const						{ return m_MaxCacheSize / 1024; }
 	int					Get_Current_Cache_Size (void) const				{ return m_CurrentCacheSize; }
-	SHADERS_API void					Flush_Cache (void);
+	void					Flush_Cache (void);
 	void					Set_Max_2D_Sound_Buffer (int bytes = DEF_MAX_2D_BUFFER_SIZE)	{ m_Max2DBufferSize = bytes; }
 	void					Set_Max_3D_Sound_Buffer (int bytes = DEF_MAX_3D_BUFFER_SIZE)	{ m_Max3DBufferSize = bytes; }
-	SHADERS_API bool					Simple_Play_2D_Sound_Effect (const char *filename, float priority = 1.0F, float volume = DEF_SFX_VOL);
+	bool					Simple_Play_2D_Sound_Effect (const char *filename, float priority = 1.0F, float volume = DEF_SFX_VOL);
 	bool					Simple_Play_2D_Sound_Effect (FileClass &file, float priority = 1.0F, float volume = DEF_SFX_VOL);
-	SHADERS_API bool						Add_To_Playlist (AudibleSoundClass *sound);
-	SHADERS_API bool						Remove_From_Playlist (AudibleSoundClass *sound);
+	bool						Add_To_Playlist (AudibleSoundClass *sound);
+	bool						Remove_From_Playlist (AudibleSoundClass *sound);
 	int						Get_Playlist_Count (void) const			{ return m_Playlist[m_CurrPage].Count (); }
 	AudibleSoundClass *	Get_Playlist_Entry (int index) const;
 	AudibleSoundClass *	Peek_Playlist_Entry (int index) const	{ return m_Playlist[m_CurrPage][index]; }
@@ -235,8 +235,8 @@ public:
 	void						Free_3D_Driver_List (void);
 	void						Reprioritize_Playlist (void);
 	bool						Validate_3D_Sound_Buffer (SoundBufferClass *buffer);
-	SHADERS_API FileClass *				Get_File (LPCTSTR filename);
-	SHADERS_API void						Return_File (FileClass *file);
+	FileClass *				Get_File (LPCTSTR filename);
+	void						Return_File (FileClass *file);
 	void						Allocate_2D_Handles (void);
 	void						Release_2D_Handles (void);
 	void						Allocate_3D_Handles (void);
@@ -255,16 +255,20 @@ public:
 	SoundBufferClass *	Get_Sound_Buffer (FileClass &file, const char *string_id, bool is_3d);
 	SoundBufferClass *	Get_Sound_Buffer (const char *filename, bool is_3d);
 	SoundBufferClass *	Find_Cached_Buffer (const char *string_id);
-	SHADERS_API SoundBufferClass *	Create_Sound_Buffer (FileClass &file, const char *string_id, bool is_3d);
+	SoundBufferClass *	Create_Sound_Buffer (FileClass &file, const char *string_id, bool is_3d);
 	SoundBufferClass *	Create_Sound_Buffer (unsigned char *file_image, unsigned long bytes, const char *string_id, bool is_3d);
-	SHADERS_API bool						Cache_Buffer (SoundBufferClass *buffer, const char *string_id);
+	bool						Cache_Buffer (SoundBufferClass *buffer, const char *string_id);
 	bool						Free_Cache_Space (int bytes);
 	static unsigned int AILCALLBACK	File_Open_Callback (char const *filename, unsigned int *file_handle);
 	static void AILCALLBACK	File_Close_Callback (unsigned int file_handle);
 	static signed int AILCALLBACK	File_Seek_Callback (unsigned int file_handle, signed int offset, unsigned int type);
 	static unsigned int AILCALLBACK	File_Read_Callback (unsigned int file_handle, void *buffer, unsigned int bytes);
 private:
-	static REF_DECL3(_theInstance,WWAudioClass *);
+#ifndef W3DVIEWER
+	static REF_DECL(WWAudioClass *, _theInstance);
+#else
+	static WWAudioClass *_theInstance;
+#endif
 	static HANDLE									_TimerSyncEvent;
 	typedef struct _CACHE_ENTRY_STRUCT : public NoEqualsClass<_CACHE_ENTRY_STRUCT>
 	{

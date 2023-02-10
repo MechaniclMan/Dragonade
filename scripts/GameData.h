@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -80,10 +80,10 @@ class cGameData :
 	public Signaler<TypedEventPair<bool, int>>
 {
 public:
-	static REF_DECL2(IsManualExit, bool);
-	static REF_DECL2(HostedGameNumber, int);
-	static REF_DECL2(WinText, WideStringClass);
-	static REF_DECL2(PTextRenderer, Render2DSentenceClass *);
+	static REF_DECL(bool, IsManualExit);
+	static REF_DECL(int, HostedGameNumber);
+	static REF_DECL(WideStringClass, WinText);
+	static REF_DECL(Render2DSentenceClass *, PTextRenderer);
 	bool IsIntermission; // 0008
 	bool IsDedicated; // 0009
 	bool IsAutoRestart; // 000A
@@ -138,7 +138,8 @@ public:
 	bool IsQuickMatch; // 0260  0268
 	unsigned long Clan1; // 0264  026C
 	unsigned long Clan2; // 0268  0270
-	static REF_DECL2(IsManualRestart, bool);
+public:
+	static REF_DECL(bool, IsManualRestart);
 	virtual void ReceiveSignal(TypedEventPair<bool,int> &signal);
 	virtual ~cGameData();
 	virtual void On_Game_Begin();
@@ -201,12 +202,14 @@ public:
 	static void Set_Win_Text(const WideStringClass& _winText) { WinText = _winText; }
 	static bool Is_Manual_Exit() { return IsManualExit; }
 	static void Set_Manual_Exit(bool b) {IsManualExit = b;}
+	static bool Is_Manual_Restart() { return IsManualRestart; }
+	static void Set_Manual_Restart(bool b) {IsManualRestart = b;}
 	static void Onetime_Init();
 	static void Onetime_Shutdown();
 	void Set_Motd(const wchar_t *s) {Motd = s;}
 	void Set_Map_Name(const StringClass &map) {MapName = map;}
 	void Set_Mod_Name(const StringClass &mod);
-	void Set_Time_Limit_Minutes(int time);
+	void Set_Time_Limit_Minutes(int time) {TimeLimit_Minutes = time;}
 	void Set_Radar_Mode(int mode) {RadarMode = mode;}
 	unsigned int Get_Config_File_Mod_Time();
 	void Load_From_Server_Config(const char *);
@@ -265,6 +268,7 @@ public:
 	bool Can_Repair_Buildings() {return CanRepairBuildings;}
 	bool Driver_Is_Always_Gunner() {return DriverIsAlwaysGunner;}
 	bool Spawn_Weapons() {return SpawnWeapons;}
+	void Set_Maximum_World_Distance(float distance);
 	void Set_Ini_Filename(StringClass const &ini)
 	{
 		INI = ini;

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -118,6 +118,9 @@ public:
 	bool Is_Flooding();
 	void Set_Server_Damage(bool Damage);
 	bool Use_Server_Damage();
+	bool Is_Spawning();
+	unsigned long Get_Creation_Time();
+	void Reset_Creation_Time();
 	
 	void Join();
 	void Leave();
@@ -191,6 +194,7 @@ private:
 	DynamicVectorClass<unsigned long> FloodProtection;
 	bool Loaded;
 	bool ServerDamage;
+	unsigned long CreationTime;
 	StringClass Serial;
 	float Version;
 	unsigned int Revision;
@@ -404,6 +408,9 @@ public:
 	}
 	inline T *Get_Player_Data(cPlayer *Player) const {
 		return static_cast<T*>(Player->Get_DA_Player()->Find_Data(this));
+	}
+	inline T *Get_Player_Data(DAPlayerClass *Player) const {
+		return static_cast<T*>(Player->Find_Data(this));
 	}
 
 protected:

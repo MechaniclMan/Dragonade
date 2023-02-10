@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -177,6 +177,11 @@ class dp88_uniqueInfantry_controller : public JFW_Object_Created_Hook_Base
 * Health 31% - 70%: Damage animation 1
 * Health 1% - 0%: Damage animation 2
 *
+* To use the WakeupObjects parameter, create an obbox object in max/gmax and name it WAKEBOX. Then
+* set WakeupObjects to 1. Any time the object changes damage states, any objects in the WAKEBOX box
+* will be forced awake so they can run their physics simulation (e.g. falling through newly-existing
+* holes in the mesh
+*
 * \param animationName
 *   Name of the animation containing all the damage state frames
 * \param loopAnimation
@@ -251,6 +256,8 @@ class dp88_uniqueInfantry_controller : public JFW_Object_Created_Hook_Base
 * \param damageBoundary5_endFrame_lowPower
 *   Last frame number for the fifth damage state animation when power is offline, or -1 to use the
 *   same value as damageBoundary5_endFrame
+* \param wakeObjects
+*   Whether to wake up objects that might be on top of this object
 */
 
 class dp88_damageAnimation : public ScriptImpClass
@@ -485,6 +492,11 @@ class dp88_conquestController : public ScriptImpClass
   void Timer_Expired ( GameObject* pSelf, int number );
   void Custom ( GameObject* pSelf, int type, int param, GameObject* pSender );
 
+  int GetWinningTeamID();
+  int GetLosingTeamID();
+
+  void DisplayMessage(StringClass message);
+
 protected:
   /*!
   * \name Scoring Modes
@@ -625,6 +637,8 @@ protected:
   void IncrementCaptureProgress( GameObject* pObj, int team, int nPlayers );
   void UpdateAnimationFrame( GameObject* pObj );
 
+  void DisplayMessage(GameObject* pObj, StringClass message, int sendtoteam = 2);
+
   int m_controllerID;       /*!< ID of the GameObject with the controller script attached */
   int m_zoneID;             /*!< ID of the control zone GameObject */
   float m_captureState;     /*!< Current capture progress. 0 = neutral, negative = team0, positive = team1 */
@@ -644,6 +658,36 @@ protected:
 // -------------------------------------------------------------------------------------------------
 
 /*!
+* \brief Conquest Mode - Control Object
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_conquest
+*
+* Attach this script to an object to generate conquest points for the team which owns the object.
+* This script does not include any mechanism for changing the owner of the object and therefore can
+* be used on something the enemy must destroy to reduce the opponents points income or combined with
+* additional scripts to allow the object to change team, for example;
+*
+*   A capturable building using the \ref scripts_dp88BuildingScripts "dp88_buildingScripts" set of
+*   scripts with a capture point object.
+*
+* \param TickPoints
+*   Conquest points to give to the team which currently owns the object every 'TickInterval' seconds
+* \param TickInterval
+*   Tick interval, in seconds, at which to give conquest points to the objects current owner
+*/
+class dp88_conquestControlObject : public ScriptImpClass
+{
+public:
+  void Created( GameObject* pObj );
+  void Timer_Expired( GameObject* pObj, int number );
+
+protected:
+  int m_controllerID;       /*!< ID of the GameObject with the controller script attached */
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
 * \brief Radar Invisibility
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
 * \ingroup scripts_radar
@@ -656,7 +700,7 @@ class dp88_radarInvisibility : public ScriptImpClass
 {
 public:
   /*! Constructor to prevent crashes in LE due to uninitialised variables */
-  dp88_radarInvisibility() : m_pPassengerIds(), m_pPassengerRadarModes(0) {};
+  dp88_radarInvisibility() : m_pPassengerIds(0), m_pPassengerRadarModes(0), m_nSeats(0) {};
 
 protected:
   void Created ( GameObject* pObj );
@@ -759,4 +803,182 @@ protected:
   bool m_bTeleportInfantry;
   bool m_bTeleportVehicles;
   /*! @} */
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Vehicle Ammo Animation
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This script plays an animation on a vehicle based on the currently loaded ammunition, allowing a
+* visual representation of ammo being used and, if desired, more than two firing locations, which is
+* achieved by moving the muzzlea0 bone as part of the ammo animation. Note that since scripts are
+* executed server side latency can affect the speed at which the animation updates, therefore this
+* is not recommended for use with high ROF weapons.
+*
+* \param Animation
+*   The name of the animation to use, where frame 0 is the first frame used when the weapon is fully
+*   loaded and <i>Animation_Frames</i> is the final frame with no ammunition remaining
+* \param Animation_Frames
+*   The number of frames to use from the specified animation
+* \param Use_Total_Ammo
+*   Specify whether the animation should be based on the total ammunition the object has or just
+*   those currently loaded into their gun. Set to 0 to count loaded ammo only or 1 to count all
+* \param Animation_Model
+*   Optional name of a W3D model file to spawn and attach to the object upon which the animation
+*   defined in this script will be applied. This allows the host object to have other animations
+*   applied, such as damage states via dp88_damageAnimation
+* \param Animation_Model_Bone
+*   If you specify an Animation_Model above then you must also specify the a bone on the parent to
+*   which that model should be attached. This also allows the animation model to be moved by the
+*   animation set executing on the parent.
+*/
+class dp88_Ammo_Animation : public ScriptImpClass
+{
+public:
+  void Created ( GameObject* pObj );
+  void Timer_Expired ( GameObject* pObj, int number );
+
+protected:
+  void UpdateAnimationFrame ( GameObject* pObj );
+
+  int m_nBullets;
+
+  /*! ID of the animation object we have created for ourselves */
+  int m_ammoAnimObjId;
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  const char* m_strAnimation;
+  int m_nFrames;
+  bool m_bUseTotal;
+  /*! @} */
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Camo Controller
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This script is the controller for dp88_Camo_Object and defines which camouflage varient should be
+* used on the current map. Only one instance of this controller should exist on a map or you may
+* get unexpected results. Typically you will create a new Daves Arrow type preset and attach this
+* script to that preset to place on your map.
+*
+* Each object that is created with one or more copies of dp88_Camo_Object attached will check the
+* variant specified in each against the one in this script and, if one matches, will update it's
+* model to the appropriate one for that camo type.
+*
+* \param Camouflage
+*   The ID of the camouflage variant to use for this map
+*/
+class dp88_Camo_Controller : public ScriptImpClass
+{
+public:
+  virtual void Created ( GameObject* pObj );
+
+  const char* GetCamoVariant() const { return m_camoVariant; };
+
+protected:
+  const char* m_camoVariant;
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Camo Object
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Attach one or more copies of this script to an object to specify alternative camouflage models to
+* use in different environments. Each copy of the script defines one camouflage varient and a model
+* filename to use in that environment. If the map contains an instance of dp88_Camo_Controller which
+* matches the camouflage variant specified in the script the model will be updated to match.
+*
+* If there is no dp88_Camo_Controller script instance on a map or its variant does not match any of
+* the variants defined in any instances of this script on the object the default model will be used.
+*
+* \param Camouflage
+*   The ID of the camouflage variant this script specifies a model for
+* \param Model
+*   The filename of the model to use if the <i>Camouflage</i> value matches the controllers value,
+*   this should include the .w3d extension
+*/
+class dp88_Camo_Object : public ScriptImpClass
+{
+public:
+  virtual void Created ( GameObject* pObj );
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Create Object With Cinematic
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_cinematic
+*
+* Based on SH_CinematicVehicleFactoryBypass this script spawns an object and then attaches it to a
+* cinematic. This could be used to spawn vehicles and have them dropped off via a cinematic script
+* for example. The benefit of these scripts over spawning objects directly in cinematics is improved
+* engine performance since cinematic spawned objects incur more physics engine checks than necessary
+*
+* This script can either trigger on creation or on a custom trigger. When using a custom trigger it
+* can be triggered multiple times if necessary.
+*
+* The object created will be attached to the cinematic in slot 0 whilst the "owner" will be added in
+* slot 1. The definition of the owner is either an object ID specified in the parameter of the
+* triggering custom or, if this is 0 or not a valid game object, the sender of the custom, which may
+* be the object this script is attached to.
+*
+* \preset Preset
+*   The preset of the object to be created
+* \param Cinematic
+*   The cinematic script to be played when the object has been created
+* \param Trigger_Custom
+*   ID of the custom message to listen for or 0 to trigger on creation instead
+* \param Offset
+*   The offset from the location of the object this script is attached to to create the cinematic at
+*
+* \note
+*   Your cinematic must send the custom message 43000 to the object at an appropriate time to allow
+*   it to start taking damage. If you do not send this custom the object will be permanently immune
+*   from all damage.
+*/
+class dp88_Create_Object_Cinematic: public ScriptImpClass
+{
+public:
+  void Created ( GameObject* pObj );
+  void Custom ( GameObject* pObj, int type, int param, GameObject* pSender );
+
+protected:
+  void Create_Object ( GameObject* pobj, GameObject* pOwner );
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Set Team On Custom
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_customconsumers
+*
+* Changes the team of the object this script is attached to upon receiving a custom message, where
+* the message parameter contains the new team ID for the object which can be either 0 (Nod), 1 (GDI)
+* or 2 (Neutral)
+*
+* This can be combined with JFW_Startup_Custom_Self to set the team of an object when it is created
+* without needing to create duplicate copies of a preset for each team (by attaching the scripts to
+* a placed object in LE rather than its preset)
+*
+* \param Message
+*   The ID of the custom message to listen for
+*
+* \note
+*   This is compatible with capturable buildings using the \ref scripts_dp88BuildingScripts "dp88_buildingScripts"
+*   set of scripts
+*/
+class dp88_Set_Team_On_Custom : public ScriptImpClass
+{
+public:
+  void Custom ( GameObject* pObj, int type, int param, GameObject* pSender );
 };

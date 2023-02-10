@@ -194,11 +194,13 @@ sub Flag {
 sub start {
 	my ( $kernel, $session, $heap, $args ) = @_[ KERNEL, SESSION, HEAP, ARG0 ];
 	print "Dragonade Log Plugin loaded.\n";
+	return 1;
 }
 
 sub stop {
 	my ( $kernel, $session, $heap, $args ) = @_[ KERNEL, SESSION, HEAP, ARG0 ];
 	print "Dragonade Log Plugin unloaded.\n";
+	return 1;
 }
 
 1;

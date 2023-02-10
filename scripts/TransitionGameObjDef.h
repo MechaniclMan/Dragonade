@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -37,7 +37,7 @@ public:
 	}
 	bool Save(ChunkSaveClass &csave);
 	bool Load(ChunkLoadClass &cload);
-	StyleType Get_Type() {return Type;}
+	StyleType Get_Type() const {return Type;}
 }; // 0074
 
 class TransitionGameObjDef : public BaseGameObjDef {

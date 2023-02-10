@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,7 +17,6 @@
 #error The renegade scripts.dll requires Microsoft Visual C++ in order to work
 #endif
 
-#pragma warning (disable: 4100 4800 4740 4731 4733 6054 6211 6320 6308)
 class ScriptableGameObj;
 typedef ScriptableGameObj GameObject;
 class ScriptSaver;
@@ -87,7 +86,7 @@ struct CombatSound {
 	ScriptableGameObj *Creator; //this is passed from the obj parameter of Create_Logical_Sound
 };
 
-class GameObjObserverClass {
+class SCRIPTS_API GameObjObserverClass {
 public:
 	GameObjObserverClass() : ID( 0 ) {}
 	virtual	~GameObjObserverClass() {}
@@ -120,7 +119,7 @@ protected:
 	int ID;
 };
 
-class ScriptClass : public GameObjObserverClass {
+class SCRIPTS_API ScriptClass : public GameObjObserverClass {
 public:
 	virtual ~ScriptClass() {}
 	virtual GameObject** Get_Owner_Ptr() = 0;
@@ -149,9 +148,7 @@ public:
   */
   void Created(GameObject *obj) {}
 
-  /*! Script event that is triggered when the object gets destroyed. Note that when a player changes
-  * character this event does *not* get triggered, if you need to react to this scenario overload
-  * Detach() instead
+  /*! Script event that is triggered when the object gets destroyed
   *
   * \param[in] obj Pointer to the GameObject this script is attached to
   */
@@ -231,7 +228,7 @@ public:
   */
   void Animation_Complete(GameObject *obj,const char *animation_name) {}
 
-  /*! Script event that is triggered when the object has been poked by a player. Requires tt.dll
+  /*! Script event that is triggered when the object has been poked by a player. Requires bandtest.dll
   * to work correctly in multiplayer mode.
   *
   * \param[in] obj Pointer to the GameObject this script is attached to
@@ -285,6 +282,14 @@ public:
 	{
 		return (float)atof(Get_Parameter(index));
 	}
+    bool Get_Bool_Parameter(const char* name)
+    {
+        return Get_Int_Parameter(name) != 0;
+    }
+    bool Get_Bool_Parameter(int index)
+    {
+        return Get_Int_Parameter(index) != 0;
+    }
 	void Destroy_Script(void);
 protected:
 	void Attach(GameObject* obj);
@@ -464,10 +469,11 @@ enum {
 	CUSTOM_EVENT_CONVERSATION_REMARK_ENDED,                                             //!< Sent on conversation remark ended
 	CUSTOM_EVENT_LADDER_OCCUPIED,                                                       //!< Sent on ladder occupied
 	CUSTOM_EVENT_FALLING_DAMAGE,                                                        //!< Sent on falling damage
-	CUSTOM_EVENT_VEHICLE_OWNER,                                                         //!< Special custom one sent by the new ownership code in tt.dll and by the scripts in mdbevf.cpp
+	CUSTOM_EVENT_VEHICLE_OWNER,                                                         //!< Special custom one sent by the new ownership code in bandtest.dll and by the scripts in mdbevf.cpp
 	CUSTOM_EVENT_VEHICLE_DRIVER,                                                        //!< Special custom one sent to vehicles where the driver/owner gets out to trigger it to find out its driver
 	CUSTOM_EVENT_VHEICLE_DRIVER_ID,                                                     //!< Response to CUSTOM_EVENT_VEHICLE_DRIVER, passes the owner GameObjects ID as the param
 	CUSTOM_EVENT_BEACON_DEPLOYED,                                                       //!< Sent when a beacon is deployed
+	CUSTOM_EVENT_REFILL,                                                                //!< Sent on refill at a PT
 };
 
 enum {
@@ -483,6 +489,14 @@ enum {
 	RADAR_BLIP_SHAPE_VEHICLE,
 	RADAR_BLIP_SHAPE_STATIONARY,
 	RADAR_BLIP_SHAPE_OBJECTIVE,
+	RADAR_BLIP_SHAPE_EXTRA_1,
+	RADAR_BLIP_SHAPE_EXTRA_2,
+	RADAR_BLIP_SHAPE_EXTRA_3,
+	RADAR_BLIP_SHAPE_EXTRA_4,
+	RADAR_BLIP_SHAPE_EXTRA_DISTANT_1,
+	RADAR_BLIP_SHAPE_EXTRA_DISTANT_2,
+	RADAR_BLIP_SHAPE_EXTRA_DISTANT_3,
+	RADAR_BLIP_SHAPE_EXTRA_DISTANT_4,
 	RADAR_BLIP_COLOR_NOD = 0,
 	RADAR_BLIP_COLOR_GDI,
 	RADAR_BLIP_COLOR_NEUTRAL,
@@ -727,11 +741,6 @@ struct ScriptCommands {
 	void	(* Unlock_Soldier_Facing)( GameObject * object );
 	void	(* Apply_Damage)( GameObject * object, float amount, const char * warhead_name, GameObject * damager);
 	void	(* Set_Loiters_Allowed)( GameObject * object, bool allowed );
-
-  /*!
-  * Set whether a SoldierGameObj is visible to AIs utilising the Enemy_Seen logic. For vehicles use
-  * the Set_Vehicle_Is_Visible function instead.
-  */
 	void	(* Set_Is_Visible)( GameObject * object, bool visible );
 	void	(* Set_Is_Rendered)( GameObject * object, bool rendered );
 	float	(* Get_Points)( GameObject * object );

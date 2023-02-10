@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infinite Ammo Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -26,7 +26,7 @@ void DAInfiniteAmmoGameFeatureClass::Init() {
 }
 
 void DAInfiniteAmmoGameFeatureClass::Level_Loaded_Event() {
-	for (WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_First(0xB001);Def;Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_Next(Def,0xB001)) {
+	for (WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_First(CID_Weapon);Def;Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_Next(Def,CID_Weapon)) {
 		if (Def->Style != STYLE_C4 && Def->Style != STYLE_BEACON) {
 			Def->MaxInventoryRounds = -1;
 		}
@@ -71,7 +71,7 @@ void DANoReloadGameFeatureClass::Init() {
 }
 
 void DANoReloadGameFeatureClass::Level_Loaded_Event() {
-	for (WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_First(0xB001);Def;Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_Next(Def,0xB001)) {
+	for (WeaponDefinitionClass *Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_First(CID_Weapon);Def;Def = (WeaponDefinitionClass*)DefinitionMgrClass::Get_Next(Def,CID_Weapon)) {
 		if (Def->Style != STYLE_C4 && Def->Style != STYLE_BEACON) {
 			AmmoDefinitionClass *AmmoDef = (AmmoDefinitionClass*)Find_Definition(Def->PrimaryAmmoDefID);
 			if (AmmoDef) {

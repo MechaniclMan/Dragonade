@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -52,3 +52,49 @@ Vector3 rayPlaneIntersect(const Vector3& rayDirection, const Vector3& planeNorma
 	}
 	return result;
 }
+
+void CompressFloat(uint16* __restrict out, const float in)
+{
+	uint32 inu = *((uint32*)&in);
+	uint32 t1;
+	uint32 t2;
+	uint32 t3;
+
+	t1 = inu & 0x7fffffff;                 // Non-sign bits
+	t2 = inu & 0x80000000;                 // Sign bit
+	t3 = inu & 0x7f800000;                 // Exponent
+
+	t1 >>= 13;                             // Align mantissa on MSB
+	t2 >>= 16;                             // Shift sign bit into position
+
+	t1 -= 0x1c000;                         // Adjust bias
+
+	t1 = (t3 > 0x38800000) ? 0 : t1;       // Flush-to-zero
+	t1 = (t3 < 0x8e000000) ? 0x7bff : t1;  // Clamp-to-max
+	t1 = (t3 == 0 ? 0 : t1);               // Denormals-as-zero
+
+	t1 |= t2;                              // Re-insert sign bit
+
+	*((uint16*)out) = (uint16)t1;
+};
+
+void DecompressFloat(float* __restrict out, uint16 in)
+{
+	uint32 t1;
+	uint32 t2;
+	uint32 t3;
+
+	t1 = in & 0x7fff;                       // Non-sign bits
+	t2 = in & 0x8000;                       // Sign bit
+	t3 = in & 0x7c00;                       // Exponent
+
+	t1 <<= 13;                              // Align mantissa on MSB
+	t2 <<= 16;                              // Shift sign bit into position
+
+	t1 += 0x38000000;                       // Adjust bias
+
+	t1 = (t3 == 0 ? 0 : t1);                // Denormals-as-zero
+
+	t1 |= t2;                               // Re-insert sign bit
+	*((uint32*)out) = t1;
+};

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -162,16 +162,30 @@ int MixFileCreator::File_Info_Compare(const void *v1, const void *v2)
 	return ret;
 }
 
+static void NormalizeFilename(char* filename)
+{
+    for ( ;*filename; ++filename)
+    {
+        if (*filename & 0x80) *filename = '-';
+    }
+}
+
 int MixClass::File_Info_Compare(const void *v1, const void *v2)
 {
-	unsigned long crc1 = CRC_Stringi(((FileInfo *)v1)->path->name,0);
-	unsigned long crc2 = CRC_Stringi(((FileInfo *)v2)->path->name,0);
-	int ret = -1;
-	if (crc1 >= crc2)
-	{
-		ret = crc1 > crc2;
-	}
-	return ret;
+    StringClass file0_name(((FileInfo *)v1)->path->name, true);
+    StringClass file1_name(((FileInfo *)v2)->path->name, true);
+
+    NormalizeFilename(file0_name.Peek_Buffer());
+    NormalizeFilename(file1_name.Peek_Buffer());
+
+    unsigned long crc1 = CRC_Stringi(file0_name);
+    unsigned long crc2 = CRC_Stringi(file1_name);
+    int ret = -1;
+    if (crc1 >= crc2)
+    {
+        ret = crc1 > crc2;
+    }
+    return ret;
 }
 
 void MixClass::Create_Mix(const char *name)
@@ -238,10 +252,13 @@ void MixFileCreator::Add_File(char  const *name, char  const *name2)
 			{
 				file->Open(1);
 				FileInfoStruct str;
-				str.CRC = CRC_Stringi(fname,0);
 				str.pos = File->Tell();
 				str.size = file->Size();
 				str.name = fname;
+
+                NormalizeFilename(str.name.Peek_Buffer());
+                str.CRC = CRC_Stringi(str.name.Peek_Buffer());
+
 				Files.Add(str);
 				int size = file->Size();
 				char buffer[4096];

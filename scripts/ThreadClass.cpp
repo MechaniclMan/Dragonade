@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,7 +28,7 @@ void ThreadClass::Internal_Thread_Function(void *data)
 	{
 		__try {
 			thread->Thread_Function();
-#pragma warning(suppress: 6322)
+#pragma warning(suppress: 6322) //warning C6322: empty _except block
 		} __except(thread->exceptionhandler(GetExceptionCode(), GetExceptionInformation())) {};
 	}
 	else
@@ -63,7 +63,7 @@ void ThreadClass::Stop(uint value)
 		unsigned int time2 = TIMEGETTIME();
 		if (time2 - time > value)
 		{
-#pragma warning(suppress: 6258)
+#pragma warning(suppress: 6258) //warning C6258: using TerminateThread does not allow proper thread clean up.
 			TerminateThread(handle,0);
 			handle = 0;
 		}
@@ -71,7 +71,7 @@ void ThreadClass::Stop(uint value)
 	}
 }
 
-ThreadClass::ThreadClass(char  const *Name, int (*ExceptionHandler)(int, LPEXCEPTION_POINTERS)) : running(false), handle(0)
+ThreadClass::ThreadClass(char  const *Name, LONG (WINAPI *ExceptionHandler)(int, LPEXCEPTION_POINTERS)) : running(false), handle(0)
 {
 	if (Name && strlen(Name) < 70)
 	{

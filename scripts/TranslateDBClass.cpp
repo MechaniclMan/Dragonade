@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,7 +18,7 @@
 const wchar_t* STRING_NOT_FOUND = L"TDBERR";
 const char* ENGLISH_STRING_NOT_FOUND = "TDBERR";
 
-#if (SHADERS_EXPORTS) || (TDBEDIT)
+#if (SHARED_EXPORTS) || (TDBEDIT)
 TranslateDBClass _TheTranslateDB;
 #endif
 
@@ -32,14 +32,14 @@ bool TranslateDBClass::IsSingleLanguageExport = false;
 TranslateDBClass::FILTER_OPT TranslateDBClass::FilterType = FILTER_DISABLED;
 uint32 TranslateDBClass::FilterCategoryID = 0;
 #else
-REF_DEF2(TranslateDBClass::m_ObjectList, TDB_OBJ_LIST, 0x0085FD08, 0x0085EEF0);
-REF_DEF2(TranslateDBClass::m_ObjectHash, TT_NOOP(HashTemplateClass<StringClass,TDBObjClass*>), 0x0085FCD0, 0x0085EEB8);
-REF_DEF2(TranslateDBClass::m_CategoryList, TDB_CATEGORY_LIST, 0x0085FCF0, 0x0085EED8);
-REF_DEF2(TranslateDBClass::m_VersionNumber, uint32, 0x00815864, 0x00814A3C);
-REF_DEF2(TranslateDBClass::m_LanguageID, uint32, 0x0085FD24, 0x0085EF0C);
-REF_DEF2(TranslateDBClass::IsSingleLanguageExport, bool, 0x0085FD28, 0x0085EF10);
-REF_DEF2(TranslateDBClass::FilterType, TranslateDBClass::FILTER_OPT, 0x0085FD2C, 0x0085EF14);
-REF_DEF2(TranslateDBClass::FilterCategoryID, uint32, 0x00815868, 0x00814A40);
+REF_DEF2(TDB_OBJ_LIST, TranslateDBClass::m_ObjectList, 0x0085FD08, 0x0085EEF0);
+REF_DEF2(TT_NOOP(HashTemplateClass<StringClass, TDBObjClass*>), TranslateDBClass::m_ObjectHash, 0x0085FCD0, 0x0085EEB8);
+REF_DEF2(TDB_CATEGORY_LIST, TranslateDBClass::m_CategoryList, 0x0085FCF0, 0x0085EED8);
+REF_DEF2(uint32, TranslateDBClass::m_VersionNumber, 0x00815864, 0x00814A3C);
+REF_DEF2(uint32, TranslateDBClass::m_LanguageID, 0x0085FD24, 0x0085EF0C);
+REF_DEF2(bool, TranslateDBClass::IsSingleLanguageExport, 0x0085FD28, 0x0085EF10);
+REF_DEF2(TranslateDBClass::FILTER_OPT, TranslateDBClass::FilterType, 0x0085FD2C, 0x0085EF14);
+REF_DEF2(uint32, TranslateDBClass::FilterCategoryID, 0x00815868, 0x00814A40);
 #endif
 
 void TranslateDBClass::Initialize()
@@ -550,7 +550,7 @@ void TranslateDBClass::Export_Table(const char *filename)
 				TDBObjClass *obj;
 				for (obj = TranslateDBClass::Get_First_Object(cat->Get_ID());obj;obj = TranslateDBClass::Get_Next_Object(cat->Get_ID(),obj))
 				{
-					fwprintf_s (f, L"%u,%hs,%d,%hs\r\n", obj->Get_ID(), (const char *)obj->Get_ID_Desc(), obj->Get_Sound_ID(), (const char *)obj->Get_Animation_Name());
+					fwprintf_s (f, L"%u,%hs,%u,%hs\r\n", obj->Get_ID(), (const char *)obj->Get_ID_Desc(), obj->Get_Sound_ID(), (const char *)obj->Get_Animation_Name());
 
 					/* Print out all language strings, even those with no entries, as users may
 					wish to enter values for those while editing the export file. Note: assumes
@@ -637,7 +637,7 @@ void TranslateDBClass::Import_Strings(const char *filename)
 
 
 
-			else if ( wcschr(input,L',') != NULL && (wcschr(input,L'=') == NULL || wcschr(input,L',') < wcschr(input,L'=')) )
+			else if (currentCategory && ( wcschr(input,L',') != NULL && (wcschr(input,L'=') == NULL || wcschr(input,L',') < wcschr(input,L'=')) ))
 			{
 				// String
 				uint32 id;
@@ -677,7 +677,7 @@ void TranslateDBClass::Import_Strings(const char *filename)
 
 
 
-			else if ( wcschr(input,L'=') != NULL && (wcschr(input,L',') == NULL || wcschr(input,L'=') < wcschr(input,L',')) )
+			else if (currentObj && ( wcschr(input,L'=') != NULL && (wcschr(input,L',') == NULL || wcschr(input,L'=') < wcschr(input,L',')) ))
 			{
 				// String Translation
 				uint32 lang_id;

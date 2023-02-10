@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -39,7 +39,7 @@ SCRIPTS_API void Find_All_Objects_With_Script(const char *script, SList<GameObje
 /*!
 * \brief Find Objects With Script - Distance Sorted
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
-* \ingroup api_objectfind
+* \ingroup api_objects_find
 *
 * Finds all GameObjects with one or more instances of the specified script attached and returns them
 * in a list which is sorted by the distance from that object to a specified position

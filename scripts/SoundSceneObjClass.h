@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,13 +12,11 @@
 #ifndef __SOUNDSCENEOBJCLASS_H__
 #define __SOUNDSCENEOBJCLASS_H__
 
-#include "scripts.h"
-#include "engine_common.h"
 #include "engine_threading.h"
 #include "engine_string.h"
 #include "engine_vector.h"
+#include "audiocallback.h"
 #include "Persist.h"
-#include "ScriptableGameObj.h"
 #include "Matrix3D.h"
 class SoundSceneClass;
 class SoundCullObjClass;
@@ -65,7 +63,7 @@ public:
 	virtual void				Attach_To_Object (RenderObjClass *render_obj, const char *bone_name);
 	virtual RenderObjClass *Peek_Parent_Object (void)			{ return m_AttachedObject; }
 	virtual int					Get_Parent_Bone (void)				{ return m_AttachedBone; }
-	SHADERS_API virtual void				Apply_Auto_Position (void);
+	virtual void				Apply_Auto_Position (void);
 	virtual void			Add_To_Scene (bool start_playing = true) = 0;
 	virtual void			Remove_From_Scene (void) = 0;
 	virtual bool			Is_In_Scene (void) const			{ return m_Scene != NULL; }
@@ -89,9 +87,9 @@ protected:
 	int								m_AttachedBone; // 0030  0048
 	uint32							m_UserData; // 0034  004C
 	RefCountClass *				m_UserObj; // 0038  0050
-#ifndef TTLE_EXPORTS
-	static REF_DECL1(m_NextAvailableID, uint32);
-#endif
+	static uint32 m_NextAvailableID;
+	static DynamicVectorClass<SoundSceneObjClass *>	m_GlobalSoundList;
+	static CriticalSectionClass m_IDListMutex;
 }; // 003C  0054
 
 #endif

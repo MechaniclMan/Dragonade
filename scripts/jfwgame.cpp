@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -280,7 +280,7 @@ void JFW_Resource_Collector::Custom(GameObject *obj,int type,int param,GameObjec
 	int Refinery_Message = Get_Int_Parameter("Refinery_Message");
 	int Cash_Limit = Get_Int_Parameter("Cash_Limit");
 	int Cash_Type = Get_Int_Parameter("Cash_Type");
-	int Entire_Team = Get_Int_Parameter("Entire_Team");
+	bool Entire_Team = Get_Bool_Parameter("Entire_Team");
 	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
 	{
 		int OldID;
@@ -335,7 +335,7 @@ void JFW_Resource_Collector_2::Custom(GameObject *obj,int type,int param,GameObj
 	int Refinery_Message = Get_Int_Parameter("Refinery_Message");
 	int Cash_Limit = Get_Int_Parameter("Cash_Limit");
 	int Cash_Type = Get_Int_Parameter("Cash_Type");
-	int Entire_Team = Get_Int_Parameter("Entire_Team");
+	bool Entire_Team = Get_Bool_Parameter("Entire_Team");
 	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
 	{
 		int OldID;
@@ -437,6 +437,130 @@ void JFW_Resource_Collector_2::Custom(GameObject *obj,int type,int param,GameObj
 }
 
 void JFW_Resource_Collector_2::Register_Auto_Save_Variables()
+{
+	Auto_Save_Variable(&cash,4,1);
+	Auto_Save_Variable(&ID,4,2);
+	Auto_Save_Variable(&PlayerID,4,3);
+	Auto_Save_Variable(&HasOre,1,4);
+}
+
+void JFW_Resource_Collector_3::Created(GameObject *obj)
+{
+	HasOre = false;
+	cash = 0;
+	ID = 0;
+	PlayerID = 0;
+}
+
+void JFW_Resource_Collector_3::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	int team = Commands->Get_Player_Type(obj);
+	int Collected_Message = Get_Int_Parameter("Collected_Mesasge");
+	int Refinery_Message = Get_Int_Parameter("Refinery_Message");
+	int Cash_Limit = Get_Int_Parameter("Cash_Limit");
+	int Cash_Type = Get_Int_Parameter("Cash_Type");
+	bool Entire_Team = Get_Bool_Parameter("Entire_Team");
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		int OldID;
+		int OldPlayerID;
+		OldID = ID;
+		OldPlayerID = PlayerID;
+		ID = Commands->Get_ID(sender);
+		PlayerID = Get_Player_ID(sender);
+		if (!Cash_Type)
+		{
+			cash = 0;
+		}
+		if ((Cash_Type == 1) && (ID != OldID) && (PlayerID != OldPlayerID))
+		{
+			cash = 0;
+		}
+	}
+	if (type == Collected_Message)
+	{
+		HasOre = true;
+		if (Cash_Type == 3)
+		{
+			cash = 0;
+		}
+		cash += param;
+		if ((cash > Cash_Limit) && (Cash_Limit))
+		{
+			cash = Cash_Limit;
+		}
+	}
+	if ((type == Refinery_Message) && (HasOre))
+	{
+		char DumpcMsg[240];
+		if (team == 0)
+		{
+			if (cash == 700)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 0 9,193,18 %s dumped Tiberium, funding the Nod Warmachine with 700 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			else if (cash == 1050)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 0 9,193,18 %s dumped Mixed Tiberium/Blue Tiberium, funding the Nod Warmachine with 1050 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			else if (cash == 1400)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 0 9,193,18 %s dumped Blue Tiberium, funding the Nod Warmachine with 1400 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			Console_Input("sndt 0 gsweep.wav");
+			Console_Input(DumpcMsg);
+		}
+		else if (team == 1)
+		{ 
+			if (cash == 700)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 1 9,193,18 %s dumped Tiberium, funding the GDI Forces with 700 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			else if (cash == 1050)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 1 9,193,18 %s dumped Mixed Tiberium/Blue Tiberium, funding the GDI Forces with 1050 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			else if (cash == 1400)
+			{
+				Commands->Give_Money(Commands->Find_Object(ID),(float)cash,Entire_Team);
+				const char *c = Get_Player_Name_By_ID(PlayerID);
+				sprintf(DumpcMsg,"cmsgt 1 9,193,18 %s dumped Blue Tiberium, funding the GDI Forces with 1400 additional credits.",c);
+				delete[] c;
+				HasOre = false;
+				cash = 0;
+			}
+			Console_Input("sndt 1 gsweep.wav");
+			Console_Input(DumpcMsg);
+		}
+	}
+}
+
+void JFW_Resource_Collector_3::Register_Auto_Save_Variables()
 {
 	Auto_Save_Variable(&cash,4,1);
 	Auto_Save_Variable(&ID,4,2);
@@ -2576,6 +2700,12 @@ void JFW_Stealth_Generator_Building::Created(GameObject *obj)
 		Commands->Send_Custom_Event(obj, StealthControl, 1111, Get_Int_Parameter("Stealth_Range"), 2);
 		Commands->Send_Custom_Event(obj, StealthControl, 2222, 3, 3);
 	}
+	sizeID = 0;
+	Vector3 position = Commands->Get_Position(obj);
+	GameObject *object2 = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+	Commands->Set_Player_Type(object2,Commands->Get_Player_Type(obj));
+	sizeID = Commands->Get_ID(object2);
+	Commands->Start_Timer(obj, this, 2, Get_Int_Parameter("Timer_Number"));
 }
 
 void JFW_Stealth_Generator_Building::Timer_Expired(GameObject *obj, int number)
@@ -2586,6 +2716,11 @@ void JFW_Stealth_Generator_Building::Timer_Expired(GameObject *obj, int number)
 		{
 			GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 			Commands->Send_Custom_Event(obj, StealthControl, 2222, 2, 0);
+			if (sizeID)
+			{
+				Commands->Destroy_Object(Commands->Find_Object(sizeID));
+				sizeID = 0;
+			}
 		}
 		Commands->Start_Timer(obj, this, 2, Get_Int_Parameter("Timer_Number"));
 	}
@@ -2595,10 +2730,16 @@ void JFW_Stealth_Generator_Building::Killed(GameObject *obj, GameObject *killer)
 {
 	GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 	Commands->Send_Custom_Event(obj, StealthControl, 3333, 0, 0);
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
 }
 
 void JFW_Stealth_Generator_Vehicle::Created(GameObject *obj)
 {
+	sizeID = 0;
 	GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 	if (!Commands->Get_Player_Type(obj))
 	{
@@ -2616,10 +2757,23 @@ void JFW_Stealth_Generator_Vehicle::Custom(GameObject *obj, int type, int param,
 	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
 	{
 		Commands->Send_Custom_Event(obj, StealthControl, 2222, 1, 0);
+		if (!sizeID)
+		{
+			Vector3 position = Commands->Get_Bone_Position(obj, "ROOTTRANSFORM");
+			GameObject *object = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+			Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
+			Commands->Attach_To_Object_Bone(object, obj, "ROOTTRANSFORM");
+			sizeID = Commands->Get_ID(object);
+		}
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
 	{
 		Commands->Send_Custom_Event(obj, StealthControl, 2222, 0, 0);
+		if (sizeID)
+		{
+			Commands->Destroy_Object(Commands->Find_Object(sizeID));
+			sizeID = 0;
+		}
 	}
 }
 
@@ -2627,11 +2781,17 @@ void JFW_Stealth_Generator_Vehicle::Destroyed(GameObject *obj)
 {
 	GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 	Commands->Send_Custom_Event(obj, StealthControl, 3333, 0, 0);
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
 }
 
 
 void JFW_Stealth_Generator_Vehicle_Deploy::Created(GameObject *obj)
 {
+	sizeID = 0;
 	deploy = false;
 	GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 	if (!Commands->Get_Player_Type(obj))
@@ -2647,8 +2807,9 @@ void JFW_Stealth_Generator_Vehicle_Deploy::Created(GameObject *obj)
 
 void JFW_Stealth_Generator_Vehicle_Deploy::Custom(GameObject *obj, int type, int param, GameObject *sender)
 {
-	if (type == CUSTOM_EVENT_VEHICLE_EXITED && deploy)
+	if (type == CUSTOM_EVENT_VEHICLE_EXITED && deploy && obj->As_VehicleGameObj()->Get_Occupant_Count() == 0)
 	{
+		Update_Network_Object(obj);
 		Commands->Set_Player_Type(obj,Commands->Get_Player_Type(sender));
 	}
 }
@@ -2664,6 +2825,14 @@ void JFW_Stealth_Generator_Vehicle_Deploy::Timer_Expired(GameObject *obj,int num
 			deploy = true;
 			obj->As_VehicleGameObj()->Set_Lock_Team(obj->As_VehicleGameObj()->Get_Player_Type());
 			Commands->Send_Custom_Event(obj, StealthControl, 2222, 1, 0);
+			if (!sizeID)
+			{
+				Vector3 position = Commands->Get_Bone_Position(obj, "ROOTTRANSFORM");
+				GameObject *object = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+				Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
+				Commands->Attach_To_Object_Bone(object, obj, "ROOTTRANSFORM");
+				sizeID = Commands->Get_ID(object);
+			}
 		}
 	}
 	else
@@ -2671,8 +2840,13 @@ void JFW_Stealth_Generator_Vehicle_Deploy::Timer_Expired(GameObject *obj,int num
 		if (deploy)
 		{
 			deploy = false;
-			obj->As_VehicleGameObj()->Set_Lock_Team(-1);
+			obj->As_VehicleGameObj()->Set_Lock_Team(2);
 			Commands->Send_Custom_Event(obj, StealthControl, 2222, 0, 0);
+			if (sizeID)
+			{
+				Commands->Destroy_Object(Commands->Find_Object(sizeID));
+				sizeID = 0;
+			}
 		}
 	}
 }
@@ -2681,6 +2855,11 @@ void JFW_Stealth_Generator_Vehicle_Deploy::Destroyed(GameObject *obj)
 {
 	GameObject *StealthControl = Find_Object_By_Preset(2, Get_Parameter("Stealth_Controller"));
 	Commands->Send_Custom_Event(obj, StealthControl, 3333, 0, 0);
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
 }
 
 void JFW_Low_Power_Message::Created(GameObject *obj)
@@ -2885,11 +3064,11 @@ void JFW_Spy_Vehicle_Ignore::Custom(GameObject *obj,int type,int param,GameObjec
 	}
 	if ((spycount) && (!nonspycount))
 	{
-		Set_Vehicle_Is_Visible(obj,false);
+		Commands->Set_Is_Visible(obj,false);
 	}
 	else
 	{
-		Set_Vehicle_Is_Visible(obj,true);
+		Commands->Set_Is_Visible(obj,true);
 	}
 }
 
@@ -2925,11 +3104,11 @@ void JFW_Spy_Vehicle_Ignore_New::Custom(GameObject *obj,int type,int param,GameO
 	}
 	if ((spycount) && (!nonspycount))
 	{
-		Set_Vehicle_Is_Visible(obj,false);
+		Commands->Set_Is_Visible(obj,false);
 	}
 	else
 	{
-		Set_Vehicle_Is_Visible(obj,true);
+		Commands->Set_Is_Visible(obj,true);
 	}
 }
 
@@ -3090,10 +3269,9 @@ void JFW_Reaper_Web::Damaged(GameObject *obj,GameObject *damager,float amount)
 {
 	ScriptableGameObj* damager_obj = Get_Vehicle_Return(damager);
 	if (!damager_obj) return;
-	const char* damager_weapon = Get_Current_Weapon(damager_obj);
-	if (!damager_weapon) return;
+	unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
 
-	if (!_stricmp(damager_weapon,Get_Parameter("Weapon")) && amount == 0)
+	if (warhead == Get_Damage_Warhead())
 	{
 		if (WebID)
 		{
@@ -3103,6 +3281,8 @@ void JFW_Reaper_Web::Damaged(GameObject *obj,GameObject *damager,float amount)
 		Vector3 pos;
 		pos = Commands->Get_Position(obj);
 		Commands->Set_Animation(obj,Get_Parameter("HumanAnimation"),false,0,0.0f,-1.0f,false);
+		SoldierGameObj *o = obj->As_SoldierGameObj();
+		o->Set_Freeze(true);
 		float Facing = Commands->Get_Facing(obj);
 		GameObject *web = Commands->Create_Object("Invisible_Object",pos);
 		Commands->Set_Model(web,Get_Parameter("WebModel"));
@@ -3128,8 +3308,52 @@ void JFW_Reaper_Web::Timer_Expired(GameObject *obj,int number)
 {
 	if (WebID)
 	{
+		SoldierGameObj *o = obj->As_SoldierGameObj();
+		o->Set_Freeze(false);
 		Commands->Destroy_Object(Commands->Find_Object(WebID));
 		WebID = 0;
+	}
+}
+
+void JFW_Toxic_Grenade::Created(GameObject *obj)
+{
+	active = false;
+}
+
+void JFW_Toxic_Grenade::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	if (amount < 0)
+	{
+		active = false;
+		return;
+	}
+	ScriptableGameObj* damager_obj = Get_Vehicle_Return(damager);
+	if (!damager_obj) return;
+	const char* damager_weapon = Get_Current_Weapon(damager_obj);
+	if (!damager_weapon) return;
+
+	if (!_stricmp(damager_weapon,Get_Parameter("Weapon")))
+	{
+		active = true;
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+	}
+}
+
+void JFW_Toxic_Grenade::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_REFILL)
+	{
+		active = false;
+	}
+}
+
+
+void JFW_Toxic_Grenade::Timer_Expired(GameObject *obj,int number)
+{
+	if (active)
+	{
+		Commands->Apply_Damage(obj,Get_Float_Parameter("Damage"),Get_Parameter("Warhead"),0);
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
 	}
 }
 
@@ -3144,17 +3368,26 @@ void JFW_Hijacker_Vehicle::Damaged(GameObject *obj,GameObject *damager,float amo
 	{
 		if (!_stricmp(Get_Current_Weapon(damager),Get_Parameter("Weapon")) && (!Get_Vehicle(damager)))
 		{
-			Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
-			Force_Occupants_Exit(obj);
-			Commands->Start_Timer(obj,this,0.5,1);
-			HijackerID = Commands->Get_ID(damager);
+			if (!damager->As_DamageableGameObj()->Is_Teammate(obj->As_DamageableGameObj()))
+			{
+				if (Get_Vehicle_Occupant_Count(obj) == 1 && !obj->As_VehicleGameObj()->Is_Immovable())
+				{
+					Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
+					Force_Occupants_Exit(obj);
+					Commands->Start_Timer(obj,this,0.5,1);
+					HijackerID = Commands->Get_ID(damager);
+				}
+			}
 		}
 	}
 }
 
 void JFW_Hijacker_Vehicle::Timer_Expired(GameObject *obj,int number)
 {
-	Soldier_Transition_Vehicle(Commands->Find_Object(HijackerID));
+	if (!Get_Vehicle_Occupant_Count(obj))
+	{
+		Soldier_Transition_Vehicle(Commands->Find_Object(HijackerID));
+	}
 }
 
 void JFW_Hijacker_Vehicle::Killed(GameObject *obj,GameObject *killer)
@@ -3175,13 +3408,24 @@ void JFW_Hijacker_Vehicle_2::Damaged(GameObject *obj,GameObject *damager,float a
 {
 	if (damager && !HijackerID && !jacking)
 	{
-		if (!_stricmp(Get_Current_Weapon(damager),Get_Parameter("Weapon")) && (!Get_Vehicle(damager)))
+		unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+		if (warhead == Get_Damage_Warhead() && (!Get_Vehicle(damager)))
 		{
-			Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
-			Force_Occupants_Exit(obj);
-			Commands->Start_Timer(obj,this,0.5,1);
-			HijackerID = Commands->Get_ID(damager);
-			jacking = true;
+			if (!damager->As_DamageableGameObj()->Is_Teammate(obj->As_DamageableGameObj()))
+			{
+				if (Get_Vehicle_Occupant_Count(obj) == 1)
+				{
+					if (Commands->Get_Distance(Commands->Get_Position(obj),Commands->Get_Position(damager)) <= Get_Float_Parameter("Distance"))
+					{
+						Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
+						Force_Occupants_Exit(obj);
+						Commands->Start_Timer(obj,this,0.5,1);
+						HijackerID = Commands->Get_ID(damager);
+						damager->As_SoldierGameObj()->Set_Can_Drive_Vehicles(true);
+						jacking = true;
+					}
+				}
+			}
 		}
 	}
 }
@@ -3201,18 +3445,29 @@ void JFW_Hijacker_Vehicle_2::Custom(GameObject *obj,int type,int param,GameObjec
 	}
 	if ((type == CUSTOM_EVENT_VEHICLE_EXITED) && (sender == Commands->Find_Object(HijackerID)))
 	{
+		if (!Get_Int_Parameter("Single_Hijack"))
+		{
+			sender->As_SoldierGameObj()->Set_Can_Drive_Vehicles(false);
+		}
 		HijackerID = 0;
 	}
 }
 
 void JFW_Hijacker_Vehicle_2::Timer_Expired(GameObject *obj,int number)
 {
-	jacking = false;
-	Soldier_Transition_Vehicle(Commands->Find_Object(HijackerID));
+	if (!Get_Vehicle_Occupant_Count(obj))
+	{
+		jacking = false;
+		Force_Vehicle_Entry(Commands->Find_Object(HijackerID),obj);
+	}
 }
 
 void JFW_Hijacker_Vehicle_2::Killed(GameObject *obj,GameObject *killer)
 {
+	if (Commands->Find_Object(HijackerID) && !Get_Int_Parameter("Single_Hijack"))
+	{
+		Commands->Find_Object(HijackerID)->As_SoldierGameObj()->Set_Can_Drive_Vehicles(false);
+	}
 }
 
 void JFW_Building_Preset_Disable::Created(GameObject *obj)
@@ -3227,9 +3482,9 @@ void JFW_Building_Preset_Disable::Custom(GameObject *obj,int type,int param,Game
 		{
 			if (obj->As_BuildingGameObj())
 			{
-				BuildingType type = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
+				BuildingType typex = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
 				int team = obj->As_BuildingGameObj()->Get_Player_Type();
-				Disable_All_Presets_By_Factory_Tech(type,team,true);
+				Disable_All_Presets_By_Factory_Tech(typex,team,true);
 			}
 		}
 		count++;
@@ -3241,9 +3496,9 @@ void JFW_Building_Preset_Disable::Custom(GameObject *obj,int type,int param,Game
 		{
 			if (obj->As_BuildingGameObj())
 			{
-				BuildingType type = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
+				BuildingType typex = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
 				int team = obj->As_BuildingGameObj()->Get_Player_Type();
-				Disable_All_Presets_By_Factory_Tech(type,team,false);
+				Disable_All_Presets_By_Factory_Tech(typex,team,false);
 			}
 		}
 	}
@@ -3277,6 +3532,7 @@ ScriptRegistrant<JFW_Chrono_Controler_Zone> JFW_Chrono_Controler_Zone_Registrant
 ScriptRegistrant<JFW_Assault_Powerplant_Controller> JFW_Assault_Powerplant_Controller_Registrant("JFW_Assault_Powerplant_Controller","Time:float,TimerNum:int,Player_Type:int,Power_Off:int,Power_On:int,Building1:int,Building2:int,Building3:int,Building4:int,Building5:int,Building6:int,Building7:int,Building8:int,Building9:int,Building10:int,Building11:int,Building12:int,Building13:int,Building14:int,Building15:int");
 ScriptRegistrant<JFW_Resource_Collector> JFW_Resource_Collector_Registrant("JFW_Resource_Collector","Collected_Mesasge:int,Refinery_Message:int,Cash_Limit:int,Cash_Type:int,Entire_Team:int");
 ScriptRegistrant<JFW_Resource_Collector_2> JFW_Resource_Collector_2_Registrant("JFW_Resource_Collector_2","Collected_Mesasge:int,Refinery_Message:int,Cash_Limit:int,Cash_Type:int,Entire_Team:int");
+ScriptRegistrant<JFW_Resource_Collector_3> JFW_Resource_Collector_3_Registrant("JFW_Resource_Collector_3","Collected_Mesasge:int,Refinery_Message:int,Cash_Limit:int,Cash_Type:int,Entire_Team:int");
 ScriptRegistrant<JFW_Resource_Refinery> JFW_Resource_Refinery_Registrant("JFW_Resource_Refinery","Refinery_Message:int");
 ScriptRegistrant<JFW_Resource_Field> JFW_Resource_Field_Registrant("JFW_Resource_Field","Cash:int,Time:float,TimerNum:int,Collected_Preset:string,Collected_Preset_Distance:float,Collected_Message:int,Nod_Preset:string,GDI_Preset:string,StartHarvest:int,StopHarvest:int");
 ScriptRegistrant<JFW_Team_DM_Controller> JFW_Team_DM_Controller_Registrant("JFW_Team_DM_Controller","Deaths_To_Loose:int,Death_Message:int,Building_To_Destroy1:int,Building_To_Destroy2:int,Building_To_Destroy3:int,Building_To_Destroy4:int,Building_To_Destroy5:int");
@@ -3292,9 +3548,9 @@ ScriptRegistrant<JFW_Radar_Jammer> JFW_Radar_Jammer_Registrant("JFW_Radar_Jammer
 ScriptRegistrant<JFW_Radar_Jammer_Sound> JFW_Radar_Jammer_Sound_Registrant("JFW_Radar_Jammer_Sound","Time:float,TimerNum:int,DisableCustom:int,Preset:string,CenterID:int,Range:float,Sound:string");
 ScriptRegistrant<JFW_Sonar_Pulse> JFW_Sonar_Pulse_Registrant("JFW_Sonar_Pulse","Spy_Script:string,Sub_Preset_1:string,Sub_Preset_2:string,Indicator:string,ZAdjust:float,WaterIndicator:string,WaterZ:float,Sound:string,Time:float,ResetTime:float");
 ScriptRegistrant<JFW_Global_Stealth_Controller> JFW_Global_Stealth_Controller_Registrant("JFW_Global_Stealth_Controller","Update_Delay=2.0:float,Timer_Number=687:int");
-ScriptRegistrant<JFW_Stealth_Generator_Building> JFW_Stealth_Generator_Building_Registrant("JFW_Stealth_Generator_Building","Timer_Number=876:int,Stealth_Range=50:int,Stealth_Controller:string,Team=1:int");
-ScriptRegistrant<JFW_Stealth_Generator_Vehicle> JFW_Stealth_Generator_Vehicle_Registrant("JFW_Stealth_Generator_Vehicle","Stealth_Range=50:int,Stealth_Controller:string");
-ScriptRegistrant<JFW_Stealth_Generator_Vehicle_Deploy> JFW_Stealth_Generator_Vehicle_Deploy_Registrant("JFW_Stealth_Generator_Vehicle_Deploy","Stealth_Range=50:int,Stealth_Controller:string");
+ScriptRegistrant<JFW_Stealth_Generator_Building> JFW_Stealth_Generator_Building_Registrant("JFW_Stealth_Generator_Building","Timer_Number=876:int,Stealth_Range=50:int,Stealth_Controller:string,Team=1:int,SizePreset:string");
+ScriptRegistrant<JFW_Stealth_Generator_Vehicle> JFW_Stealth_Generator_Vehicle_Registrant("JFW_Stealth_Generator_Vehicle","Stealth_Range=50:int,Stealth_Controller:string,SizePreset:string");
+ScriptRegistrant<JFW_Stealth_Generator_Vehicle_Deploy> JFW_Stealth_Generator_Vehicle_Deploy_Registrant("JFW_Stealth_Generator_Vehicle_Deploy","Stealth_Range=50:int,Stealth_Controller:string,SizePreset:string");
 ScriptRegistrant<JFW_Stealth_Generator_Ignored> JFW_Stealth_Generator_Ignored_Registrant("JFW_Stealth_Generator_Ignored","");
 ScriptRegistrant<JFW_Low_Power_Message> JFW_Low_Power_Message_Registrant("JFW_Low_Power_Message","Message:string");
 ScriptRegistrant<JFW_Low_Power_Sound> JFW_Low_Power_Sound_Registrant("JFW_Low_Power_Sound","DownSound:string,UpSound:string");
@@ -3312,7 +3568,8 @@ ScriptRegistrant<JFW_Spy_Vehicle_Ignore_New> JFW_Spy_Vehicle_Ignore_New_Registra
 ScriptRegistrant<JFW_Message_Send_Zone_Player_Vehicle> JFW_Message_Send_Zone_Player_Vehicle_Registrant("JFW_Message_Send_Zone_Player_Vehicle","Player_Type:int,Message:string,Red:int,Blue:int,Green:int,Sound:string,Delete:int");
 ScriptRegistrant<JFW_Water_Level> JFW_Water_Level_Registrant("JFW_Water_Level","Message:int");
 ScriptRegistrant<JFW_Submarine> JFW_Submarine_Registrant("JFW_Submarine","Message:int,Submerge_Armor:string,Surface_Armor:string,Block_Weapon:int,Ping_Sound:string,Surface_Sound:string,Ping_Time:float,Surface_Z_Offset:float,Dive_Z_Offset:float,Powerup:string,Weapon:string");
-ScriptRegistrant<JFW_Reaper_Web> JFW_Reaper_Web_Registrant("JFW_Reaper_Web","Weapon:string,Time:float,WebModel:string,HumanAnimation:string");
+ScriptRegistrant<JFW_Reaper_Web> JFW_Reaper_Web_Registrant("JFW_Reaper_Web","Warhead:string,Time:float,WebModel:string,HumanAnimation:string");
+ScriptRegistrant<JFW_Toxic_Grenade> JFW_Toxic_Grenade_Registrant("JFW_Toxic_Grenade","Weapon:string,Time:float,Warhead:string,Damage:float");
 ScriptRegistrant<JFW_Hijacker_Vehicle> JFW_Hijacker_Vehicle_Registrant("JFW_Hijacker_Vehicle","Weapon:string,Warhead:string,Damage:float,Sound:string");
-ScriptRegistrant<JFW_Hijacker_Vehicle_2> JFW_Hijacker_Vehicle_2_Registrant("JFW_Hijacker_Vehicle_2","Weapon:string,Sound:string,Disable_Transitions:int,Single_Hijack:int");
+ScriptRegistrant<JFW_Hijacker_Vehicle_2> JFW_Hijacker_Vehicle_2_Registrant("JFW_Hijacker_Vehicle_2","Warhead:string,Sound:string,Disable_Transitions:int,Single_Hijack:int,Distance:float,Weapon:string");
 ScriptRegistrant<JFW_Building_Preset_Disable> JFW_Building_Preset_Disable_Registrant("JFW_Building_Preset_Disable","Disable_Custom:int,Enable_Custom:int");

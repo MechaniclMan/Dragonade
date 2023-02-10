@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -42,18 +42,27 @@ unsigned int SCRIPTS_API Get_Zone_Type(GameObject *obj); //Get the type of a scr
 OBBoxClass SCRIPTS_API *Get_Zone_Box(GameObject *obj); //Get the box (size/position) of a ScriptZoneGameObj
 void SCRIPTS_API Set_Zone_Box(GameObject *obj,OBBoxClass &box); //Set the box (size/position) of a ScriptZoneGameObj
 GameObject SCRIPTS_API *Create_Zone(const char *preset,OBBoxClass &box); //Create a script zone and set its box
-bool SCRIPTS_API PointInZone(GameObject *obj,const Vector3 &v); //Is a point in a zone
 bool SCRIPTS_API Is_Available_For_Purchase(GameObject *factory); //Is it possible to purchase a vehicle from this factory
 GameObject SCRIPTS_API *Get_Vehicle_Gunner_Pos(GameObject *obj); //Get the vehicle gunner, returns zero if there is no gunner
-
-/*!
-* Set whether a VehicleGameObj is visible to AIs utilising the Enemy_Seen logic. For soldiers use
-* the ScriptCommands::Set_Is_Visible function instead.
-*/
-void SCRIPTS_API Set_Vehicle_Is_Visible(GameObject *obj,bool visible);
 void SCRIPTS_API Set_Vehicle_Gunner(GameObject *obj,int seat); //set gunner for this vehicle
 bool SCRIPTS_API Is_Spy(GameObject *obj); //Is this soldier object a spy
 SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team); //Get the player count in a zone
 SCRIPTS_API int Get_Object_Count_In_Zone(GameObject *obj,int Team); //Get the object count in a zone
 SCRIPTS_API bool Is_Stealth_Enabled(GameObject *obj); //Is stealth enabled
+
+/*!
+* \brief Create an object and attach it to a bone
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Creates a new instance of the named preset and attaches it to a specific bone on the specified
+* object, or the origin of the object if no bone is specified.
+*
+* \param[in] host
+*   The host object to which the new object should be attached
+* \param[in] preset
+*   The name of the preset to create an instance of
+* \param[in] bone
+*   (Optional) The name of the bone on the host object to which the object should be attached
+*/
+SCRIPTS_API GameObject* Create_Object_Attach_To_Object(GameObject* host, const char* preset, const char* bone = NULL);
 #endif

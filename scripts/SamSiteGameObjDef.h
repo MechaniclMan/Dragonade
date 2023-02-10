@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,10 +12,10 @@
 #ifndef TT_INCLUDE_SAMSITEGAMEOBJDEF_H
 #define TT_INCLUDE_SAMSITEGAMEOBJDEF_H
 #include "SmartGameObjDef.h"
-class SamSiteGameObjDef : public SmartGameObjDef {
+class SAMSiteGameObjDef : public SmartGameObjDef {
 public:
-	SamSiteGameObjDef();
-	virtual ~SamSiteGameObjDef() {}
+	SAMSiteGameObjDef();
+	virtual ~SAMSiteGameObjDef() {}
 	const PersistFactoryClass &Get_Factory() const;
 	bool Save(ChunkSaveClass &csave);
 	bool Load(ChunkLoadClass &cload);
@@ -25,7 +25,7 @@ public:
 	virtual void                        Dump (FileClass &file);
 	virtual void                        DumpPhys (FileClass &file);
 #endif
-	DECLARE_EDITABLE(SamSiteGameObjDef,SmartGameObjDef);
+	DECLARE_EDITABLE(SAMSiteGameObjDef,SmartGameObjDef);
 	friend class PresetDump;
 };
 

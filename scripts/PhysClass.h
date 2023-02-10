@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -73,7 +73,7 @@ public:
 	void								Get_Position(Vector3 * set_pos) const	{ Get_Transform().Get_Translation(set_pos); }
 	void								Set_Position(const Vector3 & pos)		{ Matrix3D tm = Get_Transform(); tm.Set_Translation(pos); Set_Transform(tm); }
 	float								Get_Facing(void) const						{ return Get_Transform().Get_Z_Rotation(); }
-	SCRIPTS_API void					Set_Facing(float new_facing);
+	void								Set_Facing(float new_facing);
 	virtual bool					Cast_Ray(PhysRayCollisionTestClass & raytest)		{ return false; }
 	virtual bool					Cast_AABox(PhysAABoxCollisionTestClass & boxtest)	{ return false; }
 	virtual bool					Cast_OBBox(PhysOBBoxCollisionTestClass & boxtest)	{ return false; }
@@ -87,7 +87,7 @@ public:
 	virtual bool					Internal_Unlink_Rider(PhysClass * rider)							{ return false; }
 	void								Update_Cull_Box(void);
 	virtual void					Set_Model(RenderObjClass * model);
-	SCRIPTS_API void				Set_Model_By_Name(const char * model_type_name);
+	void								Set_Model_By_Name(const char * model_type_name);
 	RenderObjClass *				Get_Model(void);
 	RenderObjClass *	Peek_Model(void) { return Model; }
 	void								Set_Name(const char * name);
@@ -137,6 +137,8 @@ public:
 	bool								Is_In_The_Sun(void)											{ return Get_Flag(IS_IN_THE_SUN); }
 	void								Enable_Is_State_Dirty(bool onoff)						{ Set_Flag(IS_STATE_DIRTY,onoff); }
 	bool								Is_State_Dirty(void)											{ return Get_Flag(IS_STATE_DIRTY); }
+	void								Hide(bool onoff)						{ Set_Flag(HIDDEN,onoff); }
+	bool								Is_Hidden(void)											{ return Get_Flag(HIDDEN); }
 	void								Enable_Objects_Simulation(bool onoff)					{ Set_Flag(SIMULATION_DISABLED,!onoff); }
 	bool								Is_Objects_Simulation_Enabled(void) const				{ return !Get_Flag(SIMULATION_DISABLED); }
 	bool								Is_Object_Simulating(void)									{ return Is_Objects_Simulation_Enabled() && !Is_Simulation_Disabled(); }
@@ -173,13 +175,12 @@ public:
 	virtual bool						Is_Rendering_Disabled(void);
 	unsigned Get_Last_Visible_Frame() const { return LastVisibleFrame; }
 	void Set_Last_Visible_Frame(unsigned frame) { LastVisibleFrame=frame; }
+protected:
 	bool									Get_Flag(unsigned int flag) const 					{ return ((Flags & flag) == flag); }
 	void									Set_Flag(unsigned int flag,bool onoff)			 	{ (onoff ? Flags |= flag : Flags &= ~flag); }
 	void									Push_Effects(RenderInfoClass & rinfo);
 	void									Pop_Effects(RenderInfoClass & rinfo);
-	SHADERS_API virtual void						Update_Sun_Status(void);
-	void						Real_Update_Sun_Status(void);
-	protected:
+	virtual void						Update_Sun_Status(void);
 	enum {
 		COLLISION_MASK =			0x0000001F,		// bits for the collision group
 		IMMOVABLE =					0x00000100,		// this object is immovable.
@@ -197,12 +198,14 @@ public:
 		STATIC_LIGHTING_DIRTY =		0x00100000,		// This object's static lighting cache is dirty
 		FRICTION_DISABLED =			0x00200000,		// Friction is disabled for this object (vehicles disable body-friction when their wheels are in contact)
 		SIMULATION_DISABLED =		0x00400000,		// Turn on/off simulation for this object
+		HIDDEN =                    0x00800000,     // Turn off rendering for this object
 		VISIBILITY_MODE_SHIFT =		24,				// shift count for the 'visibility mode'
 		VISIBILITY_MODE_MASK =		0x03000000,		// mask for the 'visibility mode'
 		IGNORE_SHIFT =				28,				// shift count for the 'ignore-me' counter
 		IGNORE_MASK =				0xF0000000,		// mask for the 'ignore-me' counter
 		DEFAULT_FLAGS =				0,
 	};
+protected:
 	unsigned int					Flags; // 0038  0050
 	RenderObjClass *				Model; // 003C  0054
 	StringClass						Name; // 0040  0058

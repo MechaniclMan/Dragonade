@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -38,7 +38,7 @@ public:
 	}
 	TT_INLINE explicit Vector3(const float vector[3])
 	{
-		assert(vector != NULL);
+		TT_ASSERT(vector != NULL);
 		X = vector[0];
 		Y = vector[1];
 		Z = vector[2];
@@ -185,7 +185,7 @@ public:
 	}
 	TT_INLINE static void Cross_Product(const Vector3 &a,const Vector3 &b, Vector3* __restrict set_result)
 	{
-		assert(!(set_result == &a || set_result == &b));
+		TT_ASSERT(!(set_result == &a || set_result == &b));
 		set_result->X = (a.Y * b.Z - a.Z * b.Y);
 		set_result->Y = (a.Z * b.X - a.X * b.Z);
 		set_result->Z = (a.X * b.Y - a.Y * b.X);

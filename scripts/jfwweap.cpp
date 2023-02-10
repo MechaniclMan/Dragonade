@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1394,12 +1394,14 @@ void JFW_Vehicle_Weapon_Switcher::Timer_Expired(GameObject *obj,int number)
 	obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 	if (newweap)
 	{
+		SAFE_DELETE_ARRAY(old_weapon);
 		old_weapon = newstr(Get_Current_Weapon(obj));
 		Commands->Select_Weapon(obj,new_weapon);
 	}
 	else
 	{
 		Commands->Select_Weapon(obj,old_weapon);
+		SAFE_DELETE_ARRAY(old_weapon);
 		old_weapon = 0;
 	}
 }
@@ -1436,6 +1438,10 @@ void JFW_Char_Weapon_Switcher::Created(GameObject *obj)
 
 void JFW_Char_Weapon_Switcher::KeyHook()
 {
+	if (Get_Vehicle(Owner()))
+	{
+		return;
+	}
 	if (time(NULL) - LastSwitch < Get_Float_Parameter("SwitchTime"))
 	{
 		StringClass str;

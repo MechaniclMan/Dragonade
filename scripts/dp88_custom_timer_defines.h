@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -45,12 +45,14 @@
 #define CUSTOM_UNITSOUNDS_HEALDECREMENT           (DP88_CUSTOM|MISC|0x02)             //!< Used by dp88_unitSounds to track the amount of healing a unit has recieved over a time period
 #define CUSTOM_ROCKETEER_VEHICLEKILLED            (DP88_CUSTOM|MISC|0x03)             //!< Used by dp88_AR_Rocketeer to notify itself when the flight vehicle dies (via JFW_Death_Send_Custom)
 
-#define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x01)              //!< Timer to do a weather update
+#define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x01)              //!< Used by dp88_randomWeather to do a weather update
 #define TIMER_SPAWNVEHICLEPART                    (DP88_TIMER|MISC|0x02)              //!< Used by dp88_spawnVehiclePart
 #define TIMER_MIRAGE_CHECKMOVEMENT                (DP88_TIMER|MISC|0x03)              //!< Used by dp88_AR_MirageTank to test for movement to toggle mirage mode
 #define TIMER_TURRETSOUND                         (DP88_TIMER|MISC|0x04)              //!< Used by dp88_turretSound to test for turret rotation
 #define TIMER_ROCKETEER_ENTERVEHICLE              (DP88_TIMER|MISC|0x05)              //!< Used by dp88_AR_Rocketeer to enter the flight vehicle
 #define TIMER_PARADROP_CHECKFALLRATE              (DP88_TIMER|MISC|0x06)              //!< Used by dp88_AR_Paradrop to check if the falling speed drops (ie: landed)
+#define TIMER_AMMO_ANIMATION                      (DP88_TIMER|MISC|0x07)              //!< Used by dp88_Ammo_Animation to check for changes in ammo count
+#define TIMER_CHECK_BASE_POWER_STATE              (DP88_TIMER|MISC|0x08)              //!< Used by any scripts which need to check if a base is still powered
 
 // -------------------------------------------------------------------------------------------------
 // Veterancy group
@@ -61,6 +63,7 @@
 #define CUSTOM_VETERANCY_GRANT_POINTS_DELAY       (DP88_CUSTOM|VETERANCY|0x03)        //!< Sent by dp88_veterancyGrantPoints to itself to delay the points grant until after game init
 
 #define TIMER_VETERANCY_EXPIRE_PROMOTION_CHEVRON  (DP88_TIMER|VETERANCY|0x01)         //!< Timer to clear promotion chevron
+#define TIMER_VETERANCY_CHEVRON_VISIBILITY_THINK  (DP88_TIMER|VETERANCY|0x02)         //!< Timer to update the visibility of promotion chevrons when stealthed or in a vehicle
 
 // -------------------------------------------------------------------------------------------------
 // Building scripts group
@@ -131,6 +134,8 @@
 #define CUSTOM_AI_DISABLEAI                       (DP88_CUSTOM|AI|0x03)               //!< Custom message that can be sent to a turret AI to disable it
 #define CUSTOM_AI_ENABLEAI                        (DP88_CUSTOM|AI|0x04)               //!< Custom message that can be sent to a turret AI to enable it
 
+#define TIMER_AI_THINK                            (DP88_TIMER|AI|0x01)                //!< Fires every second to process AI actions such as checking target status
+
 // -------------------------------------------------------------------------------------------------
 // AR IFV group
 // -------------------------------------------------------------------------------------------------
@@ -156,46 +161,20 @@
 /****************************
 Unsorted customs and timers
 ****************************/
-//#define CUSTOM_PILOTED_VEHICLE_ID					10022554
-/*#define CUSTOM_TD_TARGET_ID							10022560
-#define CUSTOM_TD_TARGET_DIED						10022561
-#define CUSTOM_TD_TARGET_REPAIRED					10022562
-#define CUSTOM_TD_TD_DIED							10022563
-#define CUSTOM_TD_WAITINGFORPURCHASE				10022564
-#define CUSTOM_TD_PURCHASEWAIT_OK					10022565
-#define CUSTOM_TD_REPORTCREATION					10022566
-#define CUSTOM_TD_CONSOLEID							10022567
-#define CUSTOM_TD_DRIVEREXIT						10022568
-#define CUSTOM_KILLSELF								10022569
-#define CUSTOM_RESET_SHIELD							10022570*/
 
 // Customs for Prism Tower script
 #define CUSTOM_PRISMTOWER_REQUEST_CHARGING			1144060001
 #define CUSTOM_PRISMTOWER_STOP_CHARGING				1144060002
 
-// Customs for custom turret AI scripts
-
-
-
-
-
-#define TIMER_CHECK_BASE_POWER_STATE			10055220		// Used by scripts which need to check if a base is still powered
 
 #define TIMER_CLEG_PHASEDEATH					10055222
 #define TIMER_CLEG_CHECKDROPOBJ					10055223
 #define TIMER_CLEG_CHECKRELEASETARGET			10055224
-/*#define TIMER_TD_DO_DAMAGE						10055229
-#define TIMER_TD_PURCHASEWAIT					10055230
-#define	TIMER_TD_PURCHASETIMEEXPIRED			10055231
-#define TIMER_TD_TRANSITIONS_ENABLE				10055232
-#define TIMER_TD_DIED_DRIVERFREE				10055233*/
 #define TIMER_LINKHEALTH						10055235
 #define TIMER_LINKVETPOINTS						10055236
 #define TIMER_HEALTHARMOURREGENTICK				10055239
 
-
 // Timers for prism towers and tesla coils
-#define TIMER_CUSTOMAI_THINK                  2244040001    //!< Timer that fires every 1 second in my custom AI scripts to update target state etc
 #define TIMER_TESLACOIL_DECREMENT_CHARGE      2244040002
 
 // Timers for dp88_chronoTank

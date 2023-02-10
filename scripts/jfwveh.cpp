@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -105,6 +105,10 @@ void JFW_Turret_Spawn_3::Created(GameObject *obj)
   turID = Commands->Get_ID(object);
   Commands->Send_Custom_Event(obj,Commands->Find_Object(turID),Get_Int_Parameter("Driver_Exited_Custom"),0,0);
   Attach_Script_Once_V(object,"dp88_linkHealth","%d",Commands->Get_ID(obj));
+  if (object->As_VehicleGameObj())
+  {
+	  object->As_VehicleGameObj()->Set_Is_Scripts_Visible(false);
+  }
   m_bHasDriver = false;
 }
 
@@ -178,7 +182,7 @@ void JFW_Vechicle_Animation::Timer_Expired(GameObject *obj,int number)
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 		}
 	}
 	else 
@@ -204,7 +208,7 @@ void JFW_Vechicle_Animation::Animation_Complete ( GameObject *obj, const char *a
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -244,7 +248,7 @@ void JFW_Visible_Person_In_Vechicle::Custom(GameObject *obj,int type,int param,G
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
 	{
@@ -292,7 +296,7 @@ void JFW_Visible_People_In_Vechicle::Custom(GameObject *obj,int type,int param,G
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(object,Get_Parameter("Animation1"),false,subobject,firstframe,Get_Float_Parameter("LastFrame1"),Get_Int_Parameter("Blended1"));
+			Commands->Set_Animation(object,Get_Parameter("Animation1"),false,subobject,firstframe,Get_Float_Parameter("LastFrame1"),Get_Bool_Parameter("Blended1"));
 		}
 		else
 		{
@@ -313,7 +317,7 @@ void JFW_Visible_People_In_Vechicle::Custom(GameObject *obj,int type,int param,G
 				{
 					firstframe = Get_Animation_Frame(obj);
 				}
-				Commands->Set_Animation(object,Get_Parameter("Animation2"),false,subobject,firstframe,Get_Float_Parameter("LastFrame2"),Get_Int_Parameter("Blended2"));
+				Commands->Set_Animation(object,Get_Parameter("Animation2"),false,subobject,firstframe,Get_Float_Parameter("LastFrame2"),Get_Bool_Parameter("Blended2"));
 			}
 		}
 	}
@@ -483,7 +487,7 @@ void JFW_Visible_Person_Settings::Custom(GameObject *obj,int type,int param,Game
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -514,7 +518,7 @@ void JFW_Vechicle_Animation_2::Timer_Expired(GameObject *obj,int number)
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("UpAnimation"),false,subobject,firstframe,Get_Float_Parameter("UpLastFrame"),Get_Int_Parameter("UpBlended"));
+			Commands->Set_Animation(obj,Get_Parameter("UpAnimation"),false,subobject,firstframe,Get_Float_Parameter("UpLastFrame"),Get_Bool_Parameter("UpBlended"));
 		}
 	}
 	else 
@@ -529,7 +533,7 @@ void JFW_Vechicle_Animation_2::Timer_Expired(GameObject *obj,int number)
 		{
 			firstframe = Get_Animation_Frame(obj);
 		}
-		Commands->Set_Animation(obj,Get_Parameter("DownAnimation"),false,subobject,firstframe,Get_Float_Parameter("DownLastFrame"),Get_Int_Parameter("DownBlended"));
+		Commands->Set_Animation(obj,Get_Parameter("DownAnimation"),false,subobject,firstframe,Get_Float_Parameter("DownLastFrame"),Get_Bool_Parameter("DownBlended"));
 		enabled = false;
 	}
 	Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("TimerNum"));
@@ -559,7 +563,7 @@ void JFW_Vechicle_Animation_2::Animation_Complete(GameObject *obj,const char *an
 			firstframe = Get_Animation_Frame(obj);
 		}
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -624,7 +628,7 @@ void JFW_Vechicle_Animation_Trigger::Timer_Expired(GameObject *obj,int number)
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 		}
 	}
 	else 
@@ -650,7 +654,7 @@ void JFW_Vechicle_Animation_Trigger::Animation_Complete ( GameObject *obj, const
 			firstframe = Get_Animation_Frame(obj);
 		}
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -685,7 +689,7 @@ void JFW_Vechicle_Animation_Trigger::Custom(GameObject *obj,int type,int param,G
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("UpAnimation"),false,subobject,firstframe,Get_Float_Parameter("UpLastFrame"),Get_Int_Parameter("UpBlended"));
+			Commands->Set_Animation(obj,Get_Parameter("UpAnimation"),false,subobject,firstframe,Get_Float_Parameter("UpLastFrame"),Get_Bool_Parameter("UpBlended"));
 	}
 	if (type == Get_Int_Parameter("DownTrigger"))
 	{
@@ -699,7 +703,7 @@ void JFW_Vechicle_Animation_Trigger::Custom(GameObject *obj,int type,int param,G
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("DownAnimation"),false,subobject,firstframe,Get_Float_Parameter("DownLastFrame"),Get_Int_Parameter("DownBlended"));
+			Commands->Set_Animation(obj,Get_Parameter("DownAnimation"),false,subobject,firstframe,Get_Float_Parameter("DownLastFrame"),Get_Bool_Parameter("DownBlended"));
 	}
 }
 
@@ -854,7 +858,7 @@ void JFW_Vehicle_Effect_Animation::Custom(GameObject *obj,int type,int param,Gam
 			{
 				firstframe = Get_Animation_Frame(obj);
 			}
-			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+			Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 		}
 	}
 	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -883,7 +887,7 @@ void JFW_Vehicle_Effect_Animation::Animation_Complete ( GameObject *obj, const c
 			firstframe = Get_Animation_Frame(obj);
 		}
 		obj->As_PhysicalGameObj()->Clear_Animation();
-		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -998,6 +1002,88 @@ void JFW_Aircraft_Refill::Timer_Expired(GameObject *obj, int number)
 	}
 }
 
+void JFW_Aircraft_Refill_Animation::Created(GameObject *obj)
+{
+	active = false;
+	GameObject *anim = Find_Nearest_Preset(Commands->Get_Position(obj),Get_Parameter("AnimPreset"));
+	if (anim->As_PhysicalGameObj())
+	{
+		Commands->Set_Animation_Frame(anim,Get_Parameter("Animation"),0);
+	}
+}
+
+void JFW_Aircraft_Refill_Animation::Entered(GameObject *obj, GameObject *enterer)
+{
+	if (Commands->Get_Player_Type(enterer) == Get_Int_Parameter("TeamSelection"))
+	{
+		if (!active)
+		{
+			GameObject *vobj = 0;
+			if (enterer->As_VehicleGameObj())
+			{
+				vobj = enterer;
+			}
+			if (Get_Vehicle(enterer))
+			{
+				vobj = Get_Vehicle(enterer);
+			}
+			if (vobj)
+			{
+				if (Get_Vehicle_Mode(vobj) == VEHICLE_TYPE_FLYING)
+				{
+					if (Get_Vehicle_Driver(vobj) && vobj->As_VehicleGameObj()->Get_Weapon() && !vobj->As_VehicleGameObj()->Get_Weapon()->Is_Ammo_Maxed() && vobj->As_VehicleGameObj()->Get_Weapon()->Get_Definition()->MaxInventoryRounds != 0)
+					{
+						GameObject *anim = Find_Nearest_Preset(Commands->Get_Position(obj),Get_Parameter("AnimPreset"));
+						if (anim->As_PhysicalGameObj())
+						{
+							Commands->Set_Animation(anim,Get_Parameter("Animation"),true,0,0,-1,false);
+						}
+						Commands->Start_Timer(obj,this,Get_Float_Parameter("Reload_Interval"),Commands->Get_ID(vobj));
+						active = true;
+					}
+				}
+			}
+		}
+	}
+}
+
+void JFW_Aircraft_Refill_Animation::Timer_Expired(GameObject *obj, int number)
+{
+	active = false;
+	Vector3 pos1;
+	Vector3 pos2;
+	float distance;
+	GameObject *object = Commands->Find_Object(number);
+	if (!object)
+	{
+		GameObject *anim = Find_Nearest_Preset(Commands->Get_Position(obj),Get_Parameter("AnimPreset"));
+		if (anim && anim->As_PhysicalGameObj())
+		{
+			anim->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Set_Animation_Frame(anim,Get_Parameter("Animation"),0);
+		}
+		return;
+	}
+	pos1 = Commands->Get_Position(obj);
+	pos2 = Commands->Get_Position(object);
+	distance = Commands->Get_Distance(pos1,pos2);
+	if (distance <= 10.0 && object->As_VehicleGameObj() && Get_Vehicle_Mode(object) == VEHICLE_TYPE_FLYING && Get_Vehicle_Driver(object) && object->As_VehicleGameObj()->Get_Weapon() && !object->As_VehicleGameObj()->Get_Weapon()->Is_Ammo_Maxed() && object->As_VehicleGameObj()->Get_Weapon()->Get_Definition()->MaxInventoryRounds != 0)
+	{
+		Commands->Give_PowerUp(object,Get_Parameter("Reload_Powerup"),false);
+		Commands->Start_Timer(obj, this, Get_Float_Parameter("Reload_Interval"), number);
+		active = true;
+	}
+	else
+	{
+		GameObject *anim = Find_Nearest_Preset(Commands->Get_Position(obj),Get_Parameter("AnimPreset"));
+		if (anim && anim->As_PhysicalGameObj())
+		{
+			anim->As_PhysicalGameObj()->Clear_Animation();
+			Commands->Set_Animation_Frame(anim,Get_Parameter("Animation"),0);
+		}
+	}
+}
+
 void JFW_Vehicle_Reinforcement::Created(GameObject *obj)
 {
 	Commands->Start_Timer(obj, this, Get_Float_Parameter("Time"),1);
@@ -1107,6 +1193,7 @@ ScriptRegistrant<JFW_Vehicle_Effect_Animation> JFW_Vehicle_Effect_Animation_Regi
 ScriptRegistrant<JFW_Vehicle_Regen_2> JFW_Vechicle_Regen_2_Registrant("JFW_Vechicle_Regen_2","Health:float,Time:float");
 ScriptRegistrant<JFW_Vehicle_Regen_3> JFW_Vechicle_Regen_3_Registrant("JFW_Vechicle_Regen_3","Health:float,Time:float,Warhead:string");
 ScriptRegistrant<JFW_Aircraft_Refill> JFW_Aircraft_Refill_Registrant("JFW_Aircraft_Refill","TeamSelection:int,Reload_Interval:float,Reload_Powerup:string");
+ScriptRegistrant<JFW_Aircraft_Refill_Animation> JFW_Aircraft_Refill_Animation_Registrant("JFW_Aircraft_Refill_Animation","TeamSelection:int,Reload_Interval:float,Reload_Powerup:string,AnimPreset:string,Animation:string");
 ScriptRegistrant<JFW_Vehicle_Reinforcement> JFW_Vehicle_Reinforcement_Registrant("JFW_Vehicle_Reinforcement","Vehicle:string,Time:float,FactoryID:int,Waypathid:int,Speed:float");
 ScriptRegistrant<JFW_Empty_Vehicle_Timer> JFW_Empty_Vehicle_Timer_Registrant("JFW_Empty_Vehicle_Timer","Time:float,TimerNum:int");
 ScriptRegistrant<JFW_Vehicle_Visible_Weapon> JFW_Vehicle_Visible_Weapon_Registrant("JFW_Vehicle_Visible_Weapon","Animation:string");

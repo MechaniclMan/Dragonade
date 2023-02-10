@@ -1,5 +1,5 @@
 /*  Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -10,7 +10,6 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 #include "general.h"
-#pragma warning(disable:6031)
 
 #include "scripts.h"
 #include "engine.h"
@@ -27,7 +26,13 @@
 #include "AirFactoryGameObj.h"
 #include "NavalFactoryGameObj.h"
 #include "PurchaseSettingsDefClass.h"
-
+#include "GameObjManager.h"
+#include "dp88_custom_timer_defines.h"
+#include "VehicleGameObjDef.h"
+#include "PhysicsSceneClass.h"
+#include "physcoltest.h"
+#include "Random2Class.h"
+#include "WeaponManager.h"
 void JFW_User_Settable_Parameters::Created(GameObject *obj)
 {
 	const char *filename;
@@ -39,6 +44,7 @@ void JFW_User_Settable_Parameters::Created(GameObject *obj)
 	FILE* f = fopen(filename, "r");
 	if(f)
 	{
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
 		fscanf(f, "%99[^\n]", params);
 		fclose(f);
 		char* lineEnd = strpbrk(params, "\n\r");
@@ -429,7 +435,7 @@ void JFW_Play_Animation_Destroy_Object::Created(GameObject *obj)
 	{
 		firstframe = Get_Animation_Frame(obj);
 	}
-	Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+	Commands->Set_Animation(obj,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 }
 
 void JFW_Model_Animation::Created(GameObject *obj)
@@ -438,6 +444,13 @@ void JFW_Model_Animation::Created(GameObject *obj)
 	char *anim = new char[(strlen(model) * 2) + 2];
 	sprintf(anim,"%s.%s",model,model);
 	Commands->Set_Animation(obj,anim,false,0,0,-1,false);
+	delete[] anim;
+	Destroy_Script();
+}
+
+void JFW_Model_Animation_2::Created(GameObject *obj)
+{
+	Commands->Set_Animation(obj,Get_Parameter("Animation"),false,0,0,-1,false);
 	Destroy_Script();
 }
 
@@ -459,7 +472,7 @@ void JFW_Animated_Effect::Custom(GameObject *obj,int type,int param,GameObject *
 			subobject = 0;
 		}
 		float firstframe = Get_Float_Parameter("FirstFrame");
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -474,7 +487,7 @@ void JFW_Animated_Effect_2::Custom(GameObject *obj,int type,int param,GameObject
 			subobject = 0;
 		}
 		float firstframe = Get_Float_Parameter("FirstFrame");
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 }
 
 void JFW_Random_Animated_Effect::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -494,7 +507,7 @@ void JFW_Random_Animated_Effect::Custom(GameObject *obj,int type,int param,GameO
 			subobject = 0;
 		}
 		float firstframe = Get_Float_Parameter("FirstFrame");
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 	}
 }
 
@@ -513,7 +526,7 @@ void JFW_Random_Animated_Effect_2::Custom(GameObject *obj,int type,int param,Gam
 			subobject = 0;
 		}
 		float firstframe = Get_Float_Parameter("FirstFrame");
-		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Int_Parameter("Blended"));
+		Commands->Set_Animation(object,Get_Parameter("Animation"),false,subobject,firstframe,Get_Float_Parameter("LastFrame"),Get_Bool_Parameter("Blended"));
 }
 
 void JFW_Animated_Effect::Animation_Complete(GameObject *obj,const char *animation_name)
@@ -546,7 +559,7 @@ void JFW_Fog_Create::Created(GameObject *obj)
 		}
 		else
 		{
-			bool fogenable = Get_Int_Parameter("Fog_Enable");
+			bool fogenable = Get_Bool_Parameter("Fog_Enable");
 			Commands->Set_Fog_Enable(fogenable);
 			if (fogenable)
 			{
@@ -566,7 +579,7 @@ void JFW_Fog_Create::Destroyed(GameObject *obj)
 		}
 		else
 		{
-			bool fogenable = Get_Int_Parameter("Fog_Enable");
+			bool fogenable = Get_Bool_Parameter("Fog_Enable");
 			Commands->Set_Fog_Enable(fogenable);
 			if (fogenable)
 			{
@@ -580,7 +593,7 @@ void JFW_Fog_Create::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
 	{
-		bool fogenable = Get_Int_Parameter("Fog_Enable");
+		bool fogenable = Get_Bool_Parameter("Fog_Enable");
 		Commands->Set_Fog_Enable(fogenable);
 		if (fogenable)
 		{
@@ -658,7 +671,7 @@ void JFW_Screen_Fade_On_Exit::Exited(GameObject *obj,GameObject *exiter)
 
 void JFW_BHS_DLL::Created(GameObject *obj)
 {
-	Console_Output("TT.DLL is required for this map");
+	Console_Output("BANDTEST.DLL is required for this map");
 	Destroy_Script();
 }
 
@@ -757,12 +770,6 @@ void JFW_Show_Info_Texture::Created(GameObject *obj)
 void JFW_Show_Info_Texture::Timer_Expired(GameObject *obj,int number)
 {
 	Clear_Info_Texture(obj);
-	Destroy_Script();
-}
-
-void JFW_Wireframe_Mode::Created(GameObject *obj)
-{
-	Set_Wireframe_Mode(Get_Int_Parameter("Mode"));
 	Destroy_Script();
 }
 
@@ -1001,7 +1008,7 @@ void JFW_Points_Custom::Custom(GameObject *obj,int type,int param,GameObject *se
 {
 	if (type == Get_Int_Parameter("Message"))
 	{
-		Commands->Give_Points(obj,(float)Get_Int_Parameter("Points"),Get_Int_Parameter("Team"));
+		Commands->Give_Points(obj,(float)Get_Int_Parameter("Points"),Get_Bool_Parameter("Team"));
 	}
 }
 
@@ -1031,7 +1038,7 @@ void JFW_Preset_Disable::Custom(GameObject *obj,int type,int param,GameObject *s
 	{
 		if (count == 0)
 		{
-			Disable_Preset_By_Name(Commands->Get_Player_Type(obj),Get_Parameter("Preset"),true);
+			Disable_Preset_By_Name(Get_Object_Type(obj),Get_Parameter("Preset"),true);
 		}
 		count++;
 	}
@@ -1040,7 +1047,7 @@ void JFW_Preset_Disable::Custom(GameObject *obj,int type,int param,GameObject *s
 		count--;
 		if (count == 0)
 		{
-			Disable_Preset_By_Name(Commands->Get_Player_Type(obj),Get_Parameter("Preset"),false);
+			Disable_Preset_By_Name(Get_Object_Type(obj),Get_Parameter("Preset"),false);
 		}
 	}
 }
@@ -1061,7 +1068,7 @@ void JFW_Power_Disable::Custom(GameObject *obj,int type,int param,GameObject *se
 	{
 		if (count == 0)
 		{
-			Power_Base(Commands->Get_Player_Type(obj),false);
+			Power_Base(Get_Object_Type(obj),false);
 		}
 		count++;
 	}
@@ -1070,7 +1077,7 @@ void JFW_Power_Disable::Custom(GameObject *obj,int type,int param,GameObject *se
 		count--;
 		if (count == 0)
 		{
-			Power_Base(Commands->Get_Player_Type(obj),true);
+			Power_Base(Get_Object_Type(obj),true);
 		}
 	}
 }
@@ -1298,7 +1305,7 @@ void JFW_Engineer_Hack::Damaged(GameObject *obj,GameObject *damager,float amount
 {
 	if (Warhead == Get_Damage_Warhead())
 	{
-		if (Commands->Get_Player_Type(obj) == Commands->Get_Player_Type(damager))
+		if (Get_Object_Type(obj) == Get_Object_Type(damager))
 		{
 			Apply_Repair(obj,Get_Float_Parameter("Hack_Repair"));
 		}
@@ -1368,7 +1375,7 @@ void JFW_Double_Animation::Custom(GameObject *obj,int type,int param,GameObject 
 		Commands->Set_Animation(obj,str,0,0,Get_Float_Parameter("End_Frame")+1,-1,0);
 	}
 }
-
+bool DisableEmp = false;
 void JFW_EMP::Created(GameObject *obj)
 {
 	Warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
@@ -1376,17 +1383,27 @@ void JFW_EMP::Created(GameObject *obj)
 
 void JFW_EMP::Damaged(GameObject *obj,GameObject *damager,float amount)
 {
-	if (Warhead == Get_Damage_Warhead())
+	if (Warhead == Get_Damage_Warhead() && !DisableEmp)
 	{
 		VehicleGameObj *o = obj->As_VehicleGameObj();
-		if (o && o->Get_Is_Scripts_Visible() && !o->Is_Immovable())
+		if (o && o->Get_Is_Scripts_Visible() && o->Get_Scripts_Can_Fire() && o->Can_Drive())
 		{
 			Commands->Enable_Engine(obj,false);
-			o->Set_Immovable(true);
+			o->Set_Can_Drive(false);
 			o->Set_Scripts_Can_Fire(false);
+			o->Set_Stealth_Active(false);
 			Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
-			Commands->Set_Animation(obj,Get_Parameter("Animation"),true,0,0,-1,false);
+			if (Get_Parameter("Animation") && Get_Parameter("Animation")[0])
+			{
+				Commands->Set_Animation(obj,Get_Parameter("Animation"),true,0,0,-1,false);
+			}
 			obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+		}
+		SoldierGameObj *s = obj->As_SoldierGameObj();
+		if (s && !s->Is_Frozen() && s->Is_Visible())
+		{
+			s->Set_Freeze(true);
+			Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
 		}
 	}
 }
@@ -1394,27 +1411,64 @@ void JFW_EMP::Damaged(GameObject *obj,GameObject *damager,float amount)
 void JFW_EMP::Timer_Expired(GameObject *obj,int number)
 {
 	VehicleGameObj *o = obj->As_VehicleGameObj();
-	Commands->Set_Animation(obj,0,true,0,0,-1,false);
-	obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
-	o->Set_Immovable(false);
-	Commands->Enable_Engine(obj,true);
-	o->Set_Scripts_Can_Fire(true);
+	if (o)
+	{
+		o->Clear_Animation();
+		obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+		o->Set_Can_Drive(true);
+		o->Set_Stealth_Active(true);
+		Commands->Enable_Engine(obj,true);
+		o->Set_Scripts_Can_Fire(true);
+		const VehicleGameObjDef &definition = obj->As_VehicleGameObj()->Get_Definition();
+		if (!definition.Get_Animation().Is_Empty())
+		{
+			obj->As_VehicleGameObj()->Set_Animation(definition.Get_Animation(),true,0);
+		}
+	}
+	SoldierGameObj *s = obj->As_SoldierGameObj();
+	if (s)
+	{
+		s->Set_Freeze(false);
+	}
 }
 
 void JFW_EMP_Mine::Created(GameObject *obj)
 {
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
-	Commands->Enable_Enemy_Seen(obj,true);
+	if (obj->As_VehicleGameObj())
+	{
+		obj->As_VehicleGameObj()->Set_Is_Scripts_Visible(false);
+	}
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
 }
 
 void JFW_EMP_Mine::Enemy_Seen(GameObject *obj, GameObject *enemy)
 {
-	if (enemy->As_VehicleGameObj())
+	if (Is_Script_Attached(enemy,"JFW_EMP") && !DisableEmp)
 	{
-		Commands->Create_Explosion(Get_Parameter("Explosion"),Commands->Get_Position(obj),0);
-		Commands->Apply_Damage(obj,99999,"Death",0);
+		bool fire = false;
+		VehicleGameObj *o = enemy->As_VehicleGameObj();
+		if (o && o->Get_Is_Scripts_Visible() && o->Get_Scripts_Can_Fire() && o->Can_Drive())
+		{
+			fire = true;
+		}
+		SoldierGameObj *s = enemy->As_SoldierGameObj();
+		if (s && !s->Is_Frozen() && s->Is_Visible())
+		{
+			fire = true;
+		}
+		if (fire)
+		{
+			Commands->Create_Explosion(Get_Parameter("Explosion"),Commands->Get_Position(obj),0);
+			Commands->Apply_Damage(obj,99999,"Death",0);
+		}
 	}
+}
+
+void JFW_EMP_Mine::Timer_Expired(GameObject *obj,int number)
+{
+	Commands->Enable_Enemy_Seen(obj,true);
 }
 
 void JFW_EMP_Mine::Destroyed(GameObject *obj)
@@ -1424,6 +1478,7 @@ void JFW_EMP_Mine::Destroyed(GameObject *obj)
 
 void JFW_EMP_Mine_Manager::Created(GameObject *obj)
 {
+	DisableEmp = false;
 	mines = 0;
 }
 
@@ -1485,32 +1540,24 @@ void JFW_Cyborg_Reaper::Custom(GameObject *obj,int type,int param,GameObject *se
 {
 	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
 	{
-		Commands->Apply_Damage(obj,99999,"Death",0);
+		Commands->Start_Timer(obj,this,1,1);
 		Commands->Attach_Script(Commands->Find_Object(driverid),"RA_DriverDeath", "0");
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_OWNER)
 	{
-		Commands->Start_Timer(obj,this,5,Commands->Get_ID(sender));
+		Force_Vehicle_Entry(sender,obj);
+		driverid = Commands->Get_ID(sender);
 	}
+}
+
+void JFW_Cyborg_Reaper::Timer_Expired(GameObject *obj,int number)
+{
+	Commands->Apply_Damage(obj,99999,"Death",0);
 }
 
 void JFW_Cyborg_Reaper::Killed(GameObject *obj,GameObject *killer)
 {
 	Commands->Attach_Script(Commands->Find_Object(driverid),"RA_DriverDeath", "0");
-}
-
-void JFW_Cyborg_Reaper::Timer_Expired(GameObject *obj,int number)
-{
-	if (Commands->Find_Object(number))
-	{
-		Commands->Set_Position(Commands->Find_Object(number),Commands->Get_Position(obj));
-		Soldier_Transition_Vehicle(Commands->Find_Object(number));
-		driverid = Commands->Get_ID(Commands->Find_Object(number));
-	}
-	else
-	{
-		Commands->Destroy_Object(obj);
-	}
 }
 
 void JFW_Limpet_Drone::Created(GameObject *obj)
@@ -1581,6 +1628,18 @@ void JFW_Hunter_Seeker::Timer_Expired(GameObject *obj,int number)
 
 void JFW_Ion_Storm::Created(GameObject *obj)
 {
+	DisableEmp = false;
+	int chance = Commands->Get_Random_Int(0,100);
+	//FILE *f = fopen("ion.log","wt");
+	//fprintf(f,"Ion Storm script initializing, random chance chosen is %d, IonChance is %d\n",chance,Get_Int_Parameter("IonChance"));
+	//fclose(f);
+	if (chance <= Get_Int_Parameter("IonChance"))
+	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm random chance too low, no storms this game\n");
+		//fclose(f);
+		return;
+	}
 	storm = false;
 	float min = Get_Float_Parameter("Min_Delay");
 	float max = Get_Float_Parameter("Max_Delay");
@@ -1591,18 +1650,25 @@ void JFW_Ion_Storm::Created(GameObject *obj)
 	if (min > The_Game()->Get_Time_Remaining_Seconds())
 	{
 		Destroy_Script();
+		return;
 	}
 	if (min > max)
 	{
 		Destroy_Script();
+		return;
 	}
 	float timer = Commands->Get_Random(min,max);
+	//FILE *f2 = fopen("ion.log","at");
+	//fprintf(f2,"Ion Storm timer starting, max delay is %f, min delay is %f, actual delay is %f\n",min,max,timer);
+	//fclose(f2);
 	Commands->Start_Timer(obj,this,timer,1);
 }
 void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1) //start storm
 	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm starting\n");
 		storm = true;
 		float min = Get_Float_Parameter("Min_Time");
 		float max = Get_Float_Parameter("Max_Time");
@@ -1613,29 +1679,61 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 		if (min > The_Game()->Get_Time_Remaining_Seconds())
 		{
 			Destroy_Script();
+			//fclose(f);
+			return;
 		}
 		if (min > max)
 		{
 			Destroy_Script();
+			//fclose(f);
+			return;
 		}
+		if (Get_Int_Parameter("DisableEmp"))
+		{
+			//fprintf(f,"Disable EMP\n");
+			DisableEmp = true;
+		}
+		//fprintf(f,"Disable Stealth\n");
+		Set_Global_Stealth_Disable(true);
 		float timer = Commands->Get_Random(min,max);
+		//fprintf(f,"Ion Storm run starting, max time is %f, min time is %f, actual time is %f\n",min,max,timer);
 		Commands->Start_Timer(obj,this,timer,2);
+		//fprintf(f,"Enable Ion Storm weather\n");
 		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("On_Weather_Custom"),0,0);
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
 		{
+			//fprintf(f,"Disable Nod Radar\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER))
 		{
+			//fprintf(f,"Disable GDI Radar\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT))
 		{
+			//fprintf(f,"Disable Nod Power\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT))
 		{
+			//fprintf(f,"Disable GDI Power\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
+		}
+		//fprintf(f,"Disable Base Defenses\n");
+		SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+		while (x)
+		{
+			VehicleGameObj *o = x->Data();
+			if (o && o->Get_Definition().Get_Encyclopedia_Type() == 3)
+			{
+				Commands->Send_Custom_Event(obj,0,CUSTOM_AI_DISABLEAI,0,0);
+			}
+			if (Is_Script_Attached(obj,"JFW_EMP_Mine") && Get_Int_Parameter("DestroyMines"))
+			{
+				Commands->Destroy_Object(obj);
+			}
+			x = x->Next();
 		}
 		Timer_Expired(obj,3);
 		Create_2D_Sound_Team(Get_Parameter("Announcement_Sound_Nod"),0);
@@ -1644,27 +1742,54 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 		int red = Get_Int_Parameter("Red");
 		int green = Get_Int_Parameter("Green");
 		int blue = Get_Int_Parameter("Blue");
+		//fprintf(f,"Send Ion Storm starting message\n");
 		Send_Message(red,green,blue,string);
+		//fclose(f);
 	}
 	else if (number == 2) //storm ended
 	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm stopping\n");
 		storm = false;
+		//fprintf(f,"Enable Stealth\n");
+		Set_Global_Stealth_Disable(false);
+		if (Get_Int_Parameter("DisableEmp"))
+		{
+			//fprintf(f,"Enable EMP\n");
+			DisableEmp = false;
+		}
+		//fprintf(f,"Disable Ion Storm Weather\n");
 		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Off_Weather_Custom"),0,0);
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
 		{
+			//fprintf(f,"Enable Nod Radar\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Enable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER))
 		{
+			//fprintf(f,"Enable GDI Radar\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Enable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT))
 		{
+			//fprintf(f,"Enable Nod Power\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Enable_Custom"),0,0);
 		}
 		if (Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT))
 		{
+			//fprintf(f,"Enable GDI Power\n");
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Enable_Custom"),0,0);
+		}
+		SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+		//fprintf(f,"Enable Base Defenses\n");
+		while (x)
+		{
+			VehicleGameObj *o = x->Data();
+			if (o && o->Get_Definition().Get_Encyclopedia_Type() == 3)
+			{
+				Commands->Send_Custom_Event(obj,0,CUSTOM_AI_ENABLEAI,0,0);
+			}
+			x = x->Next();
 		}
 		Create_2D_Sound_Team(Get_Parameter("End_Announcement_Sound_Nod"),0);
 		Create_2D_Sound_Team(Get_Parameter("End_Announcement_Sound_GDI"),1);
@@ -1672,6 +1797,7 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 		int red = Get_Int_Parameter("Red");
 		int green = Get_Int_Parameter("Green");
 		int blue = Get_Int_Parameter("Blue");
+		//fprintf(f,"Send Ion Storm ending message\n");
 		Send_Message(red,green,blue,string);
 		float min = Get_Float_Parameter("Min_Delay");
 		float max = Get_Float_Parameter("Max_Delay");
@@ -1682,13 +1808,19 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 		if (min > The_Game()->Get_Time_Remaining_Seconds())
 		{
 			Destroy_Script();
+			//fclose(f);
+			return;
 		}
 		if (min > max)
 		{
 			Destroy_Script();
+			//fclose(f);
+			return;
 		}
 		float timer = Commands->Get_Random(min,max);
+		//fprintf(f,"Ion Storm timer restarting, max delay is %f, min delay is %f, actual delay is %f\n",min,max,timer);
 		Commands->Start_Timer(obj,this,timer,1);
+		//fclose(f);
 	}
 	else if (number == 3)
 	{
@@ -1784,9 +1916,9 @@ void JFW_Change_Model_Created::Created(GameObject *obj)
 	Destroy_Script();
 }
 
-extern REF_DECL2(NodHouseColor, Vector3);
-extern REF_DECL2(GDIHouseColor, Vector3);
-extern REF_DECL2(PublicMessageColor, Vector3);
+extern REF_DECL(Vector3, NodHouseColor);
+extern REF_DECL(Vector3, GDIHouseColor);
+extern REF_DECL(Vector3, PublicMessageColor);
 void JFW_Killed_String_Sound::Killed(GameObject *obj,GameObject *killer)
 {
 	if (Get_Object_Type(obj) == 0)
@@ -1881,6 +2013,304 @@ void JFW_Killed_String_Sound::Killed(GameObject *obj,GameObject *killer)
 	}
 }
 
+void JFW_Custom_Create_Object_At_Bone::Created(GameObject *obj)
+{
+	id = 0;
+}
+
+void JFW_Custom_Create_Object_At_Bone::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Message") && !id)
+	{
+		if (obj->As_SoldierGameObj() && obj->As_SoldierGameObj()->Is_In_Vehicle())
+		{
+			return;
+		}
+		GameObject *o = Commands->Create_Object_At_Bone(obj,Get_Parameter("Object"),Get_Parameter("Bone"));
+		Commands->Attach_To_Object_Bone(o,obj,Get_Parameter("Bone"));
+		Commands->Set_Player_Type(o,Commands->Get_Player_Type(obj));
+		id = Commands->Get_ID(o);
+		float Time = Get_Float_Parameter("Time");
+		if (Time)
+		{
+			Commands->Start_Timer(obj,this,Time,1);
+		}
+	}
+}
+
+void JFW_Custom_Create_Object_At_Bone::Killed(GameObject *obj,GameObject *killer)
+{
+	if (id)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(id));
+		id = 0;
+	}
+}
+
+void JFW_Custom_Create_Object_At_Bone::Timer_Expired(GameObject *obj,int number)
+{
+	if (id)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(id));
+		id = 0;
+	}
+}
+
+void JFW_MSA::Created(GameObject *obj)
+{
+	sizeID = 0;
+	deploy = false;
+	float Time = Get_Float_Parameter("Time");
+	Commands->Start_Timer(obj,this,Time,1);
+	Commands->Start_Timer(obj,this,1,2);
+}
+
+void JFW_MSA::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_VEHICLE_EXITED && deploy && obj->As_VehicleGameObj()->Get_Occupant_Count() == 0)
+	{
+		Update_Network_Object(obj);
+		Commands->Set_Player_Type(obj,Commands->Get_Player_Type(sender));
+	}
+}
+
+void JFW_MSA::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 2)
+	{
+		Commands->Start_Timer(obj,this,1,2);
+		if (obj->As_VehicleGameObj()->Is_Immovable())
+		{
+			if (!deploy)
+			{
+				deploy = true;
+				obj->As_VehicleGameObj()->Set_Lock_Team(obj->As_VehicleGameObj()->Get_Player_Type());
+				if (!sizeID)
+				{
+					Vector3 position = Commands->Get_Bone_Position(obj, "ROOTTRANSFORM");
+					GameObject *object = Commands->Create_Object(Get_Parameter("SizePreset"), position);
+					Commands->Set_Player_Type(object,Commands->Get_Player_Type(obj));
+					Commands->Attach_To_Object_Bone(object, obj, "ROOTTRANSFORM");
+					sizeID = Commands->Get_ID(object);
+				}
+			}
+		}
+		else
+		{
+			if (deploy)
+			{
+				deploy = false;
+				obj->As_VehicleGameObj()->Set_Lock_Team(2);
+				if (sizeID)
+				{
+					Commands->Destroy_Object(Commands->Find_Object(sizeID));
+					sizeID = 0;
+				}
+			}
+		}
+	}
+	if (number == 1 && deploy)
+	{
+		Vector3 v,v2;
+		obj->Get_Position(&v);
+		SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+		while (x)
+		{
+			VehicleGameObj *o = x->Data();
+			if (o)
+			{
+				if (o->Is_Underground() || o->Is_Stealthed())
+				{
+					if (!o->Is_Teammate(obj->As_DamageableGameObj()))
+					{
+						o->Get_Position(&v2);
+						if (Commands->Get_Distance(v,v2) <= Get_Float_Parameter("Range"))
+						{
+							Commands->Send_Custom_Event(obj,o,Get_Int_Parameter("Message"),0,0);
+						}
+					}
+				}
+			}
+			x = x->Next();
+		}
+		SLNode<SoldierGameObj> *x2 = GameObjManager::SoldierGameObjList.Head();
+		while (x2)
+		{
+			SoldierGameObj *o = x2->Data();
+			if (o)
+			{
+				if (o->Is_Stealthed())
+				{
+					if (!o->Is_Teammate(obj->As_DamageableGameObj()))
+					{
+						o->Get_Position(&v2);
+						if (Commands->Get_Distance(v,v2) <= Get_Float_Parameter("Range"))
+						{
+							Commands->Send_Custom_Event(obj,o,Get_Int_Parameter("Message"),0,0);
+						}
+					}
+				}
+			}
+			x2 = x2->Next();
+		}
+	}
+	float Time = Get_Float_Parameter("Time");
+	Commands->Start_Timer(obj,this,Time,1);
+}
+
+void JFW_MSA::Destroyed(GameObject *obj)
+{
+	if (sizeID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(sizeID));
+		sizeID = 0;
+	}
+}
+
+void JFW_Ion_Lightning::Created(GameObject *obj)
+{
+	storm = false;
+}
+
+void JFW_Ion_Lightning::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("OnMessage"))
+	{
+		float time = Commands->Get_Random(Get_Float_Parameter("MinTime"),Get_Float_Parameter("MaxTime"));
+		Commands->Start_Timer(obj,this,time,1);
+		storm = true;
+	}
+	if (type == Get_Int_Parameter("OffMessage"))
+	{
+		storm = false;
+	}
+}
+
+void JFW_Ion_Lightning::Timer_Expired(GameObject *obj,int number)
+{
+	if (storm && number == 1)
+	{
+		Vector3 min,max;
+		PhysicsSceneClass::Get_Instance()->Get_Level_Extents(min,max);
+		CastResultStruct res;
+		max.Z += 1;
+		min.Z -= 1;
+		res.ComputeContactPoint = true;
+		float x = FreeRandom.Get_Float(min.X,max.X);
+		float y = FreeRandom.Get_Float(min.Y,max.Y);
+		Vector3 v(x,y,max.Z);
+		Vector3 v2(x,y,min.Z);
+		LineSegClass ray(v,v2);
+		PhysRayCollisionTestClass coltest(ray, &res, DEFAULT_COLLISION_GROUP);
+		PhysicsSceneClass::Get_Instance()->Cast_Ray(coltest,false);
+		if (coltest.CollidedRenderObj)
+		{
+			if (Vector3::Dot_Product(res.Normal,ray.Get_Dir()) <= 0)
+			{
+				v2.Z = res.ContactPoint.Z;
+				const AmmoDefinitionClass *def = WeaponManager::Find_Ammo_Definition(Get_Parameter("Ammo"));
+				Create_Lightning(def,v,v2);
+				Commands->Create_Sound(Get_Definition_Name(def->FireSoundDefID),v2,0);
+				v2.Z += 0.1f;
+				Commands->Create_Explosion(Get_Definition_Name(def->ExplosionDefID),v2,0);
+				if (coltest.CollidedPhysObj)
+				{
+					CombatPhysObserverClass * old_observer = (CombatPhysObserverClass *)coltest.CollidedPhysObj->Get_Observer();
+					if (old_observer && old_observer->As_BuildingGameObj())
+					{
+						Commands->Apply_Damage(old_observer->As_BuildingGameObj(),def->Damage,ArmorWarheadManager::Get_Warhead_Name(def->Warhead),0);
+					}
+				}
+			}
+		}
+		float time = Commands->Get_Random(Get_Float_Parameter("MinTime"),Get_Float_Parameter("MaxTime"));
+		Commands->Start_Timer(obj,this,time,1);
+	}
+}
+
+void JFW_Vehicle_Zone::Created(GameObject *obj)
+{
+	Vector3 position = Commands->Get_Bone_Position(obj,Get_Parameter("BoneName"));
+	Vector3 size = Get_Vector3_Parameter("ZoneSize");
+	Matrix3 rotation(true);
+	rotation.Rotate_Z(Commands->Get_Facing(obj));
+	OBBoxClass box(position,size,rotation);
+	GameObject *zone = Create_Zone(Get_Parameter("ZonePreset"),box);
+	if (zone)
+	{
+		zoneID = Commands->Get_ID(zone);
+	}
+}
+
+void JFW_Vehicle_Zone::Destroyed(GameObject *obj)
+{
+	if (zoneID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(zoneID));
+	}
+}
+
+void JFW_Building_Zone_Controller::Created(GameObject *obj)
+{
+	zoneID = 0;
+}
+
+void JFW_Building_Zone_Controller::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == 0x123456)
+	{
+		Vector3 position = Commands->Get_Position(sender);
+		Vector3 size = Get_Vector3_Parameter("ZoneSize");
+		Matrix3 rotation(true);
+		rotation.Rotate_Z(Commands->Get_Facing(obj));
+		OBBoxClass box(position,size,rotation);
+		GameObject *zone = Create_Zone(Get_Parameter("ZonePreset"),box);
+		if (zone)
+		{
+			zoneID = Commands->Get_ID(zone);
+		}
+	}
+}
+
+void JFW_Building_Zone_Controller::Killed(GameObject *obj)
+{
+	if (zoneID)
+	{
+		Commands->Destroy_Object(Commands->Find_Object(zoneID));
+	}
+}
+
+void JFW_Building_Zone::Created(GameObject *obj)
+{
+	Commands->Send_Custom_Event(obj,Find_Closest_Preset_By_Team(2,Commands->Get_Position(obj),Get_Parameter("ParentPreset")),0x123456,0,0.5f);
+}
+
+void JFW_Send_Message_Preset_Death::Killed(GameObject *obj)
+{
+	GameObject *receiver = Find_Object_By_Preset(2, Get_Parameter("Preset"));
+	Commands->Send_Custom_Event(obj, receiver, Get_Int_Parameter("Message"),0,0.0);
+}
+
+void JMG_Send_Custom_To_Self_On_Timer::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("Timer_Number"));
+}
+
+void JMG_Send_Custom_To_Self_On_Timer::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == Get_Int_Parameter("Timer_Number"))
+	{
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Message"),Get_Int_Parameter("Param"),0);
+		if (Get_Int_Parameter("Repeat") == 1)
+		{
+			Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),Get_Int_Parameter("Timer_Number"));
+		}
+		if (Get_Int_Parameter("Repeat") == -1)
+		{
+			Remove_Script(obj,"JMG_Send_Custom_To_Self_On_Timer");
+		}
+	}
+}
 
 ScriptRegistrant<JFW_Tech_Level_Timer> JFW_Tech_Level_Timer_Registrant("JFW_Tech_Level_Timer","Display_Message:string,Red:int,Blue:int,Green:int,Sound:string,Time:float,Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Startup> JFW_Tech_Level_Startup_Registrant("JFW_Tech_Level_Startup","Tech_Level:int");
@@ -1900,6 +2330,7 @@ ScriptRegistrant<JFW_Object_Draw_In_Order_2> JFW_Object_Draw_In_Order_2_Registra
 ScriptRegistrant<JFW_Object_Draw_Random> JFW_Object_Draw_Random_Registrant("JFW_Object_Draw_Random"," Location:vector3,Custom:int,BaseName:string,Count:int,Facing:float");
 ScriptRegistrant<JFW_Play_Animation_Destroy_Object> JFW_Play_Animation_Destroy_Object_Registrant("JFW_Play_Animation_Destroy_Object","Animation:string,Subobject:string,FirstFrame:float,LastFrame:float,Blended:int");
 ScriptRegistrant<JFW_Model_Animation> JFW_Model_Animation_Registrant("JFW_Model_Animation","");
+ScriptRegistrant<JFW_Model_Animation_2> JFW_Model_Animation_2_Registrant("JFW_Model_Animation_2","Animation:string");
 ScriptRegistrant<JFW_Debug_Text_File> JFW_Debug_Text_File_Registrant("JFW_Debug_Text_File","Log_File:string,Description:string");
 ScriptRegistrant<JFW_Power_Off> JFW_Power_Off_Registrant("JFW_Power_Off","Message_Off:int,Message_On:int");
 ScriptRegistrant<JFW_Follow_Waypath> JFW_Follow_Waypath_Registrant("JFW_Follow_Waypath","Waypathid:int,Speed:float");
@@ -1951,7 +2382,7 @@ ScriptRegistrant<JFW_VehicleFactory_Disable> JFW_VehicleFactory_Disable_Registra
 ScriptRegistrant<JFW_AirFactory_Disable> JFW_AirFactory_Disable_Registrant("JFW_AirFactory_Disable","Disable_Custom:int,Enable_Custom:int");
 ScriptRegistrant<JFW_NavalFactory_Disable> JFW_NavalFactory_Disable_Registrant("JFW_NavalFactory_Disable","Disable_Custom:int,Enable_Custom:int");
 ScriptRegistrant<JFW_EMP> JFW_EMP_Registrant("JFW_EMP","Warhead:string,Time:fload,Animation:string");
-ScriptRegistrant<JFW_EMP_Mine> JFW_EMP_Mine_Registrant("JFW_EMP_Mine","Mine_Manager_ID:int,Explosion:string");
+ScriptRegistrant<JFW_EMP_Mine> JFW_EMP_Mine_Registrant("JFW_EMP_Mine","Mine_Manager_ID:int,Explosion:string,Time:float");
 ScriptRegistrant<JFW_EMP_Mine_Manager> JFW_EMP_Mine_Manager_Registrant("JFW_EMP_Mine_Manager","Mine_Preset:string,Mine_Limit:int,Mine_Reload:string,Mine_Z_Offset:float,Mine_Distance:float");
 ScriptRegistrant<JFW_EMP_Mine_Layer> JFW_EMP_Mine_Layer_Registrant("JFW_EMP_Mine_Layer","Mine_Manager_ID:int,Warhead:string");
 ScriptRegistrant<JFW_Radar_Disable_Death> JFW_Radar_Disable_Death_Registrant("JFW_Radar_Disable_Death","");
@@ -1960,9 +2391,17 @@ ScriptRegistrant<JFW_Limpet_Drone> JFW_Limpet_Drone_Registrant("JFW_Limpet_Drone
 ScriptRegistrant<JFW_Forward_Custom_Object> JFW_Forward_Custom_Object_Registrant("JFW_Forward_Custom_Object","Object_ID:int");
 ScriptRegistrant<JFW_Death_Send_Custom_Self> JFW_Death_Send_Custom_Self_Registrant("JFW_Death_Send_Custom_Self","Message:int");
 ScriptRegistrant<JFW_Hunter_Seeker> JFW_Hunter_Seeker_Registrant("JFW_Hunter_Seeker","Key:string,Explosion:string");
-ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int");
+ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather> JFW_Ion_Storm_Weather_Registrant("JFW_Ion_Storm_Weather","Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Message:int");
 ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created","Character:string");
 ScriptRegistrant<JFW_Change_Model_Created> JFW_Change_Model_Created_Registrant("JFW_Change_Model_Created","Model1:string,Model2:string,Model3:string,Model4:string,Model5:string");
 ScriptRegistrant<JFW_Spawn_Object_Created> JFW_Spawn_Object_Created_Registrant("JFW_Spawn_Object_Created","Object:string");
 ScriptRegistrant<JFW_Killed_String_Sound> JFW_Killed_String_Sound_Registrant("JFW_Killed_String_Sound","GDI_String_GDI:int,Nod_String_GDI:int,Neutral_String_GDI:int,GDI_String_Nod:int,Nod_String_Nod:int,Neutral_String_Nod:int");
+ScriptRegistrant<JFW_Custom_Create_Object_At_Bone> JFW_Custom_Create_Object_At_Bone_Registrant("JFW_Custom_Create_Object_At_Bone","Message:int,Object:string,Bone:string,Time:float");
+ScriptRegistrant<JFW_MSA> JFW_MSA_Registrant("JFW_MSA","Time:float,Message:int,Range:float,SizePreset:string");
+ScriptRegistrant<JFW_Ion_Lightning> JFW_Ion_Lightning_Registrant("JFW_Ion_Lightning","MinTime:float,MaxTime:float,OnMessage:int,OffMessage:int,Ammo:string");
+ScriptRegistrant<JFW_Vehicle_Zone> JFW_Vehicle_Zone_Registrant("JFW_Vehicle_Zone","BoneName:string,ZoneSize:vector3,ZonePreset:string");
+ScriptRegistrant<JFW_Building_Zone> JFW_Building_Zone_Registrant("JFW_Building_Zone","ParentPreset:string");
+ScriptRegistrant<JFW_Building_Zone_Controller> JFW_Building_Zone_Controller_Registrant("JFW_Building_Zone_Controler","ZoneSize:vector3,ZonePreset:string");
+ScriptRegistrant<JFW_Send_Message_Preset_Death> JFW_Send_Message_Preset_Death_Registrant("JFW_Send_Message_Preset_Death","Preset:string,Message:int");
+ScriptRegistrant<JMG_Send_Custom_To_Self_On_Timer> JMG_Send_Custom_To_Self_On_Timer("JMG_Send_Custom_To_Self_On_Timer","Message:int,Param:int,Time:float,Timer_Number:int,Repeat:int");

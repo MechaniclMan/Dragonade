@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Loot Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,9 +22,6 @@
 
 class DA_API DALootPlayerDataClass : public DAPlayerDataClass {
 public:
-	void Init() {
-		CreationTime = 0;
-	}
 	void Clear_Level() {
 		Clear_Weapons();
 	}
@@ -41,7 +38,6 @@ public:
 		return Locker.Count();
 	}
 	DynamicVectorClass<const WeaponDefinitionClass*> Locker;
-	unsigned long CreationTime;
 };
 
 class DA_API DALootPowerUpClass : public DAGameObjObserverClass {
@@ -148,7 +144,6 @@ private:
 	virtual void Init();
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
-	virtual void Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier);
 	virtual void Object_Destroyed_Event(GameObject *obj);
 	virtual void Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon);
 	virtual void Remove_Weapon_Event(cPlayer *Player,WeaponClass *Weapon);

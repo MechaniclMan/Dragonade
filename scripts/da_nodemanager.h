@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Node Manager Game Mode Framework
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -79,33 +79,16 @@ protected:
 	void Defend_Tick();
 	virtual void Contested_Event() { }
 	virtual void Capture_Event() { }
-	void Update_Icon();
+	void Update_Icon_And_Radar();
 	bool Is_Player_In_Range(SoldierGameObj *Player);
 	void Give_Attack_Defend_Tick_Points(int team);
 	void Give_Capture_Points();
 	
-	inline void Update_Radar() {
-		Commands->Set_Obj_Radar_Blip_Shape(Radar[0],RADAR_BLIP_SHAPE_OBJECTIVE);
-		Commands->Set_Obj_Radar_Blip_Shape(Radar[1],RADAR_BLIP_SHAPE_OBJECTIVE);
-		Commands->Set_Obj_Radar_Blip_Color(Radar[0],Team);
-		Commands->Set_Obj_Radar_Blip_Color(Radar[1],Team);
-		Set_Object_Type(Radar[2],Team);
-		Commands->Set_Obj_Radar_Blip_Shape(Radar[2],RADAR_BLIP_SHAPE_NONE);
-	}	
-	
-	inline void Update_Radar_Player(GameObject *obj) {
-		Set_Obj_Radar_Blip_Shape_Player(obj,Radar[0],RADAR_BLIP_SHAPE_OBJECTIVE);
-		Set_Obj_Radar_Blip_Shape_Player(obj,Radar[1],RADAR_BLIP_SHAPE_OBJECTIVE);
-		Set_Obj_Radar_Blip_Color_Player(obj,Radar[0],Team);
-		Set_Obj_Radar_Blip_Color_Player(obj,Radar[1],Team);
-		Set_Obj_Radar_Blip_Color_Player(obj,Radar[2],RADAR_BLIP_SHAPE_NONE);
-	}
-	
 	DABaseNodeClass() { }
 	int Team;
 	PhysicalGameObj *Object;
-	GameObject *Icon;
-	GameObject *Radar[3];
+	PhysicalGameObj *Icon;
+	PhysicalGameObj *Radar[2];
 	bool SentAttackMessage;
 	bool SentDefendMessage[2];
 	unsigned long LastAttackMessage;
@@ -191,15 +174,7 @@ public:
 	}
 	
 private:
-	virtual void Player_Loaded_Event(cPlayer *Player);
-	virtual void Timer_Expired(int Number,unsigned int Data);
 	bool Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
-	
-	inline void Update_Radar_Player(GameObject *obj) {
-		for (int i = 0;i < Nodes.Count();i++) {
-			Nodes[i]->Update_Radar_Player(obj);
-		}
-	}
 	
 	virtual ~DANodeManagerClass() {
 		for (int i = 0;i < Nodes.Count();i++) {

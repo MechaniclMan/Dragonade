@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -113,7 +113,7 @@ public:
 	int				Get_Inventory_Rounds( void )			{ return InventoryRounds; }
 	void				Do_Reload( void );
 	void				Decrement_Rounds( int rounds = 1 );
-	bool				Is_Ammo_Maxed( void );
+	SCRIPTS_API bool	Is_Ammo_Maxed( void );
 	bool				Is_Loaded( void )							{ return (ClipRounds != 0); }
 	bool				Is_Reload_OK( void );
 	bool				Is_Reload_Needed( void )				{ return !Is_Loaded() && Is_Reload_OK(); }

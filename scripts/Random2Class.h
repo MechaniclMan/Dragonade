@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -104,7 +104,9 @@ protected:
 };
 #ifndef TTLE_EXPORTS
 #ifndef TDBEDIT
-extern REF_DECL2(FreeRandom, CRandom);
+#ifndef W3DVIEWER
+extern REF_DECL(CRandom, FreeRandom);
+#endif
 #endif
 #endif
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,10 +15,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include <MMSystem.h>
-#pragma warning (disable:6387)
 #include <shlobj.h>
 #include <shlwapi.h>
-#pragma warning (default:6387)
 #pragma comment(lib, "winmm.lib")
 #include "FastAllocator.h"
 #include "MemTracker.h"
@@ -28,9 +26,12 @@
 //#define ALWAYS_WIPE_MEMORY
 #define LEAK_LOG_DIR "debug\\memory"
 
+#pragma comment(lib, "shlwapi.lib")
+
 #pragma warning(push)
 #pragma warning(disable: 4073) // warning C4073: initializers put in library initialization area
 #pragma init_seg(lib) // leet hax to insure our threads and friends are initialized before everybody else
+#pragma warning(pop)
 PUSH_MEMORY_MACROS
 #undef new
 #undef delete
@@ -72,7 +73,8 @@ MemoryTracker::~MemoryTracker()
 		OutputDebugStringA("Failed to write to " LEAK_LOG_DIR "\\leaks.txt");
 	else
 	{
-		fprintf(leakLogFile, "address\tsize\tfile\tfunction\tline\tallocation type\n");
+		fprintf(leakLogFile, "address\tsize\tfile\tfunction\tline\tallocation type\r\n");
+		int LeakCount = 0;
 		for (AllocationUnit* tag = Tags.PopHead(); tag; tag = Tags.PopHead() )
 		{
 			const char* allocationTypeName;
@@ -87,8 +89,8 @@ MemoryTracker::~MemoryTracker()
 			case AllocType_Unvalidated: allocationTypeName = "unvalidated"; break;
 			default: __assume(false);
 			}
-#pragma warning (suppress: 6273)
-			fprintf(leakLogFile, "0x%08X\t0x%04X (%d)\t%.128s\t%.128s\t%d\t%s\n", tag->ReportedAddress, tag->ReportedSize, tag->ReportedSize, tag->SourceFile, tag->SourceFunction, tag->SourceLine, allocationTypeName);
+			LeakCount++;
+			fprintf(leakLogFile, "0x%08p\t0x%04IX (%Iu)\t%.128s\t%.128s\t%d\t%s\r\n", tag->ReportedAddress, tag->ReportedSize, tag->ReportedSize, tag->SourceFile, tag->SourceFunction, tag->SourceLine, allocationTypeName);
 
 	#if DETAILED_LEAK_LOGS
 			char detailedLeakLogFilePath[MAX_PATH];
@@ -105,7 +107,12 @@ MemoryTracker::~MemoryTracker()
 
 			delete tag;
 		}
-
+		if (LeakCount)
+		{
+			char buffer[256];
+			sprintf(buffer,"%d Memory Leaks found\n",LeakCount);
+			OutputDebugStringA(buffer);
+		}
 		fclose(leakLogFile);
 	}
 };
@@ -275,7 +282,6 @@ DECLSPEC_RESTRICT void* MemoryTracker::Allocate(const size_t size, const AllocTy
 #endif
 
 	// Store the allocation unit tag address within the allocation memory
-#pragma warning (suppress: 6011)
 	*(AllocationUnit**)tag->ActualAddress = tag;
 
 #ifdef LARGE_ALLOCATION_DEBUG_STATS
@@ -454,4 +460,3 @@ size_t MemoryTracker::GetAllocationSize(void* memory)
 };
 
 POP_MEMORY_MACROS
-#pragma warning(pop)

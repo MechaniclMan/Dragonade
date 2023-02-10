@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -36,7 +36,6 @@ public:
 	bool Load(ChunkLoadClass &cload);
 	void On_Post_Load();
 	void Think();
-	void Entered(PhysicalGameObj *);
 	bool In_List(PhysicalGameObj *);
 	bool Inside_Me(PhysicalGameObj *obj);
 	static ScriptZoneGameObj *Find_Closest_Zone(Vector3 &,ZoneConstants::ZoneType);
@@ -48,6 +47,7 @@ public:
 	int Get_Player_Type() const {return PlayerType;}
 	void Set_Player_Type(int type) {PlayerType = type;}
 	bool Is_Environment_Zone() {return Get_Definition().IsEnvironmentZone;}
+	virtual bool Point_In_Zone(const Vector3 &v);
 };
 
 #endif

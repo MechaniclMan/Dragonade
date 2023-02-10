@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -87,6 +87,7 @@ public:
 	void	Set_Boolean( BooleanControl control, bool state = true );
 	bool	Get_Boolean( BooleanControl control );
 	void	Clear_One_Time_Boolean( void )				{OneTimeBooleanBits = 0;}
+	void    Clear_Analog() {AnalogValues[0] = 0;AnalogValues[1] = 0;AnalogValues[2] = 0;AnalogValues[3] = 0;}
 	unsigned	long Get_One_Time_Boolean_Bits(void)	{return OneTimeBooleanBits;}
 	unsigned	char Get_Continuous_Boolean_Bits(void) {return ContinuousBooleanBits;}
 	void	Set_Analog( AnalogControl control, float value );

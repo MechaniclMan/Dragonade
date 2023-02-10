@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Translation Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -33,10 +33,10 @@ void DATranslationManager::Settings_Loaded_Event() {
 	Translations.Remove_All();
 	INISection *Section = DASettingsManager::Get_Section("Translations");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			const DefinitionClass *Def = Find_Named_Definition(Section->Peek_Entry(i)->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			const DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def) {
-				Translations.Insert((unsigned int)Def,Section->Peek_Entry(i)->Value);
+				Translations.Insert((unsigned int)Def,i->Value);
 			}
 		}
 	}

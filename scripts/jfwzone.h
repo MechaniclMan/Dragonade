@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -379,8 +379,61 @@ class JFW_2D_Sound_Zone_Team : public ScriptImpClass {
 	void Timer_Expired(GameObject *obj,int number);
 };
 
+
+/*!
+* \brief Repair Zone (Extended)
+* \author jonwil
+* \author Daniel Paul (danpaul88@yahoo.co.uk) (added WaitForKeyhook and wrote documentation)
+*
+* This script should be attached to a script zone to create an area in which vehicles can be
+* repaired for a fee based on the price of the vehicle, or for free if Credits is set to 0.
+*
+* When WaitForKeyhook is set to 1 (the default) the driver must press the button on their
+* keyboard which is bound to the "Repair" event to start repairing their vehicle, otherwise
+* the vehicle will start being repaired as soon as it enters the repair zone. Note that only
+* one vehicle can be repaired at a time.
+*
+* \param Player_Type
+*   Specify which teams can repair vehicles in this zone... 0 for Nod, 1 for GDI, 2 for both
+* \param Repair_Distance
+*   The maximum distance from the center of the script zone the vehicle can move before repairs
+*   stop. This should be greater than the size of the actual zone or you might find vehicles
+*   trigger the script beyond this distance and then bug out, requiring the driver to leave and
+*   re-enter the zone
+* \param Repair_Health
+*   The amount of health to restore every second
+* \param Sound
+*   The name of a sound preset to be played to the vehicle driver when the keyhook is installed,
+*   unless WaitForKeyhook is set to 0
+* \param Credits
+*   A divisor applied to the cost of the vehicle to determine the cost of each repair tick... see
+*   the notes below, it's not exactly a straightforward calculation to figure out the actual cost
+* \param RepairSound
+*   The name of a sound preset to be played to the vehicle driver when repairing begins
+* \param RepairStopSound
+*   The name of a sound preset to be played to the vehicle driver once their vehicle is repaired
+* \param WaitForKeyhook
+*   Set to 1 to wait for the player to press the key bound to the "Repair" event on their keyboard
+*   or 0 to repair as soon as they enter the zone
+*
+* \note
+*   I'm not entirely sure why the repair cost is calculated this way, nor how to explain it in an
+*   easy to understand way so I'll simple write out the process used...
+*   <br/>
+*   For each repair "tick", which occurs once per second, the cost is calculated as (vehicle_cost>2)
+*   / Credits (the script parameter), where vehicle_cost is the price to purchase the vehicle. Thus
+*   if a vehicle costs 1000 credits and you've set Credits to 4.00 the value will be;
+*   <br/>
+*   (1000/2)/4.00 = 125
+*   <br/>
+*   If the driver has at least 125 credits the script will then repair Repair_Health health and also
+*   Repair_Health armour, if either or both of them need repairing. If only health was repaired the
+*   cost will be halved, otherwise the full price is charged for that "tick". Note that even if it
+*   only repairs 1 health and 1 armour you'll still get charged 125 credits.
+*/
 class JFW_Repair_Zone_2 : public JFW_Key_Hook_Base {
 	int ID;
+  bool WaitForKeyhook;
 	void Created(GameObject *obj);
 	void Entered(GameObject *obj,GameObject *enterer);
 	void Exited(GameObject *obj,GameObject *exiter);
@@ -545,4 +598,7 @@ class JFW_Boat : public ScriptImpClass {
 
 class JFW_Destroy_Vehicle_Zone : public ScriptImpClass {
 	void Entered(GameObject *obj,GameObject *enterer);
+};
+
+class JFW_Destroy_Vehicle_Zone_Marker : public ScriptImpClass {
 };

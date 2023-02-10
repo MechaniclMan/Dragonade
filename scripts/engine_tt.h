@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -42,8 +42,6 @@ typedef int (*_Create_2D_Sound_Player) (GameObject *obj,const char *soundname);
 typedef int (*_Create_2D_WAV_Sound_Player) (GameObject *obj,const char *soundname);
 typedef int (*_Create_3D_WAV_Sound_At_Bone_Player) (GameObject *obj,const char *soundname,GameObject *obj2,const char *bonename);
 typedef int (*_Create_3D_Sound_At_Bone_Player) (GameObject *obj,const char *soundname,GameObject *obj2,const char *bonename);
-typedef void (*_Set_Obj_Radar_Blip_Shape_Player) (GameObject *obj,GameObject *obj2,int shape);
-typedef void (*_Set_Obj_Radar_Blip_Color_Player) (GameObject *obj,GameObject *obj2,int color);
 typedef int (*aoch) (ObjectCreateHookStruct *h);
 typedef void (*roch) (int pos);
 typedef int (*akh) (KeyHookStruct *h);
@@ -142,6 +140,7 @@ typedef void (*cee) (const char *Explosion, Vector3 &Pos, GameObject *Creator);
 typedef void (*rwpa) (DynamicVectorClass<int> &WaypathIDs);
 typedef void (*rwpo) (int WaypathID, DynamicVectorClass<int> &WaypointIDs);
 typedef void (*gwp) (int WaypathID, int WaypointID, Vector3 &Pos);
+typedef void (*cl) (const AmmoDefinitionClass *ammodef,Vector3 &start,Vector3 &end);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -214,8 +213,6 @@ SCRIPTS_API extern _Create_2D_Sound_Player Create_2D_Sound_Player;
 SCRIPTS_API extern _Create_2D_WAV_Sound_Player Create_2D_WAV_Sound_Player;
 SCRIPTS_API extern _Create_3D_WAV_Sound_At_Bone_Player Create_3D_WAV_Sound_At_Bone_Player;
 SCRIPTS_API extern _Create_3D_Sound_At_Bone_Player Create_3D_Sound_At_Bone_Player;
-SCRIPTS_API extern _Set_Obj_Radar_Blip_Shape_Player Set_Obj_Radar_Blip_Shape_Player;
-SCRIPTS_API extern _Set_Obj_Radar_Blip_Color_Player Set_Obj_Radar_Blip_Color_Player;
 SCRIPTS_API extern svl Set_Vehicle_Limit;
 SCRIPTS_API extern gvl Get_Vehicle_Limit;
 SCRIPTS_API extern svl Set_Air_Vehicle_Limit;
@@ -224,7 +221,6 @@ SCRIPTS_API extern svl Set_Naval_Vehicle_Limit;
 SCRIPTS_API extern gvl Get_Naval_Vehicle_Limit;
 SCRIPTS_API extern sm Send_Message;
 SCRIPTS_API extern smp Send_Message_Player;
-SCRIPTS_API extern sw Set_Wireframe_Mode;
 SCRIPTS_API extern lnhi Load_New_HUD_INI;
 SCRIPTS_API extern rw Remove_Weapon;
 SCRIPTS_API extern crm Change_Radar_Map;
@@ -267,6 +263,7 @@ SCRIPTS_API extern Get_Kbitsx Get_Kbits;
 SCRIPTS_API extern sfop Set_Fog_Override_Player;
 SCRIPTS_API extern cfop Clear_Fog_Override_Player;
 SCRIPTS_API extern smie Set_Moon_Is_Earth;
+SCRIPTS_API extern smie Set_Global_Stealth_Disable;
 SCRIPTS_API extern gml Get_Mine_Limit;
 SCRIPTS_API extern sbd Set_Special_Base_Destruction;
 SCRIPTS_API extern gpv Get_Client_Version;
@@ -282,6 +279,7 @@ SCRIPTS_API extern cee Create_Explosion_Extended;
 SCRIPTS_API extern rwpa Retrieve_Waypaths;
 SCRIPTS_API extern rwpo Retrieve_Waypoints;
 SCRIPTS_API extern gwp Get_Waypoint_Position;
+SCRIPTS_API extern cl Create_Lightning;
 SCRIPTS_API extern gttv GetTTVersion;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
@@ -347,8 +345,6 @@ SCRIPTS_API void Create_2D_Sound_Team(const char *soundname,int team); //play a 
 SCRIPTS_API void Create_2D_WAV_Sound_Team(const char *soundname,int team); //play a 2D WAV sound for a team
 SCRIPTS_API void Create_3D_WAV_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D WAV sound at a bone for a team
 SCRIPTS_API void Create_3D_Sound_At_Bone_Team(const char *soundname,GameObject *obj,const char *bonename,int team); //play a 3D sound at a bone for a team
-SCRIPTS_API void Set_Obj_Radar_Blip_Shape_Team(int Team,GameObject *obj,int shape); //set obj radar blip shape for team
-SCRIPTS_API void Set_Obj_Radar_Blip_Color_Team(int Team,GameObject *obj,int color); //set obj radar blip color for team 
 SCRIPTS_API void Send_Message_Team(int team,unsigned int red,unsigned int green,unsigned int blue,const char *msg); //send a message to a team
 SCRIPTS_API void Send_Message_With_Obj_Color(GameObject *obj,const char *Msg); //send a messages in a given objects color
 SCRIPTS_API void Send_Message_With_Team_Color(int Team,const char *Msg); //Send a message in a given teams color
@@ -384,7 +380,7 @@ SCRIPTS_API void SendShaderParamObjPlayer(GameObject* player, const char* parame
 SCRIPTS_API void SendShaderParamObjPlayer(GameObject* player, const char* parameter, Vector2 value, GameObject* object);
 SCRIPTS_API void SendShaderParamObjPlayer(GameObject* player, const char* parameter, Vector3 value, GameObject* object);
 SCRIPTS_API void SendShaderParamObjPlayer(GameObject* player, const char* parameter, Vector4 value, GameObject* object);
-SCRIPTS_API extern REF_DECL2(ConsoleFunctionList,DynamicVectorClass<ConsoleFunctionClass *>);
+SCRIPTS_API extern REF_DECL(DynamicVectorClass<ConsoleFunctionClass *>, ConsoleFunctionList);
 SCRIPTS_API void Delete_Console_Function(const char *name);
 SCRIPTS_API void Sort_Function_List();
 SCRIPTS_API void Verbose_Help_File();
@@ -410,3 +406,24 @@ SCRIPTS_API void Verbose_Help_File();
 *   Whether to also play the sound associated with the translation to the specified team
 */
 SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, int red, int green, int blue, bool bPlaySound = true );
+
+/*!
+* \brief Send Translated Message To Team(s)
+* \ingroup api_translations
+*
+* Sends the string associated with the specified translation as a message to the specified team and
+* optionally also plays the sound associated with the translation (if any) to the team
+*
+* \param[in] ID
+*   The ID of the translation containing the message to be sent
+* \param[in] team
+*   The team to send the message to, or 2 to send to both teams
+* \param[in] rgb
+*   A vector containing the red, blue and green colour components to use for this message in the X,
+*   Y and Z member variables respectively
+* \param[in] bPlaySound
+*   Whether to also play the sound associated with the translation to the specified team
+*/
+SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, Vector3 rgb, bool bPlaySound = true );
+
+SCRIPTS_API void Force_Vehicle_Entry(GameObject *soldier,GameObject *vehicle);

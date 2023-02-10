@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,12 +19,12 @@ private:
 	uint32 uTimeInit;
 	uint32 uTimeInitNeg;
 public:
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
 	static bool _is_init;
 	static SysTimeClass SystemTime;
 #else
-	static REF_DECL3(_is_init, bool);
-	static REF_DECL3(SystemTime, SysTimeClass);
+	static REF_DECL(bool, _is_init);
+	static REF_DECL(SysTimeClass, SystemTime);
 #endif
 	uint32 Get   ();
 	void   Reset ();

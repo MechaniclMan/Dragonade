@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,11 +27,6 @@
 RENEGADE_FUNCTION
 int SCRIPTS_API Get_Player_Count()
 AT2(0x00417040,0x00417040);
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void SCRIPTS_API cPlayer::Set_Player_Type(int type)
-AT2(0x0040D600,0x0040D600);
-#endif
 RENEGADE_FUNCTION
 void cPlayer::Set_Ladder_Points(int amount)
 AT2(0x0040FC90,0x0040FC90);

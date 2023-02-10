@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -35,15 +35,11 @@
 
 // the order of these includes is essential
 #include <winsock2.h>
-#pragma warning(push)
-#pragma warning(disable : 6386)
 #include <ws2tcpip.h>
-#pragma warning(pop)
 #include <windows.h>
 #include <wininet.h>
 #include <dbghelp.h>
 #include <d3d9.h>
-#include <d3dx9.h>
 #define DIRECTINPUT_VERSION 0x800
 #include <dinput.h>
 #include <imm.h>

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,8 +13,8 @@
 #define TT_INCLUDE_SAMSITEGAMEOBJ_H
 #include "SmartGameObj.h"
 #include "Vector3.h"
-class SamSiteGameObjDef;
-class SamSiteGameObj : public SmartGameObj {
+class SAMSiteGameObjDef;
+class SAMSiteGameObj : public SmartGameObj {
 private:
 	int turretbone;
 	int barrelbone;
@@ -22,16 +22,16 @@ private:
 	float time;
 public:
 	const PersistFactoryClass &Get_Factory() const;
-	SamSiteGameObj();
-	~SamSiteGameObj();
+	SAMSiteGameObj();
+	~SAMSiteGameObj();
 	void Init();
-	void Init(const SamSiteGameObjDef &);
-	SCRIPTS_API const SamSiteGameObjDef & Get_Definition( void ) const ;
+	void Init(const SAMSiteGameObjDef &);
+	SCRIPTS_API const SAMSiteGameObjDef & Get_Definition( void ) const ;
 	bool Save(ChunkSaveClass &csave);
 	bool Load(ChunkLoadClass &cload);
 	void Export_Frequent(BitStreamClass &BitStream);
 	void Import_Frequent(BitStreamClass &BitStream);
-	void Update_Turret(float,float);
+	void Update_Turret(float weapon_turn,float weapon_tilt);
 	bool Set_Targeting(Vector3  const&, bool);
 	void Generate_Control();
 	void Think();

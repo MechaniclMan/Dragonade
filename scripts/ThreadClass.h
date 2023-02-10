@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,10 +21,10 @@ public:
 	bool running; //4
 	char name[67]; //5
 	int threadid; //48
-	int (*exceptionhandler)(int, LPEXCEPTION_POINTERS); //4C
+	LONG (WINAPI *exceptionhandler)(int, LPEXCEPTION_POINTERS); //4C
 	HANDLE handle; //50
 	int thread_priority; //54
-	ThreadClass(char  const *Name, int (*ExceptionHandler)(int, LPEXCEPTION_POINTERS));
+	ThreadClass(char  const *Name, LONG (WINAPI *ExceptionHandler)(int, LPEXCEPTION_POINTERS));
 	virtual ~ThreadClass();
 	virtual void Thread_Function() = 0;
 	static void Internal_Thread_Function(void*);
@@ -33,14 +33,9 @@ public:
 	void Stop(uint);
 	static void Sleep_Ms(uint);
 
-	static void Switch_Thread()
-	{
-		WaitForSingleObject(*(HANDLE*)0x0083DBC8, 1);
-	}
-
 	bool Is_Running()
 	{
-		return running;
+		return handle != 0;
 	}
 	static int Get_Current_Thread_ID()
 	{

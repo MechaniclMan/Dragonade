@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -127,6 +127,7 @@ bool AudibleSoundDefinitionClass::Save(ChunkSaveClass &csave)
 	csave.End_Chunk();
 	csave.Begin_Chunk(0x200);
 	bool b2 = DefinitionClass::Save(csave);
+	csave.End_Chunk();
 	return b && b2;
 }
 
@@ -221,17 +222,6 @@ LogicalSoundClass *AudibleSoundDefinitionClass::Create_Logical() const
 {
 	return 0;
 }
-#else
-PersistClass *AudibleSoundDefinitionClass::Create() const
-{
-	return Create_Sound(2);
-}
-RENEGADE_FUNCTION
-AudibleSoundClass *AudibleSoundDefinitionClass::Create_Sound(int type) const
-AT2(0x0051FC00,0x0051F4A0);
-RENEGADE_FUNCTION
-LogicalSoundClass *AudibleSoundDefinitionClass::Create_Logical() const
-AT2(0x0051FE30,0x0051F6D0);
 #endif
 
 const AudibleSoundDefinitionClass &AudibleSoundDefinitionClass::operator =(const AudibleSoundDefinitionClass &that)

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -82,8 +82,7 @@ void dp88_AR_Rocketeer::Timer_Expired ( GameObject* pObj, int number )
     //Console_Output ( "[%d:%s:%s] Transitioning driver into vehicle\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
     if ( GameObject* pVehicle = Commands->Find_Object(m_nVehicleID) )
     {
-      Commands->Set_Position( pObj, Commands->Get_Position(pVehicle) );
-      Soldier_Transition_Vehicle(pObj);
+      Force_Vehicle_Entry(pObj,pVehicle);
     }
   }
 }
@@ -313,6 +312,7 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
 			while ( disguiseID == -1 )
 			{
 				disguiseID = Commands->Get_Random_Int ( 0, 3 );		// 0 -> 2
+				TT_ASSERT(disguiseID >= 0 && disguiseID < 3);
 				if ( gameControllerScript->mirageTank_disguisePresets[disguiseID] == 0 )
 					disguiseID = -1;
 			}
@@ -320,6 +320,7 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
 			// Create mirage
 			Vector3 miragePosition = Commands->Get_Position ( obj );
 			miragePosition.Z -= 3;
+			TT_ASSERT(disguiseID >= 0 && disguiseID < 3);
 			GameObject* mirage = Commands->Create_Object ( gameControllerScript->mirageTank_disguisePresets[disguiseID], miragePosition );
 			Commands->Disable_All_Collisions ( mirage );
 			mirageID = Commands->Get_ID ( mirage );
@@ -327,7 +328,7 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
       // Setup tank variables
       Commands->Enable_Stealth ( obj, true );     // Disable targeting box
       Commands->Set_Is_Rendered ( obj, false );   // Disables rendering
-      Set_Vehicle_Is_Visible(obj, false);         // Prevents AI seeing tank
+      Commands->Set_Is_Visible(obj, false);         // Prevents AI seeing tank
       Commands->Enable_Engine ( obj, false );     // Disable engine sounds
 
 			hidden = true;
@@ -343,7 +344,7 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
 
     // Setup tank variables
     Commands->Enable_Engine ( obj, true );
-    Set_Vehicle_Is_Visible(obj, true);
+    Commands->Set_Is_Visible(obj, true);
     Commands->Set_Is_Rendered ( obj, true );
     Commands->Enable_Stealth ( obj, false );
 		

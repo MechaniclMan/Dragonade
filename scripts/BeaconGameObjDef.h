@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Made entire class public
 #ifndef TT_INCLUDE_BEACONGAMEOBJDEF_H
 #define TT_INCLUDE_BEACONGAMEOBJDEF_H
 #include "SimpleGameObjDef.h"
@@ -23,11 +21,15 @@ public:
 	const PersistFactoryClass& Get_Factory() const;
 	bool Save(ChunkSaveClass& chunks);
 	bool Load(ChunkLoadClass& chunks);
+	bool Load_Variables(ChunkLoadClass& chunks);
 	uint32 Get_Class_ID() const;
 	PersistClass* Create() const;
 	bool Is_Nuke() const {return IsNuke;}
+	bool Requires_Silo() const {return RequiresSilo;}
+#ifdef DDBEDIT
+	virtual void                        Dump (FileClass &file);
+#endif
 	DECLARE_EDITABLE( BeaconGameObjDef, SimpleGameObjDef );
-	float Get_Arm_Time() const { return ArmTime; }
 	float BroadcastToAllTime; // 00AC
 	float ArmTime; // 00B0
 	float DisarmTime; // 00B4
@@ -43,8 +45,9 @@ public:
 	int PreDetonateCinematicObjDef; // 00DC
 	int PostDetonateCinematicObjDef; // 00E0
 	int ExplosionObjDef; // 00E4
-	int IsNuke; // 00E8
+	bool IsNuke; // 00E8
 	StringClass ArmingAnimationName; // 00EC
+	bool RequiresSilo;
 	friend class BeaconGameObj;
 	friend class PresetDump;
 }; // 00F0

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade GameSpy Q&R
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -69,8 +69,8 @@ void DAGameSpyGameFeatureClass::Settings_Loaded_Event() {
 	CustomRules.Delete_All();
 	INISection *Section = DASettingsManager::Get_Section("GameSpyRules");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			CustomRules.Add(StringFormat("%s\\%s\\",Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value));
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			CustomRules.Add(StringFormat("%s\\%s\\",i->Entry,i->Value));
 		}
 	}
 }

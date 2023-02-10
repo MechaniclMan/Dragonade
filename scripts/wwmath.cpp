@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,10 +12,17 @@
 #include "General.h"
 #include "wwmath.h"
 #include <stdlib.h>
-SCRIPTS_API REF_ARR_DEF3(_FastAcosTable,float,ARC_TABLE_SIZE,0x00852FB0,0x00852198,0x0087145C);
-SCRIPTS_API REF_ARR_DEF3(_FastAsinTable,float,ARC_TABLE_SIZE,0x00850FB0,0x00850198,0x0086F45C);
-SCRIPTS_API REF_ARR_DEF3(_FastSinTable,float,SIN_TABLE_SIZE,0x0084FFB0,0x0084F198,0x0086E45C);
-SCRIPTS_API REF_ARR_DEF3(_FastInvSinTable,float,SIN_TABLE_SIZE,0x00851FB0,0x00851198,0x0087045C);
+#ifndef W3DVIEWER
+SCRIPTS_API REF_ARR_DEF3(float, _FastAcosTable, ARC_TABLE_SIZE, 0x00852FB0, 0x00852198, 0x0087145C);
+SCRIPTS_API REF_ARR_DEF3(float, _FastAsinTable, ARC_TABLE_SIZE, 0x00850FB0, 0x00850198, 0x0086F45C);
+SCRIPTS_API REF_ARR_DEF3(float, _FastSinTable, SIN_TABLE_SIZE, 0x0084FFB0, 0x0084F198, 0x0086E45C);
+SCRIPTS_API REF_ARR_DEF3(float, _FastInvSinTable, SIN_TABLE_SIZE, 0x00851FB0, 0x00851198, 0x0087045C);
+#else
+float _FastAcosTable[ARC_TABLE_SIZE];
+float _FastAsinTable[ARC_TABLE_SIZE];
+float _FastSinTable[SIN_TABLE_SIZE];
+float _FastInvSinTable[SIN_TABLE_SIZE];
+#endif
 void WWMath::Init(void)
 {
 	for (int a=0;a<ARC_TABLE_SIZE;++a) {

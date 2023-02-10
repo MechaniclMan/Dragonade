@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,7 +16,6 @@
 #include "engine_threading.h"
 #include "engine_string.h"
 #include "engine_vector.h"
-#include "engine_3dre.h"
 #include "RenderObjClass.h"
 #include "PrototypeClass.h"
 
@@ -29,7 +28,9 @@ class IndexBufferClass;
 class DX8PolygonRendererClass;
 class MeshBuilderClass;
 class MeshLoadInfoClass;
-
+enum WW3DErrorType;
+class MeshModelClass;
+class LightEnvironmentClass;
 class MeshClass : public RenderObjClass
 {
 public:
@@ -47,11 +48,11 @@ public:
 	virtual void					Render(RenderInfoClass & rinfo);
 	void								Render_Material_Pass(MaterialPassClass * pass,IndexBufferClass * ib);
 	virtual void					Special_Render(SpecialRenderInfoClass & rinfo);
-	SHADERS_API virtual bool					Cast_Ray(RayCollisionTestClass & raytest);
-	SHADERS_API virtual bool					Cast_AABox(AABoxCollisionTestClass & boxtest);
-	SHADERS_API virtual bool					Cast_OBBox(OBBoxCollisionTestClass & boxtest);
-	SHADERS_API virtual bool					Intersect_AABox(AABoxIntersectionTestClass & boxtest);
-	SHADERS_API virtual bool					Intersect_OBBox(OBBoxIntersectionTestClass & boxtest);
+	virtual bool					Cast_Ray(RayCollisionTestClass & raytest);
+	virtual bool					Cast_AABox(AABoxCollisionTestClass & boxtest);
+	virtual bool					Cast_OBBox(OBBoxCollisionTestClass & boxtest);
+	virtual bool					Intersect_AABox(AABoxIntersectionTestClass & boxtest);
+	virtual bool					Intersect_OBBox(OBBoxIntersectionTestClass & boxtest);
 	virtual void					Get_Obj_Space_Bounding_Sphere(SphereClass & sphere) const;
 	virtual void					Get_Obj_Space_Bounding_Box(AABoxClass & box) const;
 	virtual void					Scale(float scale);
@@ -64,23 +65,18 @@ public:
 	WW3DErrorType					Init(const MeshBuilderClass & builder,MaterialInfoClass * matinfo,const char * name,const char * hmodelname);
 	WW3DErrorType					Load_W3D(ChunkLoadClass & cload);
 	void								Generate_Culling_Tree(void);
-	SHADERS_API MeshModelClass *				Get_Model(void);
+	MeshModelClass *				Get_Model(void);
 	MeshModelClass *				Peek_Model(void)
 	{
 		return Model;
 	}
-	SHADERS_API uint32							Get_W3D_Flags(void);
+	uint32							Get_W3D_Flags(void);
 	const char *					Get_User_Text(void) const;
-	SHADERS_API bool								Contains(const Vector3 &point);
+	bool								Contains(const Vector3 &point);
 
-	void								Compose_Deformed_Vertex_Buffer(
-											VertexFormatXYZNDUV2* verts,
-											const Vector2* uv0,
-											const Vector2* uv1,
-											const unsigned* diffuse);
-	void								Get_Deformed_Vertices(Vector3 *dst_vert, Vector3 *dst_norm, Vector3 *dst_tan, Vector3* dst_bi);
-	SHADERS_API void								Get_Deformed_Vertices(Vector3 *dst_vert, Vector3 *dst_norm);
-	SHADERS_API void								Get_Deformed_Vertices(Vector3 *dst_vert);
+    void                            Get_Deformed_Vertices(Vector3* dst_vert, Vector3* dst_norm);
+    void                            Get_Deformed_Vertices(Vector3* dst_vert, Vector3* dst_norm, uint32 stride);
+    void                Get_Deformed_Vertices(Vector3* dst_vert);
 
 	void								Set_Lighting_Environment(LightEnvironmentClass * light_env) { LightEnvironment = light_env; }
 	LightEnvironmentClass *		Get_Lighting_Environment(void) { return LightEnvironment; }
@@ -91,17 +87,18 @@ public:
 	void								Set_Base_Vertex_Offset(int base) { BaseVertexOffset = base; }
 	int								Get_Base_Vertex_Offset(void) { return BaseVertexOffset; }
 	static bool						Legacy_Meshes_Fogged;
-	SHADERS_API void								Make_Unique();
+	void								Make_Unique();
 	unsigned							Get_Debug_Id() const { return  MeshDebugId; }
 	void								Set_Debugger_Disable(bool b) { IsDisabledByDebugger=b; }
 	bool								Is_Disabled_By_Debugger() const { return IsDisabledByDebugger; }
-	SHADERS_API void								Install_User_Lighting_Array(Vector4 * lighting);
-	unsigned int *					Get_User_Lighting_Array(bool alloc = false);
-	virtual void					Save_User_Lighting (ChunkSaveClass & csave);
-	SHADERS_API virtual void					Load_User_Lighting (ChunkLoadClass & cload);
 
-	SHADERS_API void				Enable_Alternate_Material_Description(bool onoff);
-	SHADERS_API bool Use_User_Lighting(); //should this mesh have user lighting setup on it
+    void                Install_User_Lighting_Array(Vector4* lighting);
+    unsigned int*       Get_User_Lighting_Array(bool alloc = false);
+    virtual void                    Save_User_Lighting (ChunkSaveClass& csave);
+    virtual void        Load_User_Lighting (ChunkLoadClass& cload);
+    bool                Use_User_Lighting(); //should this mesh have user lighting setup on it
+
+	void				Enable_Alternate_Material_Description(bool onoff);
 
 protected:
 	void								Free(void);
@@ -121,12 +118,12 @@ protected:
 	bool								IsDisabledByDebugger;
 	unsigned int *					UserLighting;
 	MultiListClass<DX8PolygonRendererClass>		PolygonRendererList;
+
 	friend class MeshBuilderClass;
 	friend class DX8MeshRendererClass;
 	friend class DX8PolygonRendererClass;
 };
 
-SHADERS_API MeshClass*           Find_Random_Mesh       (RenderObjClass* object, uint32 collisionTypes);
 class PrimitivePrototypeClass : public PrototypeClass {
 private:
 	RenderObjClass* Proto;
@@ -166,7 +163,7 @@ public:
 	{
 		return 0;
 	}
-	SHADERS_API virtual PrototypeClass *Load_W3D(ChunkLoadClass & cload);
+	virtual PrototypeClass *Load_W3D(ChunkLoadClass & cload);
 };
 
 #endif

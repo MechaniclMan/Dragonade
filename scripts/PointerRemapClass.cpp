@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,16 +16,16 @@ void PointerRemapClass::Process()
 {
 	if (PointerPairTable.Count() > 0)
 	{
-		qsort(&(PointerPairTable[0]),PointerPairTable.Count(),8,ptr_pair_compare_function);
+		qsort(&(PointerPairTable[0]),PointerPairTable.Count(),sizeof(PtrPairStruct),ptr_pair_compare_function);
 	}
 	if (PointerRequestTable.Count() > 0)
 	{
-		qsort(&(PointerRequestTable[0]),PointerRequestTable.Count(),4,ptr_request_compare_function);
+		qsort(&(PointerRequestTable[0]),PointerRequestTable.Count(),sizeof(PtrRemapStruct),ptr_request_compare_function);
 		Process_Request_Table(PointerRequestTable,false);
 	}
 	if (RefCountRequestTable.Count() > 0)
 	{
-		qsort(&(RefCountRequestTable[0]),RefCountRequestTable.Count(),4,ptr_request_compare_function);
+		qsort(&(RefCountRequestTable[0]),RefCountRequestTable.Count(),sizeof(PtrRemapStruct),ptr_request_compare_function);
 		Process_Request_Table(RefCountRequestTable,true);
 	}
 }

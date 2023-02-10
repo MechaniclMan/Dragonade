@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,9 @@
 #define TEMPERING_SHIFT_T(y)  (y << 15)
 #define TEMPERING_SHIFT_L(y)  (y >> 18)
 #ifndef TDBEDIT
-REF_DEF2(FreeRandom, CRandom, 0x0085CB40, 0x0085BD28);
+#ifndef W3DVIEWER
+REF_DEF2(CRandom, FreeRandom, 0x0085CB40, 0x0085BD28);
+#endif
 #endif
 
 Random2Class::Random2Class(unsigned seed) : Index1(0), Index2(103)

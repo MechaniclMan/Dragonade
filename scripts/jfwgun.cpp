@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -86,8 +86,7 @@ void JFW_Building_Gun::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -100,7 +99,7 @@ void JFW_Building_Gun_Weapon::Custom(GameObject *obj,int type,int param,GameObje
 	msg = Get_Int_Parameter("Disable_Custom");
 	if (type == msg)
 	{
-		Commands->Enable_Enemy_Seen(obj,param);
+		Commands->Enable_Enemy_Seen(obj,param != 0);
 	}
 }
 
@@ -208,8 +207,7 @@ void JFW_Building_Gun_No_Aircraft::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_No_Aircraft::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -340,8 +338,7 @@ void JFW_Building_Gun_Aircraft_Only::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_Aircraft_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -477,9 +474,8 @@ void JFW_Building_Gun_Weapon_Secondary::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_Secondary::Created(GameObject *obj)
 {
-	int visible;
+	bool visible = Get_Bool_Parameter("Visible");
 	primary = true;
-	visible = Get_Int_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -492,7 +488,7 @@ void JFW_Building_Gun_Weapon_Secondary::Custom(GameObject *obj,int type,int para
 	msg = Get_Int_Parameter("Disable_Custom");
 	if (type == msg)
 	{
-		Commands->Enable_Enemy_Seen(obj,param);
+		Commands->Enable_Enemy_Seen(obj,param != 0);
 	}
 }
 
@@ -608,13 +604,12 @@ void JFW_Building_Gun_No_Aircraft_Secondary::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_No_Aircraft_Secondary::Created(GameObject *obj)
 {
-	int visible;
+	bool visible = Get_Bool_Parameter("Visible");
 	primary = true;
-	visible = Get_Int_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
-	Commands->Set_Is_Rendered(obj,visible);
+	Commands->Set_Is_Rendered(obj,visible != 0);
 }
 
 void JFW_Building_Gun_Weapon_No_Aircraft_Secondary::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -749,9 +744,8 @@ void JFW_Building_Gun_Aircraft_Only_Secondary::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_Aircraft_Only_Secondary::Created(GameObject *obj)
 {
-	int visible;
+	bool visible = Get_Bool_Parameter("Visible");
 	primary = true;
-	visible = Get_Int_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -896,8 +890,7 @@ void JFW_Building_Gun_Animated::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Weapon::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1060,8 +1053,7 @@ void JFW_Building_Gun_Animated_No_Aircraft::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Weapon_No_Aircraft::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1226,8 +1218,7 @@ void JFW_Building_Gun_Animated_Aircraft_Only::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Weapon_Aircraft_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1411,8 +1402,7 @@ void JFW_Building_Gun_Animated_Weapon::Register_Auto_Save_Variables()
 void JFW_Building_Gun_Animated_Weapon_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1584,8 +1574,7 @@ void JFW_Building_Gun_Animated_No_Aircraft_Secondary::Register_Auto_Save_Variabl
 void JFW_Building_Gun_Animated_Weapon_No_Aircraft_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1760,8 +1749,7 @@ void JFW_Building_Gun_Animated_Aircraft_Only_Secondary::Register_Auto_Save_Varia
 void JFW_Building_Gun_Animated_Weapon_Aircraft_Only_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -1973,8 +1961,7 @@ void JFW_Building_Gun_No_VTOL::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_No_VTOL::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2105,8 +2092,7 @@ void JFW_Building_Gun_VTOL_Only::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_VTOL_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2233,8 +2219,7 @@ void JFW_Building_Gun_Animated_Sound::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Sound_Weapon::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2398,8 +2383,7 @@ void JFW_Building_Gun_Animated_Sound_No_Aircraft::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Sound_Weapon_No_Aircraft::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2565,8 +2549,7 @@ void JFW_Building_Gun_Animated_Sound_Aircraft_Only::Register_Auto_Save_Variables
 
 void JFW_Building_Gun_Animated_Sound_Weapon_Aircraft_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2751,8 +2734,7 @@ void JFW_Building_Gun_Animated_Sound_Weapon::Register_Auto_Save_Variables()
 void JFW_Building_Gun_Animated_Sound_Weapon_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -2925,8 +2907,7 @@ void JFW_Building_Gun_Animated_Sound_No_Aircraft_Secondary::Register_Auto_Save_V
 void JFW_Building_Gun_Animated_Sound_Weapon_No_Aircraft_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -3102,8 +3083,7 @@ void JFW_Building_Gun_Animated_Sound_Aircraft_Only_Secondary::Register_Auto_Save
 void JFW_Building_Gun_Animated_Sound_Weapon_Aircraft_Only_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -3312,8 +3292,7 @@ void JFW_Building_Gun_Animated_Sound_No_VTOL::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Sound_Weapon_No_VTOL::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -3479,8 +3458,7 @@ void JFW_Building_Gun_Animated_Sound_VTOL_Only::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Sound_Weapon_VTOL_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -3648,8 +3626,7 @@ void JFW_Building_Gun_Animated_Sound_No_VTOL_Secondary::Register_Auto_Save_Varia
 void JFW_Building_Gun_Animated_Sound_Weapon_No_VTOL_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -3825,8 +3802,7 @@ void JFW_Building_Gun_Animated_Sound_VTOL_Only_Secondary::Register_Auto_Save_Var
 void JFW_Building_Gun_Animated_Sound_Weapon_VTOL_Only_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4039,9 +4015,8 @@ void JFW_Building_Gun_No_VTOL_Secondary::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_No_VTOL_Secondary::Created(GameObject *obj)
 {
-	int visible;
+	bool visible = Get_Bool_Parameter("Visible");
 	primary = true;
-	visible = Get_Int_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4180,9 +4155,8 @@ void JFW_Building_Gun_VTOL_Only_Secondary::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Weapon_VTOL_Only_Secondary::Created(GameObject *obj)
 {
-	int visible;
+	bool visible = Get_Bool_Parameter("Visible");
 	primary = true;
-	visible = Get_Int_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4327,8 +4301,7 @@ void JFW_Building_Gun_Animated_No_VTOL::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Weapon_No_VTOL::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4493,8 +4466,7 @@ void JFW_Building_Gun_Animated_VTOL_Only::Register_Auto_Save_Variables()
 
 void JFW_Building_Gun_Animated_Weapon_VTOL_Only::Created(GameObject *obj)
 {
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4661,8 +4633,7 @@ void JFW_Building_Gun_Animated_No_VTOL_Secondary::Register_Auto_Save_Variables()
 void JFW_Building_Gun_Animated_Weapon_No_VTOL_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
@@ -4837,8 +4808,7 @@ void JFW_Building_Gun_Animated_VTOL_Only_Secondary::Register_Auto_Save_Variables
 void JFW_Building_Gun_Animated_Weapon_VTOL_Only_Secondary::Created(GameObject *obj)
 {
 	primary = true;
-	int visible;
-	visible = Get_Int_Parameter("Visible");
+	bool visible = Get_Bool_Parameter("Visible");
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);

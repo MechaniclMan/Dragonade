@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,7 +14,7 @@
 #pragma warning(push)
 #pragma warning(disable: 4073) // warning C4073: initializers put in library initialization area
 #pragma init_seg(lib) // leet hax to insure our threads and friends are initialized before everybody else
-
+#pragma warning(pop)
 static FastAllocatorGeneral* __general_allocator = new FastAllocatorGeneral();
 
 FastAllocatorGeneral* FastAllocatorGeneral::Get_Allocator()
@@ -35,5 +35,3 @@ void SystemFree(void* memory)
 {
 	free(memory);
 };
-
-#pragma warning(pop)

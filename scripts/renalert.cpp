@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -23,6 +23,7 @@
 #include "ArmorWarheadManager.h"
 #include "SoldierGameObjDef.h"
 #include "SoldierGameObj.h"
+#include "SuperweaponGameObj.h"
 #ifdef SSGM
 #include "gmlog.h"
 #endif
@@ -3555,6 +3556,18 @@ void RA_Missile_Beacon::Created(GameObject *obj)
 	Destroy_Script();
 }
 
+//////////////RA_Superweapon_Beacon//////////////
+
+void RA_Superweapon_Beacon::Created(GameObject *obj)
+{
+	GameObject *silo = Find_Object_By_Preset(2, Get_Parameter("SiloPresetName"));
+	if (silo->As_BuildingGameObj() && silo->As_BuildingGameObj()->As_SuperweaponGameObj())
+	{
+		silo->As_BuildingGameObj()->As_SuperweaponGameObj()->Launch();
+	}
+	Destroy_Script();
+}
+
 //////////////RA_Beacon_Terminal//////////////
 
 void RA_Beacon_Terminal::Created(GameObject *obj)
@@ -3703,6 +3716,7 @@ void RA_Beacon_Terminal_2::Poked(GameObject *obj, GameObject *poker)
 void RA_Beacon_Timer::Created(GameObject *obj)
 {
 	Commands->Start_Timer(obj, this, 300.0, 147);
+	//Commands->Start_Timer(obj, this, 3.0, 147);
 }
 
 void RA_Beacon_Timer::Timer_Expired(GameObject *obj, int number)
@@ -3919,7 +3933,7 @@ void RA_MAD_Tank_Devolved::Animation_Complete(GameObject *obj, const char *anima
 			//Setup for building damage
 			float Epercentage = Get_Float_Parameter("EnemyPercentage");
 			float Fpercentage = Get_Float_Parameter("FriendPercentage");
-			bool FF = Get_Int_Parameter("ForceFF");
+			bool FF = Get_Bool_Parameter("ForceFF");
 			const char *warhead = Get_Parameter("Warhead");
 			float range = Get_Float_Parameter("DamageRadius");
 			//Time to break a few windows
@@ -3996,6 +4010,7 @@ ScriptRegistrant<RA_Vision_Control> RA_Vision_Control_Registrant("RA_Vision_Cont
 ScriptRegistrant<RA_Vision_Control_2> RA_Vision_Control_2_Registrant("RA_Vision_Control_2","FogController=RA_Game_Manager:string,InfantryFogStart=0:float,InfantryFogEnd=9:float,VehicleFogStart=0:float,VehicleFogEnd=9:float");
 ScriptRegistrant<RA_Fog_Level_Settings> RA_Fog_Level_Settings_Registrant("RA_Fog_Level_Settings", "FogEnable=1:int,FogMin=200.0:float,FogMax=300.0:float");
 ScriptRegistrant<RA_Missile_Beacon> RA_Missile_Beacon_Registrant("RA_Missile_Beacon", "SiloPresetName:string");
+ScriptRegistrant<RA_Superweapon_Beacon> RA_Superweapon_Beacon_Registrant("RA_Superweapon_Beacon", "SiloPresetName:string");
 ScriptRegistrant<RA_Beacon_Terminal> RA_Beacon_Terminal_Registrant("RA_Beacon_Terminal", "BeaconPowerup:string,BeaconReadySound:string,BeaconTakenSound:string,SiloDisableSound:string,SpyNotifySound:string");
 ScriptRegistrant<RA_Beacon_Terminal_2> RA_Beacon_Terminal_2_Registrant("RA_Beacon_Terminal_2", "BeaconPowerup:string,BeaconReadySound:string,BeaconTakenSound:string,SiloDisableSound:string,OfflineCustom:string,OnlineCustom:string,Warhead:string");
 ScriptRegistrant<RA_Beacon_Timer> RA_Beacon_Timer_Registrant("RA_Beacon_Timer", "");

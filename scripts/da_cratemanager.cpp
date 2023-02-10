@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Crate Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -493,14 +493,16 @@ public:
 
 bool DACrateManager::ShowCrateSpawners_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	HideCrateSpawners_Chat_Command(Player,Text,ChatType);
-	for (int i = 0;i < Spawners.Count();i++) {
+	int i = 0;
+	for (;i < Spawners.Count();i++) {
 		PhysicalGameObj *Marker = Create_Object("Invisible_Object",Spawners[i]);
 		Marker->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 		Marker->Peek_Physical_Object()->Set_Immovable(true);
 		Commands->Set_Model(Marker,"dsp_holo");
 		Marker->Add_Observer(new DAShowCrateSpawnersObserverClass(i+1));
 	}
-	return false;
+	DA::Host_Message("Spawned markers for %d crate spawners.",i+1);
+	return true;
 }
 
 bool DACrateManager::HideCrateSpawners_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -509,7 +511,7 @@ bool DACrateManager::HideCrateSpawners_Chat_Command(cPlayer *Player,const DAToke
 			x->Data()->Set_Delete_Pending();
 		}
 	}
-	return false;
+	return true;
 }
 
 Register_Game_Feature(DACrateManager,"Crates","EnableCrates",0);

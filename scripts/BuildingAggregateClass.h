@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ public:
 	const BuildingAggregateDefClass * Get_BuildingAggregateDef( void ) const {return (BuildingAggregateDefClass *)Definition; }
 	int				Get_Current_State(void);
 	void				Set_Current_State(int new_state,bool force_update = false);
-	SHADERS_API bool				Is_MCT(void);
+	SCRIPTS_API bool				Is_MCT(void);
 	virtual	bool	Save( ChunkSaveClass & csave );
 	virtual	bool	Load( ChunkLoadClass & cload );
 	virtual	void	Save_State( ChunkSaveClass & csave );

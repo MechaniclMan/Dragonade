@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -31,7 +31,7 @@ public:
 	}
 
 	OBBoxClass(const Vector3& aabb_center,const Vector3& aabb_extent, const Matrix3D& transform): 
-		Center(transform.applyTo(aabb_center)), 
+		Center(transform * aabb_center), 
 		Extent(aabb_extent), 
 		Basis(transform)
 	{

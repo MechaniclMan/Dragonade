@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,6 +21,7 @@ const char SCRIPTS_API *Get_Skin(GameObject *obj); //gets the skin type of obj
 void SCRIPTS_API Set_Skin(GameObject *obj,const char *Skintype); //sets the skin type of obj
 void SCRIPTS_API Damage_All_Vehicles_Area(float Damage,const char *Warhead,const Vector3 &Position,float Distance,GameObject *Host,GameObject *Damager); //damages all vechicles in a given area except the host
 void SCRIPTS_API Damage_All_Objects_Area(float Damage,const char *Warhead,const Vector3 &Position,float Distance,GameObject *Host,GameObject *Damager); //damages all objects in a given area except the host
+void SCRIPTS_API Damage_All_Objects_Area_By_Team(float Damage,const char *Warhead,const Vector3 &Position,float Distance,GameObject *Damager,bool Soldiers,bool Vehicles,int Team); //damage all smart objects in a given area by team
 //these only do damage if the building is close enough
 void SCRIPTS_API Ranged_Damage_To_Buildings(float Damage,const char *Warhead,Vector3 Location,float DamageRadius,GameObject *Damager); //damage buildings
 void SCRIPTS_API Ranged_Scale_Damage_To_Buildings(float Damage,const char *Warhead,Vector3 Location,float DamageRadius,GameObject *Damager); //damage buildings based on a scale factor
@@ -68,5 +69,23 @@ float SCRIPTS_API Get_Max_Hitpoints ( GameObject* obj );
 *   The combined current health and shield strength of the object
 */
 float SCRIPTS_API Get_Hitpoints ( GameObject* obj );
+
+/*!
+* \brief Check armour type exists
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Checks if the named armor type exists in armor.ini. This improves on the Get_Armor_Type function
+* in ArmorWarheadManager by removing the ambiguity between 0 == not found and 0 == first armor type.
+*/
+bool SCRIPTS_API Is_Valid_Armor_Type(const char* name);
+
+/*!
+* \brief Check armour type exists
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Checks if the named warhead exists in armor.ini. This improves on the Get_Warhead_Type function
+* in ArmorWarheadManager by removing the ambiguity between 0 == not found and 0 == first warhead.
+*/
+bool SCRIPTS_API Is_Valid_Warhead_Type(const char* name);
 
 #endif

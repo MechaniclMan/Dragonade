@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,17 +16,16 @@
 
 #include "Types.h"
 #include "stdarg.h"
-#if (WWCONFIG) || (TDBEDIT) || (W3DSHADER) || (W3DLIB_EXPORTS) || (W3DMESHMENDER) || (W3DDEPENDS) || (W3DMAPPER) || (ACHASH) || (PACKAGEEDITOR) || (FIXPLANES) || (MERGELOD) || (MIXCHECK) || (DDBEDIT) || (MAKEMIX)
+#if (WWCONFIG) || (TDBEDIT) || (W3DSHADER) || (W3DLIB_EXPORTS) || (W3DMESHMENDER) || (W3DDEPENDS) || (W3DMAPPER) || (ACHASH) || (PACKAGEEDITOR) || (FIXPLANES) || (MERGELOD) || (MIXCHECK) || (DDBEDIT) || (MAKEMIX) || (ALTMAT) || (W3DVIEWER)
 #define EXTERNAL 1
 #endif
 
 #pragma warning(disable: 4100) // unreferenced formal parameter
-#pragma warning(disable: 6011) // Dereferencing NULL pointer (used by renegade variable access functions)
-#pragma warning(disable: 4275) // non dll-interface class '<class>' used as base for dll-interface class '<class>'
 #pragma warning(disable: 4201) // nonstandard extension used : nameless struct/union
-#pragma warning(disable: 6290) // Bitwise operation on logical result: ! has higher precedence than &. Use && or (!(x & y)) instead
-#pragma warning(disable: 6211) // Leaking memory 'newEntries' due to an exception. Consider using a local catch block to clean up memory
 #pragma warning(disable: 4505) // unreferenced local function has been removed
+#pragma warning(disable: 6509) // warning c6509: Return used on precondition
+#pragma warning(disable: 4275) // warning c6509: Return used on precondition
+#pragma warning(disable: 4800) // forcing value to bool
 
 //class needs to have dll-interface to used by clients of class. Except that it doesn't. 
 //If it did, the linker would complain.
@@ -36,17 +35,28 @@
 #define _USE_MATH_DEFINES
 
 // breakpoint
+#if defined(_M_IX86)
 #define TT_INTERRUPT  { __asm { __asm int 3 } }
+#elif defined(_M_AMD64)
+#define TT_INTERRUPT  { __debugbreak(); }
+#endif
+
+// assert that is not removed in release mode
+#define TT_RELEASE_ASSERT(expression) { __analysis_assume(expression); if (!(expression)) TT_INTERRUPT; }
 
 // assert
 #ifdef DEBUG
 #	define TT_ASSERT(expression) \
    {                             \
+	   __analysis_assume(expression); \
       if (!(expression))         \
          TT_INTERRUPT;            \
    }
 #else
-#	define TT_ASSERT(expression)  {}
+#	define TT_ASSERT(expression) \
+   {                             \
+	   __analysis_assume(expression); \
+   }
 #endif
 
 // assumption optimization
@@ -60,9 +70,16 @@
 
 // unreachable code
 #	ifdef DEBUG
-#		define TT_UNREACHABLE TT_INTERRUPT
+#		define TT_ASSUME_UNREACHABLE TT_INTERRUPT
 #	else
-#		define TT_UNREACHABLE __assume(false);
+#		define TT_ASSUME_UNREACHABLE __assume(false);
+#	endif
+
+// unreachable code
+#	ifdef DEBUG
+#		define TT_ASSERT_UNREACHABLE TT_INTERRUPT
+#   else
+#       define TT_ASSERT_UNREACHABLE
 #	endif
 
 #define TT_UNIMPLEMENTED TT_INTERRUPT
@@ -96,9 +113,49 @@ char ( &_ArraySizeHelper( T (&array)[N] ))[N];
 
 // to communicate with Renegade
 #ifndef EXTERNAL
+
+#ifdef SHARED_EXPORTS
+#define SHARED_API __declspec(dllexport)
+#define SCRIPTS_API
+#define DA_API
+#else
+#define SHARED_API __declspec(dllimport)
+#if DAPLUGIN || SSGMPLUGIN
+#define SCRIPTS_API __declspec(dllimport)
+#define DA_API __declspec(dllimport)
+#else
+#define SCRIPTS_API __declspec(dllexport)
+#define DA_API __declspec(dllexport)
+#endif
+#endif
+
+SCRIPTS_API void* HookupAT3(void* a, void* b, void* c, void* patch_start);
+#define RENEGADE_FUNCTION  __declspec(naked)
+#ifndef TTLE_EXPORTS
+#define AT2(client, server) AT3(client, server, 0)
+#endif
+#define AT3(client, server, leveledit)  \
+{                                       \
+    __asm AT3PatchStart:                \
+    __asm push ecx                      \
+    __asm push edx                      \
+    __asm push offset AT3PatchStart     \
+    __asm push leveledit                \
+    __asm push server                   \
+    __asm push client                   \
+    __asm call HookupAT3                \
+    __asm add esp, 16                   \
+    __asm pop edx                       \
+    __asm pop ecx                       \
+    __asm jmp eax                       \
+}
+SCRIPTS_API void InitEngine();
+SCRIPTS_API extern int Exe;  // used by Vx()/ATx() macros
+
 template <typename T> T& ResolveGameReference(const int client, const int server, const int leveledit)
 {
 	if (Exe == 6) InitEngine();
+#pragma warning(suppress: 6011) //warning C6011: dereferencing NULL pointer <name>
 	return *((T*)((Exe == 0) ? client : ((Exe == 1) ? server : ((Exe == 4) ? leveledit : 0))));
 };
 
@@ -129,45 +186,18 @@ public:
 };
 
 
-#ifndef TTLE_EXPORTS
-#define REF_DECL1(name, type) type & name
-#define REF_DEF1(name, type, client) type & name = *(( type *) client )
-#define REF_DECL2(name, type) type & name
-#define REF_DEF2(name, type, client, server) type & name = ResolveGameReference<type>(client, server, 0)
-#else //!TTLE_EXPORTS
-/*#define REF_DECL1(name, type)
-#define REF_DEF1(name, type, client)
-#define REF_DECL2(name, type)
-#define REF_DEF2(name, type, client, server)*/
-#endif //TTLE_EXPORTS
-
-
-
-#define REF_DECL3(name, type) type & name
-#define REF_DEF3(name, type, client, server, leveledit) type & name = ResolveGameReference<type>(client, server, leveledit)
+#define REF_DECL(type, name) type & name
+#define REF_ARR_DECL(type, name, size) RefArrayHelper<type, size> & name
 
 #ifndef TTLE_EXPORTS
-#define REF_ARR_DECL1(name, type, size) RefArrayHelper<type, size> & name
-#define REF_ARR_DEF1(name, type, size, client) RefArrayHelper <type, size> & name = *((RefArrayHelper< type, size >*) client)
-#define REF_ARR_DECL2(name, type, size) RefArrayHelper<type, size> & name
-#define REF_ARR_DEF2(name, type, size, client, server) RefArrayHelper<type, size> & name = ResolveGameReference<RefArrayHelper< type, size >> (client, server, 0)
-#else //!TTLE_EXPORTS
-/*#define REF_ARR_DECL1(name, type, size)
-#define REF_ARR_DEF1(name, type, size, client)
-#define REF_ARR_DECL2(name, type, size)
-#define REF_ARR_DEF2(name, type, size, client, server)*/
+#define REF_DEF2(type, name, client, server) type & name = ResolveGameReference<type>(client, server, 0)
+#define REF_ARR_DEF2(type, name, size, client, server) RefArrayHelper<type, size> & name = ResolveGameReference<RefArrayHelper< type, size >> (client, server, 0)
 #endif //TTLE_EXPORTS
 
+#define REF_DEF3(type, name, client, server, leveledit) type & name = ResolveGameReference<type>(client, server, leveledit)
+#define REF_ARR_DEF3(type, name, size, client, server, leveledit) RefArrayHelper<type, size> & name = ResolveGameReference<RefArrayHelper< type, size >> ( client, server, leveledit)
 
-#define REF_ARR_DECL3(name, type, size) RefArrayHelper<type, size> & name
-#define REF_ARR_DEF3(name, type, size, client, server, leveledit) RefArrayHelper<type, size> & name = ResolveGameReference<RefArrayHelper< type, size >> ( client, server, leveledit)
 
-#define REF_2DARR_DECL1(name, type, size_inner, size_outer) RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner> & name
-#define REF_2DARR_DEF1(name, type, size_inner, size_outer, client) RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner> & name = *((RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner>*) client)
-#define REF_2DARR_DECL2(name, type, size_inner, size_outer) REF_2DARR_DECL1 ( name, type, size_inner, size_outer ) 
-#define REF_2DARR_DEF2(name, type, size_inner, size_outer, client, server) RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner> & name = ResolveGameReference<RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner>> (client, server, 0)
-#define REF_2DARR_DECL3(name, type, size_inner, size_outer) REF_2DARR_DECL1 ( name, type, size_inner, size_outer ) 
-#define REF_2DARR_DEF3(name, type, size_inner, size_outer, client, server, leveledit) RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner> & name = ResolveGameReference<RefArrayHelper<RefArrayHelper<type, size_outer>, size_inner>> (client, server, leveledit)
 
 // Q: So what are these ATx things anyways?
 // A: The ATx macros are are designed for transparently calling functions that may have 
@@ -181,80 +211,14 @@ public:
 // then use ATx as the function implemention. 
 //
 // Examples:
-// RENEGADE_FUNCTION void ExampleFunction()		AT1(0xfeedface);
 // RENEGADE_FUNCTION void ExampleFunction2()	AT2(0xdeadbeef, 0xbaadf00d);
-// RENEGADE_FUNCTION void ExampleFunction2()	AT2(0xdeadbeef, 0xbaadf00d, 0xdeadc0de);
-//
-// ATxc is a bit more complicated. You need to provide a "version selector" function 
-// and pass that to ATxc as the final parameter. If the version selector function 
-// returns 0, then A will be used for all calls to the function. If it returns 1, B will be
-// used. If it returns 2, C will be used. You should use ATxc when you want to provide 
-// multiple versions of a function which may require different configurations or hardware
-// capabilities and you don't want to manage function pointers manually.
-//
-// Example:
-// // declared somewhere in current scope
-// int ExampleAT2VersionSelector();
-// void ExampleFunction_A();
-// void ExampleFunction_B(); 
-// // the actual function
-// RENEGADE_FUNCTION void ExampleFunction() AT2c(ExampleFunction_A, ExampleFunction_B, ExampleAT2VersionSelector);
+// RENEGADE_FUNCTION void ExampleFunction3()	AT3(0xdeadbeef, 0xbaadf00d, 0xdeadc0de);
 
-#ifdef SHADERS_EXPORTS
-#define SHADERS_API __declspec(dllexport)
-#else
-#ifdef EXTERNAL
-#define SHADERS_API
-#else
-#define SHADERS_API __declspec(dllimport)
-#endif
-#endif
-
-#if (DAPLUGIN) || (SSGMPLUGIN)
-#define SCRIPTS_API __declspec(dllimport)
-#define DA_API __declspec(dllimport)
-#else
-#define SCRIPTS_API __declspec(dllexport)
-#define DA_API __declspec(dllexport)
-#endif
-
-SCRIPTS_API void InitEngine();
-SCRIPTS_API int		RenegadeAT3VersionSelector(); // Default implementation, used by AT1/AT2
-SCRIPTS_API void*	HookupAT3(void* a, void* b, void* c, void* patch_start, void* patch_end, int (*function_selector)());
-void* HookupAT3x(void* a, void* b, void* c, void* patch_start, void* patch_end, int (*version_selector)());
-#define RENEGADE_FUNCTION  __declspec(naked)
-#ifndef TTLE_EXPORTS
-#define AT1(client)						AT2(client, 0)
-#define AT2(client, server)				AT2c(client, server, RenegadeAT3VersionSelector)	
-#endif
-#define AT3(client, server, leveledit)	AT3c(client, server, leveledit, RenegadeAT3VersionSelector)
-#ifndef TTLE_EXPORTS
-#define AT2c(a, b, ver_selector)		AT3c(a, b, 0, ver_selector)
-#endif
-#define AT3c(a, b, c, ver_selector)	\
-{									\
-	__asm AT3PatchStart:			\
-	__asm push ecx					\
-	__asm push edx					\
-	__asm push ver_selector			\
-	__asm push offset AT3PatchEnd	\
-	__asm push offset AT3PatchStart	\
-	__asm push c					\
-	__asm push b					\
-	__asm push a					\
-	__asm call HookupAT3x			\
-	__asm AT3PatchEnd:				\
-	__asm add esp, 24				\
-	__asm pop edx					\
-	__asm pop ecx					\
-	__asm jmp eax					\
-}
-
-SCRIPTS_API extern int Exe;  // used by Vx()/ATx() macros
 #else
 #define SCRIPTS_API
-#define SHADERS_API
+#define SHARED_API
 #endif
+
 template<int stackBufferLength, typename Char> class FormattedString;
 
 template<int stackBufferLength> class FormattedString<stackBufferLength, char>
@@ -344,5 +308,11 @@ public:
 // Format a string (sprintf style) using a stack buffer of a given size if possible, or a heap buffer otherwise.
 #define TT_FORMAT(maxFormattedLength, format, ...) FormattedString<maxFormattedLength, char>(format, __VA_ARGS__).getValue()
 #define TT_FORMAT_WIDE(maxFormattedLength, format, ...) FormattedString<maxFormattedLength, wchar_t>(format, __VA_ARGS__).getValue()
+
+// Define the possible values for the Exe variable, rather than scattering magic numbers throughout the code
+#define EXE_CLIENT 0
+#define EXE_SERVER 1
+#define EXE_LEVELEDIT 4
+#define EXE_UNINITIALISED 6
 
 #endif

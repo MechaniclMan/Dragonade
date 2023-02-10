@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Spawn System Game Mode Framework
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -380,11 +380,13 @@ void DASpawnManagerClass::Object_Created_Event(GameObject *obj) {
 }
 
 void DASpawnManagerClass::Object_Destroyed_Event(GameObject *obj) {
-	Remove_Spawn_List(obj);
 	DASpawnPlayerDataClass *Player = Get_Player_Data(obj);
-	Player->SpawnState = DASpawnState::DEAD;
-	Player->DeathTime = GetTickCount();
-	Player->DeathPosition = Commands->Get_Position(obj);
+	if (!Player->Get_Owner()->Get_DA_Player()->Is_Spawning()) {
+		Remove_Spawn_List(obj);
+		Player->SpawnState = DASpawnState::DEAD;
+		Player->DeathTime = GetTickCount();
+		Player->DeathPosition = Commands->Get_Position(obj);
+	}
 }
 
 void DASpawnManagerClass::Send_To_Waiting_Room(GameObject *obj) {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -292,6 +292,73 @@ void JFW_Jetpack::Timer_Expired(GameObject *obj,int number)
 	time = true;
 }
 
+void JFW_Jetpack_Timer::Detach(GameObject *obj)
+{
+	if (Exe != 4)
+	{
+		if (Get_Fly_Mode(obj))
+		{
+			Toggle_Fly_Mode(obj);
+		}
+	}
+	JFW_Key_Hook_Base::Detach(obj);
+}
+
+void JFW_Jetpack_Timer::Created(GameObject *obj)
+{
+	enabled = true;
+	hookid = 0;
+	k = 0;
+	time = true;
+	InstallHook("Jetpack",obj);
+}
+
+void JFW_Jetpack_Timer::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("EnableMessage"))
+	{
+		enabled = true;
+	}
+	if (type == Get_Int_Parameter("DisableMessage"))
+	{
+		enabled = false;
+	}
+}
+
+void JFW_Jetpack_Timer::KeyHook()
+{
+	if (enabled && !Get_Vehicle(Owner()))
+	{
+		if (time)
+		{
+			if(!Get_Fly_Mode(Owner()))
+			{
+				Commands->Set_Animation(Owner(), Get_Parameter("OnAnimation"), true, 0, 0, -1, true);
+			}
+			else
+			{
+				Owner()->As_PhysicalGameObj()->Clear_Animation();
+			}
+			Toggle_Fly_Mode(Owner());
+			time = false;
+			Commands->Start_Timer(Owner(),this,Get_Float_Parameter("Timer"),1);
+		}
+		else
+		{
+			unsigned int red;
+			unsigned int green;
+			unsigned int blue;
+			Get_Team_Color(Get_Player_Type(Owner()),&red,&green,&blue);
+			Send_Message_Player(Owner(),red,green,blue,Get_Parameter("Message"));
+		}
+	}
+}
+
+void JFW_Jetpack_Timer::Timer_Expired(GameObject *obj,int number)
+{
+	time = true;
+}
+
 void JFW_Jetpack_Model::Detach(GameObject *obj)
 {
 	if (Exe != 4)
@@ -546,6 +613,7 @@ ScriptRegistrant<JFW_Attach_Script_Vehicle_Created> JFW_Attach_Script_Vehicle_Cr
 ScriptRegistrant<JFW_Dplbl_Vhcls_Keyboard> JFW_Dplbl_Vhcls_Keyboard_Registrant("JFW_Dplbl_Vhcls_Keyboard","Animation_Preset:string,oldTnk_Warhead:string,oldTnk_Dammage:float,Explosion_preset:string");
 ScriptRegistrant<JFW_Underground_Logic> JFW_Underground_Logic_Registrant("JFW_Underground_Logic","UpZOffset:float,DownZOffset:float,DigEffectObj:string,SurfaceEffectObj:string,DisableMessage:int,EnableMessage:int,IndicatorMessage:int,IndicatorObject:string,IndicatorZOffset:float,DigRed:float,DigGreen:float,DigBlue:float,DigOpacity:float,DigSound:string");
 ScriptRegistrant<JFW_Jetpack> JFW_Jetpack_Registrant("JFW_Jetpack","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string");
+ScriptRegistrant<JFW_Jetpack_Timer> JFW_Jetpack_Timer_Registrant("JFW_Jetpack_Timer","DisableMessage:int,EnableMessage:int,OnAnimation=null.null:string,timer:float,Message:string");
 ScriptRegistrant<JFW_Jetpack_Model> JFW_Jetpack_Model_Registrant("JFW_Jetpack_Model","DisableMessage:int,EnableMessage:int,OnModel:string,OffModel:string,OnAnimation=null.null:string");
 ScriptRegistrant<JFW_Suicide_Bomber> JFW_Suicide_Bomber_Registrant("JFW_Suicide_Bomber","Explosion:string");
 ScriptRegistrant<JFW_Sidebar_Key_2> JFW_Sidebar_Key_2_Registrant("JFW_Sidebar_Key_2","Key=Sidebar:string,Enable_Custom=0:int,Disable_Custom=0:int,Sound:string");

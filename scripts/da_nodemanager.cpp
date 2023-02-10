@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Node Manager Game Mode Framework
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -60,17 +60,14 @@ void DABaseNodeClass::Init(const INIClass *INI,const StringClass &Header) {
 
 	Vector3 IconPos = Position;
 	IconPos.Z += 1.0f;
-	Icon = Commands->Create_Object("Generic_Cinematic",IconPos);
+	Icon = Create_Object("Generic_Cinematic",IconPos);
 
-	Radar[0] = Commands->Create_Object("Invisible_Object",Position);
-	Radar[1] = Commands->Create_Object("Invisible_Object",Position);
-	Radar[2] = Commands->Create_Object("CtfFlag",Position); //This is for players without scripts.
-	Commands->Disable_All_Collisions(Radar[2]);
-	Commands->Set_Model(Radar[2],"null");
-	Commands->Attach_To_Object_Bone(Radar[2],Object,"origin");
-	Set_Object_Type(Radar[0],0);
-	Set_Object_Type(Radar[1],1);
-	Set_Object_Type(Radar[2],2);
+	Radar[0] = Create_Object("Invisible_Object",Position);
+	Radar[1] = Create_Object("Invisible_Object",Position);
+	Radar[0]->Set_Player_Type(0);
+	Radar[1]->Set_Player_Type(1);
+	Radar[0]->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_OBJECTIVE);
+	Radar[1]->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_OBJECTIVE);
 
 	int StartingTeam = INI->Get_Int(The_Game()->MapName,StringFormat("%s_Team",Header),2);
 	if (StartingTeam == 0 || StartingTeam == 1) {
@@ -82,8 +79,7 @@ void DABaseNodeClass::Init(const INIClass *INI,const StringClass &Header) {
 	else {
 		Set_Object_Type(Object,2);
 		Team = 2;
-		Update_Icon();
-		Update_Radar();
+		Update_Icon_And_Radar();
 	}
 
 	INI->Get_String(Name,The_Game()->MapName,StringFormat("%s_Name",Header));
@@ -270,8 +266,7 @@ void DABaseNodeClass::Captured(int CaptureTeam) {
 	Commands->Set_Health(Object,Commands->Get_Max_Health(Object));
 	Set_Object_Type(Object,Team);
 	Commands->Set_Health(Object,1.0f);
-	Update_Icon();
-	Update_Radar();
+	Update_Icon_And_Radar();
 	Give_Capture_Points();
 	SentAttackMessage = false;
 	SentDefendMessage[0] = false;
@@ -311,9 +306,11 @@ void DABaseNodeClass::Defend_Tick() {
 	}
 }
 
-void DABaseNodeClass::Update_Icon() {
+void DABaseNodeClass::Update_Icon_And_Radar() {
 	Commands->Set_Model(Icon,Icons[Team]);
 	Commands->Set_Animation(Icon,StringFormat("%s.%s",Icons[Team],Icons[Team]),true,0,0,-1.0f,false);
+	Radar[0]->Set_Radar_Blip_Color_Type(Team);
+	Radar[1]->Set_Radar_Blip_Color_Type(Team);
 }
 
 bool DABaseNodeClass::Is_Player_In_Range(SoldierGameObj *Player) {
@@ -414,16 +411,7 @@ void DANodeManagerClass::Init(const INIClass *INI) {
 	CaptureVeteranPoints = INI->Get_Int(The_Game()->MapName,"NodeCaptureVeteranPoints",INI->Get_Int("General","NodeCaptureVeteranPoints",3));
 	ContestedSpawnTime = (unsigned int)(INI->Get_Float(The_Game()->MapName,"NodeContestedSpawnTime",INI->Get_Float("General","NodeContestedSpawnTime",5.0f))*1000);
 
-	Register_Event(DAEvent::PLAYERLOADED);
 	Register_Chat_Command((DAECC)&DANodeManagerClass::Nodes_Chat_Command,"!nodes|!node|!nodeinfo");
-}
-
-void DANodeManagerClass::Player_Loaded_Event(cPlayer *Player) {
-	Start_Timer(1,0.5,false,Commands->Get_ID(Player->Owner)); //Can't send the radar data right when they join.
-}
-
-void DANodeManagerClass::Timer_Expired(int Number,unsigned int Data) {
-	Update_Radar_Player(Commands->Find_Object(Data));
 }
 
 bool DANodeManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {

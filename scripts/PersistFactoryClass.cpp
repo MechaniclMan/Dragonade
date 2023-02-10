@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -143,14 +143,14 @@ SaveLoadSubSystemClass *SaveLoadSystemClass::Find_Sub_System(uint32 id)
 	return 0;
 }
 
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
 SaveLoadSubSystemClass *SaveLoadSystemClass::_SubSystemListHead;
 PersistFactoryClass *SaveLoadSystemClass::_FactoryListHead;
 PointerRemapClass SaveLoadSystemClass::PointerRemapper;
 #else
-REF_DEF3(SaveLoadSystemClass::PointerRemapper, PointerRemapClass, 0x00830398, 0x0082F580, 0x008B5D70);
-REF_DEF3(SaveLoadSystemClass::_FactoryListHead,PersistFactoryClass *,0x008303E8,0x0082F5D0,0x008B5DC0);
-REF_DEF3(SaveLoadSystemClass::_SubSystemListHead,SaveLoadSubSystemClass *,0x008303E4,0x0082F5CC,0x008B5DBC);
+REF_DEF3(PointerRemapClass, SaveLoadSystemClass::PointerRemapper, 0x00830398, 0x0082F580, 0x008B5D70);
+REF_DEF3(PersistFactoryClass *, SaveLoadSystemClass::_FactoryListHead, 0x008303E8, 0x0082F5D0, 0x008B5DC0);
+REF_DEF3(SaveLoadSubSystemClass *, SaveLoadSystemClass::_SubSystemListHead, 0x008303E4, 0x0082F5CC, 0x008B5DBC);
 #endif
 
 void SaveLoadSystemClass::Register_Pointer(void *ptr1, void *ptr2)

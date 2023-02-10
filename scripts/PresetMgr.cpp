@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -186,10 +186,14 @@ bool PresetMgrClass::Save(ChunkSaveClass& csave)
 	PresetClass *preset = _ThePresetMgr._PresetListHead;
 	if (preset)
 	{
-		csave.Begin_Chunk(preset->Get_Factory().Chunk_ID());
-		preset->Get_Factory().Save(csave,preset);
-		csave.End_Chunk();
-		preset = preset->Next();
+		do
+		{
+			csave.Begin_Chunk(preset->Get_Factory().Chunk_ID());
+			preset->Get_Factory().Save(csave,preset);
+			csave.End_Chunk();
+			preset = preset->Next();
+		}
+		while (preset);
 	}
 	csave.End_Chunk();
 	csave.Begin_Chunk(258);

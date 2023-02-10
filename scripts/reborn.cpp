@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,6 +15,7 @@
 #include "engine.h"
 #include "reborn.h"
 #include "VehicleGameObj.h"
+#include "MoveablePhysClass.h"
 
 void Reborn_Game_Manager::Created(GameObject *obj)
 {
@@ -397,7 +398,7 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 		//deploy!
 		if (!mode && !enabled)
 		{
-			if (!obj->As_VehicleGameObj()->Is_Immovable())
+			if (!obj->As_VehicleGameObj()->Is_Immovable() && obj->As_VehicleGameObj()->Can_Drive())
 			{
 				obj->As_VehicleGameObj()->Set_Immovable(true);
 				Mode = 2;
@@ -744,12 +745,6 @@ void Reborn_IsDeployableTank::Created(GameObject *obj)
 	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
 	mode = 0;
 	PilotID = 0;
-	xpos = 0;
-	ypos = 0;
-	zpos = 0;
-	enabled = false;
-	firststep = true;
-	Commands->Start_Timer(obj,this,(float)0.1,1);
 	Commands->Clear_Weapons(obj);
 }
 
@@ -775,13 +770,17 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 	}
 	else if (type == 923572385)
 	{
+		if (!obj->As_VehicleGameObj()->Can_Drive())
+		{
+			return;
+		}
 		const char *model = Get_Parameter("Model_Name");
 		char deployanim[512];
 		char dmodel[512];
 		sprintf(deployanim,"%s_d.%s_d",model,model);
 		sprintf(dmodel,"%s_d",model);
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		if (!mode && !enabled)
+		if (!mode)
 		{
 			if (!obj->As_VehicleGameObj()->Is_Immovable())
 			{
@@ -795,7 +794,7 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 			}
 		}
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		else if ((mode == 2) && !enabled)
+		else if (mode == 2)
 		{
 			mode = 3;
 			Commands->Clear_Weapons(obj);
@@ -840,109 +839,21 @@ void Reborn_IsDeployableTank::Animation_Complete(GameObject *obj,const char *ani
 		obj->As_VehicleGameObj()->Set_Immovable(false);
 		mode = 0;
 		Commands->Set_Model(obj,model);
+		obj->As_PhysicalGameObj()->Clear_Animation();
 		Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Hibernation(obj,false);
 		Commands->Enable_Innate_Conversations(obj,true);
-		firststep = false;
-		xpos = 0;
-		ypos = 0;
-		zpos = 0;
-		enabled = false;
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Engine(obj,true);
 		return;
 	}
 }
 
-void Reborn_IsDeployableTank::Timer_Expired(GameObject *obj,int number)
-{
-	const char *model;
-	model = Get_Parameter("Model_Name");
-	char moveanim[512];
-	sprintf(moveanim,"%s.%s_m",model,model);
-	bool animatedmove = false;
-	int animm;
-	animm = Get_Int_Parameter("Enable_Moveanim");
-	if (animm == 1)
-	{
-		animatedmove = true;
-	}
-	else if (animm != 1)
-	{
-		animatedmove = false;
-	}
-	//check for moveanim
-	if ((number == 1))
-	{
-		Commands->Start_Timer(obj,this,(float)0.1,1);
-		Vector3 position = Commands->Get_Position(obj);
-		//move anim while deploy?
-		if (mode == 1)
-		{
-			return;
-		}
-		//move anim while deployed?
-		if (mode == 2)
-		{
-			return;
-		}
-		//move anim while redeploy?
-		if (mode == 3)
-		{
-			return;
-		}
-		//ever moved before?
-		if (!xpos && !ypos && !zpos)
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			return;
-		}
-		//moved!
-		if ((position.X != xpos) || (position.Y != ypos) || (position.Z != zpos))
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			if (!enabled)
-			{
-				enabled = true;
-				if (firststep && animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
-					firststep = false;
-					return;
-				}
-				else if (animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,Get_Animation_Frame(obj),-1,0);
-					return;
-				}
-			}
-		}
-		else
-		{
-			if (animatedmove)
-			{
-				obj->As_PhysicalGameObj()->Clear_Animation();
-			}
-			enabled = false;
-			return;
-		}
-	}
-}
-
 void Reborn_IsDeployableTank::Register_Auto_Save_Variables()
 {
-	Auto_Save_Variable(&enabled,1,1);
-	Auto_Save_Variable(&xpos,4,2);
-	Auto_Save_Variable(&ypos,4,3);
-	Auto_Save_Variable(&zpos,4,4);
 	Auto_Save_Variable(&PilotID,4,6);
 	Auto_Save_Variable(&mode,4,7);
-	Auto_Save_Variable(&firststep,1,8);
 }
 
 void Reborn_IsDeployableTank::Killed(GameObject *obj,GameObject *killer)
@@ -964,12 +875,7 @@ void Reborn_IsDeployableTank_2::Created(GameObject *obj)
 	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
 	mode = 0;
 	PilotID = 0;
-	xpos = 0;
-	ypos = 0;
-	zpos = 0;
-	enabled = false;
-	firststep = true;
-	Commands->Start_Timer(obj,this,(float)0.1,1);
+	//Commands->Start_Timer(obj,this,(float)0.1,1);
 }
 
 void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -994,13 +900,17 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 	}
 	else if (type == 923572385)
 	{
+		if (!obj->As_VehicleGameObj()->Can_Drive())
+		{
+			return;
+		}
 		const char *model = Get_Parameter("Model_Name");
 		char deployanim[512];
 		char dmodel[512];
 		sprintf(deployanim,"%s_d.%s_d",model,model);
 		sprintf(dmodel,"%s_d",model);
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		if (!mode && !enabled)
+		if (!mode)
 		{
 			if (!obj->As_VehicleGameObj()->Is_Immovable())
 			{
@@ -1014,7 +924,7 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 			}
 		}
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		else if ((mode == 2) && !enabled)
+		else if (mode == 2)
 		{
 			mode = 3;
 			Commands->Set_Model(obj,dmodel);
@@ -1055,109 +965,21 @@ void Reborn_IsDeployableTank_2::Animation_Complete(GameObject *obj,const char *a
 		obj->As_VehicleGameObj()->Set_Immovable(false);
 		mode = 0;
 		Commands->Set_Model(obj,model);
+		obj->As_PhysicalGameObj()->Clear_Animation();
 		Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Hibernation(obj,true);
 		Commands->Enable_Innate_Conversations(obj,true);
-		firststep = false;
-		xpos = 0;
-		ypos = 0;
-		zpos = 0;
-		enabled = false;
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Engine(obj,true);
 		return;
 	}
 }
 
-void Reborn_IsDeployableTank_2::Timer_Expired(GameObject *obj,int number)
-{
-	const char *model;
-	model = Get_Parameter("Model_Name");
-	char moveanim[512];
-	sprintf(moveanim,"%s.%s_m",model,model);
-	bool animatedmove = false;
-	int animm;
-	animm = Get_Int_Parameter("Enable_Moveanim");
-	if (animm == 1)
-	{
-		animatedmove = true;
-	}
-	else if (animm != 1)
-	{
-		animatedmove = false;
-	}
-	//check for moveanim
-	if ((number == 1))
-	{
-		Commands->Start_Timer(obj,this,(float)0.1,1);
-		Vector3 position = Commands->Get_Position(obj);
-		//move anim while deploy?
-		if (mode == 1)
-		{
-			return;
-		}
-		//move anim while deployed?
-		if (mode == 2)
-		{
-			return;
-		}
-		//move anim while redeploy?
-		if (mode == 3)
-		{
-			return;
-		}
-		//ever moved before?
-		if (!xpos && !ypos && !zpos)
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			return;
-		}
-		//moved!
-		if ((position.X != xpos) || (position.Y != ypos) || (position.Z != zpos))
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			if (!enabled)
-			{
-				enabled = true;
-				if (firststep && animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
-					firststep = false;
-					return;
-				}
-				else if (animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,Get_Animation_Frame(obj),-1,0);
-					return;
-				}
-			}
-		}
-		else
-		{
-			if (animatedmove)
-			{
-				obj->As_PhysicalGameObj()->Clear_Animation();
-			}
-			enabled = false;
-			return;
-		}
-	}
-}
-
 void Reborn_IsDeployableTank_2::Register_Auto_Save_Variables()
 {
-	Auto_Save_Variable(&enabled,1,1);
-	Auto_Save_Variable(&xpos,4,2);
-	Auto_Save_Variable(&ypos,4,3);
-	Auto_Save_Variable(&zpos,4,4);
 	Auto_Save_Variable(&PilotID,4,6);
 	Auto_Save_Variable(&mode,4,7);
-	Auto_Save_Variable(&firststep,1,8);
 }
 
 void Reborn_IsDeployableTank_2::Killed(GameObject *obj,GameObject *killer)
@@ -1425,12 +1247,6 @@ void Reborn_IsDeployableTank_3::Created(GameObject *obj)
 	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
 	mode = 0;
 	PilotID = 0;
-	xpos = 0;
-	ypos = 0;
-	zpos = 0;
-	enabled = false;
-	firststep = true;
-	Commands->Start_Timer(obj,this,(float)0.1,1);
 }
 
 void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -1455,13 +1271,17 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 	}
 	else if (type == 923572385)
 	{
+		if (!obj->As_VehicleGameObj()->Can_Drive())
+		{
+			return;
+		}
 		const char *model = Get_Parameter("Model_Name");
 		char deployanim[512];
 		char dmodel[512];
 		sprintf(deployanim,"%s_d.%s_d",model,model);
 		sprintf(dmodel,"%s_d",model);
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		if (!mode && !enabled)
+		if (!mode)
 		{
 			if (!obj->As_VehicleGameObj()->Is_Immovable())
 			{
@@ -1479,7 +1299,7 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 			}
 		}
 		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
-		else if ((mode == 2) && !enabled)
+		else if (mode == 2)
 		{
 			mode = 3;
 			Commands->Set_Model(obj,dmodel);
@@ -1520,6 +1340,7 @@ void Reborn_IsDeployableTank_3::Animation_Complete(GameObject *obj,const char *a
 		obj->As_VehicleGameObj()->Set_Immovable(false);
 		mode = 0;
 		Commands->Set_Model(obj,model);
+		obj->As_PhysicalGameObj()->Clear_Animation();
 		Commands->Clear_Weapons(obj);
 		Commands->Give_PowerUp(obj,Get_Parameter("Weapon_Powerup_Name2"),false);
 		Commands->Select_Weapon(obj,Get_Parameter("Weapon_Name2"));
@@ -1528,105 +1349,16 @@ void Reborn_IsDeployableTank_3::Animation_Complete(GameObject *obj,const char *a
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Hibernation(obj,false);
 		Commands->Enable_Innate_Conversations(obj,true);
-		firststep = false;
-		xpos = 0;
-		ypos = 0;
-		zpos = 0;
-		enabled = false;
 		Commands->Enable_Vehicle_Transitions(obj,true);
 		Commands->Enable_Engine(obj,true);
 		return;
 	}
 }
 
-void Reborn_IsDeployableTank_3::Timer_Expired(GameObject *obj,int number)
-{
-	const char *model;
-	model = Get_Parameter("Model_Name");
-	char moveanim[512];
-	sprintf(moveanim,"%s.%s_m",model,model);
-	bool animatedmove = false;
-	int animm;
-	animm = Get_Int_Parameter("Enable_Moveanim");
-	if (animm == 1)
-	{
-		animatedmove = true;
-	}
-	else if (animm != 1)
-	{
-		animatedmove = false;
-	}
-	//check for moveanim
-	if ((number == 1))
-	{
-		Commands->Start_Timer(obj,this,(float)0.1,1);
-		Vector3 position = Commands->Get_Position(obj);
-		//move anim while deploy?
-		if (mode == 1)
-		{
-			return;
-		}
-		//move anim while deployed?
-		if (mode == 2)
-		{
-			return;
-		}
-		//move anim while redeploy?
-		if (mode == 3)
-		{
-			return;
-		}
-		//ever moved before?
-		if (!xpos && !ypos && !zpos)
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			return;
-		}
-		//moved!
-		if ((position.X != xpos) || (position.Y != ypos) || (position.Z != zpos))
-		{
-			xpos = position.X;
-			ypos = position.Y;
-			zpos = position.Z;
-			if (!enabled)
-			{
-				enabled = true;
-				if (firststep && animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,0,-1,0);
-					firststep = false;
-					return;
-				}
-				else if (animatedmove)
-				{
-					Commands->Set_Animation(obj,moveanim,true,0,Get_Animation_Frame(obj),-1,0);
-					return;
-				}
-			}
-		}
-		else
-		{
-			if (animatedmove)
-			{
-				obj->As_PhysicalGameObj()->Clear_Animation();
-			}
-			enabled = false;
-			return;
-		}
-	}
-}
-
 void Reborn_IsDeployableTank_3::Register_Auto_Save_Variables()
 {
-	Auto_Save_Variable(&enabled,1,1);
-	Auto_Save_Variable(&xpos,4,2);
-	Auto_Save_Variable(&ypos,4,3);
-	Auto_Save_Variable(&zpos,4,4);
 	Auto_Save_Variable(&PilotID,4,6);
 	Auto_Save_Variable(&mode,4,7);
-	Auto_Save_Variable(&firststep,1,8);
 }
 
 void Reborn_IsDeployableTank_3::Killed(GameObject *obj,GameObject *killer)
@@ -1653,8 +1385,8 @@ ScriptRegistrant<Reborn_Diggable_Vehicle> Reborn_Diggable_Vehicle_Registrant("Re
 ScriptRegistrant<Reborn_PlaySound_OnCreate> Reborn_PlaySound_OnCreate_Registrant("Reborn_PlaySound_OnCreate","Sound_Preset_Name=BLAH!:string");
 ScriptRegistrant<Reborn_Diggable_Vehicle_Animated> Reborn_Diggable_Vehicle_Animated_Registrant("Reborn_Diggable_Vehicle_Animated","Z_Hieght_Adjust:float,Dig_Animation:string,Surface_Animation:string");
 ScriptRegistrant<Reborn_IsDeployableMech> Reborn_IsDeployableMech_Registrant("Reborn_IsDeployableMech","Model_Name=none:string,Weapon_Name=none:string,Weapon_Powerup_Name=none:string,Last_Deploy_Frame=0.00:float,StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=10:int,Stomp1Frame_Backward=51:int,Stomp2Frame_Backward=40:int");
-ScriptRegistrant<Reborn_IsDeployableTank> Reborn_IsDeployableTank_Registrant("Reborn_IsDeployableTank","Model_Name=v_nod_art:string,Weapon_Name=weapon_artillery:string,Weapon_Powerup_Name=pow_artillery:string,Last_Deploy_Frame=0.00:float,Enable_Moveanim=0:int");
-ScriptRegistrant<Reborn_IsDeployableTank_2> Reborn_IsDeployableTank_2_Registrant("Reborn_IsDeployableTank_2","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Enable_Moveanim=0:int");
-ScriptRegistrant<Reborn_IsDeployableTank_3> Reborn_IsDeployableTank_3_Registrant("Reborn_IsDeployableTank_3","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Enable_Moveanim=0:int,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string");
+ScriptRegistrant<Reborn_IsDeployableTank> Reborn_IsDeployableTank_Registrant("Reborn_IsDeployableTank","Model_Name=v_nod_art:string,Weapon_Name=weapon_artillery:string,Weapon_Powerup_Name=pow_artillery:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
+ScriptRegistrant<Reborn_IsDeployableTank_2> Reborn_IsDeployableTank_2_Registrant("Reborn_IsDeployableTank_2","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
+ScriptRegistrant<Reborn_IsDeployableTank_3> Reborn_IsDeployableTank_3_Registrant("Reborn_IsDeployableTank_3","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string");
 ScriptRegistrant<Reborn_IsMech> Reborn_IsMech_Registrant("Reborn_IsMech","StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=51:int,Stomp1Frame_Backward=10:int,Stomp2Frame_Backward=40:int");
 ScriptRegistrant<Reborn_Deployable_Vehicle_Player> Reborn_Deployable_Vehicle_Player_Registrant("Reborn_Deployable_Vehicle_Player","Key=Deploy:string,ID=0:int,Message=0:int");

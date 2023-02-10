@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,6 +24,7 @@ class RA_Global_Gap_Controller : public ScriptImpClass {
 
 class RA_Gap_Generator_Building : public ScriptImpClass {
 	unsigned long shroudID;
+	unsigned long sizeID;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj, int number);
 	void Killed(GameObject *obj, GameObject *killer);
@@ -31,6 +32,7 @@ class RA_Gap_Generator_Building : public ScriptImpClass {
 
 class RA_Gap_Generator_Vehicle : public ScriptImpClass {
 	unsigned long shroudID;
+	unsigned long sizeID;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Destroyed(GameObject *obj);

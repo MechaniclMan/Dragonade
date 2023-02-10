@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infantry Only Crates
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -138,7 +138,8 @@ class DARandomVehicleCrateClass : public DACrateClass {
 		DA::Host_Message("Looks like %ls just got a random vehicle. Go them!",Get_Wide_Team_Name(Player->Get_Team()));
 		DA::Page_Player(Player,"You have received %s from the Random Vehicle Crate. It will be dropped at your position momentarily.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
 	}
-	DynamicVectorClass<const VehicleGameObjDef*> Vehicles;
+
+	DynamicVectorClass<VehicleGameObjDef*> Vehicles;
 	Vector3 Position[2];
 	float Facing[2];
 };
@@ -182,6 +183,7 @@ class DAArmsDealerCrateClass : public DACrateClass {
 		}
 		DA::Page_Player(Player,"You have been given all weapons by the Arms Dealer Crate.");
 	}
+
 	DynamicVectorClass<WeaponDefinitionClass*> Weapons;
 };
 
@@ -265,7 +267,7 @@ Register_Crate(DAButterFingersCrateClass,"Butter Fingers",DACrateType::INFANTRY)
 
 /********************************************************************************************************************************/
 
-class DAStealthCrateClass : public DACrateClass, public DAEventClass {
+class DAStealthCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already stealth.
 		return !Player->Get_GameObj()->Is_Stealth_Enabled();
 	}
@@ -286,10 +288,11 @@ class DATiberiumMutantCrateObserverClass : public DAGameObjObserverClass {
 	}
 
 	virtual void Init() {
-		const_cast<Matrix3D&>(((SoldierGameObj*)Get_Owner())->Get_Transform()).Adjust_Z_Translation(1.0f); //Fix stuck in ground.
 		WeaponBagClass *Bag = ((SoldierGameObj*)Get_Owner())->Get_Weapon_Bag();
 		Bag->Clear_Weapons();
-		Bag->Select_Weapon(Bag->Add_Weapon("CNC_Weapon_ChemSprayer_Player",999)); //Can only use chem sprayer.
+		Bag->Add_Weapon("CNC_Weapon_ChemSprayer_Player",999);
+		Bag->Select_Index(1);
+		const_cast<Matrix3D&>(((SoldierGameObj*)Get_Owner())->Get_Transform()).Adjust_Z_Translation(1.0f); //Fix stuck in ground.
 		Start_Timer(1,1.0f);
 	}
 
@@ -306,7 +309,7 @@ class DATiberiumMutantCrateObserverClass : public DAGameObjObserverClass {
 		Vector3 Position;
 		Get_Owner()->Get_Position(&Position);
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { //AOE damage.
-			if (x->Data() != Get_Owner() && Commands->Get_Distance(Position,x->Data()->Get_Position()) < 5.0f) {
+			if (x->Data()->Get_Player_Type() != ((SoldierGameObj*)Get_Owner())->Get_Player_Type() && Commands->Get_Distance(Position,x->Data()->Get_Position()) < 5.0f) {
 				Commands->Apply_Damage(x->Data(),1.0f,"TiberiumRaw",Get_Owner());
 			}
 		}
@@ -360,16 +363,15 @@ class DATiberiumMutantCrateClass : public DACrateClass {
 	}
 
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if already in effect.
-		return !Player->Get_GameObj()->Has_Observer("DATiberiumMutantCrateObserverClass");
+		return (!Player->Get_GameObj()->Has_Observer("DATiberiumMutantCrateObserverClass") && Find_Named_Definition("CnC_GDI_Mutant_2SF_Templar"));
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		SoldierGameObjDef *Mutant = (SoldierGameObjDef*)Find_Named_Definition("CnC_GDI_Mutant_2SF_Templar");
-		if (Mutant) {
-			Player->Get_GameObj()->Re_Init(*Mutant);
-			Player->Get_GameObj()->Post_Re_Init();
-		}
-		Player->Get_GameObj()->Add_Observer(new DATiberiumMutantCrateObserverClass);
+		SoldierGameObj *Soldier = Player->Get_GameObj();
+		Player->Get_DA_Player()->Reset_Creation_Time();
+		Soldier->Set_Delete_Pending();
+		SoldierGameObj *Visceroid = Create_Commando(Player,"CnC_GDI_Mutant_2SF_Templar",Soldier->Get_Transform());
+		Visceroid->Add_Observer(new DATiberiumMutantCrateObserverClass);
 		DA::Host_Message("A %ls player has been mutated by the Tiberium Mutant Crate!",Get_Wide_Team_Name(Player->Get_Team()));
 	}
 };

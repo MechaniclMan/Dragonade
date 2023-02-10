@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,28 +12,29 @@
 #include "General.h"
 #include "DataSafe.h"
 #include "Random2Class.h"
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::SimpleKey,unsigned long,0x00829478,0x00828660);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::HandleKey,unsigned long,0x00820DD0,0x0081FFB8);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::Checksum,unsigned long,0x008294D8,0x008286C0);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::ShuffleDelay,unsigned long,0x00829470,0x00828658);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::SecurityCheckDelay,unsigned long,0x00829468,0x00828650);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::SentinelOne,DataSafeHandleClass,0x00829464,0x0082864C);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::NumLists,int,0x008294E8,0x008286D0);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::Safe,TT_NOOP(RefArray<DataSafeEntryListClass *,MAX_DATASAFE_LISTS>),0x00820E44,0x0082002C);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::TypeList,TT_NOOP(RefArray<DataSafeEntryTypeClass,MAX_DATASAFE_TYPES>),0x00828E60,0x00828048);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::TypeListCount,int,0x008294EC,0x008286D4);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::SentinelTwo,DataSafeHandleClass,0x008294B0,0x00828698);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::CRCErrors,int,0x008294F0,0x008286D8);
-SCRIPTS_API REF_DEF2(GenericDataSafeClass::PreferredThread,unsigned int,0x00829480,0x00828668);
+
+#pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
+#pragma init_seg(lib) // Move this files static initializers up a level
+#pragma warning(default: 4073)
+
+SCRIPTS_API REF_DEF2(unsigned long, GenericDataSafeClass::SimpleKey, 0x00829478, 0x00828660);
+SCRIPTS_API REF_DEF2(unsigned long, GenericDataSafeClass::HandleKey, 0x00820DD0, 0x0081FFB8);
+SCRIPTS_API REF_DEF2(unsigned long, GenericDataSafeClass::Checksum, 0x008294D8, 0x008286C0);
+SCRIPTS_API REF_DEF2(unsigned long, GenericDataSafeClass::ShuffleDelay, 0x00829470, 0x00828658);
+SCRIPTS_API REF_DEF2(unsigned long, GenericDataSafeClass::SecurityCheckDelay, 0x00829468, 0x00828650);
+SCRIPTS_API REF_DEF2(DataSafeHandleClass, GenericDataSafeClass::SentinelOne, 0x00829464, 0x0082864C);
+SCRIPTS_API REF_DEF2(int, GenericDataSafeClass::NumLists, 0x008294E8, 0x008286D0);
+SCRIPTS_API REF_DEF2(TT_NOOP(RefArray<DataSafeEntryListClass *, MAX_DATASAFE_LISTS>), GenericDataSafeClass::Safe, 0x00820E44, 0x0082002C);
+SCRIPTS_API REF_DEF2(TT_NOOP(RefArray<DataSafeEntryTypeClass, MAX_DATASAFE_TYPES>), GenericDataSafeClass::TypeList, 0x00828E60, 0x00828048);
+SCRIPTS_API REF_DEF2(int, GenericDataSafeClass::TypeListCount, 0x008294EC, 0x008286D4);
+SCRIPTS_API REF_DEF2(DataSafeHandleClass, GenericDataSafeClass::SentinelTwo, 0x008294B0, 0x00828698);
+SCRIPTS_API REF_DEF2(int, GenericDataSafeClass::CRCErrors, 0x008294F0, 0x008286D8);
+SCRIPTS_API REF_DEF2(unsigned int, GenericDataSafeClass::PreferredThread, 0x00829480, 0x00828668);
 
 #ifndef TT_EXPORTS
 RENEGADE_FUNCTION
 SCRIPTS_API void GenericDataSafeClass::Reset_Timers(void)
 AT2(0x0045B5C0,0x0045B050);
-
-RENEGADE_FUNCTION
-SCRIPTS_API void GenericDataSafeClass::Reset(void)
-AT2(0x0045B640,0x0045B0D0)
 
 RENEGADE_FUNCTION
 SCRIPTS_API void GenericDataSafeClass::Shutdown(void)
@@ -107,17 +108,17 @@ SCRIPTS_API void GenericDataSafeClass::Say_Security_Fault(void)
 
 char ErrorVal[1024] = {0,0,0,0};
 
-SCRIPTS_API REF_DEF2(DataSafeClass<int>::ReturnIndex,int,0x00829488,0x00828670);
-SCRIPTS_API REF_DEF2(DataSafeClass<int>::ReturnList,TT_NOOP(RefArray<RefArray<char, sizeof(int)>,MAX_OBJECT_COPIES>),0x0082948C,0x00828674);
-SCRIPTS_API REF_DEF2(DataSafeClass<int>::MinSlop,int,0x00828E44,0x0082802C);
-SCRIPTS_API REF_DEF2(DataSafeClass<int>::Type,int,0x00820DDC,0x0081FFC4);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<int>::ReturnIndex, 0x00829488, 0x00828670);
+SCRIPTS_API REF_DEF2(TT_NOOP(RefArray<RefArray<char, sizeof(int)>, MAX_OBJECT_COPIES>), DataSafeClass<int>::ReturnList, 0x0082948C, 0x00828674);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<int>::MinSlop, 0x00828E44, 0x0082802C);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<int>::Type, 0x00820DDC, 0x0081FFC4);
 
-SCRIPTS_API REF_DEF2(DataSafeClass<float>::ReturnIndex,int,0x008294DC,0x008286C4);
-SCRIPTS_API REF_DEF2(DataSafeClass<float>::ReturnList,TT_NOOP(RefArray<RefArray<char, sizeof(float)>,MAX_OBJECT_COPIES>),0x008294B4,0x0082869C);
-SCRIPTS_API REF_DEF2(DataSafeClass<float>::MinSlop,int,0x0082946C,0x00828654);
-SCRIPTS_API REF_DEF2(DataSafeClass<float>::Type,int,0x008294E0,0x008286C8);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<float>::ReturnIndex, 0x008294DC, 0x008286C4);
+SCRIPTS_API REF_DEF2(TT_NOOP(RefArray<RefArray<char, sizeof(float)>, MAX_OBJECT_COPIES>), DataSafeClass<float>::ReturnList, 0x008294B4, 0x0082869C);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<float>::MinSlop, 0x0082946C, 0x00828654);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<float>::Type, 0x008294E0, 0x008286C8);
 
-SCRIPTS_API REF_DEF2(DataSafeClass<unsigned int>::ReturnIndex,int,0x00829474,0x0082865C);
-SCRIPTS_API REF_DEF2(DataSafeClass<unsigned int>::ReturnList,TT_NOOP(RefArray<RefArray<char, sizeof(unsigned int)>,MAX_OBJECT_COPIES>),0x00820DE0,0x0081FFC8);
-SCRIPTS_API REF_DEF2(DataSafeClass<unsigned int>::MinSlop,int,0x00820DD4,0x0081FFBC);
-SCRIPTS_API REF_DEF2(DataSafeClass<unsigned int>::Type,int,0x0082947C,0x00828664);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<unsigned int>::ReturnIndex, 0x00829474, 0x0082865C);
+SCRIPTS_API REF_DEF2(TT_NOOP(RefArray<RefArray<char, sizeof(unsigned int)>, MAX_OBJECT_COPIES>), DataSafeClass<unsigned int>::ReturnList, 0x00820DE0, 0x0081FFC8);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<unsigned int>::MinSlop, 0x00820DD4, 0x0081FFBC);
+SCRIPTS_API REF_DEF2(int, DataSafeClass<unsigned int>::Type, 0x0082947C, 0x00828664);

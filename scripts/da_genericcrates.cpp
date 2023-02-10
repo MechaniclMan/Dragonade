@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infantry and Vehicle Crates
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -485,7 +485,7 @@ public:
 		}
 		else {
 			Set_Radar_Color();
-			Commands->Set_Obj_Radar_Blip_Shape(Radar,((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
+			((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Shape_Type(((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
 		}
 	}
 
@@ -496,11 +496,6 @@ public:
 		else {
 			Commands->Set_Obj_Radar_Blip_Color(Radar,((PhysicalGameObj*)Get_Owner())->Get_Player_Type());
 		}
-	}
-
-	void Update_New_Player(int ID) {
-		Set_Obj_Radar_Blip_Color_Player_By_ID(ID,Radar,((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Color_Type());
-		Set_Obj_Radar_Blip_Shape_Player_By_ID(ID,Radar,((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type());
 	}
 
 	virtual void Timer_Expired(GameObject *obj,int Number) {
@@ -516,11 +511,11 @@ public:
 		else {
 			if (((SmartGameObj*)Get_Owner())->Is_Stealthed()) {
 				if (((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type() != RADAR_BLIP_SHAPE_NONE) {
-					Commands->Set_Obj_Radar_Blip_Shape(Radar,RADAR_BLIP_SHAPE_NONE);
+					((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_NONE);
 				}
 			}
 			else if (((PhysicalGameObj*)Radar.Get_Ptr())->Get_Radar_Blip_Shape_Type() == RADAR_BLIP_SHAPE_NONE) {
-				Commands->Set_Obj_Radar_Blip_Shape(Radar,((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
+				((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Shape_Type(((PhysicalGameObj*)Get_Owner())->Get_Radar_Blip_Shape_Type());
 			}
 			Start_Timer(2,0.5f);
 		}
@@ -562,7 +557,6 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 		Team = Player->Get_Team();
 		DA::Host_Message("A %ls player just picked up the UAV Crate. All %ls units are now marked on radar.",Get_Wide_Team_Name(Team),Get_Wide_Team_Name(!Team));
 		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::SOLDIER | DAObjectEvent::VEHICLE | DAObjectEvent::BEACON);
-		Register_Event(DAEvent::PLAYERJOIN);
 		Register_Event(DAEvent::GAMEOVER);
 		Start_Timer(1,Get_Random_Float(60.0f,90.0f)); //End timer.
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { //Mark all enemy infantry.
@@ -584,56 +578,31 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 		obj->Add_Observer(new DAUAVCrateObserverClass(Team));
 	}
 
-	virtual void Player_Join_Event(cPlayer *Player) {
-		Start_Timer(2,1.0f,false,Player->Get_ID());
-	}
-
 	virtual void Game_Over_Event() {
 		Clear_Timers();
 		Start_Timer(1,0.0f);
 	}
 	
 	virtual void Timer_Expired(int Number,unsigned int Data) {
-		if (Number == 1) { //End
-			for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) { //Destroy observers.
-				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
-				for (int i = 0;i < Observers.Count();i++) {
-					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
-					}
-				}
-			}
-			for (SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head();x;x = x->Next()) {
-				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
-				for (int i = 0;i < Observers.Count();i++) {
-					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
-					}
-				}
-			}
-			Team = -1;
-			Unregister_Object_Event(DAObjectEvent::CREATED);
-			Unregister_Event(DAEvent::PLAYERJOIN);
-			Unregister_Event(DAEvent::GAMEOVER);
-		}
-		else { //Send radar markers to newly joined players.
-			for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) {
-				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
-				for (int i = 0;i < Observers.Count();i++) {
-					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Update_New_Player(Data);
-					}
-				}
-			}
-			for (SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head();x;x = x->Next()) {
-				const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
-				for (int i = 0;i < Observers.Count();i++) {
-					if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
-						((DAUAVCrateObserverClass*)Observers[i])->Update_New_Player(Data);
-					}
+		for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) { //Destroy observers.
+			const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
+			for (int i = 0;i < Observers.Count();i++) {
+				if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
+					((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
 				}
 			}
 		}
+		for (SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head();x;x = x->Next()) {
+			const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
+			for (int i = 0;i < Observers.Count();i++) {
+				if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
+					((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
+				}
+			}
+		}
+		Team = -1;
+		Unregister_Object_Event(DAObjectEvent::CREATED);
+		Unregister_Event(DAEvent::GAMEOVER);
 	}
 
 	int Team;

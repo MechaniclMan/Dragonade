@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -10,7 +10,6 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 #include "general.h"
-#pragma warning(disable:6031)
 
 #include "scripts.h"
 #include "nhp.h"
@@ -200,9 +199,11 @@ void NHP_Sensor_Array_Zone::Entered(GameObject *obj,GameObject *enterer)
 		Send_Message(255,255,255,"ERROR! Sensor can not find file for sensor list");
 		return;
 	}
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
 	fscanf(handle,"%d", &detectCount);
 	for (int i=0;i<=detectCount;i++)
 	{
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
 		fscanf(handle,"%99[^\n]", detectName);
 		if (!_stricmp(Commands->Get_Preset_Name(enterer),detectName))
 		{
@@ -235,9 +236,11 @@ void NHP_Sensor_Array_Zone::Exited(GameObject *obj,GameObject *exiter)
 		Send_Message(255,255,255,"ERROR! Sensor can not find file for sensor list");
 		return;
 	}
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
 	fscanf(handle,"%d", &detectCount);
 	for (int i=0;i<=detectCount;i++)
 	{
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
 		fscanf(handle,"%99[^\n]", detectName);
 		if (!_stricmp(Commands->Get_Preset_Name(exiter),detectName))
 		{

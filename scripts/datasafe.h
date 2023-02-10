@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,7 +12,7 @@
 #ifndef TT_INCLUDE_DATASAFE_H
 #define TT_INCLUDE_DATASAFE_H
 #include "SysTimeClass.h"
-#if (PARAM_EDITING_ON) || (DDBEDIT)
+#if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
 #define safe_int int
 #define safe_unsigned_int unsigned int
 #define safe_long long
@@ -182,19 +182,19 @@ protected:
 	SCRIPTS_API static void Remove_From_List(int list, DataSafeEntryClass *entry_ptr);
 	SCRIPTS_API static void Free_Handle_ID(int list, int id);
 	static inline int Get_Type_Size(int type);
-	SCRIPTS_API static REF_DECL2(PreferredThread,unsigned int);
-	SCRIPTS_API static REF_DECL2(SimpleKey,unsigned long);
-	SCRIPTS_API static REF_DECL2(HandleKey,unsigned long);
-	SCRIPTS_API static REF_DECL2(NumLists,int);
-	SCRIPTS_API static REF_DECL2(Safe,TT_NOOP(RefArray<DataSafeEntryListClass *,MAX_DATASAFE_LISTS>));
-	SCRIPTS_API static REF_DECL2(Checksum,unsigned long);
-	SCRIPTS_API static REF_DECL2(ShuffleDelay,unsigned long);
-	SCRIPTS_API static REF_DECL2(SecurityCheckDelay,unsigned long);
-	SCRIPTS_API static REF_DECL2(TypeList,TT_NOOP(RefArray<DataSafeEntryTypeClass,MAX_DATASAFE_TYPES>));
-	SCRIPTS_API static REF_DECL2(TypeListCount,int);
-	SCRIPTS_API static REF_DECL2(SentinelOne,DataSafeHandleClass);
-	SCRIPTS_API static REF_DECL2(SentinelTwo,DataSafeHandleClass);
-	SCRIPTS_API static REF_DECL2(CRCErrors,int);
+	SCRIPTS_API static REF_DECL(unsigned int, PreferredThread);
+	SCRIPTS_API static REF_DECL(unsigned long, SimpleKey);
+	SCRIPTS_API static REF_DECL(unsigned long, HandleKey);
+	SCRIPTS_API static REF_DECL(int, NumLists);
+	SCRIPTS_API static REF_DECL(TT_NOOP(RefArray<DataSafeEntryListClass *, MAX_DATASAFE_LISTS>), Safe);
+	SCRIPTS_API static REF_DECL(unsigned long, Checksum);
+	SCRIPTS_API static REF_DECL(unsigned long, ShuffleDelay);
+	SCRIPTS_API static REF_DECL(unsigned long, SecurityCheckDelay);
+	SCRIPTS_API static REF_DECL(TT_NOOP(RefArray<DataSafeEntryTypeClass, MAX_DATASAFE_TYPES>), TypeList);
+	SCRIPTS_API static REF_DECL(int, TypeListCount);
+	SCRIPTS_API static REF_DECL(DataSafeHandleClass, SentinelOne);
+	SCRIPTS_API static REF_DECL(DataSafeHandleClass, SentinelTwo);
+	SCRIPTS_API static REF_DECL(int, CRCErrors);
 };
 
 template<class T>
@@ -224,10 +224,10 @@ public:
 private:
 	static int Get_Type_ID(unsigned long type_code, int size);
 	static unsigned long Get_Type_Code(void);
-	SCRIPTS_API static REF_DECL2(Type,int);
-	SCRIPTS_API static REF_DECL2(MinSlop,int);
-	SCRIPTS_API static REF_DECL2(ReturnList,TT_NOOP(RefArray<RefArray<char, sizeof(T)>,MAX_OBJECT_COPIES>));
-	SCRIPTS_API static REF_DECL2(ReturnIndex,int);
+	SCRIPTS_API static REF_DECL(int, Type);
+	SCRIPTS_API static REF_DECL(int, MinSlop);
+	SCRIPTS_API static REF_DECL(TT_NOOP(RefArray<RefArray<char, sizeof(T)>, MAX_OBJECT_COPIES>), ReturnList);
+	SCRIPTS_API static REF_DECL(int, ReturnIndex);
 };
 
 SCRIPTS_API extern char ErrorVal[1024];
@@ -393,6 +393,7 @@ DataSafeClass<T>::DataSafeClass(T*, int slopcount)
 	for (int i=0 ; i<slopcount ; i++)
 	{
 #pragma warning(suppress: 6255) // _alloca indicates failure by raising a stack overflow exception
+#pragma warning(suppress: 6263) // warning c6263: Using alloca in a loop
 		void *stackmem = _alloca(sizeof(T));
 		T *slop_ptr = new (stackmem) T;
 		Add_Entry(*slop_ptr, true);
@@ -425,17 +426,8 @@ DataSafeClass<T>::~DataSafeClass(void)
 template <class T>
 unsigned long DataSafeClass<T>::Get_Type_Code(void)
 {
-	TT_INTERRUPT; //if this hits we may have a problem
-	volatile int data_size = sizeof(T);
-	data_size = data_size;
-	static unsigned long instruction_pointer;
-	instruction_pointer = 0;
-	__asm {
-here:
-		lea	eax,here
-		mov	[instruction_pointer],eax
-	};
-	return instruction_pointer;
+    static int dummy;
+    return (unsigned long)&dummy;
 }
 
 template <class T>
@@ -612,7 +604,9 @@ SafeDataClass<T>::SafeDataClass(void)
 {
 #pragma warning(suppress: 6255) // _alloca indicates failure by raising a stack overflow exception
 	void *stackmem = _alloca(sizeof(T));
+#pragma warning(suppress: 28193) // warning C28193: The variable holds a value that must be examined
 	T *data = new (stackmem) T;
+#pragma warning(suppress: 6011) //warning C6011: dereferencing NULL pointer 'data'
 	Handle = DataSafeClass<T>::Add_Entry(*data);
 }
 
@@ -651,6 +645,7 @@ inline T &SafeDataClass<T>::operator = (SafeDataClass<T> &safedata)
 			return (T&)*other_value;
 		}
 	}
+#pragma warning(suppress: 6011) //warning C6011: dereferencing NULL pointer 'other_value'
 	return (T&)*other_value;
 }
 

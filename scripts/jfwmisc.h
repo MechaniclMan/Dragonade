@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -193,6 +193,10 @@ class JFW_Model_Animation : public ScriptImpClass {
 	void Created(GameObject *obj);
 };
 
+class JFW_Model_Animation_2 : public ScriptImpClass {
+	void Created(GameObject *obj);
+};
+
 class JFW_Animated_Effect : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
@@ -300,7 +304,6 @@ class JFW_Show_Info_Texture : public ScriptImpClass {
 };
 
 class JFW_Wireframe_Mode : public ScriptImpClass {
-	void Created(GameObject *obj);
 };
 
 class JFW_Change_Radar_Map : public ScriptImpClass {
@@ -499,6 +502,7 @@ class JFW_EMP_Mine : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Enemy_Seen(GameObject *obj,GameObject *enemy);
 	void Destroyed(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
 };
 
 class JFW_EMP_Mine_Manager : public ScriptImpClass {
@@ -519,8 +523,8 @@ class JFW_Cyborg_Reaper : public ScriptImpClass {
 	int driverid;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	void Killed(GameObject *obj,GameObject *killer);
 	void Timer_Expired(GameObject *obj,int number);
+	void Killed(GameObject *obj,GameObject *killer);
 };
 
 class JFW_Limpet_Drone : public ScriptImpClass {
@@ -555,6 +559,13 @@ class JFW_Ion_Storm_Weather : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
+class JFW_Ion_Lightning : public ScriptImpClass {
+	bool storm;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
 class JFW_Tech_Level_Custom : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
@@ -582,4 +593,47 @@ class JFW_Spawn_Object_Created : public ScriptImpClass {
 
 class JFW_Killed_String_Sound : public ScriptImpClass {
 	void Killed(GameObject *obj,GameObject *killer);
+};
+
+class JFW_Custom_Create_Object_At_Bone : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+	void Killed(GameObject *obj,GameObject *killer);
+	int id;
+};
+
+class JFW_MSA : public ScriptImpClass {
+	bool deploy;
+	unsigned long sizeID;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Destroyed(GameObject *obj);
+};
+
+class JFW_Vehicle_Zone : public ScriptImpClass {
+	unsigned long zoneID;
+	void Created(GameObject *obj);
+	void Destroyed(GameObject *obj);
+};
+
+class JFW_Building_Zone_Controller : public ScriptImpClass {
+	unsigned long zoneID;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Killed(GameObject *obj);
+};
+
+class JFW_Building_Zone : public ScriptImpClass {
+	void Created(GameObject *obj);
+};
+
+class JFW_Send_Message_Preset_Death : public ScriptImpClass {
+	void Killed(GameObject *obj);
+};
+
+class JMG_Send_Custom_To_Self_On_Timer : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
 };

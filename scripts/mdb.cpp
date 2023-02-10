@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -81,7 +81,7 @@ void MDB_ConYard::Created(GameObject *obj)
 	{
 		Time = Get_Float_Parameter("Interval");
 		Amount = Get_Float_Parameter("Heal_Amount");
-		Self = Get_Int_Parameter("Repair_Self");
+		Self = Get_Bool_Parameter("Repair_Self");
 		PMode = Get_Int_Parameter("Power_Mode");
 		Commands->Start_Timer(obj,this,Time,1);
 		created = 1337;
@@ -176,7 +176,11 @@ void MDB_Unit_Limit::Created(GameObject *obj)
 {
 	Position = ~0u;
 	int team = Get_Object_Type(obj);
-	if (team < 0 || team >= 2) Destroy_Script();
+	if (team < 0 || team >= 2)
+	{
+		Destroy_Script();
+		return;
+	}
 	Team = (PurchaseSettingsDefClass::TEAM)!team;
 
 	uint def_id = obj->Get_Definition().Get_ID();

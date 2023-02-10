@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -187,7 +187,7 @@ public:
    virtual void                 Release_Bone                      (int boneIndex) { }
    virtual bool                 Is_Bone_Captured                  (int boneIndex) const { return false; }
    virtual void                 Control_Bone                      (int boneIndex, const Matrix3D&, bool b = false) { }
-   virtual HTreeClass*          Get_HTree                         () const { return NULL; }
+   virtual const HTreeClass *	Get_HTree(void) const														{ return NULL; }
    virtual bool                 Cast_Ray                          (RayCollisionTestClass&) { return false; }
    virtual bool                 Cast_AABox                        (AABoxCollisionTestClass&) { return false; }
    virtual bool                 Cast_OBBox                        (OBBoxCollisionTestClass&) { return false; }
@@ -268,7 +268,11 @@ public:
    void							Save_Sub_Object_User_Lighting(ChunkSaveClass & csave,RenderObjClass * sub_obj,int bone_index);
    void							Load_Sub_Object_User_Lighting(ChunkLoadClass & cload);
    void Set_User_Lighting_Flag(); //Set the HAS_USER_LIGHTING flag appropriatly for this renderobj, intended to be called during vertex solve.
+
+   void             Register_For_Rendering(bool hint_static = false);
+
 }; // 0088  00A0
+
 TT_INLINE const SphereClass & RenderObjClass::Get_Bounding_Sphere(void) const
 {
 	if (!(Bits & BOUNDING_VOLUMES_VALID)) {

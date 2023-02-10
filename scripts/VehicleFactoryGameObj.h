@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -74,7 +74,7 @@ protected:
 	int					LastDeliveryPath;
 	int                 LastFlyingDeliveryPath;
 	float					EndTimer;
-	int IsDisabled;
+	bool IsDisabled;
 	static int MaxVehiclesPerTeam;
 }; // 08CC
 

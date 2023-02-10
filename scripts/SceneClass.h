@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,14 +21,14 @@
 
 class SceneIterator {
 public:
-	virtual ~SceneIterator();
+	virtual ~SceneIterator() {};
 	virtual void First() = 0;
 	virtual void Next() = 0;
 	virtual bool Is_Done() = 0;
 	virtual RenderObjClass *Current_Item() = 0;
 };
 class RenderInfoClass;
-class SHADERS_API SceneClass : public RefCountClass
+class SceneClass : public RefCountClass
 {
 public:
    enum RegType {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -106,10 +106,10 @@ public:
 	virtual	void	Begin_Hibernation( void );
 	virtual	void	End_Hibernation( void );
 	int				Get_Radar_Blip_Shape_Type( void )				{ return RadarBlipShapeType; }
-	void				Set_Radar_Blip_Shape_Type( int type )			{ RadarBlipShapeType = type; }
-	void				Reset_Radar_Blip_Shape_Type( void )				{ RadarBlipShapeType = Get_Definition().RadarBlipType; }
+	void				Set_Radar_Blip_Shape_Type( int type )			{ RadarBlipShapeType = type; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
+	void				Reset_Radar_Blip_Shape_Type( void )				{ RadarBlipShapeType = Get_Definition().RadarBlipType; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
 	int				Get_Radar_Blip_Color_Type( void )				{ return RadarBlipColorType; }
-	void				Set_Radar_Blip_Color_Type( int type )			{ RadarBlipColorType = type; }
+	void				Set_Radar_Blip_Color_Type( int type )			{ RadarBlipColorType = type; Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);}
 	void				Reset_Radar_Blip_Color_Type( void );
 	float				Get_Radar_Blip_Intensity( void )					{ return RadarBlipIntensity; }
 	void				Set_Radar_Blip_Intensity( float value )		{ RadarBlipIntensity = value; }
@@ -139,6 +139,7 @@ private:
 	BYTE						ServerUpdateSkips;
 	float						HibernationTimer;
 	bool						HibernationEnable;
+	char                        TeamVisibility;
 	ReferencerClass		HostGameObj;
 	int						HostGameObjBone;
 	int						RadarBlipShapeType;

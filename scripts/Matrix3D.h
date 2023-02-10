@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -11,13 +11,13 @@
 */
 #ifndef TT_INCLUDE__MATRIX3D_H
 #define TT_INCLUDE__MATRIX3D_H
-class Matrix3;
-class Quaternion;
-class Vector3;
-#include "Vector4.h"
+#include "vector2.h"
 #include "Vector3.h"
-#include "plane.h"
-
+#include "Vector4.h"
+class Matrix3;
+class Matrix4;
+class Quaternion;
+class PlaneClass;
 class SCRIPTS_API Matrix3D
 {
 protected:
@@ -27,12 +27,6 @@ public:
    TT_INLINE Vector4 & operator [] (int i) { return Row[i]; }
    TT_INLINE const Vector4 & operator [] (int i) const { return Row[i]; }
 
-   static Matrix3D getXRotationMatrix(float angle);
-   static Matrix3D getYRotationMatrix(float angle);
-   static Matrix3D getZRotationMatrix(float angle);
-   static Matrix3D getXRotationMatrix(float cosAngle, float sinAngle);
-   static Matrix3D getYRotationMatrix(float cosAngle, float sinAngle);
-   static Matrix3D getZRotationMatrix(float cosAngle, float sinAngle);
 	TT_INLINE explicit Matrix3D(bool init) { if (init) Make_Identity(); }
 	TT_INLINE explicit Matrix3D(float m[12])
 	{
@@ -503,44 +497,8 @@ public:
 	}
 
 	int	Is_Orthogonal(void) const; 
-   Vector3  applyTo      (const Vector3& vector) const;
-   Vector3  getPosition  () const;
-   Matrix3  getRotation  () const;
-   float    getRotationX () const;
-   float    getRotationY () const;
-   float    getRotationZ () const;
-   void     rotateX      (float angle);
-   void     rotateY      (float angle);
-   void     rotateZ      (float angle);
-   void     set          (float _11, float _12, float _13, float _14,
-                          float _21, float _22, float _23, float _24,
-                          float _31, float _32, float _33, float _34);
-   void     setPosition  (const Vector3& position);
-   void     setRotationX (float angle);
-   void     setRotationY (float angle);
-   void     setRotationZ (float angle);
-   Matrix3D transpose    () const;
-
-   Matrix3D& reverseMultiply(const Matrix3D& matrix);
-
    Matrix3D& operator *= (const Matrix3D& matrix);
-
    Vector3 operator * (const Vector3& vector) const;
-
-   Vector3 getXAxis() const
-   {
-	   return Vector3(Row[0].X, Row[1].X, Row[2].X);
-   }
-
-   Vector3 getYAxis() const
-   {
-	   return Vector3(Row[0].Y, Row[1].Y, Row[2].Y);
-   }
-
-   Vector3 getZAxis() const
-   {
-	   return Vector3(Row[0].Z, Row[1].Z, Row[2].Z);
-   }
    static void Transform_Vector(const Matrix3D & A,const Vector3 & in,Vector3 * out)
    {
 		Vector3 tmp;
@@ -621,6 +579,8 @@ public:
 	}
 	static Matrix3D Reflect_Plane(const PlaneClass& _plane);
 	PlaneClass Transform_Plane(const PlaneClass& _plane) const;
+	static bool Solve_Linear_System(Matrix3D & system);
+	void	Re_Orthogonalize(void);
 }; // 48
 
 TT_INLINE Matrix3D operator * (const Matrix3D &A,const Matrix3D &B)

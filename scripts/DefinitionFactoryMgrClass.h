@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,10 +21,10 @@ public:
 	static DefinitionFactoryClass *Find_Factory(uint32 id);
 	static DefinitionFactoryClass *Get_First(uint32 id);
 	static DefinitionFactoryClass *Get_Next(DefinitionFactoryClass *factory,uint32 id);
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
 	static DefinitionFactoryClass *_FactoryListHead;
 #else
-	static REF_DECL3(_FactoryListHead,DefinitionFactoryClass *);
+	static REF_DECL(DefinitionFactoryClass *, _FactoryListHead);
 #endif
 };
 

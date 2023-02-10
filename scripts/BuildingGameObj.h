@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -42,7 +42,7 @@ class BaseControllerClass;
 class ConstructionYardGameObj;
 class AirFactoryGameObj;
 class NavalFactoryGameObj;
-class SuperWeaponGameObj;
+class SuperweaponGameObj;
 class BuildingGameObj : public DamageableGameObj, public CombatPhysObserverClass
 {
 public:
@@ -113,17 +113,18 @@ public:
 	virtual ConstructionYardGameObj *				As_ConstructionYardGameObj (void)	{ return NULL; }
 	virtual	AirFactoryGameObj *		As_AirFactoryGameObj (void)			{ return NULL; }
 	virtual	NavalFactoryGameObj *		As_NavalFactoryGameObj (void)			{ return NULL; }
-	virtual	SuperWeaponGameObj *		As_SuperWeaponGameObj (void)			{ return NULL; }
+	virtual	SuperweaponGameObj *		As_SuperweaponGameObj (void)			{ return NULL; }
 	int Get_State() { return CurrentState; }
 	BaseControllerClass *Get_Base() { return BaseController; }
 	void Update_State(bool force_update = false);
-	static REF_DECL2(CanRepairBuildings,bool);
+	static REF_DECL(bool, CanRepairBuildings);
 protected:
 	BuildingMonitorClass *					BuildingMonitor;
 	BaseControllerClass *					BaseController;
 	bool											IsDestroyed;
 	Vector3										Position;
 	bool											IsPowerOn;
+	bool											IsSpyDisabled;
 	int											CurrentState;						// derived from the health and IsPowerOn
 	AudibleSoundClass *						CurrentAnnouncement;
 	SphereClass									AnnouncementSphere;

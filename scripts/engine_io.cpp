@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,9 +17,7 @@
 #include "straw.h"
 #include "BufferedFileClass.h"
 #include "Crc32.h"
-#pragma warning (disable:6387)
-#include "shlobj.h"
-#pragma warning (default:6387)
+#include <shlobj.h>
 void SCRIPTS_API Strip_Path_From_Filename(StringClass& target, const char* fileName)
 {
 	if (strchr(fileName,'\\'))
@@ -35,7 +33,11 @@ void SCRIPTS_API Strip_Path_From_Filename(StringClass& target, const char* fileN
 }
 #ifndef TTLE_EXPORTS
 #ifndef DDBEDIT
-SCRIPTS_API REF_DEF2(_TheFileFactory, FileFactoryClass *, 0x00809E74, 0x0080904C);
+#ifndef EXTERNAL
+SCRIPTS_API REF_DEF2(FileFactoryClass *, _TheFileFactory, 0x00809E74, 0x0080904C);
+#else
+FileFactoryClass *_TheFileFactory;
+#endif
 FileClass SCRIPTS_API *Get_Data_File(const char *file)
 {
 	return _TheFileFactory->Get_File(file);
@@ -51,7 +53,15 @@ char RegPath[MAX_PATH];
 bool PathsInit = false;
 void Read_Paths()
 {
+#ifndef EXTERNAL
 	const bool isClient = (Exe == 0);
+#else
+#if defined(PACKAGEEDITOR)
+	const bool isClient = false;
+#else
+	const bool isClient = true;
+#endif
+#endif
 
 	char RegBase[MAX_PATH];
 	char RegClient[MAX_PATH];
@@ -60,7 +70,6 @@ void Read_Paths()
 	char FileClient[MAX_PATH];
 	char FileFDS[MAX_PATH];
 
-	PathsInit = true;
 	bool UseRenFolder = !isClient;
 	INIClass *ini = Get_INI("paths.ini");
 	if (ini)
@@ -159,6 +168,8 @@ void Read_Paths()
 	strcat(RegPath,RegBase);
 	strcat(RegPath,"\\");
 	strcat(RegPath,isClient ? RegClient : RegFDS);
+
+	PathsInit = true;
 }
 const char SCRIPTS_API *Get_File_Path()
 {
@@ -186,14 +197,6 @@ const char SCRIPTS_API *Get_Registry_Path()
 }
 #endif
 #endif
-unsigned long ChunkSaveClass2::Write(const StringClass& string)
-{
-	uint16 length = (uint16)string.Get_Length();
-	int result = SimpleWrite(length);
-	result += Write((char*)string.Peek_Buffer(), length);
-	TT_ASSERT(result == (int)sizeof(uint16) + (int)length);
-	return result;
-}
 #ifndef TTLE_EXPORTS
 #ifndef DDBEDIT
 INIClass SCRIPTS_API *Get_INI(char const *filename)
@@ -219,21 +222,9 @@ void SCRIPTS_API Release_INI(INIClass *ini)
 	}
 }
 
-int INISection::Count() const {
-	return EntryIndex.Count();
-}
-
-INIEntry *INISection::Peek_Entry(int Index) {
-	return EntryIndex[Index];
-}
-
-INIEntry *INISection::Find_Entry(const char *Entry) {
-	for (int i = 0;i < Count();i++) {
-		if (!_stricmp(Peek_Entry(i)->Entry,Entry)) {
-			return Peek_Entry(i);
-		}
-	}
-	return 0;
+int INIClass::Section_Count() const
+{
+	return SectionIndex->Count();
 }
 
 int INIClass::Load(FileClass& file)
@@ -247,122 +238,409 @@ int INIClass::Load(FileClass& file)
 	return Load(straw);
 }
 
-int INIClass::Section_Count() const {
-	return SectionIndex->Count();
-}
-
-const char *INIClass::Get_File_Name() const {
-	return Filename;
-}
-	
-INISection *INIClass::Get_Section(const char *Section) const {
-	for (int i = 0;i < SectionIndex->Count();i++) {
-		if (!_stricmp((*SectionIndex)[i]->Section,Section)) {
-			return (*SectionIndex)[i];
-		}
-	}
-	return 0;
-}
-
-INIEntry *INIClass::Find_Entry(const char* section,const char* entry) const {
-	INISection *S = Get_Section(section);
-	if (S) {
-		return S->Find_Entry(entry);
-	}
-	return 0;
-}
-
-int INIClass::Get_Int(char const *section,char const *entry,int defaultvalue) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		return atoi(E->Value);
-	}
-	return defaultvalue;
-}
-
-float INIClass::Get_Float(char const *section,char const *entry,float defaultvalue) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		return (float)atof(E->Value);
-	}
-	return defaultvalue;
-}
-
-bool INIClass::Get_Bool(char const *section,char const *entry,bool defaultvalue) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		return (!_stricmp(E->Value,"1") || !_stricmp(E->Value,"true") || !_stricmp(E->Value,"yes"));
-	}
-	return defaultvalue;
-}
-
-int INIClass::Get_String(char const *section,char const *entry,char const *defaultvalue,char *result,int size) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		strncpy(result,E->Value,size);
-		return strlen(result);
-	}
-	strncpy(result,defaultvalue,size);
-	return strlen(result);
-}
-
-StringClass &INIClass::Get_String(StringClass &string,const char *section,const char *entry,const char *defaultvalue) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		string = E->Value;
-		return string;
-	}
-	string = defaultvalue;
-	return string;
-}
-
-WideStringClass &INIClass::Get_Wide_String(WideStringClass &string,const char *section,const char *entry,const wchar_t *defaultvalue) const {
-	INIEntry *E = Find_Entry(section,entry);
-	if (E) {
-		string = E->Value;
-		return string;
-	}
-	string = defaultvalue;
-	return string;
-}
-
-RENEGADE_FUNCTION
-void INIClass::Initialize()
-AT2(0x005DE9E0,0x005DE280);
-RENEGADE_FUNCTION
-void INIClass::Shutdown()
-AT2(0x005DEAA0,0x005DE340);
-RENEGADE_FUNCTION
-bool INIClass::Clear(char* section,char* entry)
-AT2(0x005DEF00,0x005DE7A0);
-RENEGADE_FUNCTION
-int INIClass::Load(Straw& ffile)
-AT2(0x005DF260,0x005DEB00);
-RENEGADE_FUNCTION
-int INIClass::Entry_Count(char const *section) const
-AT2(0x005DFE30,0x005DF6D0);
-RENEGADE_FUNCTION
-const char *INIClass::Get_Entry(char const *section,int index) const
-AT2(0x005E0040,0x005DF8E0);
+#ifndef EXTERNAL
 RENEGADE_FUNCTION
 bool INIClass::Put_Wide_String(const char* section, const char* entry, const wchar_t* string)
 AT2(0x005E08B0,0x005E0150);
 RENEGADE_FUNCTION
-bool INIClass::Put_String(const char* section, const char* entry, const char* string)
-AT2(0x005E1A10,0x005E12B0);
-RENEGADE_FUNCTION
-int INIClass::Save(FileClass& file)
-AT2(0x005DFA40,0x005DF2E0);
-RENEGADE_FUNCTION
-bool INIClass::Put_Int(const char* section, const char* entry, int value, int format)
-AT2(0x005E1030,0x005E08D0);
-RENEGADE_FUNCTION
-bool INIClass::Put_Bool(const char* section, const char* entry, bool value)
-AT2(0x005E2760,0x005E2000);
-RENEGADE_FUNCTION
-bool INIClass::Put_Float(const char* section, const char* entry, float value)
-AT2(0x005E17F0,0x005E1090);
+WideStringClass &INIClass::Get_Wide_String(WideStringClass &,char  const*,char  const*,wchar_t  const*) const
+AT2(0x005E06E0,0x005DFF80);
+#endif
 
+int Read_Line(Straw& straw,char* line,int lineSize,bool& isLast)
+{
+		if (!line || lineSize == 0)
+				return 0;
+		int i;
+		for (i = 0;;)
+		{
+				char c;
+				int getResult = straw.Get(&c, 1);
+				if (getResult != 1)
+				{
+						isLast = true;
+						break;
+				}
+				if (c == '\n')
+						break;
+				if (c != '\r' && i + 1 < lineSize)
+						line[i++] = c;
+		}
+		line[i] = '\0';
+		strtrim(line);
+		return (int)strlen(line);
+}
+
+int INIClass::Load(Straw& straw)
+{
+		bool isLastLine = false;
+		CacheStraw cacheStraw(4096);
+		cacheStraw.Get_From(&straw);
+		char line[512];
+ 
+		// Ignore everything above first section (indicated by a line like "[sectionName]")
+		while (!isLastLine)
+		{
+				Read_Line(cacheStraw, line, 512, isLastLine);
+				if (isLastLine)
+						return false;
+				if (line[0] == '[' && strchr(line, ']'))
+						break;
+		}
+ 
+		if (Section_Count() > 0)
+		{
+				while (!isLastLine)
+				{
+						TT_ASSERT(line[0] == '[' && strchr(line, ']')); // at start of section
+						line[0] = ' ';
+						*strchr(line, ']') = '\0';
+						strtrim(line);
+						char sectionName[64];
+						strcpy(sectionName, line);
+						while (!isLastLine)
+						{
+								Read_Line(cacheStraw, line, 512, isLastLine);
+								if (line[0] == '[' && strchr(line, ']'))
+										break;
+								Strip_Comments(line);
+								char* delimiter = strchr(line, '=');
+								if (delimiter)
+								{
+										*delimiter = '\0';
+										char* key = line;
+										char* value = delimiter + 1;
+										strtrim(key);
+										if (key[0] != '\0')
+										{
+												strtrim(value);
+												if (value[0] == '\0')
+												{
+														continue;
+												}
+												if (!Put_String(sectionName, key, value))
+														return false;
+										}
+								}
+						}
+				}
+		}
+		else
+		{
+				while (!isLastLine)
+				{
+						TT_ASSERT(line[0] == '[' && strchr(line, ']')); // at start of section
+						line[0] = ' ';
+						*strchr(line, ']') = '\0';
+						strtrim(line);
+						INISection* section = new INISection(newstr(line));
+						if (!section)
+						{
+								Clear(0, 0);
+								return false;
+						}
+						while (!isLastLine)
+						{
+								Read_Line(cacheStraw, line, 512, isLastLine);
+								if (line[0] == '[' && strchr(line, ']'))
+										break;
+								Strip_Comments(line);
+								char* delimiter = strchr(line, '=');
+								if (delimiter)
+								{
+										*delimiter = '\0';
+										char* key = line;
+										char* value = delimiter + 1;
+										strtrim(key);
+										if (key[0] != '\0')
+										{
+												strtrim(value);
+												if (value[0] == '\0')
+												{
+														continue;
+												}
+												INIEntry* entry = new INIEntry(newstr(key), newstr(value));
+												if (!entry)
+												{
+														delete section;
+														Clear(0, 0);
+														return false;
+												}
+												uint32 crc = CRC_String(entry->Entry, 0);
+												if (section->EntryIndex.Is_Present(crc))
+														DuplicateCRCError(__FUNCTION__, section->Section, line);
+												section->EntryIndex.Add_Index(crc, entry);
+												section->EntryList.Add_Tail(entry);
+										}
+								}
+						}
+						if (section->EntryList.Is_Empty())
+						{
+								delete section;
+						}
+						else
+						{
+								uint32 crc = CRC_String(section->Section, 0);
+								SectionIndex->Add_Index(crc, section);
+								SectionList->Add_Tail(section);
+						}
+				}
+		}
+		return true;
+}
+
+StringClass &INIClass::Get_String(StringClass& string, const char* section, const char* entry, const char *defaultvalue) const
+{
+	const char *value = defaultvalue;
+	if (!section || !entry)
+	{
+		string = "";
+	}
+	INIEntry *Entry = Find_Entry(section,entry);
+	if (Entry)
+	{
+		value = Entry->Value;
+	}
+	if (value)
+	{
+		string = value;
+	}
+	else
+	{
+		string = "";
+	}
+	return string;
+}
+INISection *INIClass::Find_Section(const char* section) const
+{
+	if (section)
+	{
+		/*int crc = CRC_String(section,0);
+		if (SectionIndex->Is_Present(crc))
+		{
+			return (*SectionIndex)[crc];
+		}*/
+		for (INISection *i = SectionList->First();i && i->Is_Valid();i = i->Next()) {
+			if (!_stricmp(section,i->Section)) {
+				return i;
+			}
+		}
+	}
+	return 0;
+}
+INIEntry *INIClass::Find_Entry(const char* section,const char* entry) const
+{
+	INISection *Section = Find_Section(section);
+	if (Section)
+	{
+		return Section->Find_Entry(entry);
+	}
+	return 0;
+}
+int INIClass::Get_Int(char const *section,char const *entry,int defaultvalue) const
+{
+	if (section)
+	{
+		if (entry)
+		{
+			INIEntry *Entry = Find_Entry(section,entry);
+			if (Entry)
+			{
+				if (Entry->Value)
+				{
+					int *value;
+					const char *pattern;
+					if (Entry->Value[0] == '$')
+					{
+						value = &defaultvalue;
+						pattern = "$%x";
+					}
+					else
+					{
+						if (tolower(Entry->Value[strlen(Entry->Value) - 1]) != 'h')
+						{
+							return atoi(Entry->Value);
+						}
+						value = &defaultvalue;
+						pattern = "%xh";
+					}
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
+					sscanf(Entry->Value, pattern, value);
+				}
+			}
+		}
+	}
+	return defaultvalue;
+}
+float INIClass::Get_Float(char const *section,char const *entry,float defaultvalue) const
+{
+	if (section)
+	{
+		if (entry)
+		{
+			INIEntry *Entry = Find_Entry(section,entry);
+			if (Entry)
+			{
+				if (Entry->Value)
+				{
+					float c = defaultvalue;
+#pragma warning(suppress: 6031) //warning C6031: return value ignored
+					sscanf(Entry->Value, "%f", &c);
+					defaultvalue = c;
+					if (strchr(Entry->Value, '%'))
+					{
+						defaultvalue = defaultvalue / 100.0f;
+					}
+				}
+			}
+		}
+	}
+	return defaultvalue;
+}
+bool INIClass::Get_Bool(char const *section,char const *entry,bool defaultvalue) const
+{
+	if (section)
+	{
+		if (entry)
+		{
+			INIEntry *Entry = Find_Entry(section,entry);
+			if (Entry)
+			{
+				if (Entry->Value)
+				{
+					switch ( toupper(Entry->Value[0]) )
+					{
+						case '1':
+						case 'T':
+						case 'Y':
+							return true;
+							break;
+						case '0':
+						case 'F':
+						case 'N':
+							return false;
+							break;
+					}
+				}
+			}
+		}
+	}
+	return defaultvalue;
+}
+int INIClass::Get_String(char const *section,char const *entry,char const *defaultvalue,char *result,int size) const
+{
+	if (!result || size <= 1 || !section || !entry)
+	{
+		return 0;
+	}
+	INIEntry *Entry = Find_Entry(section,entry);
+	const char *value = defaultvalue;
+	if (Entry)
+	{
+		if (Entry->Value)
+		{
+			value = Entry->Value;
+		}
+	}
+	if (!value)
+	{
+		result[0] = 0;
+		return 0;
+	}
+	strncpy(result, value, size);
+	result[size - 1] = 0;
+	strtrim(result);
+	return (int)strlen(result);
+}
+int INIClass::Entry_Count(char const *section) const
+{
+	INISection *Section = Find_Section(section);
+	if (Section)
+	{
+		return Section->EntryIndex.Count();
+	}
+	return 0;
+}
+const char *INIClass::Get_Entry(char const *section,int index) const
+{
+	int count = index;
+	INISection *Section = Find_Section(section);
+	if (Section)
+	{
+		if (Section && index < Section->EntryIndex.Count())
+		{
+			for (INIEntry *i = Section->EntryList.First();i; i = i->Next())
+			{
+				if (!i->Is_Valid())
+				{
+					break;
+				}
+				if (!count)
+				{
+					return i->Entry;
+				}
+				count--;
+			}
+		}
+	}
+	return 0;
+}
+void INIClass::Initialize()
+{
+	SectionList = new List<INISection *>;
+	SectionIndex = new IndexClass<int,INISection *>;
+	Filename = newstr("<unknown>");
+}
+void INIClass::Shutdown()
+{
+	if (SectionList)
+	{
+		delete SectionList;
+	}
+	if (SectionIndex)
+	{
+		delete SectionIndex;
+	}
+	if (Filename)
+	{
+		delete[] Filename;
+	}
+}
+bool INIClass::Clear(char* section,char* entry)
+{
+	if (section)
+	{
+		INISection *Section = Find_Section(section);
+		if (Section)
+		{
+			if (entry)
+			{
+				INIEntry *Entry = Section->Find_Entry(entry);
+				if (!Entry)
+				{
+					return true;
+				}
+				Section->EntryIndex.Remove_Index(CRC_String(Entry->Entry,0));
+				delete Entry;
+				return true;
+			}
+			else
+			{
+				SectionIndex->Remove_Index(CRC_String(Section->Section,0));
+				delete Section;
+				return true;
+			}
+		}
+	}
+	else
+	{
+		SectionList->Delete();
+		SectionIndex->Clear();
+		delete[] Filename;
+		Filename = newstr("<unknown>");
+	}
+	return true;
+}
 int INIClass::CRC(char *string)
 {
 	return CRC_String(string,0);
@@ -412,6 +690,159 @@ uint INIClass::Get_Color_UInt(char const *section, char const *entry, uint defau
 
 	return ((a & 0xFF) << 24) | ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
 };
+
+void INIClass::Strip_Comments(char* buffer)
+{
+	if (buffer)
+	{
+		char *buf = strrchr(buffer,';');
+		if (buf)
+		{
+			buf[0] = 0;
+			strtrim(buffer);
+		}
+	}
+}
+
+void INIClass::DuplicateCRCError(const char *function,const char* section,const char* entry)
+{
+	char OutputString[512];
+	_snprintf(OutputString,512,"%s - Duplicate Entry \"%s\" in section \"%s\" (%s)\n",function,entry,section,Filename);
+	OutputString[511] = 0;
+	OutputDebugString(OutputString);
+	MessageBox(0,OutputString,"Duplicate CRC in INI file.",16);
+}
+
+int INIClass::Load(char* filename)
+{
+	file_auto_ptr ptr(_TheFileFactory,filename);
+	int ret = Load(*ptr);
+	if (Filename)
+	{
+		delete[] Filename;
+	}
+	Filename = newstr(filename);
+	return ret;
+}
+
+int INIClass::Save(FileClass& file)
+{
+	FilePipe pipe(&file);
+	if (Filename)
+	{
+		delete[] Filename;
+	}
+	Filename = newstr(file.File_Name());
+	return Save(pipe);
+}
+
+int INIClass::Save(Pipe& pipe)
+{
+	int pos = 0;
+	for (INISection *i = SectionList->First();i;i = i->Next())
+	{
+		if (!i->Is_Valid())
+		{
+			break;
+		}
+		int i1 = pipe.Put("[",1) + pos;
+		int i2 = pipe.Put(i->Section,(int)strlen(i->Section)) + i1;
+		int i3 = pipe.Put("]",1) + i2;
+		int i4 = pipe.Put("\n",(int)strlen("\n")) + i3;
+		for (INIEntry *j = i->EntryList.First();j;j = j->Next())
+		{
+			if (!j->Is_Valid())
+			{
+				break;
+			}
+			int i5 = pipe.Put(j->Entry,(int)strlen(j->Entry)) + i4;
+			int i6 = pipe.Put("=",1) + i5;
+			int i7 = pipe.Put(j->Value,(int)strlen(j->Value)) + i6;
+			i4 = pipe.Put("\n",(int)strlen("\n")) + i7;
+		}
+		pos = pipe.Put("\n",(int)strlen("\n")) + i4;
+	}
+	return pipe.End() + pos;
+}
+
+bool INIClass::Put_String(const char* section, const char* entry, const char* string)
+{
+	if (!section || !entry)
+	{
+		return false;
+	}
+	INISection *sec = Find_Section(section);
+	if (!sec)
+	{
+		sec = new INISection(newstr(section));
+		SectionList->Add_Tail(sec);
+		SectionIndex->Add_Index(CRC_String(sec->Section,0),sec);
+	}
+	INIEntry *ent = sec->Find_Entry(entry);
+	if (ent)
+	{
+		if (strcmp(ent->Entry,entry))
+		{
+			DuplicateCRCError("INIClass::Put_String",section,entry);
+		}
+		SectionIndex->Remove_Index(CRC_String(ent->Entry,0));
+		if (ent)
+		{
+			delete ent;
+		}
+	}
+	if (string && *string)
+	{
+		ent = new INIEntry(newstr(entry),newstr(string));
+		sec->EntryList.Add_Tail(ent);
+		sec->EntryIndex.Add_Index(CRC_String(ent->Entry,0),ent);
+	}
+	return true;
+}
+
+bool INIClass::Put_Int(const char* section, const char* entry, int value, int format)
+{
+	char *form;
+	if (format == 1)
+	{
+		form = "%Xh";
+	}
+	else
+	{
+		if (format > 1 && format == 2)
+		{
+			form = "$%X";
+		}
+		else
+		{
+			form = "%d";
+		}
+	}
+	char buf[524];
+	sprintf(buf,form,value);
+	return Put_String(section,entry,buf);
+}
+
+bool INIClass::Put_Bool(const char* section, const char* entry, bool value)
+{
+	char *str;
+	if (value)
+	{
+		str = "yes";
+	}
+	else
+	{
+		str = "no";
+	}
+	return Put_String(section,entry,str);
+}
+
+bool INIClass::Put_Float(const char* section, const char* entry, float value)
+{
+	char buf[524];
+	sprintf(buf,"%f",value);
+	return Put_String(section,entry,buf);
+}
 
 unsigned int SCRIPTS_API Get_Registry_Int(const char *entry,int defaultvalue)
 {

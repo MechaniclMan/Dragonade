@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -42,13 +42,6 @@ SoldierGameObj* BeaconGameObj::Get_Owner()
 	
 	return physicalOwner->As_SoldierGameObj();
 }
-
-
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void C4GameObj::Defuse()
-AT2(0x0070D610,0x0070CBD0);
-#endif
 
 // -------------------------------------------------------------------------------------------------
 
@@ -581,7 +574,7 @@ SCRIPTS_API BeaconGameObj* Find_Nearest_Beacon(const Vector3& position, int team
 	for (auto object_node = GameObjManager::BeaconGameObjList.Head(); object_node; object_node = object_node->Next())
 	{
 		BeaconGameObj* object = object_node->Data();
-		if (team == 2 || team == object->Get_Type())
+		if (team == 2 || team == object->Get_Player_Type())
 		{
 			Vector3 beacon_position;
 			object->Get_Position(&beacon_position);
@@ -928,4 +921,11 @@ SCRIPTS_API int	WeaponClass::Get_Total_Rounds()
 SCRIPTS_API float WeaponClass::Get_Range( void )
 {
 	return ( PrimaryAmmoDefinition != NULL ) ? PrimaryAmmoDefinition->Range : 0;
+}
+
+SCRIPTS_API bool WeaponClass::Is_Ammo_Maxed( void )
+{
+	if (InventoryRounds == -1) return true;
+	if (((int)Definition->MaxInventoryRounds == 0) && (ClipRounds == 0)) return false;
+	return (InventoryRounds == (int)Definition->MaxInventoryRounds);
 }

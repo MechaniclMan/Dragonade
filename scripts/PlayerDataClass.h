@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -68,14 +68,33 @@ public:
 	void Import_Occasional(BitStreamClass &BitStream);
 	void Stats_Reset();
 	void Stats_Add_Game_Time(float time) { GameTime += time; SessionTime += time; }
-	void Stats_Set_Final_Health(float health) { FinalHealth = health; }
-	void Stats_Add_Vehicle_Time(float time) { VehicleTime += time; }
-	void Stats_Add_Weapon_Fired(int weapon);
+	void Stats_Add_Enemy_Killed() {EnemiesKilled++;}
+	void Stats_Add_Ally_Killed() {AlliesKilled++;}
 	void Stats_Add_Shot_Fired() {ShotsFired++;}
+	void Stats_Add_Head_Shot() {HeadShots++;}
+	void Stats_Add_Torso_Shot() {TorsoShots++;}
+	void Stats_Add_Arm_Shot() {ArmShots++;}
+	void Stats_Add_Leg_Shot() {LegShots++;}
+	void Stats_Add_Crotch_Shot() {CrotchShots++;}
+	void Stats_Set_Final_Health(float health) { FinalHealth = health; }
 	void Stats_Add_Powerup() {PowerupsCollected++;}
+	void Stats_Add_Vehicle_Destroyed() {VehiclesDestroyed++;}
+	void Stats_Add_Vehicle_Time(float time) { VehicleTime += time; }
+	void Stats_Add_Kill_From_Vehicle() {KillsFromVehicle++;}
+	void Stats_Add_Squish() {Squishes++;}
+	void Stats_Add_Credit_Grant(float grant) {CreditGrant += grant;}
 	void Stats_Add_Building_Destroyed() {BuildingDestroyed++;}
-	float Get_Score() { return Score; }
-	float Get_Money() { return Money; }
+	void Stats_Add_Torso_Hit() {TorsoHit++;}
+	void Stats_Add_Head_Hit() {HeadHit++;}
+	void Stats_Add_Arm_Hit() {ArmHit++;}
+	void Stats_Add_Leg_Hit() {LegHit++;}
+	void Stats_Add_Crotch_Hit() {CrotchHit++;}
+	void Stats_Add_Weapon_Fired(int weapon);
+	float Get_Score() const {return Score;}
+	float Get_Money() const {return Money;}
+	float Get_Session_Time() const {return SessionTime;}
+	float Get_Punish_Timer() {return PunishTimer;}
+	void Inc_Punish_Timer(float time) {PunishTimer += time;}
 
 }; // 00A0
 

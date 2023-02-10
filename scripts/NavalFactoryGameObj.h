@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -50,10 +50,10 @@ public:
 private:
 	void					Load_Variables (ChunkLoadClass &cload);	
 	bool					IsBusy;
+    bool                    IsDisabled;
 	float					Timer;
 	int DefinitionID;
 	ReferencerClass	Purchaser;
-	int IsDisabled;
 	ScriptZoneGameObj *SpawnPos;
 	ScriptZoneGameObjDef *ConstructionZone1Def;
 	DynamicVectorClass<ScriptZoneGameObj *> ConstructionZone1Instances;

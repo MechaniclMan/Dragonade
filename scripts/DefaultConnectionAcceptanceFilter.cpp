@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,7 +18,7 @@
 #include "engine_player.h"
 #include "CombatManager.h"
 #include "cGameType.h"
-REF_DEF2(CombatManager::IAmClient, bool, 0x00855EC9, 0x008550B1);
+REF_DEF2(bool, CombatManager::IAmClient, 0x00855EC9, 0x008550B1);
 
 bool DefaultConnectionAcceptanceFilter::isPlayerNameAllowed(cGameData& gameData, const WideStringClass& playerName, int id)
 {
@@ -113,6 +113,11 @@ ConnectionAcceptanceFilter::STATUS DefaultConnectionAcceptanceFilter::getStatus(
 	{
 		status = STATUS_REFUSING;
 		refusalMessage = L"Invalid serial.";
+	}
+	else if (connectionRequest.clientVersion == 4.0f && connectionRequest.clientRevisionNumber < 5219)
+	{
+		refusalMessage.Format(L"You need a newer version of scripts.dll to join this server. Please get the newest version from http://www.tiberiantechnologies.org/");
+		status = STATUS_REFUSING;
 	}
 	else
 	{

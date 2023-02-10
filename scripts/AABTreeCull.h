@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -29,9 +29,9 @@ public:
 	AABTreeCullSystemClass(void);
 	virtual ~AABTreeCullSystemClass(void);
 
-	SHADERS_API void			Re_Partition(void);
-	SHADERS_API void			Re_Partition(const AABoxClass & bounds,SimpleDynVecClass<AABoxClass> & boxes);
-	void						Update_Bounding_Boxes(void);
+	void			Re_Partition(void);
+	void			Re_Partition(const AABoxClass & bounds,SimpleDynVecClass<AABoxClass> & boxes);
+	void			Update_Bounding_Boxes(void);
 	virtual void				Update_Culling(CullableClass * obj);
 	int							Partition_Node_Count(void) const;
 	int							Partition_Tree_Depth(void) const;
@@ -41,9 +41,9 @@ public:
 	virtual void				Collect_Objects(const OBBoxClass & box);
 	virtual void				Collect_Objects(const FrustumClass & frustum);
 	virtual void				Collect_Objects(const SphereClass & sphere);
-	SHADERS_API virtual void	Load(ChunkLoadClass & cload);
+	virtual void	Load(ChunkLoadClass & cload);
 	virtual void				Save(ChunkSaveClass & csave);
-	SHADERS_API void			Load_Object_Linkage(ChunkLoadClass & cload, CullableClass * obj);
+	void			Load_Object_Linkage(ChunkLoadClass & cload, CullableClass * obj);
 	void						Save_Object_Linkage(ChunkSaveClass & csave, CullableClass * obj);
 	const AABoxClass &			Get_Bounding_Box(void);
 	void						Get_Node_Bounds(int node_id,AABoxClass * set_bounds);
@@ -65,14 +65,14 @@ protected:
 	void	NODE_TRIVIALLY_ACCEPTED(void)		{ }
 	void	NODE_REJECTED(void)					{ }
 
-	SHADERS_API void	Add_Object_Internal(CullableClass * obj, int node_index = -1);
+	void	Add_Object_Internal(CullableClass * obj, int node_index = -1);
 	void				Remove_Object_Internal(CullableClass * obj);
 	void				Re_Index_Nodes(void);
 	void				Re_Index_Nodes_Recursive(AABTreeNodeClass * node, int & counter);
 	int					Partition_Node_Count_Recursive(AABTreeNodeClass * node) const;
 	void				Partition_Tree_Depth_Recursive(AABTreeNodeClass * node, int cur_depth, int & max_depth) const;
 	void				Add_Object_Recursive(AABTreeNodeClass * node, CullableClass * obj);
-	SHADERS_API void	Add_Loaded_Object(AABTreeNodeClass * node, CullableClass * obj);
+	void	Add_Loaded_Object(AABTreeNodeClass * node, CullableClass * obj);
 	void				Collect_Branch(AABTreeNodeClass * node);
 	void				Collect_Objects_Recursive(AABTreeNodeClass * node, const FrustumClass & frustum, int planes_passed);
 	void				Update_Bounding_Boxes_Recursive(AABTreeNodeClass * node);

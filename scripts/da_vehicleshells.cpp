@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Shells Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -45,7 +45,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	VehicleGameObj *Shadow = (VehicleGameObj*)Create_Object(ShellDef->Def,Transform);
 	Shadow->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 	Shadow->Set_Player_Type(-2);
-	Shadow->Script_Enable_Transitions(false);
+	Commands->Enable_Vehicle_Transitions(Shadow,false);
 	if (!ShellDef->Model.Is_Empty()) {
 		Commands->Set_Model(Shadow,ShellDef->Model);
 	}
@@ -70,7 +70,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	Commands->Set_Model(Shell,Get_Model(Shadow));
 	Shell->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 	Shell->Set_Player_Type(-2);
-	Shell->Script_Enable_Transitions(false);
+	Commands->Enable_Vehicle_Transitions(Shell,false);
 	DefenseObjectClass *ShellDefense = Shell->Get_Defense_Object();
 	ShellDefense->Set_Health_Max(VehicleDefense->HealthMax);
 	ShellDefense->Set_Shield_Strength_Max(VehicleDefense->ShieldStrengthMax);
@@ -151,7 +151,7 @@ void DAVehicleShellObserverClass::Timer_Expired(GameObject *obj,int Number) {
 		VehicleGameObj *Shadow = (VehicleGameObj*)Create_Object(ShellDef->Def,((PhysicalGameObj*)obj)->Get_Transform());
 		Shadow->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 		Shadow->Set_Player_Type(-2);
-		Shadow->Script_Enable_Transitions(false);
+		Commands->Enable_Vehicle_Transitions(Shadow,false);
 		if (!ShellDef->Model.Is_Empty()) {
 			Commands->Set_Model(Shadow,ShellDef->Model);
 		}
@@ -200,10 +200,10 @@ void DAVehicleShellsGameFeatureClass::Settings_Loaded_Event() {
 	Shells.Remove_All();
 	INISection *Section = DASettingsManager::Get_Section("Vehicle_Shells");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			VehicleGameObjDef *VehicleDef = (VehicleGameObjDef*)Find_Named_Definition(Section->Peek_Entry(i)->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			VehicleGameObjDef *VehicleDef = (VehicleGameObjDef*)Find_Named_Definition(i->Entry);
 			if (VehicleDef && VehicleDef->Get_Class_ID() == CID_Vehicle) {
-				DATokenParserClass Parser(Section->Peek_Entry(i)->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				const char *DefName = Parser.Get_String();
 				if (DefName) {
 					VehicleGameObjDef *ShellDef = (VehicleGameObjDef*)Find_Named_Definition(DefName);

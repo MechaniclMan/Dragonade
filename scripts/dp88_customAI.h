@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -106,7 +106,7 @@ public:
   
   virtual void AIStateChanged( GameObject* pObj, bool bEnabled );
 
-  float getDistance ( GameObject *obj1, GameObject *obj2 );
+  static float getDistance ( GameObject *obj1, GameObject *obj2 );
   virtual float getPriority( GameObject *obj, GameObject *target );
   virtual float getPriority( GameObject *obj, int target_id );
   bool getPrimary ( GameObject *target );
@@ -624,24 +624,22 @@ class dp88_AI_ChargedTurret_Animation : public ScriptImpClass
 * the objective is used as a go-to location rather than a target to shoot at, so the behaviour of
 * the unit when it arrives at an objective depends upon the script being used and its configuration.
 *
-* \param Priority
-*   The priority of this objective, AIs will attempt to accomplish the highest priority objectives
-*   first, randomly choosing between objecives with equal priority
-* \param Distance
-*   The target distance from this objective the unit will try to achieve. Be careful not to set this
-*   too low or the AI might be unable to calculate a successful route.
 * \param Team
 *   Which team this objective applies to. 0 for Nod/Soviets, 1 for GDI/Allies and 2 for both
 * \param Type
-*   What type of objective this is, valid values are 1 (Offensive) or 2 (Defensive).
-* \param Soldier_Objective
-*   Whether this objective is suitable for soldiers to attempt. 1 to enable, 0 to disable
-* \param Light_Vehicle_Objective
-*   Whether this objective is suitable for a light vehicle to attempt. 1 to enable, 0 to disable
-* \param Heavy_Vehicle_Objective
-*   Whether this objective is suitable for a heavy vehicle to attempt. 1 to enable, 0 to disable
-* \param Aircraft_Objective
-*   Whether this objective is suitable for aircraft to attempt. 1 to enable, 0 to disable
+*   What type of objective this is, valid values are 1 (Offensive), 2 (Defensive) or 3 (Engineering)
+* \param Range
+*   The target distance from this objective the unit will try to achieve. Be careful not to set this
+*   too low or the AI might be unable to calculate a successful route. Upon arrival units will roam
+*   within this area until the objective is accomplished or a new objective takes priority
+* \param Priority_Soldier
+*   Objective priority for soldiers, or 0 is this objective is not suitable for soldiers
+* \param Priority_Light_Vehicle
+*   Objective priority for light vehicles, or 0 is this objective is not suitable for light vehicles
+* \param Priority_Heavy_Vehicle
+*   Objective priority for heavy vehicles, or 0 is this objective is not suitable for heavy vehicles
+* \param Priority_Aircraft
+*   Objective priority for aircraft, or 0 is this objective is not suitable for aircraft
 */
 class dp88_AI_Objective : public ScriptImpClass
 {
@@ -650,19 +648,19 @@ public:
   void Detach ( GameObject* obj );
 
   GameObject* GetGameObject();
-  int GetPriority()         { return m_priority; }
-  int GetDistance()         { return m_distance; }
-  unsigned char GetType()   { return m_type; }
 
-  /*! Check if this objective is suitable for the unit type of the specified object */
-  bool IsSuitable ( GameObject* obj, unsigned char objective_type );
+  unsigned char GetType()   { return m_type; }
+  int GetTeam()             { return m_team; }
+  int GetRange()            { return m_range; }
+
+  /*! Get the priority of this objective for the specified AI unit */
+  float GetPriority(GameObject* obj, float distance_modifier);
 
   /*!
-  * Finds the highest priority objective suitable for the type of unit which is passed as the
-  * parameter and returns it. If multiple objectives share the highest priority one will be picked
-  * at random
+  * Finds the most suitable objective of a given type for the specified unit, based on the distance
+  * to the objective and their distance modifier
   */
-  static dp88_AI_Objective* GetObjective ( GameObject* obj, unsigned char objective_type );
+  static dp88_AI_Objective* GetBestObjective ( GameObject* obj, unsigned char objective_type, float distance_modifier );
 
   /*! Checks if the specified objective is still valid */
   static bool IsValidObjective ( dp88_AI_Objective* pObjective );
@@ -671,17 +669,32 @@ public:
   /*! @{ */
   const static unsigned char TYPE_OFFENSIVE = 1;
   const static unsigned char TYPE_DEFENSIVE = 2;
+  const static unsigned char TYPE_ENGINEERING = 2;
   /*! @} */
 
 protected:
-  /*! \name Cached Script Parameters */
+  /*! \name Unit types */
   /*! @{ */
-  int m_objID;
-  int m_priority;
-  int m_distance;
-  unsigned char m_type;
+  const static unsigned char UNITTYPE_SOLDIER = 0;
+  const static unsigned char UNITTYPE_LVEHICLE = 1;
+  const static unsigned char UNITTYPE_HVEHICLE = 2;
+  const static unsigned char UNITTYPE_AIRCRAFT = 3;
+  const static unsigned char UNITTYPE_MAX = UNITTYPE_AIRCRAFT;
+  const static unsigned char UNITTYPE_UNKNOWN = UCHAR_MAX;
   /*! @} */
 
-  static int s_nObjectives;
-  static dp88_AI_Objective** s_pObjectives;
+  /*! Get the unit type of the specified unit */
+  unsigned char GetUnitType(GameObject* obj);
+
+  int m_objID;;
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  unsigned char m_type;
+  int m_priority[UNITTYPE_MAX + 1];
+  int m_range;
+  int m_team;
+  /*! @} */
+
+  static DynamicVectorClass<dp88_AI_Objective *> Objectives;
 };

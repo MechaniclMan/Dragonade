@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Plugin Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -29,23 +29,22 @@ void DAPluginManager::Init() {
 	INISection *Section = DASettingsManager::Get_Section("Plugins");
 	if (Section) {
 		bool NewLine = false;
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			if (!_stricmp(Entry->Value,"1") || !_stricmp(Entry ->Value,"true")) {
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			if (!_stricmp(i->Value,"1") || !_stricmp(i->Value,"true")) {
 				NewLine = true;
-				HINSTANCE Handle = LoadLibrary(Entry->Entry);
+				HINSTANCE Handle = LoadLibrary(i->Entry);
 				if (Handle) {
 					PluginInit Init = (PluginInit)GetProcAddress(Handle,"Plugin_Init");
 					if (Init) {
 						Init();
 					}
 					Plugins.Add(Handle);
-					Console_Output("Plugin %s loaded\n",Entry->Entry);
-					DALogManager::Write_Log("_PLUGIN","load %s",Entry->Entry);
+					Console_Output("Plugin %s loaded\n",i->Entry);
+					DALogManager::Write_Log("_PLUGIN","load %s",i->Entry);
 				}
 				else {
-					Console_Output("Could not load plugin %s\n",Entry->Entry);
-					DALogManager::Write_Log("_PLUGIN","failure %s",Entry->Entry);
+					Console_Output("Could not load plugin %s\n",i->Entry);
+					DALogManager::Write_Log("_PLUGIN","failure %s",i->Entry);
 				}
 			}
 		}

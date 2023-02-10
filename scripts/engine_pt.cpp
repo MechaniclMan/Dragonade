@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,15 +15,6 @@
 #include "engine_def.h"
 #include "engine_obj2.h"
 
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-TeamPurchaseSettingsDefClass *TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM team)
-AT2(0x006F3430,0x006F29F0);
-RENEGADE_FUNCTION
-PurchaseSettingsDefClass *PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE type,PurchaseSettingsDefClass::TEAM team)
-AT2(0x006F2BD0,0x006F2190);
-#endif
-
 unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
 {
 	int ID = Get_Definition_ID(preset);
@@ -31,7 +22,7 @@ unsigned int SCRIPTS_API Get_Team_Cost(const char *preset,unsigned int team)
 	{
 		return TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(team))->Get_Beacon_Cost();
 	}
-	for (unsigned int i = 0;i < 5;i++)
+	for (unsigned int i = 0;i < 7;i++)
 	{
 		PurchaseSettingsDefClass *p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(team));
 		if (p)
@@ -71,7 +62,7 @@ void SCRIPTS_API Disable_Preset_By_Name(unsigned int Team,const char *Name, bool
 	}
 	PurchaseSettingsDefClass *p = 0;
 	unsigned int i;
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 7; i++)
 	{
 		p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(Team));
 		if (!p)
@@ -101,7 +92,7 @@ void SCRIPTS_API Hide_Preset_By_Name(unsigned int Team,const char *Name, bool en
 	}
 	PurchaseSettingsDefClass *p = 0;
 	unsigned int i;
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 7; i++)
 	{
 		p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(Team));
 		if (!p)
@@ -131,7 +122,7 @@ void SCRIPTS_API Busy_Preset_By_Name(unsigned int Team,const char *Name, bool en
 	}
 	PurchaseSettingsDefClass *p = 0;
 	unsigned int i;
-	for (i = 0; i < 5; i++)
+	for (i = 0; i < 7; i++)
 	{
 		p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(Team));
 		if (!p)
@@ -163,7 +154,7 @@ const char SCRIPTS_API *Get_Team_Icon(const char *preset,unsigned int team)
 			return t->Get_Enlisted_Texture(i);
 		}
 	}
-	for (unsigned int i = 0;i < 5;i++)
+	for (unsigned int i = 0;i < 7;i++)
 	{
 		PurchaseSettingsDefClass *p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)team);
 		if (p)
@@ -204,7 +195,7 @@ const char SCRIPTS_API *Get_Icon(const char *preset)
 
 void SCRIPTS_API Disable_All_Presets_By_Factory_Tech(BuildingType type,unsigned int team,bool disable)
 {
-	for (unsigned int i = 0;i < 5;i++)
+	for (unsigned int i = 0;i < 7;i++)
 	{
 		PurchaseSettingsDefClass *p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(team));
 		if (p)

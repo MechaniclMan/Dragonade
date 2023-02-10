@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,8 +30,8 @@ typedef DynamicVectorClass<TDBCategoryClass*> TDB_CATEGORY_LIST;
 
 
 
-extern SHADERS_API const wchar_t* STRING_NOT_FOUND;
-extern SHADERS_API const char* ENGLISH_STRING_NOT_FOUND;
+extern SHARED_API const wchar_t* STRING_NOT_FOUND;
+extern SHARED_API const char* ENGLISH_STRING_NOT_FOUND;
 
 
 
@@ -76,15 +76,15 @@ private:
 	static FILTER_OPT FilterType;
 	static uint32 FilterCategoryID;
 #else
-	SHADERS_API static REF_DECL2(m_ObjectList, TDB_OBJ_LIST);
-	SHADERS_API static REF_DECL2(m_ObjectHash, TT_NOOP(HashTemplateClass<StringClass, TDBObjClass*>));
-	static REF_DECL2(m_CategoryList, TDB_CATEGORY_LIST);
-	static REF_DECL2(m_VersionNumber, uint32);
-	static REF_DECL2(m_LanguageID, uint32);
-	static REF_DECL2(IsSingleLanguageExport, bool);
-	static REF_DECL2(CategoryExportFilter, uint32);
-	static REF_DECL2(FilterType, FILTER_OPT);
-	static REF_DECL2(FilterCategoryID, uint32);
+	SHARED_API static REF_DECL(TDB_OBJ_LIST, m_ObjectList);
+	SHARED_API static REF_DECL(TT_NOOP(HashTemplateClass<StringClass, TDBObjClass*>), m_ObjectHash);
+	static REF_DECL(TDB_CATEGORY_LIST, m_CategoryList);
+	static REF_DECL(uint32, m_VersionNumber);
+	static REF_DECL(uint32, m_LanguageID);
+	static REF_DECL(bool, IsSingleLanguageExport);
+	static REF_DECL(uint32, CategoryExportFilter);
+	static REF_DECL(FILTER_OPT, FilterType);
+	static REF_DECL(uint32, FilterCategoryID);
 #endif
 
 protected:
@@ -111,9 +111,9 @@ protected:
 
 public:
 
-	SHADERS_API static void Initialize();
-	SHADERS_API static void Shutdown();
-	SHADERS_API static uint32 Get_Version_Number();
+	SHARED_API static void Initialize();
+	SHARED_API static void Shutdown();
+	SHARED_API static uint32 Get_Version_Number();
 	static void Update_Version();
 	static bool Is_Loaded() { return (m_ObjectList.Count() > 0); }
 
@@ -131,7 +131,7 @@ public:
 	static bool Add_Object(TDBObjClass* object);
 	static bool Remove_Object(int index);
 	static bool Clear_Object(int index);
-	SHADERS_API static void Remove_All();
+	SHARED_API static void Remove_All();
 	
 	static int Get_Object_Count()
 	{

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,13 +9,16 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Changed operator== and operator!= to not be case sensitive.
 #ifndef SCRIPTS_INCLUDE__ENGINE_STRING_H
 #define SCRIPTS_INCLUDE__ENGINE_STRING_H
 
+
+
 #include "engine_common.h"
 #include "HashTemplateKeyClass.h"
+
+
+
 
 class StringClass {
 public:
@@ -56,13 +59,32 @@ public:
 	int	Get_Length (void) const;
 	bool Is_Empty (void) const;
 	void Erase (int start_index, int char_count);
-	SHADERS_API int __cdecl Format(const char* format,...);
-	SHADERS_API int __cdecl Format_Args(const char* format,const va_list& arg_list);
+	SHARED_API int __cdecl Format(const char* format,...);
+	SHARED_API int __cdecl Format_Args(const char* format,const va_list& arg_list);
 	char *Get_Buffer (int new_length);
 	char *Peek_Buffer (void);
 	const char * Peek_Buffer (void) const;
-	SHADERS_API bool Copy_Wide (const wchar_t *source);
-	SHADERS_API static void Release_Resources();
+	SHARED_API bool Copy_Wide (const wchar_t *source);
+	SHARED_API static void Release_Resources();
+
+  /*!
+  * Finds any occurances of the search string within this string and replaces them with a specified
+  * replacement string.
+  *
+  * \param[in] search
+  *   The substring to be replaced
+  * \param[in] replace
+  *   The replacement string to insert
+  * \param[in] bCaseSensitive
+  *   True to perform a case sensitive search, false if case doesn't matter
+  * \param[in] maxCount
+  *   The maximum number of replacements to perform, or -1 to replace all instances
+  *
+  * \return
+  *   The number of replacements that were made
+  */
+	SHARED_API int Replace(const char* search, const char* replace, bool bCaseSensitive = true, int maxCount=-1);
+
 	void TruncateLeft(uint truncateLength)
 	{
 		uint length = Get_Length();
@@ -126,7 +148,7 @@ public:
 		char* iter = m_Buffer;
 		for (; *iter != '\0' && *iter <= ' '; iter++);
 
-		TruncateLeft(iter - m_Buffer);
+		TruncateLeft((int)(iter - m_Buffer));
 	}
 
 	void TrimRight()
@@ -134,7 +156,7 @@ public:
 		char* iter = m_Buffer + Get_Length() - 1;
 		for (; *iter != '\0' && *iter <= ' '; iter--);
 
-		TruncateRight(m_Buffer + Get_Length() - 1 - iter);
+		TruncateRight((int)(m_Buffer + Get_Length() - 1 - iter));
 	}
 
 	void Trim()
@@ -161,6 +183,25 @@ public:
 			return hash;
 		}
 	}
+
+    int IndexOf(char c)
+    {
+        int length = Get_Length();
+        for (int i = 0; i < length; ++i)
+        {
+            if (m_Buffer[i] == c) return i;
+        }
+        return -1;
+    }
+
+    int LastIndexOf(char c)
+    {
+        for (int i = Get_Length() - 1; i >= 0; --i)
+        {
+            if (m_Buffer[i] == c) return i;
+        }
+        return -1;
+    }
 
 	void ToUpper()
 	{
@@ -210,18 +251,18 @@ private:
 		MAX_TEMP_LEN		= 256-sizeof(_HEADER),
 		MAX_TEMP_BYTES		= (MAX_TEMP_LEN * sizeof (char)) + sizeof (HEADER),
 	};
-	SHADERS_API void Get_String(int length,bool is_temp);
+	SHARED_API void Get_String(int length,bool is_temp);
 	char* Allocate_Buffer(int len);
-	SHADERS_API void Resize(int new_len);
-	SHADERS_API void Uninitialised_Grow(int new_len);
-	SHADERS_API void Free_String();
+	SHARED_API void Resize(int new_len);
+	SHARED_API void Uninitialised_Grow(int new_len);
+	SHARED_API void Free_String();
 	void Store_Length(int length);
 	void Store_Allocated_Length(int length);
 	HEADER *Get_Header() const;
 	int Get_Allocated_Length() const;
 	void Set_Buffer_And_Allocated_Length(char *buffer, int length);
 	char* m_Buffer;
-#if (SHADERS_EXPORTS) || (EXTERNAL)
+#if (SHARED_EXPORTS) || (EXTERNAL)
 	static char __declspec(thread) TempStrings[MAX_TEMP_STRING][MAX_TEMP_BYTES];
 	static unsigned int __declspec(thread) FreeTempStrings;
 #endif
@@ -229,8 +270,8 @@ private:
 	static char *m_EmptyString;
 	static char m_NullChar;
 #else
-	SHADERS_API static REF_DECL3(m_EmptyString, char *);
-	SHADERS_API static REF_DECL3(m_NullChar, char);
+	SHARED_API static REF_DECL(char *, m_EmptyString);
+	SHARED_API static REF_DECL(char, m_NullChar);
 #endif
 };
 
@@ -247,7 +288,7 @@ inline const StringClass &StringClass::operator= (const char *string)
 {
 	if (string != 0)
 	{
-		int len = strlen (string);
+		int len = (int)strlen (string);
 		Uninitialised_Grow (len+1);
 		Store_Length (len);
 		memcpy (m_Buffer, string, (len + 1) * sizeof (char));		
@@ -303,7 +344,7 @@ inline StringClass::StringClass (const StringClass &string, bool hint_temporary)
 
 inline StringClass::StringClass (const char *string, bool hint_temporary) : m_Buffer (m_EmptyString)
 {
-	int len=string ? strlen(string) : 0;
+	int len=string ? (int)strlen(string) : 0;
 	if (hint_temporary || len>0)
 	{
 		Get_String (len+1, hint_temporary);
@@ -313,7 +354,7 @@ inline StringClass::StringClass (const char *string, bool hint_temporary) : m_Bu
 
 inline StringClass::StringClass (const wchar_t *string, bool hint_temporary) : m_Buffer (m_EmptyString)
 {
-	int len = string ? wcslen (string) : 0;
+	int len = string ? (int)wcslen (string) : 0;
 	if (hint_temporary || len > 0)
 	{
 		Get_String (len + 1, hint_temporary);
@@ -403,7 +444,7 @@ inline void StringClass::Erase (int start_index, int char_count)
 inline const StringClass &StringClass::operator+= (const char *string)
 {
 	int cur_len = Get_Length ();
-	int src_len = strlen (string);
+	int src_len = (int)strlen (string);
 	int new_len = cur_len + src_len;
 	Resize (new_len + 1);
 	Store_Length (new_len);
@@ -496,7 +537,7 @@ inline int StringClass::Get_Length (void) const
 		length = header->length;
 		if (length == 0)
 		{
-			length = strlen (m_Buffer);
+			length = (int)strlen (m_Buffer);
 			((StringClass *)this)->Store_Length (length);
 		}
 	}
@@ -583,16 +624,16 @@ public:
 	int Get_Length (void) const;
 	bool Is_Empty (void) const;
 	void Erase (int start_index, int char_count);
-	SHADERS_API int _cdecl Format (const wchar_t *format, ...);
-	SHADERS_API int _cdecl Format_Args (const wchar_t *format, const va_list & arg_list );
-	SHADERS_API bool Convert_From (const char *text);
+	SHARED_API int _cdecl Format (const wchar_t *format, ...);
+	SHARED_API int _cdecl Format_Args (const wchar_t *format, const va_list & arg_list );
+	SHARED_API bool Convert_From (const char *text);
 	bool Convert_To (StringClass &string);
 	bool Convert_To (StringClass &string) const;
-	SHADERS_API bool Is_ANSI(void);
+	SHARED_API bool Is_ANSI(void);
 	wchar_t *		Get_Buffer (int new_length);
 	wchar_t *		Peek_Buffer (void);
 	const wchar_t*	Peek_Buffer() const;
-	SHADERS_API static void	Release_Resources (void);
+	SHARED_API static void	Release_Resources (void);
 
 	void TruncateLeft(uint truncateLength)
 	{
@@ -624,14 +665,14 @@ public:
 	{
 		wchar_t* iter = m_Buffer;
 		for (; *iter != L'\0' && *iter <= L' '; iter++);
-		TruncateLeft(iter - m_Buffer);
+		TruncateLeft((int)(iter - m_Buffer));
 	}
 
 	void TrimRight()
 	{
 		wchar_t* iter = m_Buffer + Get_Length() - 1;
 		for (; *iter != L'\0' && *iter <= L' '; iter--);
-		TruncateRight(m_Buffer + Get_Length() - 1 - iter);
+		TruncateRight((int)(m_Buffer + Get_Length() - 1 - iter));
 	}
 
 	void Trim()
@@ -652,9 +693,9 @@ public:
 		return result;
 	}
 
-	SHADERS_API WideStringClass Substring(int start, int length) const;
-	SHADERS_API void RemoveSubstring(int start, int length);
-	SHADERS_API void ReplaceSubstring(int start, int length, const WideStringClass& substring);
+	SHARED_API WideStringClass Substring(int start, int length) const;
+	SHARED_API void RemoveSubstring(int start, int length);
+	SHARED_API void ReplaceSubstring(int start, int length, const WideStringClass& substring);
 
 private:
 	typedef struct _HEADER
@@ -668,18 +709,18 @@ private:
 		MAX_TEMP_LEN		= 256,
 		MAX_TEMP_BYTES		= (MAX_TEMP_LEN * sizeof (wchar_t)) + sizeof (HEADER),
 	};
-	SHADERS_API void Get_String(int length,bool is_temp);
+	SHARED_API void Get_String(int length,bool is_temp);
 	wchar_t *		Allocate_Buffer (int length);
-	SHADERS_API void			Resize (int size);
-	SHADERS_API void			Uninitialised_Grow (int length);
-	SHADERS_API void Free_String();
+	SHARED_API void			Resize (int size);
+	SHARED_API void			Uninitialised_Grow (int length);
+	SHARED_API void Free_String();
 	void Store_Length(int length);
 	void Store_Allocated_Length(int length);
 	HEADER *Get_Header() const;
 	int Get_Allocated_Length() const;
 	void Set_Buffer_And_Allocated_Length(wchar_t *buffer, int length);
 	wchar_t* m_Buffer;
-#if (SHADERS_EXPORTS || EXTERNAL)
+#if (SHARED_EXPORTS || EXTERNAL)
 	static char __declspec(thread) TempStrings[MAX_TEMP_STRING][MAX_TEMP_BYTES];
 	static unsigned int __declspec(thread) FreeTempStrings;
 #endif
@@ -687,8 +728,8 @@ private:
 	static wchar_t *m_EmptyString;
 	static wchar_t m_NullChar;
 #else
-	SHADERS_API static REF_DECL3(m_EmptyString, wchar_t *);
-	SHADERS_API static REF_DECL3(m_NullChar, wchar_t);
+	SHARED_API static REF_DECL(wchar_t *, m_EmptyString);
+	SHARED_API static REF_DECL(wchar_t, m_NullChar);
 #endif
 };
 
@@ -715,7 +756,7 @@ inline WideStringClass::WideStringClass (const WideStringClass &string, bool hin
 
 inline WideStringClass::WideStringClass (const wchar_t *string, bool hint_temporary) : m_Buffer (m_EmptyString)
 {
-	int len=string ? wcslen(string) : 0;
+	int len=string ? (int)wcslen(string) : 0;
 	if (hint_temporary || len>0)
 	{
 		Get_String (len+1, hint_temporary);
@@ -728,7 +769,7 @@ inline WideStringClass::WideStringClass (const char *string, bool hint_temporary
 {
 	if (hint_temporary || (string && strlen(string)>0))
 	{
-		Get_String (strlen(string) + 1, hint_temporary);
+		Get_String ((int)strlen(string) + 1, hint_temporary);
 	}
 	(*this) = string;
 }
@@ -778,12 +819,12 @@ inline WideStringClass::operator const wchar_t * (void) const
 
 inline bool WideStringClass::operator== (const wchar_t *rvalue) const
 {
-	return (Compare_No_Case (rvalue) == 0);
+	return (Compare (rvalue) == 0);
 }
 
 inline bool WideStringClass::operator!= (const wchar_t *rvalue) const
 {
-	return (Compare_No_Case (rvalue) != 0);
+	return (Compare (rvalue) != 0);
 }
 
 inline const WideStringClass & WideStringClass::operator= (const WideStringClass &string)
@@ -837,7 +878,7 @@ inline void WideStringClass::Erase (int start_index, int char_count)
 			char_count = len - start_index;
 		}
 		memmove (&m_Buffer[start_index],&m_Buffer[start_index + char_count],(len - (start_index + char_count) + 1) * sizeof (wchar_t));
-		Store_Length( wcslen(m_Buffer) );
+		Store_Length( (int)wcslen(m_Buffer) );
 	}
 }
 
@@ -845,7 +886,7 @@ inline const WideStringClass & WideStringClass::operator= (const wchar_t *string
 {
 	if (string)
 	{
-		int len = wcslen (string);
+		int len = (int)wcslen (string);
 		Uninitialised_Grow (len + 1);
 		Store_Length (len);
 		memcpy (m_Buffer, string, (len + 1) * sizeof (wchar_t));		
@@ -873,7 +914,7 @@ inline const WideStringClass &WideStringClass::operator+= (const wchar_t *string
 	if (string)
 	{
 		int cur_len = Get_Length ();
-		int src_len = wcslen (string);
+		int src_len = (int)wcslen (string);
 		int new_len = cur_len + src_len;
 		Resize (new_len + 1);
 		Store_Length (new_len);
@@ -966,7 +1007,7 @@ inline int WideStringClass::Get_Length (void) const
 		length = header->length;
 		if (length == 0)
 		{
-			length = wcslen (m_Buffer);
+			length = (int)wcslen (m_Buffer);
 			((WideStringClass *)this)->Store_Length (length);
 		}
 	}

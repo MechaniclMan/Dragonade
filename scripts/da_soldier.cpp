@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Soldier Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -35,19 +35,24 @@ void DASoldierManager::Init() {
 void DASoldierManager::Settings_Loaded_Event() {
 	//Spawn characters
 	StringClass Buffer;
-	Set_Nod_Soldier_Name(DASettingsManager::Get_String(Buffer,"NodSpawnCharacter",Get_Definition_Name(TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_NOD)->Get_Enlisted_Definition(0))));
-	Set_GDI_Soldier_Name(DASettingsManager::Get_String(Buffer,"GDISpawnCharacter",Get_Definition_Name(TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_GDI)->Get_Enlisted_Definition(0))));
+	DASettingsManager::Get_String(Buffer,"NodSpawnCharacter",0);
+	if (!Buffer.Is_Empty()) {
+		Set_Nod_Soldier_Name(Buffer);
+	}
+	DASettingsManager::Get_String(Buffer,"GDISpawnCharacter",0);
+	if (!Buffer.Is_Empty()) {
+		Set_GDI_Soldier_Name(Buffer);
+	}
 
 	//Grant weapons
 	GrantWeapons.Remove_All();
 	INISection *Section = DASettingsManager::Get_Section("Grant_Weapons");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def && Def->Get_Class_ID() == CID_Soldier) {
 				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
-				DATokenParserClass Parser(Entry->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				while (const char *Token = Parser.Get_String()) {
 					DefinitionClass *Def2 = Find_Named_Definition(Token);
 					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {
@@ -65,12 +70,11 @@ void DASoldierManager::Settings_Loaded_Event() {
 	ExclusiveWeapons.Remove_All();
 	Section = DASettingsManager::Get_Section("Exclusive_Weapons");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def && Def->Get_Class_ID() == CID_Weapon) {
 				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
-				DATokenParserClass Parser(Entry->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				while (const char *Token = Parser.Get_String()) {
 					DefinitionClass *Def2 = Find_Named_Definition(Token);
 					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {
@@ -87,10 +91,9 @@ void DASoldierManager::Settings_Loaded_Event() {
 	//Replace weapons
 	Section = DASettingsManager::Get_Section("Replace_Weapons");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *OldWeaponDef = Find_Named_Definition(Entry->Entry);
-			DefinitionClass *NewWeaponDef = Find_Named_Definition(Entry->Value);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *OldWeaponDef = Find_Named_Definition(i->Entry);
+			DefinitionClass *NewWeaponDef = Find_Named_Definition(i->Value);
 			if (OldWeaponDef && OldWeaponDef->Get_Class_ID() == CID_Weapon && NewWeaponDef && NewWeaponDef->Get_Class_ID() == CID_Weapon) {
 				for (PowerUpGameObjDef *PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_First(CID_PowerUp);PowerUpDef;PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_Next(PowerUpDef,CID_PowerUp)) {
 					if ((unsigned int)PowerUpDef->GrantWeaponID == OldWeaponDef->Get_ID()) {
@@ -113,12 +116,11 @@ void DASoldierManager::Settings_Loaded_Event() {
 	RemoveWeapons.Remove_All();
 	Section = DASettingsManager::Get_Section("Remove_Weapons");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def && Def->Get_Class_ID() == CID_Weapon) {
 				DynamicVectorClass<const WeaponDefinitionClass*> Weapons;
-				DATokenParserClass Parser(Entry->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				while (const char *Token = Parser.Get_String()) {
 					DefinitionClass *Def2 = Find_Named_Definition(Token);
 					if (Def2 && Def2->Get_Class_ID() == CID_Weapon) {

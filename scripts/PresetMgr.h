@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -118,6 +118,6 @@ public:
 #if (DDBEDIT) || (TDBEDIT)
 extern PresetMgrClass _ThePresetMgr;
 #else
-extern REF_DECL3(_ThePresetMgr,PresetMgrClass);
+extern REF_DECL(PresetMgrClass, _ThePresetMgr);
 #endif
 #endif

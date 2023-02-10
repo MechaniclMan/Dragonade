@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -102,7 +102,7 @@ public:
   virtual unsigned long       Get_Class_ID            () const;
   virtual AudibleSoundClass::SoundType           Get_Type                () const;
   virtual void                Set_Type                (SoundType type);
-  virtual SHADERS_API bool    Play                    (bool addToPlaylist);
+  virtual bool    Play                    (bool addToPlaylist);
   virtual bool                Pause                   ();
   virtual bool                Resume                  ();
   virtual bool                Stop                    (bool removeFromPlaylist);
@@ -154,9 +154,9 @@ public:
   virtual void                Free_Miles_Handle       ();
   virtual void                Initialize_Miles_Handle ();
   virtual void                Allocate_Miles_Handle   ();
-  virtual SHADERS_API SoundBufferClass*   Get_Buffer              () const;
+  virtual SoundBufferClass*   Get_Buffer              () const;
   virtual SoundBufferClass*   Peek_Buffer             () const;
-  SHADERS_API virtual void                Set_Buffer              (SoundBufferClass* buffer);
+  virtual void                Set_Buffer              (SoundBufferClass* buffer);
   virtual void                Restart_Loop            ();
   virtual void                Update_Play_Position    ();
   virtual void                On_Loop_End             ();

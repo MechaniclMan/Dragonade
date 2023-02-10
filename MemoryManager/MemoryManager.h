@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -79,11 +79,13 @@ void	FreeMemory(void* memory);
 void	FreeMemory(void* memory, DeallocType type, const char* file, unsigned int line, const char* function);
 size_t	GetMemorySize(void* memory);
 
+#pragma warning(suppress: 28251) //warning C28251: Inconsistent annotation for function: this instance has an error 
 void*	operator new(size_t size);
 void*	operator new(size_t size, const char* file, unsigned int line);
 void	operator delete(void* memory);
 void	operator delete(void* memory, const char* file, unsigned int line);
 
+#pragma warning(suppress: 28251) //warning C28251: Inconsistent annotation for function: this instance has an error 
 void*	operator new[](size_t size);
 void*	operator new[](size_t size, const char* file, unsigned int line);
 void	operator delete[](void* memory);

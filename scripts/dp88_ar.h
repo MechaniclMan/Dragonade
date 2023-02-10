@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -13,6 +13,7 @@
 
 #include "dp88_customAI.h"
 #include "dp88_custom_timer_defines.h"
+#include "dp88_misc.h"
 
 // -------------------------------------------------------------------------------------------------
 
@@ -68,38 +69,29 @@
 *   Optional. The name of the second disguise preset for the Mirage Tank on this map.
 * \param MirageTank_disguisePreset_3
 *   Optional. The name of the third disguise preset for the Mirage Tank on this map.
-* \param warminer_refToOre
-*   Deprecated, pending removal
-* \param warminer_oreToRef
-*   Deprecated, pending removal
-* \param warminer_unloadOre
-*   Deprecated, pending removal
-* \param chronominer_refToOre
-*   Deprecated, pending removal
-* \param chronominer_unloadOre
-*   Deprecated, pending removal
+* \param Camouflage
+*   The ID of the camouflage variant to use for this map
 */
 
-class dp88_AR_GameController : public ScriptImpClass
+class dp88_AR_GameController : public dp88_Camo_Controller
 {
+public:
   // Events
   void Created( GameObject *obj );
   void Custom( GameObject *obj, int type, int param, GameObject *sender );
   void Timer_Expired( GameObject *obj, int number );
   void Destroyed( GameObject *obj );
 
-  public:
   dp88_AR_GameController();
   ~dp88_AR_GameController();
 
+protected:
   bool created;
 
   short team0_countryID;    // Country ID for Soviets
   short team1_countryID;    // Country ID for Allies
 
-  // Terror Drone console waiting for response
-  int TD_Waiting_Console;
-
+public:
   // Mirage Tank
   char* mirageTank_disguisePresets[3];
 };
@@ -263,6 +255,8 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 *   An optional sound effect to be played each time the ore load level increases
 * \param Idle_Animation
 *   An optional animation to be played in a loop when the miner is not mining or docked
+* \param Resource_Name
+*   The name of hte resource field (defaults to ore if none is specified)
 *
 * \note
 *   Because this script is designed to act as a base class for both types of AR miner it is not
@@ -271,7 +265,6 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 *   derived script for that at this time, thus the dp88_AR_War_Miner script in LevelEdit is really
 *   an instance of this base class script.
 */
-
 class dp88_Ore_Miner : public JFW_Key_Hook_Base   // Inherit from keyhook base for chrono miner
 {
 protected:
@@ -289,6 +282,7 @@ protected:
   int m_oreCapacity;      //!< Maximum number of mined ore units onboard
   float m_oreMiningTime;  //!< Time required to mine one ore unit
   float m_oreDumpTime;    //!< Time required to dump ore at a refinery
+  const char* m_resourceName; //!< Resource name for strings>
 
   const char* m_animations[3];
   const char* m_animSounds[3];
@@ -409,6 +403,8 @@ public:
 * must enter to be considered 'inside' the ore field. This zone can grow and shrink with the ore
 * field animation if desired.
 *
+* If you attach this to a script zone directly, it will use that zone instead of spawning a new zone.
+*
 * Used on it's own this script can either create an ore field with infinite capacity or one which is
 * gradually depleted until it is empty. If you want the ore field to re-grow you must add one or
 * more objects with the dp88_Ore_Extractor script attached.
@@ -446,6 +442,7 @@ public:
 class dp88_Ore_Field : public ScriptImpClass
 {
 public:
+  dp88_Ore_Field() : m_pZoneObserver(NULL) {}
   void Created ( GameObject* pObj );
   void Detach ( GameObject* pObj );
   void Entered ( GameObject* pZoneObj, GameObject* pEnterer );

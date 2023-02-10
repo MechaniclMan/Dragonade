@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -63,6 +63,7 @@ DAPlayerClass::DAPlayerClass(cPlayer *Player) {
 	Loaded = false;
 	LastTibDamageTime = 0;
 	ServerDamage = false;
+	CreationTime = 0;
 }
 
 DAPlayerClass::~DAPlayerClass() {
@@ -477,6 +478,18 @@ bool DAPlayerClass::Use_Server_Damage() {
 	return ServerDamage;
 }
 
+bool DAPlayerClass::Is_Spawning() {
+	return (CreationTime == The_Game()->FrameCount);
+}
+
+unsigned long DAPlayerClass::Get_Creation_Time() {
+	return CreationTime;
+}
+
+void DAPlayerClass::Reset_Creation_Time() {
+	CreationTime = The_Game()->FrameCount;
+}
+
 void DAPlayerClass::Join() {
 	Get_Owner()->Set_DA_Player(this);
 	Serial = Get_Client_Serial_Hash(Get_ID());
@@ -772,12 +785,14 @@ void DAPlayerClass::Change_Character(const SoldierGameObjDef *Soldier) {
 	for (int i = 0;i < Observers.Count();i++) {
 		Observers[i]->Change_Character(Soldier);
 	}
+	Reset_Creation_Time();
 }
 
 void DAPlayerClass::Created() {
 	for (int i = 0;i < Observers.Count();i++) {
 		Observers[i]->Created();
 	}
+	Reset_Creation_Time();
 }
 
 void DAPlayerClass::Destroyed() {
@@ -914,6 +929,7 @@ void DAPlayerManager::Init() {
 	Instance.Register_Event(DAEvent::CLEARWEAPONS,INT_MAX);
 	Instance.Register_Event(DAEvent::C4DETONATEREQUEST,INT_MAX);
 	Instance.Register_Event(DAEvent::C4DETONATE,INT_MAX);
+	Instance.Register_Event(DAEvent::CHANGECHARACTER,INT_MAX);
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
 	
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER,INT_MAX);
@@ -1354,7 +1370,7 @@ void DAPlayerManager::Object_Created_Event(GameObject *obj) {
 void DAPlayerManager::Object_Destroyed_Event(GameObject *obj) {
 	cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
 	Player->Get_DA_Player()->Destroyed();
-	if (!DisableDeathCounter && ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health())) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
+	if (!DisableDeathCounter && !Player->Get_DA_Player()->Is_Spawning() && ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health())) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
 		Player->Increment_Deaths();
 	}
 }

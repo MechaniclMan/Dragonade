@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -226,7 +226,11 @@ public:
 		in_time = Get_Float_Parameter("TransitionIn");
 		out_time = Get_Float_Parameter("TransitionOut");
 		int res = sscanf_s(Get_Parameter("Color"),"%f/%f/%f/%f", &r, &g, &b, &a);
-		if (res != 4) Destroy_Script();
+		if (res != 4)
+		{
+			Destroy_Script();
+			return;
+		}
 
 		Commands->Start_Timer(obj, this, time, 0);
 		Set_Screen_Fade_Color_Player(obj, r, g, b, 0);
@@ -339,7 +343,44 @@ class SH_VTOLAttachedC4FreeZone: public ScriptImpClass
 	}
 };
 
-#define REGISTER_SCRIPT(name, params) ScriptRegistrant<name> name##Registrant(#name, params);
+class SH_Invulnerable: public ScriptImpClass
+{
+public:
+    ArmorType original_skin;
+    ArmorType original_armor;
+
+    void Created(GameObject* obj)
+    {
+        auto damageable_obj = obj->As_DamageableGameObj();
+        if (!damageable_obj)
+        {
+            Destroy_Script();
+            return;
+        }
+
+        auto defense_obj = damageable_obj->Get_Defense_Object();
+        original_skin = defense_obj->Get_Skin();
+        original_armor = defense_obj->Get_Shield_Type();
+
+        Set_Skin(obj, "Blamo");
+        Commands->Set_Shield_Type(obj, "Blamo");
+    }
+
+    void Detach(GameObject* obj)
+    {
+        auto damageable_obj = obj->As_DamageableGameObj();
+        if (damageable_obj)
+        {
+            auto defense_obj = damageable_obj->Get_Defense_Object();
+            defense_obj->Set_Skin(original_skin);
+            defense_obj->Set_Shield_Type(original_armor);
+        }
+
+        ScriptImpClass::Detach(obj);
+    }
+};
+
+#define REGISTER_SCRIPT(name, params) ScriptRegistrant<name> name##Registrant(#name, params)
 
 ScriptRegistrant<SH_ConsoleCommand> SH_ConsoleCommand_Registrant("SH_ConsoleCommand","");
 ScriptRegistrant<SH_PCT_Powerup> SH_PCT_Powerup_Registrant("SH_PCT_Powerup","");
@@ -358,3 +399,5 @@ REGISTER_SCRIPT(SH_DangerZone, "Time:float,TransitionIn:float,TransitionOut:floa
 REGISTER_SCRIPT(SH_C4FreeZone, "");
 REGISTER_SCRIPT(SH_VehicleAttachedC4FreeZone, "");
 REGISTER_SCRIPT(SH_VTOLAttachedC4FreeZone, "");
+REGISTER_SCRIPT(SH_Invulnerable, "");
+

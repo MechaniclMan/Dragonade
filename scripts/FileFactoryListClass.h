@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,8 +17,8 @@ extern char* lastFileName;
 
 class FileFactoryListClass : public FileFactoryClass
 {
-#if !defined(WWCONFIG) && !defined(PACKAGEEDITOR)
-	static REF_DECL3(Instance, FileFactoryListClass *);
+#if !defined(WWCONFIG) && !defined(PACKAGEEDITOR) && !defined(W3DVIEWER)
+	static REF_DECL(FileFactoryListClass *, Instance);
 #else
 	static FileFactoryListClass *Instance;
 #endif
@@ -36,7 +36,7 @@ public:
 	virtual void Return_File(FileClass* file);
 	
 	FileFactoryListClass();
-	void Add_FileFactory(FileFactoryClass* factory, const char* factoryName);
+	void Add_FileFactory(FileFactoryClass* factory, const char* factoryName, bool addToBegin = false);
 	void Remove_FileFactory(FileFactoryClass* factory);
 	FileFactoryClass *Remove_FileFactory();
 	void Add_Temp_FileFactory(FileFactoryClass* factory);

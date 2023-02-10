@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Loot Game Feature
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -419,11 +419,10 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 	CharacterDropOdds.Remove_All();
 	INISection *Section = DASettingsManager::Get_Section("Loot");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def && Def->Get_Class_ID() == CID_Soldier) {
-				DATokenParserClass Parser(Entry->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				DropOddsStruct Odds;
 				char *Token = Parser.Get_String();
 				if (Token) { //<powerup %>|<weapon %>|<DNA %>
@@ -478,11 +477,10 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 	CharacterPowerUps.Remove_All();
 	Section = DASettingsManager::Get_Section("Loot_PowerUps");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def && Def->Get_Class_ID() == CID_Soldier) {
-				DATokenParserClass Parser(Entry->Value,'|');
+				DATokenParserClass Parser(i->Value,'|');
 				DynamicVectorClass<const PowerUpGameObjDef *> PowerUps;
 				while (char *Token = Parser.Get_String()) {
 					const PowerUpGameObjDef *PowerUpDef = (PowerUpGameObjDef*)Find_Named_Definition(Token);
@@ -502,17 +500,16 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 	CharacterWeapons.Remove_All();
 	Section = DASettingsManager::Get_Section("Loot_Weapons");
 	if (Section) {
-		for (int i = 0;i < Section->Count();i++) {
-			INIEntry *Entry = Section->Peek_Entry(i);
-			DefinitionClass *Def = Find_Named_Definition(Entry->Entry);
+		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
+			DefinitionClass *Def = Find_Named_Definition(i->Entry);
 			if (Def) {
 				if (Def->Get_Class_ID() == CID_Weapon) { //Undroppable weapons
-					if (!_stricmp(Entry->Value,"1") || !_stricmp(Entry->Value,"true")) {
+					if (!_stricmp(i->Value,"1") || !_stricmp(i->Value,"true")) {
 						UndroppableWeapons.Add((WeaponDefinitionClass*)Def);
 					}
 				}
 				else if (Def->Get_Class_ID() == CID_Soldier) { //Soldier -> Weapon overrides
-					const WeaponDefinitionClass *WeaponDef = (WeaponDefinitionClass*)Find_Named_Definition(Entry->Value);
+					const WeaponDefinitionClass *WeaponDef = (WeaponDefinitionClass*)Find_Named_Definition(i->Value);
 					if (WeaponDef && WeaponDef->Get_Class_ID() == CID_Weapon) {
 						CharacterWeapons.Insert((unsigned int)Def,WeaponDef);
 					}
@@ -538,98 +535,96 @@ void DALootGameFeatureClass::Object_Created_Event(GameObject *obj) {
 	for (int i = 0;i < Player->Locker.Count();i++) { //Keep weapons when switching characters.
 		Bag->Add_Weapon(Player->Locker[i],999);
 	}
-	Player->CreationTime = The_Game()->FrameCount;
-}
-
-void DALootGameFeatureClass::Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier) {
-	Get_Player_Data(Player)->CreationTime = The_Game()->FrameCount;
 }
 
 void DALootGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
-	DALootPlayerDataClass *Player = Get_Player_Data(((SoldierGameObj*)obj)->Get_Player());
-	DropOddsStruct Odds = CharacterDropOdds.Get((unsigned int)&obj->Get_Definition(),DropOdds);
+	DAPlayerClass *Player = ((SoldierGameObj*)obj)->Get_DA_Player();
+	if (!Player->Is_Spawning()) {
+		DALootPlayerDataClass *PlayerData = Get_Player_Data(Player);
+		DropOddsStruct Odds = CharacterDropOdds.Get((unsigned int)&obj->Get_Definition(),DropOdds);
 Reselect:
-	int Rand = Get_Random_Int(1,Odds.Total+1);
-	int Total = 0;
-	if (Odds.PowerUp && Rand <= (Total+=Odds.PowerUp)) { //Drop powerup
-		DALootPowerUpClass *PowerUp = Create_PowerUp((SoldierGameObj*)obj);
-		if (PowerUp) {
+		int Rand = Get_Random_Int(1,Odds.Total+1);
+		int Total = 0;
+		if (Odds.PowerUp && Rand <= (Total+=Odds.PowerUp)) { //Drop powerup
+			DALootPowerUpClass *PowerUp = Create_PowerUp((SoldierGameObj*)obj);
+			if (PowerUp) {
+				if (DamagersOnlyTime >= 0.0f) {
+					PowerUp->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
+				}
+			}
+			else { //This character doesn't drop any powerups, remove chance to drop powerups and reselect.
+				Odds.Total -= Odds.PowerUp;
+				Odds.PowerUp = 0;
+				goto Reselect;
+			}
+		}
+		else if (Odds.Weapon && Rand <= (Total+=Odds.Weapon)) { //Drop backpack
+			DALootBackpackClass *Backpack = Create_Backpack((SoldierGameObj*)obj);
+			const WeaponDefinitionClass *MainDrop = Get_Character_Weapon_Drop((SoldierGameObj*)obj);
+			WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
+			bool MainDropFound = false;
+			for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+				WeaponClass *Weapon = Bag->Peek_Weapon(i);
+				const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
+				if (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON)) { //Don't drop empty C4 or beacons.
+					if (PlayerData->Has_Weapon(WeaponDef)) {
+						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+					}
+					else if (WeaponDef == MainDrop) {
+						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+						MainDropFound = true;
+					}
+				}
+			}
+			if (MainDrop) {
+				if (!MainDropFound) { //Try to find a match by translation ID.
+					int IconID = MainDrop->IconNameID;
+					for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+						WeaponClass *Weapon = Bag->Peek_Weapon(i);
+						if (Weapon->Get_Definition()->IconNameID == IconID && (Weapon->Get_Total_Rounds() || (MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON))) {
+							Backpack->Add_Weapon(MainDrop,Weapon->Get_Total_Rounds());
+							MainDropFound = true;
+							break;
+						}
+					}
+				}
+				if (!MainDropFound) { //Try to find a match by ammo ID.
+					unsigned int AmmoDefID = MainDrop->PrimaryAmmoDefID;
+					for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+						WeaponClass *Weapon = Bag->Peek_Weapon(i);
+						if (Weapon->PrimaryAmmoDefinition->Get_ID() == AmmoDefID && (Weapon->Get_Total_Rounds() || (MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON))) {
+							Backpack->Add_Weapon(MainDrop,Weapon->Get_Total_Rounds());
+							MainDropFound = true;
+							break;
+						}
+					}
+				}
+				if (!MainDropFound && MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON) { //Just going to have to drop an empty one then.
+					Backpack->Add_Weapon(MainDrop,0);
+				}
+			}
+			if (!Backpack->Get_Weapon_Count()) { //No weapons to drop, remove chance to drop weapons and reselect.
+				Backpack->Get_Owner()->Set_Delete_Pending();
+				Odds.Total -= Odds.Weapon;
+				Odds.Weapon = 0;
+				goto Reselect;
+			}
 			if (DamagersOnlyTime >= 0.0f) {
-				PowerUp->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
+				Backpack->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
 			}
 		}
-		else { //This character doesn't drop any powerups, remove chance to drop powerups and reselect.
-			Odds.Total -= Odds.PowerUp;
-			Odds.PowerUp = 0;
-			goto Reselect;
+		else if (Odds.DNA && Rand <= (Total+=Odds.DNA)) { //Drop DNA
+			DALootDNAClass *DNA = Create_DNA((SoldierGameObj*)obj);
+			if (DamagersOnlyTime >= 0.0f) {
+				DNA->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
+			}
 		}
+		PlayerData->Clear_Weapons();
 	}
-	else if (Odds.Weapon && Rand <= (Total+=Odds.Weapon)) { //Drop backpack
-		DALootBackpackClass *Backpack = Create_Backpack((SoldierGameObj*)obj);
-		const WeaponDefinitionClass *MainDrop = Get_Character_Weapon_Drop((SoldierGameObj*)obj);
-		WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
-		bool MainDropFound = false;
-		for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-			WeaponClass *Weapon = Bag->Peek_Weapon(i);
-			const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
-			if (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON)) { //Don't drop empty C4 or beacons.
-				if (Player->Has_Weapon(WeaponDef)) {
-					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-				}
-				else if (WeaponDef == MainDrop) {
-					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-					MainDropFound = true;
-				}
-			}
-		}
-		if (MainDrop) {
-			if (!MainDropFound) { //Try to find a match by translation ID.
-				int IconID = MainDrop->IconNameID;
-				for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-					WeaponClass *Weapon = Bag->Peek_Weapon(i);
-					if (Weapon->Get_Definition()->IconNameID == IconID && (Weapon->Get_Total_Rounds() || (MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON))) {
-						Backpack->Add_Weapon(MainDrop,Weapon->Get_Total_Rounds());
-						MainDropFound = true;
-						break;
-					}
-				}
-			}
-			if (!MainDropFound) { //Try to find a match by ammo ID.
-				unsigned int AmmoDefID = MainDrop->PrimaryAmmoDefID;
-				for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-					WeaponClass *Weapon = Bag->Peek_Weapon(i);
-					if (Weapon->PrimaryAmmoDefinition->Get_ID() == AmmoDefID && (Weapon->Get_Total_Rounds() || (MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON))) {
-						Backpack->Add_Weapon(MainDrop,Weapon->Get_Total_Rounds());
-						MainDropFound = true;
-						break;
-					}
-				}
-			}
-			if (!MainDropFound && MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON) { //Just going to have to drop an empty one then.
-				Backpack->Add_Weapon(MainDrop,0);
-			}
-		}
-		if (!Backpack->Get_Weapon_Count()) { //No weapons to drop, remove chance to drop weapons and reselect.
-			Backpack->Get_Owner()->Set_Delete_Pending();
-			Odds.Total -= Odds.Weapon;
-			Odds.Weapon = 0;
-			goto Reselect;
-		}
-		if (DamagersOnlyTime >= 0.0f) {
-			Backpack->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
-		}
-	}
-	else if (Odds.DNA && Rand <= (Total+=Odds.DNA)) { //Drop DNA
-		DALootDNAClass *DNA = Create_DNA((SoldierGameObj*)obj);
-		if (DamagersOnlyTime >= 0.0f) {
-			DNA->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
-		}
-	}
-	Player->Clear_Weapons();
 }
 
 void DALootGameFeatureClass::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
-	if (Get_Player_Data(Player)->CreationTime != The_Game()->FrameCount && Is_Droppable(Weapon)) { //Don't add undroppable or starting weapons to the locker.
+	if (!Player->Get_DA_Player()->Is_Spawning() && Is_Droppable(Weapon)) { //Don't add undroppable or starting weapons to the locker.
 		Get_Player_Data(Player)->Add_Weapon(Weapon);
 	}
 }
@@ -695,7 +690,8 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 			DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 			Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
 			Backpack->Set_Expire_Time(DropCommandExpireTime);
-			Bag->Remove_Weapon(Bag->Get_Index());
+			Bag->Select_Next();
+			Bag->Remove_Weapon(WeaponDef);
 			return true;
 		}
 		DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");

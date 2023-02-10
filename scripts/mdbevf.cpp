@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1310,7 +1310,7 @@ void MDB_ExpVehFac_Cinematic::Created(GameObject *obj)
 	Commands->Attach_To_Object_Bone(Veh,obj,"Origin");
 	Commands->Attach_Script(Veh,"MDB_ExpVehFac_Cinematic_Vehicle","");
 	Commands->Enable_Engine(Veh,true);
-	Set_Vehicle_Is_Visible(Veh,false);
+	Commands->Set_Is_Visible(Veh,false);
 	Commands->Send_Custom_Event(Veh,Veh,CUSTOM_EVENT_VEHICLE_OWNER,ExpVehFac[Team]->LastFlyVehOwner,0);
 	ExpVehFac[Team]->LastFlyVehID = 0;
 	ExpVehFac[Team]->LastFlyVehOwner = 0;
@@ -1324,7 +1324,7 @@ void MDB_ExpVehFac_Cinematic::Timer_Expired(GameObject *obj,int number)
 	Commands->Attach_To_Object_Bone(Veh,0,0);
 	Remove_Script(Veh,"MDB_ExpVehFac_Cinematic_Vehicle");
 	Commands->Enable_Engine(Veh,false);
-	Set_Vehicle_Is_Visible(Veh,true);
+	Commands->Set_Is_Visible(Veh,true);
 }
 
 void MDB_ExpVehFac_Cinematic::Register_Auto_Save_Variables()

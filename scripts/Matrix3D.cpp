@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -36,17 +36,6 @@ Matrix3D::Matrix3D
 	this->Row[1] = Vector4(_21,_22,_23,_24);
 	this->Row[2] = Vector4(_31,_32,_33,_34);
 }
-
-
-
-Vector3 Matrix3D::applyTo
-   (const Vector3& vector) const
-{
-   return Vector3 ((Row[0].X * vector.X) + (Row[0].Y * vector.Y) + (Row[0].Z * vector.Z) + Row[0].W,
-                   (Row[1].X * vector.X) + (Row[1].Y * vector.Y) + (Row[1].Z * vector.Z) + Row[1].W,
-                   (Row[2].X * vector.X) + (Row[2].Y * vector.Y) + (Row[2].Z * vector.Z) + Row[2].W);
-}
-
 
 int Matrix3D::Is_Orthogonal(void) const
 {
@@ -224,216 +213,6 @@ void Matrix3D::Set_Rotation (const Quaternion& q)
 	Row[2][2] =(float)(1.0 - 2.0 * (q[1] * q[1] + q[0] * q[0]));
 }
 
-Matrix3D Matrix3D::getXRotationMatrix(float angle)
-{
-	return getXRotationMatrix(cos(angle), sin(angle));
-}
-
-
-
-Matrix3D Matrix3D::getYRotationMatrix(float angle)
-{
-	return getYRotationMatrix(cos(angle), sin(angle));
-}
-
-
-
-Matrix3D Matrix3D::getZRotationMatrix(float angle)
-{
-	return getZRotationMatrix(cos(angle), sin(angle));
-}
-
-
-
-Matrix3D Matrix3D::getXRotationMatrix(float cosAngle, float sinAngle)
-{
-	return Matrix3D
-	(
-	    1,        0,         0, 0,
-		0, cosAngle, -sinAngle, 0,
-	    0, sinAngle,  cosAngle, 0
-	);
-}
-
-
-
-Matrix3D Matrix3D::getYRotationMatrix(float cosAngle, float sinAngle)
-{
-	return Matrix3D
-	(
-		 cosAngle, 0, sinAngle, 0,
-	            0, 1,        0, 0,
-	    -sinAngle, 0, cosAngle, 0
-	);
-}
-
-
-
-Matrix3D Matrix3D::getZRotationMatrix(float cosAngle, float sinAngle)
-{
-	return Matrix3D
-	(
-		cosAngle, -sinAngle, 0, 0,
-	    sinAngle,  cosAngle, 0, 0,
-	           0,         0, 1, 0
-	);
-}
-
-
-
-Vector3 Matrix3D::getPosition() const
-{
-   return Vector3 (Row[0].W, Row[1].W, Row[2].W);
-}
-
-
-
-float Matrix3D::getRotationX() const
-{
-   return ::atan2 (Row[2].Y, Row[1].Y);
-}
-
-
-
-float Matrix3D::getRotationY() const
-{
-   return ::atan2 (Row[0].Z, Row[2].Z);
-}
-
-
-
-float Matrix3D::getRotationZ() const
-{
-   return ::atan2 (Row[1].X, Row[0].X);
-}
-
-
-
-void Matrix3D::rotateX
-   (float angle)
-{
-	reverseMultiply(getXRotationMatrix(angle));
-}
-
-
-
-void Matrix3D::rotateY
-   (float angle)
-{
-	reverseMultiply(getYRotationMatrix(angle));
-}
-
-
-
-void Matrix3D::rotateZ
-   (float angle)
-{
-	reverseMultiply(getZRotationMatrix(angle));
-}
-
-
-
-void Matrix3D::set
-   (float _11, float _12, float _13, float _14,
-    float _21, float _22, float _23, float _24,
-    float _31, float _32, float _33, float _34)
-{
-   this->Row[0].X = _11;
-   this->Row[0].Y = _12;
-   this->Row[0].Z = _13;
-   this->Row[0].W = _14;
-   this->Row[1].X = _21;
-   this->Row[1].Y = _22;
-   this->Row[1].Z = _23;
-   this->Row[1].W = _24;
-   this->Row[2].X = _31;
-   this->Row[2].Y = _32;
-   this->Row[2].Z = _33;
-   this->Row[2].W = _34;
-}
-
-
-
-void Matrix3D::setPosition
-   (const Vector3& position)
-{
-   Row[0].W = position.X;
-   Row[1].W = position.Y;
-   Row[2].W = position.Z;
-}
-
-
-
-void Matrix3D::setRotationX
-   (float angle)
-{
-   angle -= this->getRotationX();
-   if (angle < -WWMATH_PI)
-      angle += WWMATH_PI * 2;
-
-   this->rotateX (angle);
-}
-
-
-
-void Matrix3D::setRotationY
-   (float angle)
-{
-   angle -= this->getRotationY();
-   if (angle < -WWMATH_PI)
-      angle += WWMATH_PI * 2;
-
-   this->rotateY (angle);
-}
-
-
-
-void Matrix3D::setRotationZ
-   (float angle)
-{
-   angle -= this->getRotationZ();
-   if (angle < -WWMATH_PI)
-      angle += WWMATH_PI * 2;
-
-   this->rotateZ (angle);
-}
-
-
-
-Matrix3D Matrix3D::transpose() const
-{
-   return Matrix3D (Row[0].X, Row[1].X, Row[2].X, Row[0].W,
-                    Row[0].Y, Row[1].Y, Row[2].Y, Row[1].W,
-                    Row[0].Z, Row[1].Z, Row[2].Z, Row[2].W);
-}
-
-
-
-Matrix3D& Matrix3D::reverseMultiply(const Matrix3D& matrix)
-{
-	set
-	(
-		Row[0].X * matrix.Row[0].X + Row[1].X * matrix.Row[0].Y + Row[2].X * matrix.Row[0].Z,
-	    Row[0].Y * matrix.Row[0].X + Row[1].Y * matrix.Row[0].Y + Row[2].Y * matrix.Row[0].Z,
-	    Row[0].Z * matrix.Row[0].X + Row[1].Z * matrix.Row[0].Y + Row[2].Z * matrix.Row[0].Z,
-	    Row[0].W * matrix.Row[0].X + Row[1].W * matrix.Row[0].Y + Row[2].W * matrix.Row[0].Z + matrix.Row[0].W,
-	    
-	    Row[0].X * matrix.Row[1].X + Row[1].X * matrix.Row[1].Y + Row[2].X * matrix.Row[1].Z,
-	    Row[0].Y * matrix.Row[1].X + Row[1].Y * matrix.Row[1].Y + Row[2].Y * matrix.Row[1].Z,
-	    Row[0].Z * matrix.Row[1].X + Row[1].Z * matrix.Row[1].Y + Row[2].Z * matrix.Row[1].Z,
-	    Row[0].W * matrix.Row[1].X + Row[1].W * matrix.Row[1].Y + Row[2].W * matrix.Row[1].Z + matrix.Row[1].W,
-	    
-	    Row[0].X * matrix.Row[2].X + Row[1].X * matrix.Row[2].Y + Row[2].X * matrix.Row[2].Z,
-	    Row[0].Y * matrix.Row[2].X + Row[1].Y * matrix.Row[2].Y + Row[2].Y * matrix.Row[2].Z,
-	    Row[0].Z * matrix.Row[2].X + Row[1].Z * matrix.Row[2].Y + Row[2].Z * matrix.Row[2].Z,
-	    Row[0].W * matrix.Row[2].X + Row[1].W * matrix.Row[2].Y + Row[2].W * matrix.Row[2].Z + matrix.Row[2].W
-	);
-
-	return *this;
-}
-
-
-
 Vector3 Matrix3D::operator *
    (const Vector3& vector) const
 {
@@ -448,7 +227,7 @@ Vector3 Matrix3D::operator *
 Matrix3D& Matrix3D::operator *=
    (const Matrix3D& matrix)
 {
-	set
+	Set
 	(
 		Row[0].X * matrix.Row[0].X + Row[0].Y * matrix.Row[1].X + Row[0].Z * matrix.Row[2].X,
 	    Row[0].X * matrix.Row[0].Y + Row[0].Y * matrix.Row[1].Y + Row[0].Z * matrix.Row[2].Y,
@@ -623,4 +402,69 @@ PlaneClass Matrix3D::Transform_Plane(const PlaneClass& plane) const
 	out.N.Z = Row[0][2] * plane.N.X + Row[1][2] * plane.N.Y + Row[2][2] * plane.N.Z;
 	out.D	= Row[0][3] * plane.N.X + Row[1][3] * plane.N.Y + Row[2][3] * plane.N.Z + plane.D;
 	return out;
+}
+
+bool Matrix3D::Solve_Linear_System(Matrix3D & system)
+{
+	if (system[0][0] == 0.0f) return false;
+	system[0] *= 1.0f / system[0][0];
+	system[1] -= system[1][0] * system[0];
+	system[2] -= system[2][0] * system[0];
+	if (system[1][1] == 0.0f) return false;
+	system[1] *= 1.0f / system[1][1];
+	system[2] -= system[2][1] * system[1];
+	if (system[2][2] == 0.0f) return false;
+	system[2] *= 1.0f / system[2][2];
+	system[1] -= system[1][2] * system[2];
+	system[0] -= system[0][2] * system[2];
+	system[0] -= system[0][1] * system[1];
+	return true;
+}
+
+void Matrix3D::Re_Orthogonalize(void)
+{
+	Vector3 x(Row[0][0],Row[0][1],Row[0][2]);
+	Vector3 y(Row[1][0],Row[1][1],Row[1][2]);
+	Vector3 z;
+	Vector3::Cross_Product(x,y,&z);
+	Vector3::Cross_Product(z,x,&y);
+	float len = x.Length();
+	if (len < WWMATH_EPSILON)
+	{
+		Make_Identity();
+		return;
+	}
+	else
+	{
+		x *= 1.0f/len;
+	}
+	len = y.Length();
+	if (len < WWMATH_EPSILON)
+	{
+		Make_Identity();
+		return;
+	}
+	else
+	{
+		y *= 1.0f/len;
+	}
+	len = z.Length();
+	if (len < WWMATH_EPSILON)
+	{
+		Make_Identity();
+		return;
+	}
+	else
+	{
+		z *= 1.0f/len;
+	}
+	Row[0][0] = x.X;
+	Row[0][1] = x.Y;
+	Row[0][2] = x.Z;
+	Row[1][0] = y.X;
+	Row[1][1] = y.Y;
+	Row[1][2] = y.Z;
+	Row[2][0] = z.X;
+	Row[2][1] = z.Y;
+	Row[2][2] = z.Z;
 }

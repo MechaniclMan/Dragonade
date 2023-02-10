@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -11,14 +11,17 @@
 */
 #include "general.h"
 
+#pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
+#pragma init_seg(lib) // Move this files static initializers up a level
+#pragma warning(default: 4073)
 #include "SysTimeClass.h"
 extern "C" DECLSPEC_IMPORT DWORD WINAPI timeGetTime(void);
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
 bool SysTimeClass::_is_init;
 SysTimeClass SysTimeClass::SystemTime;
 #else
-REF_DEF3(SysTimeClass::_is_init, bool, 0x0081C644, 0x0081B824, 0x0085A544);
-REF_DEF3(SysTimeClass::SystemTime, SysTimeClass, 0x0083F450, 0x0083E638, 0x008851B0);
+REF_DEF3(bool, SysTimeClass::_is_init, 0x0081C644, 0x0081B824, 0x0085A544);
+REF_DEF3(SysTimeClass, SysTimeClass::SystemTime, 0x0083F450, 0x0083E638, 0x008851B0);
 #endif
 uint32 SysTimeClass::Get()
 {

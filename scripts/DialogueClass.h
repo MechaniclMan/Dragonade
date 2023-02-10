@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -50,6 +50,7 @@ public:
    virtual ~DialogueClass();
 
    void Free_Options ();
+   int Get_Conversation();
    bool Load         (ChunkLoadClass& chunkLoader);
    bool Save         (ChunkSaveClass& chunkSaver);
    const DialogueClass& operator=(const DialogueClass& string);

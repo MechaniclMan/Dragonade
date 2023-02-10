@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,17 +14,6 @@
 #include "scripts.h"
 #include "engine_vector.h"
 #include "Matrix3D.h"
-
-#define TT_LADDER_EXIT_TOP 0
-#define TT_LADDER_EXIT_BOTTOM 1
-#define TT_LADDER_ENTER_TOP 2
-#define TT_LADDER_ENTER_BOTTOM 3
-#define TT_LEGACY_VEHICLE_ENTER_0 4
-#define TT_LEGACY_VEHICLE_ENTER_1 5
-#define TT_LEGACY_VEHICLE_EXIT_0 6
-#define TT_LEGACY_VEHICLE_EXIT_1 7
-#define TT_VEHICLE_ENTER 8
-#define TT_VEHICLE_EXIT 9
 
 //type/class ID values for various things
 #define CID_Beacon 0x3016
@@ -73,7 +62,7 @@ bool SCRIPTS_API Get_Powerup_Always_Allow_Grant(GameObject *obj); //Returns if t
 void SCRIPTS_API Set_Powerup_Always_Allow_Grant(GameObject *obj,bool Grant); //Change if this powerup is set to always allows grant
 int SCRIPTS_API Get_Powerup_Grant_Sound(GameObject *obj); //Returns the sound that is played when this powerup is picked up
 void SCRIPTS_API Grant_Powerup(GameObject *obj,const char *Preset_Name); //grants a powerup
-
+GameObject SCRIPTS_API *Find_Closest_Building(const Vector3& position); // Find the closest building
 Vector3 SCRIPTS_API Get_Velocity( GameObject* obj ); // Get the current velocity of a PhysicalGameObject
 void SCRIPTS_API Set_Velocity( GameObject* obj, Vector3 velocity ); // Set the velocity of a PhysicalGameObject
 Matrix3D SCRIPTS_API Get_Transform( GameObject* obj ); // Get the current transform of a PhysicalGameObject

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -192,8 +192,6 @@ DA_API void Send_Announcement_Team_Version_Less_Than(int Team,const char *String
 DA_API void Send_Message_Team_With_Team_Color(int Team,const char *Msg);
 DA_API void Send_Message_Player_By_ID(int ID,unsigned int Red,int unsigned Green,int unsigned Blue,const char *Message);
 DA_API void Create_2D_WAV_Sound_Player_By_ID(int ID,const char *Sound);
-DA_API void Set_Obj_Radar_Blip_Shape_Player_By_ID(int ID,GameObject *obj,int Shape);
-DA_API void Set_Obj_Radar_Blip_Color_Player_By_ID(int ID,GameObject *obj,int Color);
 
 DA_API PhysicalGameObj *Create_Object(const char *Preset,const Vector3 &Position);
 DA_API PhysicalGameObj *Create_Object(const char *Preset,const Matrix3D &Transform);
@@ -201,6 +199,14 @@ DA_API PhysicalGameObj *Create_Object(int Preset,const Vector3 &Position);
 DA_API PhysicalGameObj *Create_Object(int Preset,const Matrix3D &Transform);
 DA_API PhysicalGameObj *Create_Object(const DefinitionClass *Def,const Vector3 &Position);
 DA_API PhysicalGameObj *Create_Object(const DefinitionClass *Def,const Matrix3D &Transform);
+
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,const char *Preset,const Vector3 &Position);
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,const char *Preset,const Matrix3D &Transform);
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,int Preset,const Vector3 &Position);
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,int Preset,const Matrix3D &Transform);
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const Vector3 &Position);
+DA_API SoldierGameObj *Create_Commando(cPlayer *Player,const DefinitionClass *Def,const Matrix3D &Transform);
+
 DA_API void Disable_Building_Type(int Team,BuildingConstants::BuildingType Type);
 DA_API unsigned int Get_Hash(const char *String);
 DA_API bool Is_Starting_Weapon(const SoldierGameObjDef *Soldier,const PowerUpGameObjDef *PowerUp);

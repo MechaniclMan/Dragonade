@@ -25,7 +25,7 @@ inline StringClass ToString(unsigned int Num) {
 
 inline StringClass StringFormat(const char *Format,...) {
 	char Buffer[526];
-	Buffer[526] = '\0'; 
+	Buffer[525] = '\0'; 
 	va_list arg_list; 
 	va_start(arg_list,Format); 
 	vsnprintf(Buffer,526,Format,arg_list); 
@@ -35,7 +35,7 @@ inline StringClass StringFormat(const char *Format,...) {
 
 inline WideStringClass WideStringFormat(const wchar_t *Format,...) {
 	wchar_t Buffer[526];
-	Buffer[526] = '\0'; 
+	Buffer[525] = '\0'; 
 	va_list arg_list; 
 	va_start(arg_list,Format); 
 	vswprintf(Buffer,526,Format,arg_list); 

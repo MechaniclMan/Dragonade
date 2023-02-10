@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -23,9 +23,11 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     void Damaged( GameObject *obj, GameObject *damager, float amount );
     void Killed ( GameObject *obj, GameObject *killer );
     void Destroyed ( GameObject *obj );
+    void Detach(GameObject* obj);
     void Custom ( GameObject* obj, int type, int param, GameObject* sender );
     void Timer_Expired( GameObject *obj, int number );
     void KeyHook();
+
 
     // Recieve veterancy points
     void recieveVeterancyPoints ( float points );
@@ -42,6 +44,7 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     int infantryVeteranRequirement, infantryEliteRequirement;
     int vehicleVeteranRequirement, vehicleEliteRequirement;
     int chevronObjId, promotionChevronObjId;
+    bool chevronVisible;
 
     /* Flags to mark whether we have upgraded weapons for veteran or rookie levels (saves lots of
     string comparisions and preset validation later on) */
@@ -56,7 +59,7 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     // Marker to indicate if we are dead or not, sometimes the promotion
     // functions can get called after the unit is dead, so we need a quick
     // and easy way to check this and abort promotion if we are dead
-    bool dead;
+    bool deregistered;
 
 
     // Static arrays of pointers to all veterancy units
@@ -66,6 +69,9 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     /****************
     Functions
     *****************/
+
+    /*! Called when this unit has been killed or destroyed to deregister from the static array */
+    void Deregister(GameObject* obj);
 
     /*! Grant x veterancy points to the specified unit */
     void grantVeterancyPoints ( GameObject* obj, float points );
@@ -83,6 +89,23 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     /*! Chevron scripts */
     void createChevrons();
     void clearChevrons();
+
+    /****************
+    Struct to carry-over points when purchasing new infantry (this is required since Destroyed()
+    is now called correctly in this instance so we can't rely on that mechanism for carry-over)
+    *****************/
+
+    struct PointsCarryOverData
+    {
+      long playerId;
+      unsigned int gameTime;
+      float infantryVeterancyPoints, vehicleVeterancyPoints;
+
+      PointsCarryOverData() : playerId(-1) {}
+    };
+    
+    // Only need one instance, carry-over should happen immediately after Destroyed() is called
+    static PointsCarryOverData carryOverData;
 };
 
 // -------------------------------------------------------------------------------------------------

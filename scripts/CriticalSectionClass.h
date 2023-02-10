@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -63,7 +63,7 @@ private:
 
 	void Enter()
 	{
-		assert((size_t)&Flag % 4 == 0); // aligned to 4 bytes please
+		TT_ASSERT((size_t)&Flag % 4 == 0); // aligned to 4 bytes please
 		for (;;)
 		{
 			if (_interlockedbittestandset(&Flag, 0) == 0) return;

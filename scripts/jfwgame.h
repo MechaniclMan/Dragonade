@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -304,12 +304,14 @@ class JFW_Global_Stealth_Controller : public ScriptImpClass {
 };
 
 class JFW_Stealth_Generator_Building : public ScriptImpClass {
+	unsigned long sizeID;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj, int number);
 	void Killed(GameObject *obj, GameObject *killer);
 };
 
 class JFW_Stealth_Generator_Vehicle : public ScriptImpClass {
+	unsigned long sizeID;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Destroyed(GameObject *obj);
@@ -317,6 +319,7 @@ class JFW_Stealth_Generator_Vehicle : public ScriptImpClass {
 
 class JFW_Stealth_Generator_Vehicle_Deploy : public ScriptImpClass {
 	bool deploy;
+	unsigned long sizeID;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 	void Timer_Expired(GameObject *obj, int number);
@@ -327,6 +330,16 @@ class JFW_Stealth_Generator_Ignored : public ScriptImpClass {
 };
 
 class JFW_Resource_Collector_2 : public ScriptImpClass {
+	bool HasOre;
+	int cash;
+	int ID;
+	int PlayerID;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	public: void Register_Auto_Save_Variables();
+};
+
+class JFW_Resource_Collector_3 : public ScriptImpClass {
 	bool HasOre;
 	int cash;
 	int ID;
@@ -426,6 +439,14 @@ class JFW_Reaper_Web : public ScriptImpClass {
 	void Killed(GameObject *obj,GameObject *killer);
 	void Timer_Expired(GameObject *obj,int number);
 	int WebID;
+};
+
+class JFW_Toxic_Grenade : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float amount);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+	bool active;
 };
 
 class JFW_Hijacker_Vehicle : public ScriptImpClass {

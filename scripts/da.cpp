@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -66,7 +66,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.4";
+	return "1.5";
 }
 
 void DA::Init() {
@@ -104,8 +104,8 @@ void DA::Init() {
 	Sort_Function_List();
 	Verbose_Help_File();
 
-	DASettingsManager::Get_String(MessageNick,"General","MessageNick",0);
-	DASettingsManager::Get_String(MessagePrefix,"General","MessagePrefix",0);
+	DASettingsManager::Get_String(MessageNick,"MessageNick",0);
+	DASettingsManager::Get_String(MessagePrefix,"MessagePrefix",0);
 	if (!MessagePrefix.Is_Empty()) {
 		MessagePrefix += " ";
 	}
@@ -786,3 +786,4 @@ public:
 	}
 };
 Register_Console_Function(DACMsgPConsoleFunctionClass);
+

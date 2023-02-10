@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -10,12 +10,6 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 #include "general.h"
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winsock2.h>
-#endif
 #include "scripts.h"
 #include "engine.h"
 #include "da.h"
@@ -45,7 +39,7 @@ FARPROC GetProcAddressCheck(HMODULE hModule,LPCSTR lpProcName)
 	FARPROC x = GetProcAddress(hModule,lpProcName);
 	if (!x)
 	{
-		MessageBox(NULL,"Error getting function address from tt.dll",lpProcName,MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
+		MessageBox(NULL,"Error getting function address from bandtest.dll",lpProcName,MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
 	}
 	return x;
 }
@@ -71,36 +65,6 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 
 			if ((!Exe) || (Exe == 1))
 			{
-				if (GetFileAttributes("shaders.dll") == 0xFFFFFFFF)
-				{
-					const char *path2 = Get_File_Path();
-					char path[MAX_PATH];
-					strcpy(path,path2);
-					strcat(path,"dllload.txt");
-					FILE *f = fopen(path,"at");
-					if (f)
-					{
-						fprintf(f,"[shaders.dll] Module not found, unable to continue.\n");
-						fclose(f);
-					}
-					MessageBox(NULL,"shaders.dll was not found. Are you sure you installed scripts.dll correctly?","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
-					ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
-				}
-				if (GetFileAttributes("tt.dll") == 0xFFFFFFFF)
-				{
-					const char *path2 = Get_File_Path();
-					char path[MAX_PATH];
-					strcpy(path,path2);
-					strcat(path,"dllload.txt");
-					FILE *f = fopen(path,"at");
-					if (f)
-					{
-						fprintf(f,"[tt.dll] Module not found, unable to continue.\n");
-						fclose(f);
-					}
-					MessageBox(NULL,"tt.dll was not found. Are you sure you installed scripts.dll correctly?","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
-					ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
-				}
 				if (GetFileAttributes("scripts2.dll") == 0xFFFFFFFF)
 				{
 					const char *path2 = Get_File_Path();
@@ -116,26 +80,7 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 					MessageBox(NULL,"scripts2.dll was not found. Are you sure you installed scripts.dll correctly?","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
 					ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
 				}
-				tt = LoadLibrary("tt.dll");
-				LastError = GetLastError();
-				if (!tt)
-				{
-					const char *path2 = Get_File_Path();
-					char path[MAX_PATH];
-					strcpy(path,path2);
-					strcat(path,"dllload.txt");
-					FILE *f = fopen(path,"at");
-					if (f)
-					{
-						char *errorMessage = new char[2048]; //Ugly, but whatever.
-						FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,NULL,LastError,0,errorMessage,2048,NULL);
-						fprintf(f,"[tt.dll] Failed to load, error %d. %s\n",LastError,errorMessage);
-						delete[] errorMessage;
-						fclose(f);
-					}
-					MessageBox(NULL,"Unfortunately, there was an error loading tt.dll. Please report this bug!","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
-					ExitProcess(LastError);
-				}
+				tt = GetModuleHandle("Bandtest.dll");
 			}
 			wwscripts = LoadLibrary("scripts2.dll");
 			LastError = GetLastError();
@@ -236,28 +181,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	{
 		return false;
 	}
-	Commands->Enable_Stealth = (void(*)(GameObject * object, bool onoff))Address(tt,"New_Enable_Stealth");
-	Commands->Create_Explosion = (void(*)( const char * explosion_def_name, const Vector3 & pos, GameObject * creator))Address(tt,"New_Create_Explosion");
-	Commands->Create_Explosion_At_Bone = (void(*)( const char * explosion_def_name, GameObject * object, const char * bone_name, GameObject * creator))Address(tt,"New_Create_Explosion_At_Bone");
-	Commands->Set_Fog_Enable = (void(*)(bool enabled))Address(tt,"New_Set_Fog_Enable");
-	Commands->Set_Fog_Range = (void(*)(float startdistance, float enddistance, float ramptime))Address(tt,"New_Set_Fog_Range");
-	Commands->Set_War_Blitz = (void(*)(float intensity, float startdistance, float enddistance, float heading, float distribution, float ramptime))Address(tt,"New_Set_War_Blitz");
-	Commands->Fade_Background_Music = (void(*)( const char * wav_filename, int fade_out_time, int fade_in_time ))Address(tt,"New_Fade_Background_Music");
-	Commands->Set_Background_Music = (void(*)( const char * wav_filename ))Address(tt,"New_Set_Background_Music");
-	Commands->Stop_Background_Music = (void	(*)( void ))Address(tt,"New_Stop_Background_Music");
-	Commands->Create_Sound = (int(*)( const char * sound_preset_name, const Vector3 & position, GameObject * creator))Address(tt,"New_Create_Sound");
-	Commands->Create_2D_Sound = (int(*)( const char * sound_preset_name ))Address(tt,"New_Create_2D_Sound");
-	Commands->Create_2D_WAV_Sound = (int(*)( const char * wav_filename ))Address(tt,"New_Create_2D_WAV_Sound");
-	Commands->Create_3D_WAV_Sound_At_Bone = (int(*)( const char * wav_filename, GameObject * obj, const char*bone_name))Address(tt,"New_Create_3D_WAV_Sound_At_Bone");
-	Commands->Create_3D_Sound_At_Bone = (int(*)( const char * sound_preset_name, GameObject * obj, const char * bone_name ))Address(tt,"New_Create_3D_Sound_At_Bone");
-	Commands->Play_Building_Announcement = (void(*)( GameObject * object, int text_id ))Address(tt,"New_Play_Building_Announcement");
-	Commands->Clear_Weapons = (void(*)( GameObject * object ))Address(tt,"New_Clear_Weapons");
-	Commands->Enable_Vehicle_Transitions = (void(*)( GameObject * object, bool enable ))Address(tt,"New_Enable_Vehicle_Transitions");
-	Commands->Set_Screen_Fade_Color = (void(*)( float r, float g, float b, float seconds ))Address(tt,"New_Set_Screen_Fade_Color");
-	Commands->Set_Screen_Fade_Opacity = (void(*)(float opacity,float seconds))Address(tt,"New_Set_Screen_Fade_Opacity");
-	Commands->Select_Weapon = (void(*)( GameObject * obj, const char * weapon_name ))Address(tt,"New_Select_Weapon");
-	Commands->Shake_Camera = (void(*)( const Vector3 & pos, float radius, float intensity, float duration))Address(tt,"New_Shake_Camera");
-	Commands->Set_Model = (void(*)( GameObject * obj, const char * model_name ))Address(tt,"New_Set_Model");
 	Enable_Stealth_Player = (_Enable_Stealth_Player)Address(tt,"New_Enable_Stealth_Player");
 	Set_Fog_Enable_Player = (_Set_Fog_Enable_Player)Address(tt,"New_Set_Fog_Enable_Player");
 	Set_Fog_Range_Player = (_Set_Fog_Range_Player)Address(tt,"New_Set_Fog_Range_Player");
@@ -276,10 +199,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Create_2D_WAV_Sound_Player = (_Create_2D_WAV_Sound_Player)Address(tt,"New_Create_2D_WAV_Sound_Player");
 	Create_3D_WAV_Sound_At_Bone_Player = (_Create_3D_WAV_Sound_At_Bone_Player)Address(tt,"New_Create_3D_WAV_Sound_At_Bone_Player");
 	Create_3D_Sound_At_Bone_Player = (_Create_3D_Sound_At_Bone_Player)Address(tt,"New_Create_3D_Sound_At_Bone_Player");
-	Commands->Set_Obj_Radar_Blip_Shape = (void(*)( GameObject * obj, int shape_type))Address(tt,"New_Set_Obj_Radar_Blip_Shape");
-	Commands->Set_Obj_Radar_Blip_Color = (void(*)( GameObject * obj, int color_type ))Address(tt,"New_Set_Obj_Radar_Blip_Color");
-	Set_Obj_Radar_Blip_Shape_Player = (_Set_Obj_Radar_Blip_Shape_Player)Address(tt,"New_Set_Obj_Radar_Blip_Shape_Player");
-	Set_Obj_Radar_Blip_Color_Player = (_Set_Obj_Radar_Blip_Color_Player)Address(tt,"New_Set_Obj_Radar_Blip_Color_Player");
 	AddObjectCreateHook = (aoch)Address(tt,"NewAddObjectCreateHook");
 	RemoveObjectCreateHook = (roch)Address(tt,"NewRemoveObjectCreateHook");
 	AddKeyHook = (akh)Address(tt,"AddKeyHook");
@@ -306,11 +225,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Naval_Vehicle_Limit = (gvl)Address(tt,"Get_Naval_Vehicle_Limit");
 	Send_Message = (sm)Address(tt,"Send_Message");
 	Send_Message_Player = (smp)Address(tt,"Send_Message_Player");
-	Commands->Display_Health_Bar = (void(*)( GameObject * object, bool display ))Address(tt,"New_Display_Health_Bar");
-	Set_Wireframe_Mode = (sw)Address(tt,"Set_Wireframe_Mode");
-	Commands->Disable_All_Collisions = (void(*)( GameObject * obj ))Address(tt,"New_Disable_All_Collisions");
-	Commands->Disable_Physical_Collisions = (void(*)( GameObject * obj ))Address(tt,"New_Disable_Physical_Collisions");
-	Commands->Enable_Collisions = (void(*)( GameObject * obj ))Address(tt,"New_Enable_Collisions");
 	Load_New_HUD_INI = (lnhi)Address(tt,"Load_New_HUD_INI");
 	Remove_Weapon = (rw)Address(tt,"Remove_Weapon");
 	Change_Radar_Map = (crm)Address(tt,"Change_Radar_Map");
@@ -348,7 +262,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Send_Client_Text = (sct)Address(tt,"Send_Client_Text");
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
 	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
-	Commands->Control_Enable = (void(*)( GameObject * obj, bool enable ))Address(tt,"New_Control_Enable");
 	AddShaderNotify = (asn)Address(tt,"AddShaderNotify");
 	RemoveShaderNotify = (rsn)Address(tt,"RemoveShaderNotify");
 	Do_Objectives_Dlg = (dod)Address(tt,"Do_Objectives_Dlg");
@@ -359,8 +272,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Send_Shader_Param = (ssp)Address(tt,"Send_Shader_Param");
 	Send_Shader_Param_Obj_Player = (sspop)Address(tt,"Send_Shader_Param_Obj_Player");
 	Send_Shader_Param_Obj = (sspo)Address(tt,"Send_Shader_Param_Obj");
-	Commands->Static_Anim_Phys_Goto_Frame = (void(*)( int obj_id, float frame, const char * anim_name))Address(tt,"New_Static_Anim_Phys_Goto_Frame");
-	Commands->Static_Anim_Phys_Goto_Last_Frame = (void(*)( int obj_id, const char * anim_name))Address(tt,"New_Static_Anim_Phys_Goto_Last_Frame");
 	Set_GDI_Soldier_Name = (ssn)Address(tt,"Set_GDI_Soldier_Name");
 	Set_Nod_Soldier_Name = (ssn)Address(tt,"Set_Nod_Soldier_Name");
 	Get_IP_Address = (Get_IP_Addressx)Address(tt,"Get_IP_Address");
@@ -386,7 +297,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Client_Revision = (gpr)Address(tt,"Get_Client_Revision");
 	Get_Revision = (gpr)Address(tt,"Get_Revision");
 	Get_Damage_Warhead = (gdw)Address(tt,"Get_Damage_Warhead");
-	Commands->Action_Enter_Exit = (naee)Address(tt,"New_Action_Enter_Exit");
 	Get_GameObj_By_Player_Name = (ggobpn)Address(tt,"Get_GameObj_By_Player_Name");
 	Send_Custom_All_Players = (scap)Address(tt,"Send_Custom_All_Players");
 	Steal_Team_Credits = (stc)Address(tt,"Steal_Team_Credits");
@@ -408,8 +318,8 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Retrieve_Waypaths = (rwpa)Address(tt,"Retrieve_Waypaths");
 	Retrieve_Waypoints = (rwpo)Address(tt,"Retrieve_Waypoints");
 	Get_Waypoint_Position = (gwp)Address(tt,"Get_Waypoint_Position");
-	ssc ttssc = (ssc)Address(tt,"Set_Script_Commands");
-	ttssc(commands);
+	Create_Lightning = (cl)Address(tt,"Create_Lightning");
+	Set_Global_Stealth_Disable = (smie)Address(tt,"Set_Global_Stealth_Disable");
 	
 	DA::Init();
 

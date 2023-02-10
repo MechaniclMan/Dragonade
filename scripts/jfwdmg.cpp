@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -90,7 +90,7 @@ void JFW_Give_Points_On_Death::Killed(GameObject *obj,GameObject *killer)
 	{
 		return;
 	}
-	Commands->Give_Points(killer,Get_Float_Parameter("Points"),Get_Int_Parameter("Whole_Team"));
+	Commands->Give_Points(killer,Get_Float_Parameter("Points"),Get_Bool_Parameter("Whole_Team"));
 	Destroy_Script();
 }
 

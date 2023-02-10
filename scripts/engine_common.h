@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,14 +12,10 @@
 #ifndef SCRIPTS_INCLUDE__ENGINE_COMMON_H
 #define SCRIPTS_INCLUDE__ENGINE_COMMON_H
 
-#ifndef TTLE_EXPORTS
-#include "ConPublic.h"
-#endif //!TTLE_EXPORTS
-
 // (float) is merely there to make sure that it uses the float overloads to send the version over network.
 // and to make sure we do not forget the f suffix on the version number.
 #define TT_VERSION_MAGIC '!TT!'
-#define TT_VERSION ((float)4.0f)
+#define TT_VERSION ((float)4.1f)
 
 #define SAFE_DELETE_ARRAY(p)	{ delete[] p; p = NULL; }
 #define SAFE_DELETE(p)			{ delete p; p = NULL; }
@@ -41,12 +37,5 @@ template <typename T, typename T2> TT_INLINE void RefPtrSet(T& dest, T2& source)
 };
 
 void SCRIPTS_API Console_Input(const char *Input); //triggers console input (i.e. passes the string in as though it was typed into the console)
-#ifndef NEW_CONSOLE
 void SCRIPTS_API Console_Output(const char *Output,...); //prints stuff to the console, works like printf
-#else //NEW_CONSOLE
-SCRIPTS_API extern void (*Console_Output)(const char *Output,...);
-SCRIPTS_API extern void (*Console_OutputV)(const char *Output, va_list va);
-SCRIPTS_API bool UseRenderConsole();
-#endif //!NEW_CONSOLE
-
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,6 +17,17 @@
 #include "WWMath.h"
 #include "LineSegClass.h"
 #include "engine_math.h"
+#include "CastResultStruct.h"
+#include "FrustumClass.h"
+class Vector3;
+class TriClass;
+class MeshTriClass;
+class FrustumClass;
+class LineSegClass;
+class SphereClass;
+class OBBoxClass;
+class PlaneClass;
+class AAPlaneClass;
 class MinMaxAABoxClass;
 class LineSegClass;
 class AABoxClass
@@ -128,8 +139,8 @@ public:
 	{
 		return 2.0f*Extent.X * 2.0f*Extent.Y * 2.0f*Extent.Z;
 	}
-	inline bool		Contains(const Vector3 & point) const;
-	inline bool		Contains(const AABoxClass & other_box) const;
+	bool		Contains(const Vector3 & point) const;
+	bool		Contains(const AABoxClass & other_box) const;
 	inline bool		Contains(const MinMaxAABoxClass & other_box) const;
 	static void	Transform(const Matrix3D & tm,const AABoxClass & in,AABoxClass * out);
 	Vector3	Center;
@@ -237,7 +248,6 @@ public:
 	Vector3	MinCorner;
 	Vector3	MaxCorner;
 };
-#include "CollisionMath.h"
 inline void	AABoxClass::Init(const MinMaxAABoxClass & mmbox)
 {
 	Center = (mmbox.MaxCorner + mmbox.MinCorner) * 0.5f;
@@ -263,14 +273,6 @@ inline bool AABoxClass::Contains(const MinMaxAABoxClass & other_box) const
 	if (other_box.MaxCorner.Y > bmax.Y) return false;
 	if (other_box.MaxCorner.Z > bmax.Z) return false;
 	return true;
-}
-inline bool AABoxClass::Contains(const Vector3 & point) const
-{
-	return CollisionMath::Overlap_Test(*this,point) == CollisionMath::INSIDE;
-}
-inline bool AABoxClass::Contains(const AABoxClass & other_box) const
-{
-	return CollisionMath::Overlap_Test(*this,other_box) == CollisionMath::INSIDE;
 }
 inline void MinMaxAABoxClass::Init_Empty()
 {

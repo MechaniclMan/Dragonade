@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -82,7 +82,7 @@ void ScriptImpClass::Set_Parameters_String(const char *params)
 	Clear_Parameters();
 	mArgC = count;
 	mArgV = new char*[count];
-	assert(mArgV != NULL);
+	TT_ASSERT(mArgV != NULL);
 	memset(mArgV, 0, (sizeof(char*) * count));
 	strcpy(working, params);
 	count = 0;
@@ -315,7 +315,7 @@ int ScriptImpClass::Get_Parameter_Index(const char* parameterName)
 	FILE *f = fopen(path,"at");
 	if (f)
 	{
-		fprintf(f,"Critical error the name is %s parameter is %s the map is %s\n",this->Get_Name(),parameterName,The_Game()->Get_Map_Name());
+		fprintf(f,"Critical error the name is %s parameter is %s the map is %s\n",this->Get_Name(),parameterName,The_Game()->Get_Map_Name().Peek_Buffer());
 		fclose(f);
 	}
 	return -1;

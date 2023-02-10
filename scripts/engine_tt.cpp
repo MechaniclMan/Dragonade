@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added GetTTVersion.
 #include "general.h"
 
 #include "scripts.h"
@@ -35,6 +33,13 @@
 #include "NavalFactoryGameObj.h"
 #include "SCAnnouncement.h"
 #include "cScTextObj.h"
+#include "SuperweaponGameObj.h"
+#include "DefinitionMgrClass.h"
+#include "PhysicsSceneClass.h"
+#include "C4GameObj.h"
+#include "TeamPurchaseSettingsDefClass.h"
+#include "PurchaseSettingsDefClass.h"
+#include "PowerUpGameObjDef.h"
 class WideStringClass;
 
 
@@ -62,8 +67,6 @@ SCRIPTS_API _Create_2D_Sound_Player Create_2D_Sound_Player;
 SCRIPTS_API _Create_2D_WAV_Sound_Player Create_2D_WAV_Sound_Player;
 SCRIPTS_API _Create_3D_WAV_Sound_At_Bone_Player Create_3D_WAV_Sound_At_Bone_Player;
 SCRIPTS_API _Create_3D_Sound_At_Bone_Player Create_3D_Sound_At_Bone_Player;
-SCRIPTS_API _Set_Obj_Radar_Blip_Shape_Player Set_Obj_Radar_Blip_Shape_Player;
-SCRIPTS_API _Set_Obj_Radar_Blip_Color_Player Set_Obj_Radar_Blip_Color_Player;
 SCRIPTS_API aoch AddObjectCreateHook;
 SCRIPTS_API roch RemoveObjectCreateHook;
 SCRIPTS_API asn AddShaderNotify;
@@ -105,7 +108,6 @@ SCRIPTS_API svl Set_Naval_Vehicle_Limit;
 SCRIPTS_API gvl Get_Naval_Vehicle_Limit;
 SCRIPTS_API sm Send_Message;
 SCRIPTS_API smp Send_Message_Player;
-SCRIPTS_API sw Set_Wireframe_Mode;
 SCRIPTS_API lnhi Load_New_HUD_INI;
 SCRIPTS_API rw Remove_Weapon;
 SCRIPTS_API crm Change_Radar_Map;
@@ -156,6 +158,7 @@ SCRIPTS_API spb Set_Position_Clip_Bullets;
 SCRIPTS_API sb Set_Bullets;
 SCRIPTS_API sb Set_Clip_Bullets;
 SCRIPTS_API smie Set_Moon_Is_Earth;
+SCRIPTS_API smie Set_Global_Stealth_Disable;
 SCRIPTS_API gml Get_Mine_Limit;
 SCRIPTS_API sbd Set_Special_Base_Destruction;
 SCRIPTS_API gpv Get_Client_Version;
@@ -177,6 +180,7 @@ SCRIPTS_API cee Create_Explosion_Extended;
 SCRIPTS_API rwpa Retrieve_Waypaths;
 SCRIPTS_API rwpo Retrieve_Waypoints;
 SCRIPTS_API gwp Get_Waypoint_Position;
+SCRIPTS_API cl Create_Lightning;
 SCRIPTS_API gttv GetTTVersion;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
@@ -245,39 +249,16 @@ SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, int 
 
 // -------------------------------------------------------------------------------------------------
 
-SCRIPTS_API void Set_Obj_Radar_Blip_Shape_Team(int Team,GameObject *obj,int shape)
+SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, Vector3 rgb, bool bPlaySound )
 {
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == Team) || (Team == 2))
-			{
-				Set_Obj_Radar_Blip_Shape_Player(o,obj,shape);
-			}
-		}
-		x = x->Next();
-	}
+  int red = (int)(rgb.X * 255);
+  int green = (int)(rgb.Y * 255);
+  int blue = (int)(rgb.Z * 255);
+
+  Send_Translated_Message_Team(ID, team, red, green, blue, bPlaySound);
 }
 
-SCRIPTS_API void Set_Obj_Radar_Blip_Color_Team(int Team,GameObject *obj,int color)
-{
-	SLNode<SoldierGameObj> *x = GameObjManager::StarGameObjList.Head();
-	while (x)
-	{
-		GameObject *o = x->Data();
-		if (o)
-		{
-			if ((Get_Object_Type(o) == Team) || (Team == 2))
-			{
-				Set_Obj_Radar_Blip_Color_Player(o,obj,color);
-			}
-		}
-		x = x->Next();
-	}
-}
+// -------------------------------------------------------------------------------------------------
 
 SCRIPTS_API void Set_Occupants_Fade(GameObject *obj,float red,float green,float blue,float opacity)
 {
@@ -938,7 +919,7 @@ bool SCRIPTS_API Create_Vehicle(const char *Preset_Name,float Delay,GameObject *
 	return true;
 }
 
-SCRIPTS_API REF_DEF2(ConsoleFunctionList,DynamicVectorClass<ConsoleFunctionClass *>,0x0081DEB8,0x0081D098);
+SCRIPTS_API REF_DEF2(DynamicVectorClass<ConsoleFunctionClass *>, ConsoleFunctionList, 0x0081DEB8, 0x0081D098);
 
 SCRIPTS_API void Delete_Console_Function(const char *name)
 {
@@ -960,8 +941,8 @@ SCRIPTS_API void cScTextObj::Set_Dirty_Bit_For_Team(DIRTY_BIT value, int teamId)
 {
 	TT_FOREACH(player, *Get_Player_List())
 	{
-		if (player->IsActive && player->PlayerType == teamId)
-			Set_Object_Dirty_Bit(player->PlayerId, value, true);
+		if (player->Is_Active() && player->Get_Player_Type() == teamId)
+			Set_Object_Dirty_Bit(player->Get_Id(), value, true);
 	}
 }
 
@@ -980,9 +961,15 @@ SCRIPTS_API void SCAnnouncement::Set_Dirty_Bit_For_Team(DIRTY_BIT value, int tea
 {
 	TT_FOREACH(player, *Get_Player_List())
 	{
-		if (player->IsActive && player->PlayerType == teamId)
-			Set_Object_Dirty_Bit(player->PlayerId, value, true);
+		if (player->Is_Active() && player->Get_Player_Type() == teamId)
+			Set_Object_Dirty_Bit(player->Get_Id(), value, true);
 	}
+}
+
+SCRIPTS_API void Force_Vehicle_Entry(GameObject *soldier,GameObject *vehicle)
+{
+	Commands->Set_Position(soldier,Commands->Get_Position(vehicle));
+	vehicle->As_VehicleGameObj()->Add_Occupant(soldier->As_SoldierGameObj());
 }
 
 RENEGADE_FUNCTION
@@ -996,3 +983,142 @@ AT2(0x004284F0,0x00428670);
 RENEGADE_FUNCTION
 SCRIPTS_API void ScriptableGameObj::Add_Observer( GameObjObserverClass * observer )
 AT2(0x006B6C70,0x006B6510);
+
+RENEGADE_FUNCTION
+SCRIPTS_API void VehicleGameObj::Add_Occupant(SoldierGameObj * occupant )
+AT2(0x0067B280,0x0067AB20);
+
+RENEGADE_FUNCTION
+SCRIPTS_API void SuperweaponGameObj::Launch()
+AT2(0x00740D50,0x007405F0);
+
+RENEGADE_FUNCTION
+SCRIPTS_API bool PhysicsSceneClass::Cast_Ray(PhysRayCollisionTestClass & raytest,bool use_collision_region)
+AT3(0x00631460,0x00630D00,0x006B0100);
+
+RENEGADE_FUNCTION
+SCRIPTS_API bool PhysicsSceneClass::Cast_AABox(class PhysAABoxCollisionTestClass &,bool)
+AT3(0x00631530,0x00630DD0,0x006B0200);
+
+RENEGADE_FUNCTION
+SCRIPTS_API bool PhysicsSceneClass::Cast_OBBox(class PhysOBBoxCollisionTestClass &,bool)
+AT3(0x00631600,0x00630EA0,0x006B0350);
+
+RENEGADE_FUNCTION
+SCRIPTS_API void PhysicsSceneClass::Get_Level_Extents(Vector3 &min, Vector3 &max)
+AT3(0x00623C80,0x00623520,0x0069FAB0);
+
+RENEGADE_FUNCTION
+SCRIPTS_API void PhysicsSceneClass::Collect_Objects(const OBBoxClass & box,bool static_objs,bool dynamic_objs,MultiListClass<PhysClass> * list)
+AT2(0x00631E30,0x006316D0);
+
+SCRIPTS_API REF_DEF3(PhysicsSceneClass*, PhysicsSceneClass::TheScene, 0x00855444, 0x0085462C, 0x00872BCC);
+
+RENEGADE_FUNCTION
+void C4GameObj::Defuse()
+AT2(0x0070D610,0x0070CBD0);
+
+RENEGADE_FUNCTION
+TeamPurchaseSettingsDefClass *TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM team)
+AT2(0x006F3430,0x006F29F0);
+RENEGADE_FUNCTION
+PurchaseSettingsDefClass *PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE type,PurchaseSettingsDefClass::TEAM team)
+AT2(0x006F2BD0,0x006F2190);
+
+RENEGADE_FUNCTION
+void BuildingGameObj::Collect_Building_Components()
+AT2(0x006843E0,0x00683C80);
+RENEGADE_FUNCTION
+void BaseControllerClass::Enable_Radar(bool Enable)
+AT3(0x006EFD00,0x006EF2C0,0x00558ED0);
+
+RENEGADE_FUNCTION
+bool PowerUpGameObjDef::Grant(SmartGameObj *, PowerUpGameObj *, bool) const
+AT2(0x006F09F0,0x006EFFB0);
+
+RENEGADE_FUNCTION
+void SoldierGameObj::Toggle_Fly_Mode()
+AT2(0x006CFC80,0x006CF520);
+RENEGADE_FUNCTION
+void AirFactoryGameObj::Create_Vehicle(int defintion_id,SoldierGameObj * player)
+AT2(0x006EDC80,0x006ED240);
+RENEGADE_FUNCTION
+int AirFactoryGameObj::Get_Team_Vehicle_Count() const
+AT2(0x006F16B0,0x006F0C70);
+RENEGADE_FUNCTION
+bool AirFactoryGameObj::Is_Available_For_Purchase() const
+AT2(0x0070B6F0,0x0070ACB0);
+RENEGADE_FUNCTION
+SCRIPTS_API bool SoldierGameObj::Is_In_Elevator()
+AT2(0x006C9610,0x006C8EB0);
+RENEGADE_FUNCTION
+void NavalFactoryGameObj::Create_Vehicle(int defintion_id,SoldierGameObj * player)
+AT2(0x0073EE30,0x0073E6D0);
+RENEGADE_FUNCTION
+int NavalFactoryGameObj::Get_Team_Vehicle_Count() const
+AT2(0x0073FB80,0x0073F420);
+RENEGADE_FUNCTION
+bool NavalFactoryGameObj::Is_Available_For_Purchase() const
+AT2(0x007408E0,0x00740180);
+RENEGADE_FUNCTION
+bool NavalFactoryGameObj::Can_Spawn(int definition_id)
+AT2(0x007425B0,0x00741E50);
+
+RENEGADE_FUNCTION
+bool VehicleFactoryGameObj::Request_Vehicle(int defintion_id, float generation_time,SoldierGameObj * player)
+AT2(0x006EE1A0,0x006ED760);
+RENEGADE_FUNCTION
+int VehicleFactoryGameObj::Get_Team_Vehicle_Count() const
+AT2(0x006EE060,0x006ED620);
+RENEGADE_FUNCTION
+bool VehicleFactoryGameObj::Is_Available_For_Purchase() const
+AT2(0x006EE010,0x006ED5D0);
+RENEGADE_FUNCTION
+void SoldierGameObj::Re_Init(const SoldierGameObjDef &)
+AT2(0x006C7410,0x006C6CB0);
+RENEGADE_FUNCTION
+void SCRIPTS_API cPlayer::Set_Player_Type(int type)
+AT2(0x0040D600,0x0040D600);
+
+RENEGADE_FUNCTION
+Vector3 SCRIPTS_API Get_Color_For_Team(int teamId)
+AT2(0x006D99E0,0x006D9280);
+Vector3 DamageableGameObj::Get_Team_Color(void)
+{
+	return Get_Color_For_Team(PlayerType);
+}
+
+void SCRIPTS_API Get_Object_Color(GameObject *obj, unsigned int *red, unsigned int *green, unsigned int *blue)
+{
+	if (!obj)
+	{
+		return;
+	}
+	DamageableGameObj *o = obj->As_DamageableGameObj();
+	if (!o)
+	{
+		return;
+	}
+	Vector3 v = o->Get_Team_Color();
+	*red = (unsigned int)(v.X*255);
+	*green = (unsigned int)(v.Y*255);
+	*blue = (unsigned int)(v.Z*255);
+}
+
+void SCRIPTS_API Grant_Powerup(GameObject *obj,const char *Preset_Name)
+{
+	if (!obj)
+	{
+		return;
+	}
+	SmartGameObj *o = obj->As_SmartGameObj();
+	if (o)
+	{
+		PowerUpGameObjDef *def = (PowerUpGameObjDef *)Find_Named_Definition(Preset_Name);
+		def->Grant(o,0,true);
+	}
+}
+
+RENEGADE_FUNCTION
+SCRIPTS_API uint Send_Object_Update(NetworkObjectClass* object, int remoteHostId)
+AT2(0x00461820,0x004612F0);

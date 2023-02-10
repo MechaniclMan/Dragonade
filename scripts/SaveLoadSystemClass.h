@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,14 +20,14 @@ class SaveLoadSystemClass
 
 public:
 
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
    static PointerRemapClass PointerRemapper;
    static PersistFactoryClass *_FactoryListHead;
    static SaveLoadSubSystemClass *_SubSystemListHead;
 #else
-   static REF_DECL3(PointerRemapper, PointerRemapClass);
-   static REF_DECL3(_FactoryListHead, PersistFactoryClass *);
-   static REF_DECL3(_SubSystemListHead, SaveLoadSubSystemClass *);
+   static REF_DECL(PointerRemapClass, PointerRemapper);
+   static REF_DECL(PersistFactoryClass *, _FactoryListHead);
+   static REF_DECL(SaveLoadSubSystemClass *, _SubSystemListHead);
 #endif
 
    static SaveLoadSubSystemClass* Find_Sub_System                   (uint32 id);

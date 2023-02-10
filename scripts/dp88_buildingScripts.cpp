@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,9 +27,9 @@
 
 // -------------------------------------------------------------------------------------------------
 
-extern REF_DECL2(NodHouseColor, Vector3);
-extern REF_DECL2(GDIHouseColor, Vector3);
-extern REF_DECL2(PublicMessageColor, Vector3);
+extern REF_DECL(Vector3, NodHouseColor);
+extern REF_DECL(Vector3, GDIHouseColor);
+extern REF_DECL(Vector3, PublicMessageColor);
 
 // -------------------------------------------------------------------------------------------------
 
@@ -369,12 +369,12 @@ void dp88_buildingScripts_controller::Custom( GameObject *obj, int type, int par
 	// Building captured notification sent by a capture point
 	else if ( type == CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED && sender != NULL )
 	{
-		// Check the sender is one of our children
+		// Check the sender is one of our children (or ourself, for compatibility with dp88_Set_Team_On_Custom)
 		int childIndex = findChild( Commands->Get_ID (sender) );
-		if ( childIndex < 0 )
+		if ( childIndex < 0 && sender != obj )
 			return;
 
-		// The building has been captured by another team, set the new object type
+		// If the building has been captured by another team set the new object type
 		if ( Get_Object_Type(obj) != param )
 		{
 			Set_Object_Type(obj,param);
@@ -1287,7 +1287,7 @@ Building Capture Point
 
 void dp88_buildingScripts_capturePoint::Created( GameObject *obj )
 {
-  GameObject* parent = RegisterWithParent(obj, Get_Parameter("Building_Controller_Preset"), BUILDING_CHILD_TYPE_GENERIC);
+  GameObject* parent = RegisterWithParent(obj, Get_Parameter("Building_Controller_Preset"), BUILDING_CHILD_TYPE_CAPTUREPOINT);
   if ( !parent )
     return;
 
@@ -1304,7 +1304,7 @@ void dp88_buildingScripts_capturePoint::Created( GameObject *obj )
   currentTeam = Get_Object_Type(parent);
   Set_Object_Type(obj,currentTeam);
 
-  // Set the current health state to match the current team (0 = Soviet, 1 = Allies, -2 = Neutral)
+  // Set the current health state to match the current team (0 = Soviet, 1 = Allies, 2 = Neutral)
   if ( currentTeam == 0 )
     Commands->Set_Health(obj, 0.25f);
   else if ( currentTeam == 1 )
@@ -1343,42 +1343,32 @@ void dp88_buildingScripts_capturePoint::Damaged( GameObject *obj, GameObject *da
     {
       currentTeam = 0;
 
-      int red = (int)(NodHouseColor.X * 255);
-      int green = (int)(NodHouseColor.Y * 255);
-      int blue = (int)(NodHouseColor.Z * 255);
+      Send_Translated_Message_Team( Get_Int_Parameter("Sov_String_All"), 1, NodHouseColor );
+      Send_Translated_Message_Team( Get_Int_Parameter("Sov_String_Sov"), 0, NodHouseColor );
 
-      Send_Translated_Message_Team( Get_Int_Parameter("Sov_String_All"), 1, red, green, blue );
-      Send_Translated_Message_Team( Get_Int_Parameter("Sov_String_Sov"), 0, red, green, blue );
-
-      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
       Set_Object_Type(obj,currentTeam);
+      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
     }
 
     // OK, we didn't capture it, but did we manage to make it neutral?
     else if ( currentTeam == 1 && health <= max/2.0f )
     {
-      currentTeam = -2;
-      
-      int red = (int)(PublicMessageColor.X * 255);
-      int green = (int)(PublicMessageColor.Y * 255);
-      int blue = (int)(PublicMessageColor.Z * 255);
+      currentTeam = 2;
 
-      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_All"), 1, red, green, blue );
-      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_Sov"), 0, red, green, blue );
+      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_All"), 1, PublicMessageColor );
+      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_Sov"), 0, PublicMessageColor );
 
-      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
       Set_Object_Type(obj,currentTeam);
+      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
     }
   }
 
-
-  // If the damager was the allied engineer then increase the health by 1 and
-  // check if they have now captured the building
-  else if (warhead == Get_Damage_Warhead() && Commands->Get_Player_Type(damager) == 1)
+  
+  // If the damager was on team 1 then increase the health by 1 and check if we have been captured
+  else if (Commands->Get_Player_Type(damager) == 1)
   {
-    // Increase health by 1.00 (unless we are already less than 1.00 below the
-    // maximum in which case we just set it to the maximum)
-    health = ( health >= max-1.00f ) ? max : health + 1.0f;
+    // Increase health by up to 1
+    health = ( health >= max-1.0f ) ? max : health + 1.0f;
     Commands->Set_Health (obj, health );
 
     // Did we capture the structure?
@@ -1386,36 +1376,28 @@ void dp88_buildingScripts_capturePoint::Damaged( GameObject *obj, GameObject *da
     {
       currentTeam = 1;
 
-      int red = (int)(GDIHouseColor.X * 255);
-      int green = (int)(GDIHouseColor.Y * 255);
-      int blue = (int)(GDIHouseColor.Z * 255);
+      Send_Translated_Message_Team( Get_Int_Parameter("All_String_All"), 1, GDIHouseColor );
+      Send_Translated_Message_Team( Get_Int_Parameter("All_String_Sov"), 0, GDIHouseColor );
 
-      Send_Translated_Message_Team( Get_Int_Parameter("All_String_All"), 1, red, green, blue );
-      Send_Translated_Message_Team( Get_Int_Parameter("All_String_Sov"), 0, red, green, blue );
-
-      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
       Set_Object_Type(obj,currentTeam);
+      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
     }
 
     // OK, we didn't capture it, but did we manage to make it neutral?
     else if ( currentTeam == 0 && health >= max/2.0f )
     {
-      currentTeam = -2;
+      currentTeam = 2;
 
-      int red = (int)(PublicMessageColor.X * 255);
-      int green = (int)(PublicMessageColor.Y * 255);
-      int blue = (int)(PublicMessageColor.Z * 255);
+      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_All"), 1, PublicMessageColor );
+      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_Sov"), 0, PublicMessageColor );
 
-      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_All"), 1, red, green, blue );
-      Send_Translated_Message_Team( Get_Int_Parameter("Neutral_String_Sov"), 0, red, green, blue );
-
-      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
       Set_Object_Type(obj,currentTeam);
+      Commands->Send_Custom_Event (obj, Commands->Find_Object(m_parentId), CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, currentTeam, 0.0f );
     }
   }
 
   UpdateAnimationFrame(obj);
-} 
+}
 
 // -------------------------------------------------------------------------------------------------
 
@@ -1430,6 +1412,28 @@ void dp88_buildingScripts_capturePoint::OnBuildingDestroyed( GameObject *obj )
 
   // And kill ourself
   Commands->Apply_Damage ( obj, 1000.0f, "Death", obj );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_buildingScripts_capturePoint::OnBuildingCaptured( GameObject *obj, int team )
+{
+  // Captured by some external mechanism such as using dp88_Set_Team_On_Custom
+  if ( team != Get_Object_Type(obj) && -1 != m_parentId )
+  {
+    currentTeam = team;
+    Set_Object_Type(obj,currentTeam);
+
+    // Set the current health state to match the current team (0 = Soviet, 1 = Allies, 2 = Neutral)
+    if ( currentTeam == 0 )
+      Commands->Set_Health(obj, 0.25f);
+    else if ( currentTeam == 1 )
+      Commands->Set_Health(obj, Commands->Get_Max_Health(obj));
+    else
+      Commands->Set_Health(obj, Commands->Get_Max_Health(obj)/2.0f);
+  
+    UpdateAnimationFrame(obj);
+  }
 }
 
 // -------------------------------------------------------------------------------------------------

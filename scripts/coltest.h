@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,22 +15,21 @@
 #include "castresultstruct.h"
 #include "LineSegClass.h"
 #include "AABoxClass.h"
-#include "CollisionMath.h"
 #include "OBBoxClass.h"
 class RenderObjClass;
 class TriClass;
-class CollisionTestClass
+class SCRIPTS_API CollisionTestClass
 {
 public:
-	CollisionTestClass(CastResultStruct * res,int collision_type);
+	CollisionTestClass(CastResultStruct * res,Collision_Type collision_type);
 	CollisionTestClass(const CollisionTestClass & that);
 public:
 	CastResultStruct *			Result; // 0000
-	int								CollisionType; // 0004
+	Collision_Type								CollisionType; // 0004
 	RenderObjClass *				CollidedRenderObj; // 0008	
 }; // 000C
 
-inline CollisionTestClass::CollisionTestClass(CastResultStruct * res,int collision_type) :
+inline CollisionTestClass::CollisionTestClass(CastResultStruct * res,Collision_Type collision_type) :
 	Result(res),
 	CollisionType(collision_type),
 	CollidedRenderObj(NULL)
@@ -47,52 +46,40 @@ inline CollisionTestClass::CollisionTestClass(const CollisionTestClass & that) :
 class RayCollisionTestClass : public CollisionTestClass
 {
 public:
-	RayCollisionTestClass(const LineSegClass & ray,CastResultStruct * res,int collision_type = COLLISION_TYPE_0,bool ignore_translucent_meshes=false);
-	RayCollisionTestClass(const RayCollisionTestClass & raytest,const Matrix3D & tm);
-	bool Cull(const Vector3 & min,const Vector3 & max);
-	bool Cull(const AABoxClass & box);
-	bool Cast_To_Triangle(const TriClass & tri);
-public:
-	LineSegClass Ray;
-	bool IgnoreTranslucentMeshes;
+	LineSegClass     Ray;
+	bool             IgnoreTranslucentMeshes;
+
+	RayCollisionTestClass(const LineSegClass& ray, CastResultStruct* res, Collision_Type collision_type = COLLISION_TYPE_0, bool ignore_translucent_meshes = false);
+	RayCollisionTestClass(const RayCollisionTestClass& raytest, const Matrix3D& tm);
+
+	bool Cull(const Vector3& min,const Vector3& max);
+	bool Cull(const AABoxClass& box);
+
+	bool Cast_To_Triangle(const TriClass& tri);
+
 private:
 	RayCollisionTestClass(const RayCollisionTestClass &);
 	RayCollisionTestClass & operator = (const RayCollisionTestClass &);
 };
 
-inline RayCollisionTestClass::RayCollisionTestClass(const LineSegClass & ray,CastResultStruct * res,int collision_type,bool ignore_translucent_meshes) :
-	CollisionTestClass(res,collision_type),
+inline RayCollisionTestClass::RayCollisionTestClass(const LineSegClass& ray, CastResultStruct* res, Collision_Type collision_type, bool ignore_translucent_meshes) :
+	CollisionTestClass(res, collision_type),
 	Ray(ray),
 	IgnoreTranslucentMeshes(ignore_translucent_meshes)
 {
 }
 
-inline RayCollisionTestClass::RayCollisionTestClass(const RayCollisionTestClass & raytest,const Matrix3D & tm) :
+inline RayCollisionTestClass::RayCollisionTestClass(const RayCollisionTestClass& raytest, const Matrix3D& tm) :
 	CollisionTestClass(raytest),
-	Ray(raytest.Ray,tm),
+	Ray(raytest.Ray, tm),
 	IgnoreTranslucentMeshes(raytest.IgnoreTranslucentMeshes)
 {
-}
-
-inline bool RayCollisionTestClass::Cull(const Vector3 & _min,const Vector3 & _max)
-{ 
-	return !CollisionMath::Intersection_Test(_min, _max, Ray);
-}
-
-inline bool RayCollisionTestClass::Cull(const AABoxClass & box) 
-{ 
-	return (CollisionMath::Overlap_Test(box,Ray) == CollisionMath::POS);
-}
-
-inline bool RayCollisionTestClass::Cast_To_Triangle(const TriClass & tri) 
-{
-	return CollisionMath::Collide(Ray,tri,Result);
 }
 
 class SCRIPTS_API AABoxCollisionTestClass : public CollisionTestClass
 {
 public:
-	AABoxCollisionTestClass(const AABoxClass & aabox,const Vector3 & move,CastResultStruct * res,int collision_type = COLLISION_TYPE_0);
+	AABoxCollisionTestClass(const AABoxClass & aabox,const Vector3 & move,CastResultStruct * res,Collision_Type collision_type = COLLISION_TYPE_0);
 	AABoxCollisionTestClass(const AABoxCollisionTestClass & that);
 	enum ROTATION_TYPE 
 	{
@@ -103,7 +90,6 @@ public:
 	};
 	bool							Cull(const Vector3 & min,const Vector3 & max);
 	bool							Cull(const AABoxClass & box);
-	bool							Cast_To_Triangle(const TriClass & tri);
 	void							Translate(const Vector3 & translation);
 	void							Rotate(ROTATION_TYPE rotation);
 	void							Transform(const Matrix3D & tm);
@@ -140,21 +126,15 @@ inline bool AABoxCollisionTestClass::Cull(const Vector3 & min,const Vector3 & ma
 	return false;
 }
 
-inline bool AABoxCollisionTestClass::Cast_To_Triangle(const TriClass & tri) 
-{
-	return CollisionMath::Collide(Box,Move,tri,Result);
-}
-
 class SCRIPTS_API OBBoxCollisionTestClass : public CollisionTestClass
 {
 public:
-	OBBoxCollisionTestClass(const OBBoxClass & obbox,const Vector3 & move,CastResultStruct * res,int type = COLLISION_TYPE_0);
+	OBBoxCollisionTestClass(const OBBoxClass & obbox,const Vector3 & move,CastResultStruct * res,Collision_Type type = COLLISION_TYPE_0);
 	OBBoxCollisionTestClass(const OBBoxCollisionTestClass & that);
 	OBBoxCollisionTestClass(const OBBoxCollisionTestClass & that,const Matrix3D & tm);
 	OBBoxCollisionTestClass(const AABoxCollisionTestClass & that,const Matrix3D & tm);
 	bool Cull(const Vector3 & min,const Vector3 & max);
 	bool Cull(const AABoxClass & box);
-	bool Cast_To_Triangle(const TriClass & tri);
 public:
 	OBBoxClass	 				Box;
 	Vector3						Move;
@@ -179,11 +159,6 @@ inline bool OBBoxCollisionTestClass::Cull(const Vector3 & min,const Vector3 & ma
 		return true;
 	}
 	return false;
-}
-
-inline bool OBBoxCollisionTestClass::Cast_To_Triangle(const TriClass & tri) 
-{
-	return CollisionMath::Collide(Box,Move,tri,Vector3(0,0,0),Result);
 }
 
 #endif

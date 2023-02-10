@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,17 +17,12 @@
 
 #include "SceneClass.h"
 #include "VisTableMgrClass.h"
+#include "VisTableClass.h"
 #include "WidgetUserClass.h"
 #include "multilist.h"
 #include "PhysClass.h"
 #include "AABTreeCull.h"
 #include "GridCull.h"
-#include "ConPublic.h"
-
-#ifdef NEW_CONSOLE
-#include "../console/convar.h"
-extern SHADERS_API SCVar	r_usevis;
-#endif //NEW_CONSOLE
 
 class TextureClass;
 class CameraClass;
@@ -51,8 +46,9 @@ class VisRenderContextClass;
 class VisSampleClass;
 class MeshClass;
 class FrustumClass;
-
-
+class VisSectorStatsClass;
+class VisOptProgressClass;
+enum VisDirBitsType;
 
 class PhysicsSceneClass :
 	public SceneClass, public WidgetUserClass
@@ -61,10 +57,10 @@ public:
 	PhysicsSceneClass(void);
 	virtual ~PhysicsSceneClass(void);
 	static PhysicsSceneClass * Get_Instance(void) { return TheScene; }
-	SHADERS_API void Update(float dt,int frameid);
-	SHADERS_API void Pre_Render_Processing(CameraClass & camera);
-	SHADERS_API void Post_Render_Processing(void);
-	SHADERS_API void Add_Dynamic_Object(PhysClass * newobj);
+	void Update(float dt,int frameid);
+	void Pre_Render_Processing(CameraClass & camera);
+	void Post_Render_Processing(void);
+	void Add_Dynamic_Object(PhysClass * newobj);
 	void Add_Static_Object(StaticPhysClass * newtile,int cull_node_id = -1);
 	void Add_Dynamic_Light(LightPhysClass * light);
 	void Add_Static_Light(LightPhysClass * newlight,int cull_node_id = -1);
@@ -104,26 +100,18 @@ public:
 	void Invalidate_Lighting_Caches(const AABoxClass & bounds);
 	void Set_Collision_Region(const AABoxClass & bounds,int colgroup);
 	void Release_Collision_Region(void);
-	SHADERS_API bool Cast_Ray(PhysRayCollisionTestClass & raytest,bool use_collision_region = false);
-	SHADERS_API bool Cast_AABox(PhysAABoxCollisionTestClass & boxtest,bool use_collision_region = false);
-	SHADERS_API bool Cast_OBBox(PhysOBBoxCollisionTestClass & boxtest,bool use_collision_region = false);
-	SHADERS_API bool Intersection_Test(PhysAABoxIntersectionTestClass & boxtest,bool use_collision_region = false);
-	SHADERS_API bool Intersection_Test(PhysOBBoxIntersectionTestClass & boxtest,bool use_collision_region = false);
-	SHADERS_API bool Intersection_Test(PhysMeshIntersectionTestClass & meshtest,bool use_collision_region = false);
-	SHADERS_API bool Intersection_Test(const AABoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
-	SHADERS_API bool Intersection_Test(const OBBoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
-	bool Real_Cast_Ray(PhysRayCollisionTestClass & raytest,bool use_collision_region = false);
-	bool Real_Cast_AABox(PhysAABoxCollisionTestClass & boxtest,bool use_collision_region = false);
-	bool Real_Cast_OBBox(PhysOBBoxCollisionTestClass & boxtest,bool use_collision_region = false);
-	bool Real_Intersection_Test1(PhysAABoxIntersectionTestClass & boxtest,bool use_collision_region = false);
-	bool Real_Intersection_Test2(PhysOBBoxIntersectionTestClass & boxtest,bool use_collision_region = false);
-	bool Real_Intersection_Test3(PhysMeshIntersectionTestClass & meshtest,bool use_collision_region = false);
-	bool Real_Intersection_Test4(const AABoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
-	bool Real_Intersection_Test5(const OBBoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
+	SCRIPTS_API bool Cast_Ray(PhysRayCollisionTestClass & raytest,bool use_collision_region = false);
+	SCRIPTS_API bool Cast_AABox(PhysAABoxCollisionTestClass & boxtest,bool use_collision_region = false);
+	SCRIPTS_API bool Cast_OBBox(PhysOBBoxCollisionTestClass & boxtest,bool use_collision_region = false);
+	bool Intersection_Test(PhysAABoxIntersectionTestClass & boxtest,bool use_collision_region = false);
+	bool Intersection_Test(PhysOBBoxIntersectionTestClass & boxtest,bool use_collision_region = false);
+	bool Intersection_Test(PhysMeshIntersectionTestClass & meshtest,bool use_collision_region = false);
+	bool Intersection_Test(const AABoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
+	bool Intersection_Test(const OBBoxClass & box,int collision_group,int collision_type,bool use_collision_region = false);
 	void Force_Dynamic_Objects_Awake(const AABoxClass & box);
 	void Collect_Objects(const Vector3 & point,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
 	void Collect_Objects(const AABoxClass & box,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
-	void Collect_Objects(const OBBoxClass & box,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
+	SCRIPTS_API void Collect_Objects(const OBBoxClass & box,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
 	void Collect_Objects(const FrustumClass & frustum,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
 	void Collect_Collideable_Objects(const AABoxClass & box,int colgroup,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
 	void Collect_Collideable_Objects(const OBBoxClass & box,int colgroup,bool static_objs, bool dynamic_objs,MultiListClass<PhysClass> * list);
@@ -166,8 +154,8 @@ public:
 	void Lock_Vis_Sample_Point(bool onoff);
 	bool Is_Vis_Sample_Point_Locked(void);
 	void Compute_Vis_Sample_Point(const CameraClass & camera,Vector3 * set_point);
-	SHADERS_API VisTableClass *Get_Vis_Table(int vis_sector_id);
-	SHADERS_API VisTableClass *Get_Vis_Table(const Vector3 & point);
+	VisTableClass *Get_Vis_Table(int vis_sector_id);
+	VisTableClass *Get_Vis_Table(const Vector3 & point);
 	VisTableClass *Get_Vis_Table(const CameraClass & camera);
 	VisTableClass *Get_Vis_Table_For_Rendering(const CameraClass & camera);
 	virtual void On_Vis_Occluders_Rendered(VisRenderContextClass & context,VisSampleClass & sample) {}
@@ -190,7 +178,7 @@ public:
 	void Validate_Vis(void);
 	int Allocate_Vis_Object_ID(int count = 1);
 	int Allocate_Vis_Sector_ID(int count = 1);
-	SHADERS_API int Get_Vis_Table_Size(void);
+	int Get_Vis_Table_Size(void);
 	int Get_Vis_Table_Count(void);
 	int Get_Static_Light_Count(void);
 	void Generate_Vis_For_Light(int light_index);
@@ -201,16 +189,16 @@ public:
 
 	void Enable_Static_Projectors(bool onoff);
 	bool Are_Static_Projectors_Enabled(void);
-	SHADERS_API void Set_Static_Shadow_Resolution(uint res);
+	void Set_Static_Shadow_Resolution(uint res);
 	uint Get_Static_Shadow_Resolution();
 	void Enable_Dynamic_Projectors(bool onoff);
 	bool Are_Dynamic_Projectors_Enabled(void);
-	SHADERS_API void Set_Dynamic_Shadow_Resolution(uint res);
+	void Set_Dynamic_Shadow_Resolution(uint res);
 	uint Get_Dynamic_Shadow_Resolution();
-	SHADERS_API void Add_Static_Texture_Projector(TexProjectClass* newprojector);
-	SHADERS_API void Remove_Static_Texture_Projector(TexProjectClass* projector);
-	SHADERS_API void Add_Dynamic_Texture_Projector(TexProjectClass* newprojector);
-	SHADERS_API void Remove_Dynamic_Texture_Projector(TexProjectClass* projector);
+	void Add_Static_Texture_Projector(TexProjectClass* newprojector);
+	void Remove_Static_Texture_Projector(TexProjectClass* projector);
+	void Add_Dynamic_Texture_Projector(TexProjectClass* newprojector);
+	void Remove_Dynamic_Texture_Projector(TexProjectClass* projector);
 	void Remove_Texture_Projector(TexProjectClass* projector);
 	bool Contains(TexProjectClass* projector);
 	
@@ -223,7 +211,7 @@ public:
 		SHADOW_MODE_COUNT,
 	};
 	
-	SHADERS_API void Set_Shadow_Mode(ShadowEnum shadow_mode);
+	void Set_Shadow_Mode(ShadowEnum shadow_mode);
 	ShadowEnum Get_Shadow_Mode(void);
 	void Set_Shadow_Attenuation(float znear,float zfar);
 	void Get_Shadow_Attenuation(float * set_znear,float * set_zfar);
@@ -231,14 +219,18 @@ public:
 	float Get_Shadow_Normal_Intensity(void);
 	void Set_Shadow_Resolution(unsigned int res);
 	unsigned int Get_Shadow_Resolution(void);
-	SHADERS_API void Set_Max_Simultaneous_Shadows(unsigned int count);
+	void Set_Max_Simultaneous_Shadows(unsigned int count);
 	unsigned int Get_Max_Simultaneous_Shadows(void);
 	CameraClass *Get_Shadow_Camera(void);
 	SpecialRenderInfoClass *Get_Shadow_Render_Context();
 	MaterialPassClass *Get_Shadow_Material_Pass(void);
-	SHADERS_API void Invalidate_Static_Shadow_Projectors(void);
-	SHADERS_API void Generate_Static_Shadow_Projectors(void);
+	void Invalidate_Static_Shadow_Projectors(void);
+	void Generate_Static_Shadow_Projectors(void);
 	void Generate_Static_Directional_Shadow(StaticAnimPhysClass& obj, const Vector3& light_dir);
+	void Generate_Vis_Statistics_Report(DynamicVectorClass<VisSectorStatsClass> & report);
+	void Optimize_Visibility_Data(VisOptProgressClass & progress_status);
+	VisSampleClass				Update_Vis(const Matrix3D & camera,VisDirBitsType direction_bits);
+	VisSampleClass				Update_Vis(const Vector3 & sample_point,const Matrix3D & camera,VisDirBitsType direction_bits,CameraClass * alternate_camera = NULL,int user_vis_id = -1);
 
 	int Create_Decal(const Matrix3D &tm,const char *texture_name,float radius,bool is_permanent = false,bool apply_to_translucent_polys = false,PhysClass *only_this_obj = NULL);
 	bool Remove_Decal(uint32 id);
@@ -266,7 +258,7 @@ public:
 	virtual void Destroy_Iterator(SceneIterator *) {}
 	virtual void Register(RenderObjClass * obj,RegType for_what);
 	virtual void Unregister(RenderObjClass * obj,RegType for_what);
-	SHADERS_API void Get_Level_Extents (Vector3 &min, Vector3 &max);
+	SCRIPTS_API void Get_Level_Extents (Vector3 &min, Vector3 &max);
 	void Enable_Debug_Display(bool onoff) { DebugDisplayEnabled = onoff; }
 	bool Is_Debug_Display_Enabled(void) { return DebugDisplayEnabled; }
 	void Enable_Projector_Debug_Display(bool onoff) { ProjectorDebugDisplayEnabled = onoff; }
@@ -290,8 +282,7 @@ public:
 	const StatsStruct &Get_Statistics(void);
 	float Compute_Vis_Mesh_Ram(void);
 protected:
-	SHADERS_API virtual void Customized_Render(RenderInfoClass & rinfo);
-	void Real_Customized_Render(RenderInfoClass & rinfo);
+	virtual void Customized_Render(RenderInfoClass & rinfo);
 	void Render_Objects(RenderInfoClass& rinfo,RefMultiListClass<PhysClass> * static_ws_list,RefMultiListClass<PhysClass> * static_list,RefMultiListClass<PhysClass> * dyn_list);
 	void Render_Object(RenderInfoClass & context,PhysClass * obj);
 	void Render_Backface_Occluders(RenderInfoClass & context,RefMultiListClass<PhysClass> *  static_ws_list,RefMultiListClass<PhysClass> * static_list);
@@ -302,14 +293,15 @@ protected:
 	void Vis_Render_And_Scan(VisRenderContextClass & context,VisSampleClass & sample);
 	void Merge_Vis_Sector_IDs(uint32 id0,uint32 id1);
 	void Merge_Vis_Object_IDs(uint32 id0,uint32 id1);
-	SHADERS_API void Release_Projector_Resources(void);
-	SHADERS_API void Apply_Projectors(const CameraClass & camera);
+public:
+	void Release_Projector_Resources(void);
+protected:
+	void Apply_Projectors(const CameraClass & camera);
 	void Apply_Projector_To_Objects(TexProjectClass * tex_proj,const CameraClass & camera);
 	float Compute_Projector_Attenuation(TexProjectClass * dynamic_projector,const Vector3 & view_pos,const Vector3 & view_dir);
 public:
-	SHADERS_API void Allocate_Decal_Resources(void);
-	void Real_Allocate_Decal_Resources(void);
-	SHADERS_API void Release_Decal_Resources(void);
+	void Allocate_Decal_Resources(void);
+	void Release_Decal_Resources(void);
 protected:
 	void Save_LDD_Variables(ChunkSaveClass & csave);
 	void Save_Static_Objects(ChunkSaveClass & csave);
@@ -395,7 +387,7 @@ protected:
 	float SunPitch;
 	float SunYaw;
 	LightClass *SunLight;
-	SHADERS_API static bool AllowCollisionFlags[NUM_COLLISION_FLAGS];
+	static bool AllowCollisionFlags[NUM_COLLISION_FLAGS];
 	int DynamicPolyBudget;
 	int StaticPolyBudget;
 	RefMultiListClass<PhysClass> ObjList;
@@ -410,7 +402,11 @@ protected:
 	bool UpdateOnlyVisibleObjects;
 	unsigned CurrentFrameNumber;
 private:
-	SHADERS_API static REF_DECL3(TheScene, PhysicsSceneClass*);
+#ifndef W3DVIEWER
+	SCRIPTS_API static REF_DECL(PhysicsSceneClass*, TheScene);
+#else
+	static PhysicsSceneClass *TheScene;
+#endif
 	friend class WW3D;
 	friend class VisOptimizationContextClass;
 }; // 792, WIN: 700

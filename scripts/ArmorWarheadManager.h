@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,8 @@
 #endif
 #include "engine_string.h"
 #include "datasafe.h"
+typedef	unsigned int	ArmorType;
+typedef	unsigned int	WarheadType;
 class SCRIPTS_API ArmorWarheadManager
 {
 public:

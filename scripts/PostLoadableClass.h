@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,7 +12,7 @@
 #ifndef TT_INCLUDE__POSTLOADABLECLASS_H
 #define TT_INCLUDE__POSTLOADABLECLASS_H
 
-class PostLoadableClass
+class SCRIPTS_API PostLoadableClass
 {
 public:
 	PostLoadableClass(void) : IsPostLoadRegistered(false)						{ }
@@ -22,6 +22,6 @@ public:
 	void									Set_Post_Load_Registered(bool onoff)	{ IsPostLoadRegistered = onoff; }
 private:
 	bool									IsPostLoadRegistered;
-};
+}; // 0008
 
 #endif

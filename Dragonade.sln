@@ -1,10 +1,15 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2012 for Windows Desktop
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scripts", "scripts\scripts.vcxproj", "{9B549C98-0BF4-4092-AE2A-AD7F780F8405}"
+	ProjectSection(ProjectDependencies) = postProject
+		{6636E311-E860-4F52-9D23-FE38E38D6020} = {6636E311-E860-4F52-9D23-FE38E38D6020}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MemoryManager", "MemoryManager\MemoryManager.vcxproj", "{2FEF1C76-9E4A-4921-B2D3-E536DA918810}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example\example.vcxproj", "{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shared", "shared\shared.vcxproj", "{6636E311-E860-4F52-9D23-FE38E38D6020}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +29,10 @@ Global
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Debug|Win32.Build.0 = Debug|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.ActiveCfg = Release|Win32
 		{214EAE6B-D3A6-4D46-9964-51736E3CBCAB}.Release|Win32.Build.0 = Release|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.ActiveCfg = Debug|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Debug|Win32.Build.0 = Debug|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.ActiveCfg = Release|Win32
+		{6636E311-E860-4F52-9D23-FE38E38D6020}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

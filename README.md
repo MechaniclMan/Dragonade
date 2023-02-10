@@ -1,4 +1,4 @@
-Dragonade 1.4
+Dragonade 1.5
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -14,8 +14,8 @@ ExEric3, providing hosting and test servers.
 
 Installation:
 
-1. Download and install the latest server version of scripts.dll from http://www.tiberiantechnologies.org/downloads. 
-   Note that DA was designed to work with Scripts 4.0. It will not work with earlier versions and may or may not work with later versions.
+1. Download and install the latest server version of TT from http://www.tiberiantechnologies.org/downloads. 
+   Note that DA was designed to work with TT 4.1. It will not work with earlier versions and may or may not work with later versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
@@ -24,6 +24,21 @@ Installation:
 
 
 Update History:
+
+
+Version 1.5:
+  Additions:
+   - Updated to TT 4.1.
+   - Updated to Visual Studio 2012.
+
+  Changes:
+   - Players can now donate all their credits to a teammate by using "!donate <player>", i.e. without specifying an amount.
+  
+  Bug Fixes:
+   - Fixed the da.ini spawn character settings breaking the spawn character settings in leveledit and tt.ini.
+   - Visceroids now have a firing animation.
+   - Fixed the invisible blockers in Domination mode sometimes being visible.
+
 
 Version 1.4:
   Additions:

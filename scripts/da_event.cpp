@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -35,7 +35,6 @@ DynamicVectorClass<DAEventStruct*> DAEventManager::Events[DAEvent::MAX];
 DynamicVectorClass<DAObjectEventStruct*> DAEventManager::ObjectEvents[DAObjectEvent::MAX];
 DynamicVectorClass<DAEventTimerStruct*> DAEventManager::Timers;
 bool DAEventManager::IsSoldierReInit = false;
-int DAEventManager::AddOccupantSeat = -1;
 
 void DAEventManager::Register_Event(DAEventClass *Base,DAEvent::Type Type,int Priority) {
 	for (int i = 0;i < Events[Type].Count();i++) {
@@ -270,7 +269,6 @@ void DAEventManager::Level_Loaded_Event() {
 	for (int i = 0;i < Events[DAEvent::LEVELLOADED].Count();i++) {
 		Events[DAEvent::LEVELLOADED][i]->Base->Level_Loaded_Event();
 	}
-	AddOccupantSeat = -1;
 }
 
 void DAEventManager::Remix_Event() {
@@ -472,42 +470,13 @@ void DAEventManager::Team_Change_Request_Event(int ID) {
 	}
 }
 
-void DAEventManager::Transition_Check_Event(TransitionInstanceClass *Transition,SoldierGameObj *Soldier) {
-	VehicleGameObj *Vehicle = Transition->Get_Vehicle();
-	if (!Vehicle || Soldier->Get_Vehicle() == Vehicle) { //Ladder or exiting vehicle.
-		Transition->Start(Soldier);
-		return;
-	}
-	int Seat = Find_Empty_Vehicle_Seat(Vehicle);
-	if (Seat != -1) {
-		for (int i = 0;i < Events[DAEvent::VEHICLEENTRYREQUEST].Count();i++) {
-			if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Soldier->Get_Player(),Seat)) {
-				return;
-			}
-		}
-		if (Seat >= Vehicle->Get_Definition().Get_Seat_Count() || Seat < 0 || Vehicle->Get_Occupant(Seat)) {
-			return;
-		}
-		else {
-			AddOccupantSeat = Seat;
-		}
-		Transition->Start(Soldier);
-	}
-}
-
-void DAEventManager::Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier) {
-	if (!Soldier->Get_Vehicle()) {
-		if (AddOccupantSeat == -1) {
-			AddOccupantSeat = Find_Empty_Vehicle_Seat(Vehicle);
-		}
-		if (AddOccupantSeat != -1 && !Vehicle->Get_Occupant(AddOccupantSeat)) {
-			Vehicle->Add_Occupant(Soldier,AddOccupantSeat);
-			AddOccupantSeat = -1;
-			if (!Vehicle->Get_Driver()) {
-				Commands->Enable_Engine(Vehicle,false);
-			}
+bool DAEventManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
+	for (int i = 0;i < Events[DAEvent::VEHICLEENTRYREQUEST].Count();i++) {
+		if (!Events[DAEvent::VEHICLEENTRYREQUEST][i]->Base->Vehicle_Entry_Request_Event(Vehicle,Player,Seat)) {
+			return false;
 		}
 	}
+	return true;
 }
 
 bool DAEventManager::PowerUp_Grant_Request_Event(SmartGameObj *Grantee,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {

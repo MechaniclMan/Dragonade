@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2011 Tiberian Technologies
+	Copyright 2014 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,7 @@
 #include "Rect.h"
 #include "DataSafe.h"
 #include "Vector3.h"
-class	AmmoDefinitionClass : public DefinitionClass {
+class AmmoDefinitionClass : public DefinitionClass {
 public:
 	enum {
 		AMMO_TYPE_NORMAL,
@@ -93,6 +93,13 @@ public:
 	Vector2			IconOffset;
 	float			GrenadeSafetyTime;
 	bool            C4Animation;
+
+#if (PARAM_EDITING_ON) || (DDBEDIT)
+    Vector3 ProjectileExtent;
+#else
+    SafeDataClass<Vector3> ProjectileExtent;
+#endif
+
 	friend class PresetDump;
 }; // 0110
 
@@ -173,6 +180,7 @@ public:
 	float CameraShakeIntensity;
 	float CameraShakeRadius;
 	float CameraShakeDuration;
+	float CollisionDamageMultiplier;
 	ExplosionDefinitionClass();
 	virtual ~ExplosionDefinitionClass();
 	virtual const PersistFactoryClass &Get_Factory() const;

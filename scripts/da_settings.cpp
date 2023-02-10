@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Settings Manager
-	Copyright 2013 Whitedragon, Tiberian Technologies
+	Copyright 2014 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -161,10 +161,10 @@ void DASettingsClass::Get_Vector3(Vector3 &Buffer,const char *Section1,const cha
 }
 
 INISection *DASettingsClass::Get_Section(const char *Section) const {
-	if (INISection *Sect = INI->Get_Section(StringFormat("%s_%s",DAGameManager::Get_Map(),Section))) {
+	if (INISection *Sect = INI->Find_Section(StringFormat("%s_%s",DAGameManager::Get_Map(),Section))) {
 		return Sect;
 	}
-	return INI->Get_Section(Section);
+	return INI->Find_Section(Section);
 }
 
 
