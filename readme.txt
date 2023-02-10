@@ -1,4 +1,4 @@
-Dragonade 1.0
+Dragonade 1.0.1
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,5 +25,13 @@ Installation:
 
 Update History:
 
+Version 1.0.1:
+  Bug Fixes:
+   - Added missing cPlayer exports that would cause some plugins to not load correctly.
+   - Fixed crash that occurred on certain fan maps with Tiberium Silos.
+   - Fixed one of the examples in the example plugin not working.
+
 Version 1.0:
-  - Initial release
+   - Initial release
+
+

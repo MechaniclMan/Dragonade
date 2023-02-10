@@ -57,7 +57,7 @@ public:
 private:
 	__declspec(deprecated("Replaced by Kill_Received.")) virtual void Killed(GameObject *obj,GameObject *Killer) { }
 	__declspec(deprecated("Replaced by Damage_Received.")) virtual void Damaged(GameObject *obj,GameObject *Damager,float Damage) { }
-	__declspec(deprecated("Replaced by Init.")) virtual void Created(GameObject *obj) { } //Override Init instead to get around the double created bug.
+	__declspec(deprecated("Replaced by Init.")) virtual void Created(GameObject *obj) { }
 	DA_API __declspec(deprecated("Replaced by Get_Owner")) virtual GameObject *Owner();
 	DA_API __declspec(deprecated("Reserved for internal use. Use Init instead.")) virtual void Attach(GameObject *obj);
 	DA_API __declspec(deprecated("Reserved for internal use. Use destructor instead.")) virtual void Detach(GameObject *obj);

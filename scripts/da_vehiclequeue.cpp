@@ -88,7 +88,7 @@ void DAVehicleQueueGameFeatureClass::Level_Loaded_Event() {
 	//Take over spawning of the harvesters.
 	BaseControllerClass *Base = BaseControllerClass::Find_Base(0);
 	RefineryGameObj *Ref = (RefineryGameObj*)Base->Find_Building(BuildingConstants::TYPE_REFINERY);
-	if (Ref && Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY)) {
+	if (Ref && Ref->Get_Harvester_Def_ID() && Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY)) {
 		Ref->Block_Harvester_Spawn();
 		Ref->Destroy_Harvester();
 		Spawn_Vehicle(0,0,(VehicleGameObjDef*)Find_Definition(Ref->Get_Harvester_Def_ID()),0);
@@ -96,7 +96,7 @@ void DAVehicleQueueGameFeatureClass::Level_Loaded_Event() {
 
 	Base = BaseControllerClass::Find_Base(1);
 	Ref = (RefineryGameObj*)Base->Find_Building(BuildingConstants::TYPE_REFINERY);
-	if (Ref && Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY)) {
+	if (Ref && Ref->Get_Harvester_Def_ID() && Base->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY)) {
 		Ref->Block_Harvester_Spawn();
 		Ref->Destroy_Harvester();
 		Spawn_Vehicle(1,0,(VehicleGameObjDef*)Find_Definition(Ref->Get_Harvester_Def_ID()),0);

@@ -74,8 +74,8 @@ public:
 	void Get_Player_String(int id,WideStringClass &str,bool b);
 	void Increment_Kills();
 	void Increment_Deaths();
-	void Set_Kills(int kills);
-	void Set_Deaths(int deaths);
+	SCRIPTS_API void Set_Kills(int kills);
+	SCRIPTS_API void Set_Deaths(int deaths);
 	void Set_Fps(int _fps) { Fps = _fps; }
 	bool Get_Is_Active() const { return IsActive; }
 	bool Is_Human() const { return PlayerId >= 0; }

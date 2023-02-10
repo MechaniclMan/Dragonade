@@ -1014,12 +1014,6 @@ void DAEventManager::Init() {
 
 	static DAEventConnectionAcceptanceFilterClass ConnFilter;
 	addConnectionAcceptanceFilter(&ConnFilter);
-
-	HINSTANCE Handle = LoadLibrary("da.dll");
-	if (!Handle) {
-		MessageBox(NULL,"da.dll was not found. Exiting FDS.","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
-		ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
-	}
 }
 
 

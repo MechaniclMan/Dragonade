@@ -20,6 +20,7 @@
 #include "da_settings.h"
 #include "da_translation.h"
 #include "da_vehicle.h"
+#include "GameObjManager.h"
 
 /*
 The following are examples on how to use some of the core sytems in DA:
@@ -202,8 +203,13 @@ bool DAExampleGameModeClass::Damage_Request_Event(DamageableGameObj *Victim,Offe
 }
 
 void DAExampleGameModeClass::Object_Created_Event(GameObject *obj) {
-	if (((VehicleGameObj*)obj)->Get_Lock_Owner()) { //This event only triggers on vehicles, so it's safe to assume the object is a VehicleGameObj.
-		((VehicleGameObj*)obj)->Add_Occupant((SoldierGameObj*)((VehicleGameObj*)obj)->Get_Lock_Owner(),0); //Put the player in their newly created vehicle.
+	Start_Timer(1,0.1f,false,obj->Get_ID()); //Start a timer with the ID of the gameobject as the data.
+}
+
+void DAExampleGameModeClass::Timer_Expired(int Number,unsigned int Data) {
+	VehicleGameObj *Vehicle = (VehicleGameObj*)GameObjManager::Find_SmartGameObj(Data); //Turn the ID back into a gameobject.
+	if (Vehicle && Vehicle->Get_Lock_Owner()) { //Just in case.
+		Vehicle->Add_Occupant((SoldierGameObj*)Vehicle->Get_Lock_Owner(),0); //Force the purchaser of the vehicle into it.
 	}
 }
 

@@ -230,6 +230,12 @@ void DA::Init() {
 	Verbose_Help_File();
 
 	Commands->Get_Random_Int = Get_Random_Int;
+
+	HINSTANCE Handle = LoadLibrary("da.dll");
+	if (!Handle) {
+		MessageBox(NULL,"da.dll was not found. Exiting FDS.","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
+		ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
+	}
 }
 
 void DA::Shutdown() {

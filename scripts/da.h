@@ -17,7 +17,7 @@
 #include "da_string.h"
 #include "da_token.h"
 
-#define DA_VERSION "1.0"
+#define DA_VERSION "1.0.1"
 
 class cPlayer;
 class SoldierGameObj;

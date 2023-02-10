@@ -27,6 +27,7 @@ class DAExampleGameModeClass : public DAEventClass, public DAGameModeClass {
 	virtual bool Add_Weapon_Request_Event(SoldierGameObj *Soldier,const WeaponDefinitionClass *Weapon);
 	virtual bool Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
 	virtual void Object_Created_Event(GameObject *obj);
+	virtual void Timer_Expired(int Number,unsigned int Data);
 };
 
 //To use the player data manager you create a class that inherits from DAPlayerDataClass and use that class with DAPlayerDataManagerClass.
