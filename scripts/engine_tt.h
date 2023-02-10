@@ -183,6 +183,8 @@ typedef void (*ftup) (GameObject *player,GameObject *obj);
 typedef void (*fvu) (GameObject *obj);
 typedef void (*fvup) (GameObject *player,GameObject *obj);
 typedef void (*schn) (GameObject *obj);
+typedef uint32 (*gpd) (const Vector3 &start, const Vector3 &dest, PathfindDistanceCallback callback, SmartGameObj *pathObj, void *data);
+typedef bool (*cgpd) (uint32 id);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -365,6 +367,10 @@ SCRIPTS_API extern ftup Force_Turret_Update_Player;
 SCRIPTS_API extern fvu Force_Velocity_Update;
 SCRIPTS_API extern fvup Force_Velocity_Update_Player;
 SCRIPTS_API extern schn Set_Camera_Host_Network;
+SCRIPTS_API extern gpd Get_Pathfind_Distance; // Returns > 0 when succusful. May trigger callback function straight away. pathObj must be a vehicle or a soldier
+SCRIPTS_API extern cgpd Cancel_Get_Pathfind_Distance; // Cancels a pathfind distance request. Use the result from Get_Pathfind_Distance to cancel
+
+
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:

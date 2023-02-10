@@ -19,7 +19,6 @@
 #include "GameObjManager.h"
 #include "MoveablePhysClass.h"
 #include "engine_tt.h"
-#include "cTeam.h"
 #include "PhysicsSceneClass.h"
 #include "physcoltest.h"
 #include "VehicleGameObj.h"
@@ -736,7 +735,7 @@ void JMG_Bear_Hunter_Game_Control::Timer_Expired(GameObject *obj,int number)
 					Commands->Fade_Background_Music("SpecForce_Moments01.mp3",5000,5000);
 				}
 			}
-			else if (!easTowers[0].activeTime && alarmSwitchActive)
+			else if (alarmSwitchActive)
 			{
 				alarmSwitchActive = false;
 				sprintf(currentSong,atCabin ? "03-ammoclip.mp3" : "SpecForce_Sneak_02.mp3");
@@ -1131,8 +1130,7 @@ void JMG_Bear_Hunter_Game_Control::Timer_Expired(GameObject *obj,int number)
 					int deerCount = JmgUtility::MathClampInt(3+(int)(0.33f*Get_Player_Count()),3,25);
 					for (int x = 0;x < deerCount;x++)
 					{
-						GameObject *tinyDeer = Commands->Find_Object(JMG_Bear_Hunter_Golden_Deer_Statue::tinyDeerIds[x]);
-						if (tinyDeer)
+						if (Commands->Find_Object(JMG_Bear_Hunter_Golden_Deer_Statue::tinyDeerIds[x]))
 							continue;
 						Vector3 playerPos = Commands->Get_Position(statuePlayer);
 						if (BearHunterGameControlSystem.getRandomPosition(&playerPos,500.0f,2500.0f))
@@ -1387,7 +1385,7 @@ void JMG_Bear_Hunter_Game_Control::Timer_Expired(GameObject *obj,int number)
 		for (int x = 0;x < 5;x++)
 		{
 			GameObject *ai = Commands->Find_Object(JMG_Bear_Hunter_Engineer_AI::engineerIds[x]);
-			if (!ai && (JMG_Bear_Hunter_Engineer_AI::engineerMode[x] || (!JMG_Bear_Hunter_Engineer_AI::engineerMode[x] && !engineerSpawnedOnce[x])))
+			if (!ai && (JMG_Bear_Hunter_Engineer_AI::engineerMode[x] || !engineerSpawnedOnce[x]))
 			{
 				Vector3 createPosition = engineerSpawnLocations[x];
 				if (JMG_Bear_Hunter_Engineer_AI::engineerMode[x])
@@ -1693,7 +1691,6 @@ void JMG_Bear_Hunter_Game_Control::Custom(GameObject *obj,int message,int param,
 			GameObject *switchObj = Commands->Find_Object(easTowers[0].id);
 			if (switchObj)
 			{
-				Vector3 switchPos = Commands->Get_Position(switchObj);
 				if (easTowers[0].activeTime)
 				{
 					smoothFade = true;
@@ -2263,7 +2260,6 @@ void JMG_Bear_Hunt_Mutant_Attacker::Timer_Expired(GameObject *obj,int number)
 				else
 				{
 					stuckCount = 40;
-					Vector3 pos = Commands->Get_Position(obj);
 					pos.Z += 1.25f;
 					MoveablePhysClass *mphys = obj->As_PhysicalGameObj() ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 					if (mphys && mphys->Can_Teleport(Matrix3D(pos)))
@@ -2465,6 +2461,7 @@ void JMG_Security_Camera_Behavior::Created(GameObject *obj)
 	}
 	else
 		floodLightId = 0;
+	stealthModeOverride = Get_Int_Parameter("StealthModeOverride");
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Start_Timer(obj,this,0.25f,1);
@@ -2472,6 +2469,8 @@ void JMG_Security_Camera_Behavior::Created(GameObject *obj)
 void JMG_Security_Camera_Behavior::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Security_Camera_Behavior_Ignore"))
+		return;
+	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	int seenID = Commands->Get_ID(seen);
 	if (!EnemyID)
@@ -3320,7 +3319,6 @@ void JMG_Bear_Hunt_Final_Boss::Timer_Expired(GameObject *obj,int number)
 			Commands->Start_Timer(obj,this,0.1f,1);
 		else
 		{
-			GameObject *jumper = Commands->Find_Object(jumperId);
 			if (jumper)
 				Commands->Destroy_Object(jumper);
 			Set_Skin(obj,"BossRabbitHealth");
@@ -3344,10 +3342,10 @@ void JMG_Bear_Hunt_Final_Boss::Timer_Expired(GameObject *obj,int number)
 				sprintf(Anim,"%s.%s",ModelName,ModelName);
 				Commands->Set_Animation(light,Anim,true,0,AnimationFrame,-1,false);
 				char bonename[32];
-				for (int x = 0;x < 2;x++)
+				for (int y = 0;y < 2;y++)
 				{
 					GameObject *lightEffect = Commands->Create_Object("Warning_Light_EffectN",Commands->Get_Position(light));
-					sprintf(bonename,"LightPos%d",x+1);
+					sprintf(bonename,"LightPos%d",y+1);
 					Commands->Attach_To_Object_Bone(lightEffect,light,bonename);
 				}
 			}
@@ -3513,7 +3511,7 @@ void JMG_Bear_Hunt_Final_Boss::ChooseTarget(GameObject *obj,Vector3 pos,GameObje
 {
 	if (!attackingPlayer)
 	{
-		Vector3 pos = Commands->Get_Position(obj);
+		pos = Commands->Get_Position(obj);
 		GameObject *closestStar = NULL;
 		float closestDist = 0;
 		for (int x = 0;x < maxTotalBearHunterPlayerAssistAI;x++)
@@ -4232,11 +4230,8 @@ void JMG_Bear_Hunter_Alarm_Switch::Custom(GameObject *obj,int message,int param,
 	if (message == Get_Int_Parameter("AlarmTriggerMessage") && param && switchPosition == 1)
 	{
 		waitingToDeactivate = false;
-		if (param)
-		{
-			UpdateTower(2);
-			Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("AlarmTriggerMessage"),1,(float)param);
-		}
+		UpdateTower(2);
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("AlarmTriggerMessage"),1,(float)param);
 		GameObject *notifyObject = Commands->Find_Object(Get_Int_Parameter("NotifyId"));
 		if (notifyObject)
 			Commands->Send_Custom_Event(obj,notifyObject,Get_Int_Parameter("NotifyMessage"),param,0);
@@ -7408,7 +7403,6 @@ void JMG_Bear_Hunt_Final_Boss_Support::Timer_Expired(GameObject *obj,int number)
 			Commands->Start_Timer(obj,this,0.1f,1);
 		else
 		{
-			GameObject *jumper = Commands->Find_Object(jumperId);
 			if (jumper)
 				Commands->Destroy_Object(jumper);
 			Set_Skin(obj,"BossRabbitHealth");
@@ -7813,7 +7807,7 @@ ScriptRegistrant<JMG_Bear_Hunter_Game_Control> JMG_Bear_Hunter_Game_Control_Regi
 ScriptRegistrant<JMG_Rp2_Hostile_Mutant_AI> JMG_Rp2_Hostile_Mutant_AI_Registrant("JMG_Rp2_Hostile_Mutant_AI","");
 ScriptRegistrant<JMG_Bear_Hunt_Mutant_Attacker> JMG_Bear_Hunt_Mutant_Attacker_Registrant("JMG_Bear_Hunt_Mutant_Attacker","Speed:float");
 ScriptRegistrant<JMG_Bear_Hunter_Animal_Control> JMG_Bear_Hunter_Animal_Control_Registrant("JMG_Bear_Hunter_Animal_Control","");
-ScriptRegistrant<JMG_Security_Camera_Behavior> JMG_Security_Camera_Behavior_Registrant("JMG_Security_Camera_Behavior","Angle:float,Alarm_ID=0:int,Is_Gun=1:int,Delay=0:float,Alarm_Message=0:int,Alarm_Sound=Beep:string,UpdateRateMultiplier=1.0:float,IdleAimZAngleModifier=0.0:float,FloodLightPreset=null:string,Power_Message=0:int");
+ScriptRegistrant<JMG_Security_Camera_Behavior> JMG_Security_Camera_Behavior_Registrant("JMG_Security_Camera_Behavior","Angle:float,Alarm_ID=0:int,Is_Gun=1:int,Delay=0:float,Alarm_Message=0:int,Alarm_Sound=Beep:string,UpdateRateMultiplier=1.0:float,IdleAimZAngleModifier=0.0:float,FloodLightPreset=null:string,Power_Message=0:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Bear_Hunt_Mutant_Cat_Explosion> JMG_Bear_Hunt_Mutant_Cat_Explosion_Registrant("JMG_Bear_Hunt_Mutant_Cat_Explosion","KillSelfExplosion:string,KilledExplosion:string");
 ScriptRegistrant<JMG_Bear_Hunter_President_Controller> JMG_Bear_Hunter_President_Controller_Registrant("JMG_Bear_Hunter_President_Controller","");
 ScriptRegistrant<JMG_Bear_Hunter_Turret_Death_Alert> JMG_Bear_Hunter_Turret_Death_Alert_Registrant("JMG_Bear_Hunter_Turret_Death_Alert","");

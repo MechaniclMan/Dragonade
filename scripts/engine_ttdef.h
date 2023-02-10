@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -22,8 +22,8 @@ enum TextMessageEnum
 	TEXT_MESSAGE_PUBLIC,
 	TEXT_MESSAGE_TEAM,
 	TEXT_MESSAGE_PRIVATE,
-	TEXT_MESSAGE_TMSG, //special extra value for the TMSG console command
-	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks. //DA
+	TEXT_MESSAGE_TMSG, //Special extra value for the TMSG console command.
+	TEXT_MESSAGE_KEYHOOK, //For chat commands triggered by keyhooks.
 };
 enum AnnouncementEnum
 {
@@ -70,4 +70,60 @@ struct ShaderNotifyStruct {
 #define FOG_EXP 1 //Set_Fog_Density applies to this mode
 #define FOG_EXP2 2 //Set_Fog_Density applies to this mode
 #define FOG_LINEAR 3 //This is the default if you are using fog
+
+enum PathfindDistanceResult
+{
+	PATHFIND_DISTANCE_INVALID_RESULT = -1,
+	PATHFIND_DISTANCE_RESULT_OK = 0,
+	PATHFIND_DISTANCE_RESULT_CANCELED,
+	PATHFIND_DISTANCE_RESULT_INVALID_START_POS,
+	PATHFIND_DISTANCE_RESULT_INVALID_DEST_POS,
+	PATHFIND_DISTANCE_RESULT_NO_PATH,
+	PATHFIND_DISTANCE_RESULT_COUNT
+};
+
+struct PathfindDistanceRequest;
+
+typedef void(*PathfindDistanceCallback)(const PathfindDistanceRequest &result);
+class PathSolveClass;
+struct PathfindDistanceRequest
+{
+	PathfindDistanceRequest() :
+		Id(0), Start(), Dest(), PathSolver(nullptr), Result(PATHFIND_DISTANCE_INVALID_RESULT), Distance(0.0f), Callback(nullptr), Data(nullptr)
+	{
+
+	}
+
+	PathfindDistanceRequest(const Vector3 &start, const Vector3 &dest, PathfindDistanceCallback callback, void *data) :
+		Id(0), Start(start), Dest(dest), PathSolver(nullptr), Result(PATHFIND_DISTANCE_INVALID_RESULT), Distance(0.0f), Callback(callback), Data(data)
+	{
+
+	}
+
+	bool operator==(const PathfindDistanceRequest &other) const
+	{
+		return false;
+	}
+
+	bool operator!=(const PathfindDistanceRequest &other) const
+	{
+		return true;
+	}
+
+	void Do_Callback()
+	{
+		PathSolver = nullptr;
+		Callback((*this));
+	}
+
+	uint32 Id;
+	Vector3 Start;
+	Vector3 Dest;
+	PathSolveClass *PathSolver;
+	PathfindDistanceResult Result;
+	float Distance;
+	PathfindDistanceCallback Callback;
+	void *Data;
+};
+
 #endif

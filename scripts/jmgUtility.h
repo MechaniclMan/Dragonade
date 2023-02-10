@@ -8,6 +8,7 @@
 #include "SoldierGameObj.h"
 #include "PhysicsSceneClass.h"
 #include "MoveablePhysClass.h"
+#include "VehicleGameObj.h"
 #define PI 3.14159265f
 #define PI180 PI/180
 
@@ -729,6 +730,22 @@ public:
 		if (360-abs(Deg1-Deg2) <= MaxDiff)
 			return true;
 		return false;
+	}
+	static bool CanSeeStealth(int stealthModeOverride,GameObject *obj,GameObject *seen)
+	{
+		if (stealthModeOverride == -1)
+			return false;
+		if (!stealthModeOverride && seen->As_SmartGameObj() && seen->As_SmartGameObj()->Is_Stealthed())
+		{
+			float dist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
+			if (seen->As_SoldierGameObj() && dist > seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance()*seen->As_SoldierGameObj()->Get_Stealth_Fade_Distance())
+				return false;
+			else if (seen->As_VehicleGameObj() && dist > seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance()*seen->As_VehicleGameObj()->Get_Stealth_Fade_Distance())
+				return false;	
+			else if (dist > seen->As_SmartGameObj()->Get_Stealth_Fade_Distance()*seen->As_SmartGameObj()->Get_Stealth_Fade_Distance())
+				return false;
+		}
+		return true;
 	}
 };
 
@@ -2120,6 +2137,7 @@ class JMG_Utility_Zone_Apply_Damage_On_Enter : public ScriptImpClass {
 * \WanderingAIGroupID - Group of points to wander between
 * \FlightHeight - How high it should stay above the points
 * \FireRange - Max range that it can use it's guns
+* \StealthModeOverride - 0 = normal stealth detection, 1 = sees everything, -1 = can't see any stealthed enemies
 * \author jgray
 * \ingroup JmgUtility
 */
@@ -2128,6 +2146,7 @@ class JMG_Utility_AI_Guardian_Aircraft : public ScriptImpClass {
 	int EnemyID;
 	int EnemyTimeOutTime;
 	Vector3 LastPos;
+	int stealthModeOverride;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 	void Enemy_Seen(GameObject *obj,GameObject *seen);
@@ -2938,6 +2957,7 @@ class JMG_Utility_Fainting_Soldier : public ScriptImpClass
 * \WanderSpeed - Speed the unit moves at 
 * \FireRange - Max range that it can use it's guns
 * \CheckBlocked - Whether to check if the target spot is blocked before firing
+* \StealthModeOverride - 0 = normal stealth detection, 1 = sees everything, -1 = can't see any stealthed enemies
 * \author jgray
 * \ingroup JmgUtility
 */
@@ -2946,6 +2966,7 @@ class JMG_Utility_AI_Guardian_Infantry : public ScriptImpClass {
 	int EnemyID;
 	int EnemyTimeOutTime;
 	Vector3 LastPos;
+	int stealthModeOverride;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 	void Enemy_Seen(GameObject *obj,GameObject *seen);
@@ -3755,6 +3776,10 @@ class JMG_Utility_AI_Goto_Enemy : public ScriptImpClass {
 			this->attack = attack;
 			this->overrideLocation = overrideLocation;
 		}
+		bool operator == (LastAction l)
+		{
+			return (targetId == l.targetId && JmgUtility::SimpleDistance(location,l.location) <= 0.0f && speed == l.speed && distance == l.distance && attack == l.attack && overrideLocation == l.overrideLocation);
+		}
 	};
 	LastAction lastAction;
 	aiState state;
@@ -3947,6 +3972,7 @@ class JMG_Utility_Custom_Damage_All_Soldiers_On_Team : public ScriptImpClass {
 * \CheckBlocked - Whether to check if the target spot is blocked before firing
 * \AimAtFeet - Should the vehicle aim at the feet of infantry
 * \TurnOffEngineOnArrival - Should the vehicle turn off its engine when it gets to its points (useful for wheeled vehicles that roll away)
+* \StealthModeOverride - 0 = normal stealth detection, 1 = sees everything, -1 = can't see any stealthed enemies
 * \author jgray
 * \ingroup JmgUtility
 */
@@ -3958,6 +3984,7 @@ class JMG_Utility_AI_Guardian_Vehicle : public ScriptImpClass {
 	Vector3 LastPos;
 	int backward;
 	int stuckTime;
+	int stealthModeOverride;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 	void Enemy_Seen(GameObject *obj,GameObject *seen);
@@ -4302,6 +4329,7 @@ class JMG_Utility_HUD_Count_Down : public ScriptImpClass {
 public:
 	struct SendCustomOnSecondNode
 	{
+		bool hasTriggered;
 		int triggerSecond;
 		int id;
 		int custom;
@@ -4310,6 +4338,7 @@ public:
 		struct SendCustomOnSecondNode *next;
 		SendCustomOnSecondNode(int triggerSecond,int id,int custom,int param,float delay)
 		{
+			this->hasTriggered = false;
 			this->triggerSecond = triggerSecond;
 			this->id = id;
 			this->custom = custom;
@@ -4326,7 +4355,7 @@ public:
 			sendCustomOnSecondController = new SendCustomOnSecondNode(triggerSecond,id,custom,param,delay);
 		while (current)
 		{
-			if (current->triggerSecond == triggerSecond)
+			if (triggerSecond == current->triggerSecond && id == current->id && custom == current->custom && param == current->param)
 			{
 				Console_Input("msg ERROR: A custom for this trigger second already exists!");
 				return;
@@ -4356,18 +4385,20 @@ private:
 	void Destroyed(GameObject *obj);
 	char *formatReminderString(const char *format,...);
 	
-	SendCustomOnSecondNode *FindSecondNode(int second)
+	void NodeSendCustom(GameObject *obj,int second)
 	{
 		if (!sendCustomOnSecondController)
-			return NULL;
+			return;
 		SendCustomOnSecondNode *current = sendCustomOnSecondController;
 		while (current)
 		{
-			if (current->triggerSecond == second)
-				return current;
+			if (current->triggerSecond == second && !current->hasTriggered)
+			{
+				current->hasTriggered = true;
+				Commands->Send_Custom_Event(obj,Commands->Find_Object(current->id),current->custom,current->param,current->delay);
+			}
 			current = current->next;
 		}
-		return NULL;
 	}
 	void CleanupSecondNodes()
 	{
@@ -4378,10 +4409,13 @@ private:
 			temp = temp->next;
 			delete die;
 		}
+		sendCustomOnSecondController = NULL;
 	}
 };
 /*!
-* \brief Sends a custom when TimeInSeconds (on JMG_Utility_HUD_Count_Down) matches the TriggerTime 
+* \brief Sends a custom when TimeInSeconds (on JMG_Utility_HUD_Count_Down) matches the TriggerTime, only will trigger once even if multiple JMG_Utility_HUD_Count_Downs are placed
+* \ Can be placed before JMG_Utility_HUD_Count_Down is placed.
+* \ If an object with JMG_Utility_HUD_Count_Down is destroyed all currently placed JMG_Utility_HUD_Count_Down_Send_Customs will be removed.
 * \TriggerTime - Time in which to send the custom
 * \ID - ID to send the custom to, if 0 it sends it to the object this script is attached too
 * \Custom - Custom to send
@@ -5061,6 +5095,7 @@ class JMG_Utility_Force_Player_Team_At_Gameover : public ScriptImpClass {
 * \FlightHeight - How high should the aircraft fly (use 0 if not an aircraft)
 * \TurnOffEngineOnArrival - Should the vehicle kill its engine when it arrives
 * \UseSecondaryAttack - Should the unit attack with its secondary fire instead
+* \StealthModeOverride - 0 = normal stealth detection, 1 = sees everything, -1 = can't see any stealthed enemies
 * \author jgray
 * \ingroup JmgUtility
 */
@@ -5073,6 +5108,7 @@ class JMG_Utility_AI_Guardian_Generic : public ScriptImpClass {
 	int EnemyTimeOutTime;
 	Vector3 LastPos;
 	bool primaryFire;
+	int stealthModeOverride;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 	void Enemy_Seen(GameObject *obj,GameObject *seen);

@@ -362,6 +362,8 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Force_Velocity_Update = (fvu)Address(tt,"Force_Velocity_Update");
 	Force_Velocity_Update_Player = (fvup)Address(tt,"Force_Velocity_Update_Player");
 	Set_Camera_Host_Network = (schn)Address(tt,"Set_Camera_Host_Network");
+	Get_Pathfind_Distance = (gpd)Address(tt,"Get_Pathfind_Distance");
+	Cancel_Get_Pathfind_Distance = (cgpd)Address(tt,"Cancel_Get_Pathfind_Distance");
 	
 	DA::Init();
 

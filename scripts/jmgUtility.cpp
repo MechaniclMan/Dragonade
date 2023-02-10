@@ -554,7 +554,7 @@ void JMG_Utility_AI_Engineer::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (!canFight)
 		return;
-	if (seen->As_SmartGameObj() && seen->As_SmartGameObj()->Is_Stealthed() && JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen)) > 900)
+	if (!JmgUtility::CanSeeStealth(0,obj,seen))
 		return;
 	if (targetId && targetUpdate)
 		return;
@@ -1140,18 +1140,15 @@ void JMG_Utility_AI_Vehicle::RunAttack(GameObject *obj,GameObject *target)
 		useAmmo = ammo;
 		lastHealth = Commands->Get_Health(target);
 		attacking = true;
-		Vector3 pos = Commands->Get_Position(target);
 		mypos = Commands->Get_Position(obj);
 		if (Get_Int_Parameter("FollowTarget")) 
 		{
 			moving = true;
-			ActionParamsStruct params;
 			AttackMove(obj,target,true,Vector3(),useAmmo,0.0f,false,Get_Float_Parameter("MaxRange"));
 		} 
 		else 
 		{
 			moving = false;
-			ActionParamsStruct params;
 			AttackMove(obj,target,false,currentAction.position,useAmmo,0.0f,false,Get_Float_Parameter("MaxRange"));
 		}
 		Commands->Start_Timer(obj,this,1.0f,3);
@@ -2461,6 +2458,7 @@ void JMG_Utility_AI_Guardian_Aircraft::Created(GameObject *obj)
 	EnemyID = 0;
 	EnemyTimeOutTime = 0;
 	LastPos = Commands->Get_Position(obj);
+	stealthModeOverride = Get_Int_Parameter("StealthModeOverride");
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Engine(obj,true);
 	Commands->Start_Timer(obj,this,1.0f,1);
@@ -2498,6 +2496,8 @@ void JMG_Utility_AI_Guardian_Aircraft::Timer_Expired(GameObject *obj,int number)
 void JMG_Utility_AI_Guardian_Aircraft::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	if (!EnemyID || !EnemyTimeOutTime)
 	{
@@ -3437,7 +3437,9 @@ void JMG_Utility_Teleport_On_Pickup::Custom(GameObject *obj,int message,int para
 		MoveablePhysClass *mphys = sender->As_PhysicalGameObj() ? sender->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 		if (mphys && mphys->Find_Teleport_Location(TargetPos,Get_Float_Parameter("MaxDistance"),&TargetPos))
 		{
+			Toggle_Fly_Mode(sender);
 			Commands->Set_Position(sender,TargetPos);
+			Toggle_Fly_Mode(sender);
 			Force_Position_Update(sender);
 			float facing = Get_Float_Parameter("Facing");
 			if (Is_Script_Attached(sender,"JMG_Utility_Delay_Then_Rotate_Camera"))
@@ -3936,6 +3938,7 @@ void JMG_Utility_AI_Guardian_Infantry::Created(GameObject *obj)
 	EnemyID = 0;
 	EnemyTimeOutTime = 0;
 	LastPos = Commands->Get_Position(obj);
+	stealthModeOverride = Get_Int_Parameter("StealthModeOverride");
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Engine(obj,true);
 	Commands->Start_Timer(obj,this,1.0f,1);
@@ -3975,6 +3978,8 @@ void JMG_Utility_AI_Guardian_Infantry::Timer_Expired(GameObject *obj,int number)
 void JMG_Utility_AI_Guardian_Infantry::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	if (!EnemyID || !EnemyTimeOutTime)
 	{
@@ -4453,8 +4458,10 @@ bool JMG_Utility_Zone_Teleport_To_Random_Wander_Point::Grab_Teleport_Spot(GameOb
 	MoveablePhysClass *mphys = enter->As_PhysicalGameObj() ? enter->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
 	{
+		Toggle_Fly_Mode(enter);
 		Commands->Set_Position(enter,targetPos);
 		Force_Position_Update(enter);
+		Toggle_Fly_Mode(enter);
 		char params[220];
 		sprintf(params,"0.1,%.2f",facing);
 		Commands->Attach_Script(enter,"JMG_Utility_Delay_Then_Rotate_Camera",params);
@@ -4483,8 +4490,10 @@ void JMG_Utility_Zone_Teleport_To_Random_Wander_Point_Attach::Timer_Expired(Game
 		MoveablePhysClass *mphys = obj->As_PhysicalGameObj() ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 		if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
 		{
+			Toggle_Fly_Mode(obj);
 			Commands->Set_Position(obj,targetPos);
 			Force_Position_Update(obj);
+			Toggle_Fly_Mode(obj);
 			char params[220];
 			sprintf(params,"0.1,%.2f",facing);
 			Commands->Attach_Script(obj,"JMG_Utility_Delay_Then_Rotate_Camera",params);
@@ -4680,8 +4689,10 @@ bool JMG_Utility_Custom_Teleport_Players_Outside_Range_To_Wanderpoints::Grab_Tel
 	MoveablePhysClass *mphys = player->As_PhysicalGameObj() ? player->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
 	if (mphys && mphys->Find_Teleport_Location(targetPos,safeTeleportDistance,&targetPos))
 	{
+		Toggle_Fly_Mode(player);
 		Commands->Set_Position(player,targetPos);
 		Force_Position_Update(player);
+		Toggle_Fly_Mode(player);
 		char params[220];
 		sprintf(params,"0.1,%.2f",facing);
 		Commands->Attach_Script(player,"JMG_Utility_Delay_Then_Rotate_Camera",params);
@@ -5853,6 +5864,7 @@ void JMG_Utility_AI_Guardian_Vehicle::Created(GameObject *obj)
 	EnemyID = 0;
 	EnemyTimeOutTime = 0;
 	LastPos = Commands->Get_Position(obj);
+	stealthModeOverride = Get_Int_Parameter("StealthModeOverride");
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Engine(obj,true);
 	Commands->Start_Timer(obj,this,1.0f,1);
@@ -5922,6 +5934,8 @@ void JMG_Utility_AI_Guardian_Vehicle::Timer_Expired(GameObject *obj,int number)
 void JMG_Utility_AI_Guardian_Vehicle::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	if (!EnemyID || !EnemyTimeOutTime)
 	{
@@ -6481,7 +6495,6 @@ JMG_Utility_HUD_Count_Down::SendCustomOnSecondNode *JMG_Utility_HUD_Count_Down::
 bool JMG_Utility_HUD_Count_Down::controllerPlaced = false;
 void JMG_Utility_HUD_Count_Down::Created(GameObject *obj)
 {
-	sendCustomOnSecondController = NULL;
 	seconds = Get_Int_Parameter("TimeInSeconds");
 	stringId = Get_Int_Parameter("StringID");
 	color = Get_Vector3_Parameter("Color");
@@ -6514,9 +6527,7 @@ void JMG_Utility_HUD_Count_Down::Timer_Expired(GameObject *obj,int number)
 				JmgUtility::SetHUDHelpText(stringId,formatReminderString(warningMessage,seconds/60,seconds/60 == 1 ? minuteSingular : minutePlural),color);
 			else if (seconds && (seconds <= 10 || seconds == 30 || seconds == 20))
 				JmgUtility::SetHUDHelpText(stringId,formatReminderString(warningMessage,seconds,seconds == 1 ? secondSingular : secondPlural),color);
-			SendCustomOnSecondNode *node = FindSecondNode(seconds);
-			if (node)
-				Commands->Send_Custom_Event(obj,Commands->Find_Object(node->id),node->custom,node->param,node->delay);
+			NodeSendCustom(obj,seconds);
 		}
 		Commands->Start_Timer(obj,this,1.0f,1);
 	}
@@ -7402,9 +7413,9 @@ void JMG_Utility_Send_Custom_When_No_More_Units_On_Team_Exist::Timer_Expired(Gam
 				{
 					if (debug)
 					{
-						char debug[220];
-						sprintf(debug,"msg %s",Commands->Get_Preset_Name(o));
-						Console_Input(debug);
+						char debugMsg[220];
+						sprintf(debugMsg,"msg %s",Commands->Get_Preset_Name(o));
+						Console_Input(debugMsg);
 					}
 					found = true;
 					break;
@@ -7727,6 +7738,7 @@ void JMG_Utility_AI_Guardian_Generic::Created(GameObject *obj)
 	EnemyID = 0;
 	EnemyTimeOutTime = 0;
 	LastPos = Commands->Get_Position(obj);
+	stealthModeOverride = Get_Int_Parameter("StealthModeOverride");
 	Commands->Enable_Enemy_Seen(obj,true);
 	Commands->Enable_Engine(obj,true);
 	Commands->Start_Timer(obj,this,1.0f,1);
@@ -7767,6 +7779,8 @@ void JMG_Utility_AI_Guardian_Generic::Timer_Expired(GameObject *obj,int number)
 void JMG_Utility_AI_Guardian_Generic::Enemy_Seen(GameObject *obj,GameObject *seen)
 {
 	if (Is_Script_Attached(seen,"JMG_Utility_AI_Guardian_Ignored"))
+		return;
+	if (!JmgUtility::CanSeeStealth(stealthModeOverride,obj,seen))
 		return;
 	if (!EnemyID || !EnemyTimeOutTime)
 	{
@@ -8894,7 +8908,6 @@ void JMG_Utility_Created_Set_Damage_And_Death_Points::Created(GameObject *obj)
 	if (points != -1)
 		Set_Damage_Points(obj,points);
 }
-
 bool JMG_Utility_Detect_AFK_Controller::controllerPlaced = false;
 bool JMG_Utility_Detect_AFK_Controller::isAFK[128] = {false};
 void JMG_Utility_Detect_AFK_Controller::Created(GameObject *obj)
@@ -9071,7 +9084,7 @@ ScriptRegistrant<JMG_Utility_Swimming_Infantry> JMG_Utility_Swimming_Infantry_Re
 ScriptRegistrant<JMG_Utility_Zone_Enable_Spawners_In_Range> JMG_Utility_Zone_Enable_Spawners_In_Range_Registrant("JMG_Utility_Zone_Enable_Spawners_In_Range","StartID:int,EndID:int,PlayerType=2:int,Enable=1:int,TriggerOnce=1:int");
 ScriptRegistrant<JMG_Utility_Display_Message_On_Vehicle_Enter> JMG_Utility_Display_Message_On_Vehicle_Enter_Registrant("JMG_Utility_Display_Message_On_Vehicle_Enter","StringId:int,MessageOverride=null:string,Color[R|G|B]=0.0 1.0 0.0:vector3,DriverOnly=1:int,ShowOnce=1:int,PlayerType=2:int");
 ScriptRegistrant<JMG_Utility_Zone_Apply_Damage_On_Enter> JMG_Utility_Zone_Apply_Damage_On_Enter_Registrant("JMG_Utility_Zone_Apply_Damage_On_Enter","ID:int,DamageAmount:float,Warhead=None:string,DamageOccupants=1:int,PlayerType=2:int,OnlyOnce=0:int");
-ScriptRegistrant<JMG_Utility_AI_Guardian_Aircraft> JMG_Utility_AI_Guardian_Aircraft_Registrant("JMG_Utility_AI_Guardian_Aircraft","WanderingAIGroupID:int,FlightHeight=25.0:float,FireRange=100.0:float,FaceTarget=1:int");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Aircraft> JMG_Utility_AI_Guardian_Aircraft_Registrant("JMG_Utility_AI_Guardian_Aircraft","WanderingAIGroupID:int,FlightHeight=25.0:float,FireRange=100.0:float,FaceTarget=1:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Utility_Switch_Weapon_While_Primary_Empty> JMG_Utility_Switch_Weapon_While_Primary_Empty_Registrant("JMG_Utility_Switch_Weapon_While_Primary_Empty","PrimaryWeapon=null:string,SecondaryWeapon=null:string,ReloadTime=0.0:float,PrimaryToSecondaryTime=-1.0:float,SecondaryToPrimaryTime=-1.0:float,IdlePrimaryAnim=null:string,IdleSecondaryAnim=null:string,PrimaryToSecondaryAnim=null:string,SecondaryToPrimaryAnim=null:string,PrimaryToSecondarySound=null:string,SecondaryToPrimarySound=null:string");
 ScriptRegistrant<JMG_Utility_Send_Custom_When_Near_Building> JMG_Utility_Send_Custom_When_Near_Building_Registrant("JMG_Utility_Send_Custom_When_Near_Building","SendCustomObjectID=0:int,NearToBuildingCustom:int,FarFromBuildingCustom:int,CloseToBuildingDistance=1.0:float,BuildingPlayerType=2:int,CheckDeadBuildings=1:int,CheckRate=0.25:float");
 ScriptRegistrant<JMG_Utility_AI_Engineer_Repair_Target> JMG_Utility_AI_Engineer_Repair_Target_Registrant("JMG_Utility_AI_Engineer_Repair_Target","");
@@ -9106,7 +9119,7 @@ ScriptRegistrant<JMG_Utility_Scale_Damage_Square_By_Player_Count> JMG_Utility_Sc
 ScriptRegistrant<JMG_Utility_Regen_HitPoints> JMG_Utility_Regen_HitPoints_Registrant("JMG_Utility_Regen_HitPoints","RegenHealth=1:int,HealthAmount=1.0:float,HealthPerPlayer=0.0:float,RegenArmor=1:int,ArmorAmount=1.0:float,ArmorPerPlayer=0.0:float,Rate=1.0:float,DamageDelay=0.0:float");
 ScriptRegistrant<JMG_Utility_Toggle_Flight_On_Delay> JMG_Utility_Toggle_Flight_On_Delay_Registrant("JMG_Utility_Toggle_Flight_On_Delay","Delay:float");
 ScriptRegistrant<JMG_Utility_Fainting_Soldier> JMG_Utility_Fainting_Soldier_Registrant("JMG_Utility_Fainting_Soldier","FaintAnimation:string,LayAnimation:string,StandAnimation:string,FaintSound=null:string,StandSound=null:string,ChangeArmorTypeWhenKnockedOut=0:int,ArmorTypeWhileKnockedOut=Blamo:string,TeamWhileKnockedOut=-2:int");
-ScriptRegistrant<JMG_Utility_AI_Guardian_Infantry> JMG_Utility_AI_Guardian_Infantry_Registrant("JMG_Utility_AI_Guardian_Infantry","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Infantry> JMG_Utility_AI_Guardian_Infantry_Registrant("JMG_Utility_AI_Guardian_Infantry","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Utility_Set_Innate_Max_Wander_Distance> JMG_Utility_Set_Innate_Max_Wander_Distance_Registrant("JMG_Utility_Set_Innate_Max_Wander_Distance","Distance:float");
 ScriptRegistrant<JMG_Utility_Switch_Weapon_To_Empty_Hands_Until_Custom> JMG_Utility_Switch_Weapon_To_Empty_Hands_Until_Custom_Registrant("JMG_Utility_Switch_Weapon_To_Empty_Hands_Until_Custom","Custom:int");
 ScriptRegistrant<JMG_Utility_Set_Skin_And_Shield_Type_On_Custom> JMG_Utility_Set_Skin_And_Shield_Type_On_Custom_Registrant("JMG_Utility_Set_Skin_And_Shield_Type_On_Custom","Custom:int,SkinType=None:string,ShieldType=None:string");
@@ -9158,7 +9171,7 @@ ScriptRegistrant<JMG_Utility_Grant_Key_On_Create> JMG_Utility_Grant_Key_On_Creat
 ScriptRegistrant<JMG_Utility_Custom_Send_Custom> JMG_Utility_Custom_Send_Custom_Registrant("JMG_Utility_Custom_Send_Custom","Custom:int,ID=0:int,SendCustom:int,Param:int,Delay:float");
 ScriptRegistrant<JMG_Utility_Damage_Unoccupied_Vehicle> JMG_Utility_Damage_Unoccupied_Vehicle_Registrant("JMG_Utility_Damage_Unoccupied_Vehicle","Rate=0.1:float,Delay=60.0:float,DecreaseTick=0.1:float,IncreaseTick=0.1:float,Damage=1.0:float,Warhead=None:string");
 ScriptRegistrant<JMG_Utility_Custom_Damage_All_Soldiers_On_Team> JMG_Utility_Custom_Damage_All_Soldiers_On_Team_Registrant("JMG_Utility_Custom_Damage_All_Soldiers_On_Team","Custom:int,Team:int,Damage:float,Warhead=None:string");
-ScriptRegistrant<JMG_Utility_AI_Guardian_Vehicle> JMG_Utility_AI_Guardian_Vehicle_Registrant("JMG_Utility_AI_Guardian_Vehicle","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int,AimAtFeet=1:int,TurnOffEngineOnArrival=1:int");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Vehicle> JMG_Utility_AI_Guardian_Vehicle_Registrant("JMG_Utility_AI_Guardian_Vehicle","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int,AimAtFeet=1:int,TurnOffEngineOnArrival=1:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Destroy_Closest_Model_To_Position> JMG_Utility_Custom_Destroy_Closest_Model_To_Position_Registrant("JMG_Utility_Custom_Destroy_Closest_Model_To_Position","Custom:int,Model:string,Position:Vector3,MaxDistance=0.0:float");
 ScriptRegistrant<JMG_Utility_Send_Custom_On_Deaths_Controller> JMG_Utility_Send_Custom_On_Deaths_Controller_Registrant("JMG_Utility_Send_Custom_On_Deaths_Controller","MaxDeaths=100:int,DeathReminder=25:int,UrgentDeathReminder=10:int,StringID=12628:int,ReminderMessage=%d %s^ only %d more %s allowed!:string,Delim=^:string,ReminderMessageOrder=0:int,DeathSingular=casualty:string,DeathPlural=casualties:string,RemainingSingular=death:string,RemainingPlural=deaths:string,ReminderColor=1.0 0.0 0.0:Vector3,ID=0:int,Custom=0:int,Param=0:int,Delay=0:int,ReminderCustom=0:int,AddDeathsWhenNoPlayers=0.0:float,NoPlayersAddDeathSaftyTime=0:int");
 ScriptRegistrant<JMG_Utility_Send_Custom_On_Deaths_Reporter> JMG_Utility_Send_Custom_On_Deaths_Reporter_Registrant("JMG_Utility_Send_Custom_On_Deaths_Reporter","");
@@ -9213,7 +9226,7 @@ ScriptRegistrant<JMG_Utility_Pickup_Attach_Script> JMG_Utility_Pickup_Attach_Scr
 ScriptRegistrant<JMG_Utility_Objective_System_Objective_Status_Update_Custom> JMG_Utility_Objective_System_Objective_Status_Update_Custom_Registrant("JMG_Utility_Objective_System_Objective_Status_Update_Custom","Custom:int,ObjectiveID:int,NewObjectiveStringID:int,NewObjectiveMarkerObjectID:int");
 ScriptRegistrant<JMG_Utility_Objective_System_Objective_Failed_Custom> JMG_Utility_Objective_System_Objective_Failed_Custom_Registrant("JMG_Utility_Objective_System_Objective_Failed_Custom","Custom:int,ObjectiveID:int");
 ScriptRegistrant<JMG_Utility_Force_Player_Team_At_Gameover> JMG_Utility_Force_Player_Team_At_Gameover_Registrant("JMG_Utility_Force_Player_Team_At_Gameover","Team:int");
-ScriptRegistrant<JMG_Utility_AI_Guardian_Generic> JMG_Utility_AI_Guardian_Generic_Registrant("JMG_Utility_AI_Guardian_Generic","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int,ArriveDistance=1.0:float,FlightHeight=0.0:float,TurnOffEngineOnArrival=1:int,UseSecondaryAttack=0:int");
+ScriptRegistrant<JMG_Utility_AI_Guardian_Generic> JMG_Utility_AI_Guardian_Generic_Registrant("JMG_Utility_AI_Guardian_Generic","WanderingAIGroupID:int,WanderSpeed=1.0:float,FireRange=100.0:float,FaceTarget=1:int,CheckBlocked=1:int,ArriveDistance=1.0:float,FlightHeight=0.0:float,TurnOffEngineOnArrival=1:int,UseSecondaryAttack=0:int,StealthModeOverride=0:int");
 ScriptRegistrant<JMG_Utility_Custom_Create_Object_In_Front_Of_Self> JMG_Utility_Custom_Create_Object_In_Front_Of_Self_Registrant("JMG_Utility_Custom_Create_Object_In_Front_Of_Self","Custom:int,PresetName:string,Distance:float,Height:float,Rotation:float");
 ScriptRegistrant<JMG_Utility_Send_Custom_When_No_More_Units_On_Team_Exist_Ignore> JMG_Utility_Send_Custom_When_No_More_Units_On_Team_Exist_Ignore_Registrant("JMG_Utility_Send_Custom_When_No_More_Units_On_Team_Exist_Ignore","Ignore:int");
 ScriptRegistrant<JMG_Utility_Custom_Damage_All_Vehicles_On_Team> JMG_Utility_Custom_Damage_All_Vehicles_On_Team_Registrant("JMG_Utility_Custom_Damage_All_Vehicles_On_Team","Custom:int,Team:int,Damage:float,Warhead=None:string");

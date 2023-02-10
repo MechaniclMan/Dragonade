@@ -767,7 +767,7 @@ void DB_Innate_Soldier::State_Act_Bullet_Heard(SoldierGameObj *obj, bool b)
 			SubState = "Crouch Walk To";
 			if (Get_Random_Pathfind_Spot(Position,6,&pos2))
 			{
-				Action_Goto_Location(obj,pos2,AI_STATE_SEARCH,1.0f,2.0f,1);
+				Action_Goto_Location(obj,pos2,AI_STATE_SEARCH,0.89999998f,2.0f,1);
 			}
 		}
 	}
@@ -787,7 +787,7 @@ void DB_Innate_Soldier::State_Act_Gunshot_Heard(SoldierGameObj *obj)
 		Vector3 pos = Position;
 		if (Get_Random_Pathfind_Spot(Position,6,&pos))
 		{
-			Action_Goto_Location_Facing(obj,pos,AI_STATE_SEARCH,Position,1.0f,2.0f,0);
+			Action_Goto_Location_Facing(obj,pos,AI_STATE_SEARCH,Position,0.89999998f,2.0f,0);
 		}
 		else
 		{
@@ -834,10 +834,9 @@ void DB_Innate_Soldier::State_Act_Attack(SoldierGameObj *obj)
 	{
 		//Select a random spot and then check if it will have a clear shot of the enemy object from that position.
 		//Do it up to 512 times and stop when it has 4 valid locations. Select the one closest to effective range.
-		Vector3 pos4;
 		do
 		{
-			pos4 = pos2;
+			Vector3 pos4 = pos2;
 			if (Get_Random_Pathfind_Spot(pos,(er+range)/2,&pos4))
 			{
 				float len = (pos4 - pos).Length() - er;
@@ -850,22 +849,14 @@ void DB_Innate_Soldier::State_Act_Attack(SoldierGameObj *obj)
 			}
 			count++;
 		} while (count < 512 && positionCount < 4);
-		/*if(!positionCount)
-		{
-			if(!Get_Random_Pathfind_Spot(pos,4,&pos4) && Can_Position_Target_Object(obj,pos2,(PhysicalGameObj *)target))
-			{
-				pos3 = pos2;
-			}
-		}*/
 	}
 	else
 	{
 		pos3 = pos2;
 	}
 	SubState = "Random Run Attack";
-	ActTime = 2.5f;
-	Action_Attack_Object(obj,(PhysicalGameObj *)target,range,false,pos3,0.5f);
-	//Action_Attack_Object(obj,(PhysicalGameObj *)target,range,(1.0f - Aggressiveness) > FreeRandom.Get_Float()*5.0f,pos3,0.5f);
+	ActTime = 3;
+	Action_Attack_Object(obj,(PhysicalGameObj *)target,range,(1.0f - Aggressiveness) > FreeRandom.Get_Float()*5.0f,pos3,0.5f);
 }
 void DB_Innate_Soldier::Action_Reset(SoldierGameObj *obj)
 {
@@ -911,7 +902,7 @@ void DB_Innate_Soldier::Action_Attack_Object(SoldierGameObj *obj, PhysicalGameOb
 	{
 		ActionParamsStruct params;
 		params.Set_Basic(Get_ID(),(float)StatePriorities[State],9000000,AI_STATE_COMBAT);
-		params.Set_Movement(pos,1.0f,distance,crouched);
+		params.Set_Movement(pos,0.89999998f,distance,crouched);
 		params.Set_Attack(target,range,FreeRandom.Get_Float() * 2.0f,true);
 		params.AttackCrouched = crouched;
 		params.AttackWanderAllowed = IsStationary ^ 1;

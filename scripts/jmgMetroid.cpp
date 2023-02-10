@@ -15,14 +15,11 @@
 #include "engine.h"
 #include "SoldierGameObj.h"
 #include "WeaponBagClass.h"
-#include "WeaponClass.h"
 #include "WeaponMgr.h"
 #include "GameObjManager.h"
 #include "MoveablePhysClass.h"
 #include "engine_tt.h"
-#include "cTeam.h"
 #include "PhysicsSceneClass.h"
-#include "physcoltest.h"
 #include "VehicleGameObj.h"
 
 #include "jmgUtility.h"
@@ -1557,7 +1554,7 @@ void JMG_Metroid_Boss_Turret::Enemy_Seen(GameObject *obj,GameObject *seen)
 	if (TargetID == IgnoreID)
 		return;
 	float TempDist = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
-	if (TempDist >= MinDistance && TempDist <= MaxDistance && (!SeenID || SeenID == TargetID || (SeenID && TempDist < TargetDistance)))
+	if (TempDist >= MinDistance && TempDist <= MaxDistance && (!SeenID || SeenID == TargetID || TempDist < TargetDistance))
 	{
 		TargetDistance = TempDist;
 		ClearTarget = Get_Int_Parameter("AttackTimer");
@@ -3321,6 +3318,7 @@ void JMG_Metroid_Kill_On_Damage_Amounts::Created(GameObject *obj)
 	char Delim = Get_Parameter("Delim")[0];
 	int StringLength = strlen(Get_Parameter("Values"));
 	char Value[2000];
+	sprintf(Value,"\0");
 	int strPos = 0;
 	int DamagePos = 0;
 	for (int x = 0;x < 256;x++)

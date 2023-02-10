@@ -783,6 +783,10 @@ public:
 			char debug[220];
 			sprintf(debug,"msg RenCometBustersScoreSystem ERROR: Could not open save files %sBetaCMBTPlayerRecords.tmp and %sCMBTPlayerRecords.txt for writting!",SavePath,SavePath);
 			Console_Input(debug);
+			if (SaveScores)
+				fclose(SaveScores);
+			if (SaveScores2)
+				fclose(SaveScores2);
 			return;
 		}
 		while (Current)
@@ -1581,10 +1585,7 @@ public:
 				{
 					Commands->Send_Custom_Event(Other,Other,7043453,25,0.0f);
 					if (Commands->Get_Health(Hitter))
-					{
-						OtherObj = OtherObj->next;
 						return false;
-					}
 				}
 			}
 			else

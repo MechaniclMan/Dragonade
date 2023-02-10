@@ -2294,6 +2294,7 @@ class JMG_Security_Camera_Behavior : public ScriptImpClass {
 	int CameraFacingCount;
 	int IncreaseOrDecreaseCount;
 	int SeenTime;
+	int stealthModeOverride;
 	Vector3 CameraFacingLocation[5];
 	float CameraFacingUpdateTime;
 	void Created(GameObject *obj);
