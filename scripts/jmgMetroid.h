@@ -1142,6 +1142,9 @@ char *MetroidStringLibrary(int StringID)
 	case 20:return "Kill the guards to cancel the lockdown.";
 	case 21:return "?????";
 	case 22:return "Turret destroyed lockdown averted.";
+	case 23:return "Lockdown canceled, laser gate powered off.";
+	case 24:return "Mash the action key to hack the terminal.";
+	case 25:return "Good work!";
 	default:return "HUD STRING NOT FOUND!";
 	}
 }
@@ -1161,7 +1164,7 @@ void Set_Shader_Number_Vector(GameObject *Player,int eventid,Vector4 parameter)
 		char textString[256];
 		switch (eventid)
 		{
-		case 99:sprintf_s(textString,"Control panel deactivated (%.0f/3)",parameter.Y);break;
+		case 99:sprintf_s(textString,"Control panel deactivated (%.0f/3)",parameter.Y);	Set_HUD_Help_Text_Player_Text(Player,7233,textString,Vector3(0.0,1.0,0.0));break;
 		case 999:sprintf_s(textString,"Incorrect code! Counter measures activated!");break;
 		case 998:sprintf_s(textString,"A terminal has been reset!");break;
 		case 997:sprintf_s(textString,"You moved out of range!");break;
@@ -1192,7 +1195,10 @@ void Set_Shader_Number_Vector(GameObject *Player,int eventid,Vector4 parameter)
 		{
 		case 0:
 			if ((int)parameter.Y != 3)
+			{
 				sprintf_s(textString,"Security Console Deactivated (%d/3)",(int)parameter.Y);
+				Set_HUD_Help_Text_Player_Text(Player,7233,textString,Vector3(0.0,1.0,0.0));
+			}
 			else
 				sprintf_s(textString,"Security restrictions cleared, resuming operations.");
 				break;
@@ -1702,6 +1708,7 @@ class JMG_Metroid_Move_To_Random_Ambush_Spot : public ScriptImpClass {
 	Vector3 FaceLocation;
 	Vector3 LastMoveToLocation;
 	Vector3 MyLastPos;
+	int faceReset;
 	int LastEnemyID;
 	bool ImAtPoint;
 	bool InnateEnabled;
@@ -2165,7 +2172,7 @@ public:
 					if (Terminal)
 					{
 						Commands->Enable_HUD_Pokable_Indicator(Terminal,false);
-						Commands->Set_Animation(Terminal,"jg_computer.jg_computer",false,0,1.0f,1.0f,false);
+						Commands->Set_Animation(Terminal,"hackterminal.hackterminal",false,0,190.0f,190.0f,false);
 					}
 					MineTerminalDeactivated[x] = true;
 					MineTerminalReset[x] = 300;
@@ -2188,13 +2195,14 @@ public:
 	}
 	void DisplayHUDMessage(int StringID,const Vector3 &Color = Vector3(0.0f,0.5f,1.0f))
 	{
-		Vector4 Temp = Vector4(4920036.0f,Color.X,Color.Y,Color.Z);
+		char text[220];
+		sprintf_s(text,"%s",MetroidStringLibrary(StringID));
 		for (int x = 1;x < 128;x++)
 		{
 			GameObject *Player = Get_GameObj(x);
 			if (!Player)
 				continue;
-			Set_Shader_Number_Vector(Player,StringID,Temp);
+			Set_HUD_Help_Text_Player_Text(Player,7233,text,Color);
 		}
 	}
 	void DisplayDynamicHUDMessage(int StringID,float SpecialParam1,float SpecialParam2 = 0.0f,float SpecialParam3 = 0.0f)
@@ -2279,6 +2287,7 @@ class JMG_Metroid_Boss_Turret : public ScriptImpClass {
 	void Custom(GameObject *obj,int message,int param,GameObject *sender);
 	void Action_Complete(GameObject *obj,int action,ActionCompleteReason reason);
 	void Timer_Expired(GameObject *obj,int number);
+	void Damaged(GameObject *obj,GameObject *damager,float damage);
 };
 
 class JMG_Metroid_Boss_Grinder_Kill_Zone : public ScriptImpClass {
@@ -3108,7 +3117,7 @@ public:
 			Commands->Attach_Script(LockdownTerminal,"JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script",params);
 			char Animation[32];
 			sprintf(Animation,"%s.%s",Get_Model(LockdownTerminal),Get_Model(LockdownTerminal));
-			Commands->Set_Animation(LockdownTerminal,Animation,false,0,1,1,false);
+			Commands->Set_Animation(LockdownTerminal,Animation,false,0,0,0,false);
 			Commands->Enable_HUD_Pokable_Indicator(LockdownTerminal,true);
 		}
 		LockdownInProgress = true;
@@ -3983,6 +3992,7 @@ class JMG_Metroid_AI_Hunt_Equipment : public ScriptImpClass {
 
 class JMG_Metroid_Base_Defense : public ScriptImpClass {
 	int enemyID;
+	float resetTime;
 	float MinDist;
 	float MaxDist;
 	void Created(GameObject *obj);
@@ -4387,9 +4397,10 @@ class JMG_Metroid_Zone_Score_Monitor : public ScriptImpClass {
 };
 
 class JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script : public ScriptImpClass {
-	int CompletedCombos;
-	int triggerTime;
-	int timeOutTime;
+	float pokeAmount;
+	int TerminalNumber;
+	int subtractionGrowth;
+	time_t lastPoke;
 	void Created(GameObject *obj);
 	void Poked(GameObject *obj,GameObject *poker);
 	void Timer_Expired(GameObject *obj,int number);
@@ -4398,10 +4409,10 @@ class JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script : public Scri
 };
 
 class JMG_Metroid_Mine_Computer_Console_Script_Special : public ScriptImpClass {
+	float pokeAmount;
 	int TerminalNumber;
-	int CompletedCombos;
-	int triggerTime;
-	int timeOutTime;
+	int subtractionGrowth;
+	time_t lastPoke;
 	void Created(GameObject *obj);
 	void Poked(GameObject *obj,GameObject *poker);
 	void Timer_Expired(GameObject *obj,int number);

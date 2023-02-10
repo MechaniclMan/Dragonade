@@ -68,7 +68,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio1_Key_Hook(cPlayer *Player) {
 			}
 		}
 		if (!LowestBuilding) {
-			DA::Private_Color_Message(Player,WHITE,"All your buildings are at full health.");
+			DA::Private_Color_Message(Player,COLORWHITE,"All your buildings are at full health.");
 		}
 		else {
 			DA::Team_Player_Message(Player,"Repair the %s!",DATranslationManager::Translate(LowestBuilding));
@@ -307,7 +307,7 @@ void DAExtraRadioCommandsGameFeatureClass::Radio12_Key_Hook(cPlayer *Player) {
 	if (!Player->Get_DA_Player()->Is_Flooding() && !Player->Get_DA_Player()->Is_Muted()) {
 		GameObject *Vehicle = Player->Get_GameObj()?Player->Get_GameObj()->Get_Vehicle():0;
 		if (!Vehicle) {
-			DA::Private_Color_Message(Player->Get_ID(),WHITE,"You are not in a vehicle.");
+			DA::Private_Color_Message(Player->Get_ID(),COLORWHITE,"You are not in a vehicle.");
 		}
 		else {
 			StringClass Translation = DATranslationManager::Translate(Vehicle);

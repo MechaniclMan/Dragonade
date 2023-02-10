@@ -43,25 +43,29 @@ void DAC4BeaconManager::Settings_Loaded_Event() {
 void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 	BeaconGameObj *Beacon = (BeaconGameObj*)obj;
 	if (Beacon->Get_Owner()) {
-		bool Ped = Beacon->Is_In_Enemy_Base();
-		ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
-		if (Explosion) {
-			float DamageRadius = Explosion->DamageRadius*Explosion->DamageRadius;
-			float Distance = 0.0f;
-			BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
-			if (Building) {
+		BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+		if (Building) {
+			bool Ped = Beacon->Is_In_Enemy_Base();
+			ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
+			if (Explosion) {
+				float Distance = 0.0f;
+				float FakeDistance = 0.0f;
 				Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
-			}
-			if (BlockFakeBeacons && (!The_Cnc_Game()->BeaconPlacementEndsGame || !Ped) && Distance > DamageRadius) {
-				WeaponClass *Weapon = Beacon->Get_Owner()->Get_Weapon_Bag()->Find_Weapon(Beacon->Get_WeaponDef());
-				if (Weapon) { //Refund the ammo used to plant this beacon.
-					Weapon->Set_Clip_Rounds(Weapon->Get_Clip_Rounds()+Weapon->PrimaryAmmoDefinition->SprayBulletCost);
+				PhysicalGameObj *FakeBuilding = Get_Closest_Fake_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+				if (FakeBuilding) {
+					FakeDistance = Commands->Get_Distance(FakeBuilding->Get_Position(),Beacon->Get_Position());
 				}
-				Beacon->Set_Delete_Pending();
-				DA::Page_Player(Beacon->Get_Owner(),"Beacons may only be deployed where they would damage an enemy building.");
-			}
-			else if (Ped && !The_Cnc_Game()->BeaconPlacementEndsGame && Distance > DamageRadius) {
-				DA::Page_Player(Beacon->Get_Owner(),"Sure you want to deploy that here? Pedestal beacons are disabled on this server.");
+				if (BlockFakeBeacons && (!The_Cnc_Game()->BeaconPlacementEndsGame || !Ped) && Distance > Explosion->DamageRadius*Explosion->DamageRadius && FakeDistance > Explosion->DamageRadius) {
+					WeaponClass *Weapon = Beacon->Get_Owner()->Get_Weapon_Bag()->Find_Weapon(Beacon->Get_WeaponDef());
+					if (Weapon) { //Refund the ammo used to plant this beacon.
+						Weapon->Set_Clip_Rounds(Weapon->Get_Clip_Rounds()+Weapon->PrimaryAmmoDefinition->SprayBulletCost);
+					}
+					Beacon->Set_Delete_Pending();
+					DA::Page_Player(Beacon->Get_Owner(),"Beacons may only be deployed where they would damage an enemy building.");
+				}
+				else if (Ped && !The_Cnc_Game()->BeaconPlacementEndsGame && Distance > Explosion->DamageRadius*Explosion->DamageRadius) {
+					DA::Page_Player(Beacon->Get_Owner(),"Sure you want to deploy that here? Pedestal beacons are disabled on this server.");
+				}
 			}
 		}
 	}
@@ -73,17 +77,22 @@ void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
 			DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
 		}
 		else {
-			BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),Beacon->Get_Player_Type()?0:1);
+			BuildingGameObj *Building = Get_Closest_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
 			if (Building) {
 				ExplosionDefinitionClass *Explosion = (ExplosionDefinitionClass*)Find_Definition(Beacon->Get_Definition().ExplosionObjDef);
-				float DamageRadius = Explosion->DamageRadius*Explosion->DamageRadius;
 				float Distance = 0.0f;
 				Building->Find_Closest_Poly(Beacon->Get_Position(),&Distance);
-				if (Distance <= DamageRadius) {
+				if (Distance <= Explosion->DamageRadius*Explosion->DamageRadius) {
 					DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(Building));
 				}
 				else {
-					DA::Team_Player_Message(Beacon->Get_Owner(),"The beacon is a fake.");
+					PhysicalGameObj *FakeBuilding = Get_Closest_Fake_Building(Beacon->Get_Position(),!Beacon->Get_Player_Type());
+					if (FakeBuilding && Commands->Get_Distance(FakeBuilding->Get_Position(),Beacon->Get_Position()) <= Explosion->DamageRadius) {
+						DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon at the %s!",DATranslationManager::Translate(FakeBuilding));
+					}
+					else {
+						DA::Team_Player_Message(Beacon->Get_Owner(),"The beacon is a fake.");
+					}
 				}
 			}
 		}

@@ -277,22 +277,22 @@ protected:
 * \param Priority_Infantry
 *   Base targetting priority for infantry targets, or 0 to ignore infantry
 * \param Weapon_Infantry
-*   Weapon to use against infantry targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against infantry targets: 1 for primary fire, 2 for secondary fire
 * \param Splash_Infantry
 *   Determines if we should try to damage infantry with splash instead of hitting them directly.
 *   This is useful for slow / inaccurate weapons which do splash damage: 1 to enable, 0 to disable
 * \param Priority_Light_Vehicle
 *   Base targetting priority for light vehicle targets, or 0 to ignore light vehicles
 * \param Weapon_Light_Vehicle
-*   Weapon to use against light vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against light vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_Heavy_Vehicle
 *   Base targetting priority for heavy vehicle targets, or 0 to ignore heavy vehicles
 * \param Weapon_Heavy_Vehicle
-*   Weapon to use against heavy vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against heavy vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_VTOL
 *   Base targetting priority for flying targets, or 0 to ignore flying targets
 * \param Weapon_VTOL
-*   Weapon to use against flying targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against flying targets: 1 for primary fire, 2 for secondary fire
 * \param Min_Attack_Range
 *   Minimum distance at which the turret can engage enemies when using primary fire
 * \param Max_Attack_Range
@@ -397,22 +397,22 @@ protected:
 * \param Priority_Infantry
 *   Base targetting priority for infantry targets, or 0 to ignore infantry
 * \param Weapon_Infantry
-*   Weapon to use against infantry targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against infantry targets: 1 for primary fire, 2 for secondary fire
 * \param Splash_Infantry
 *   Determines if we should try to damage infantry with splash instead of hitting them directly.
 *   This is useful for slow / inaccurate weapons which do splash damage: 1 to enable, 0 to disable
 * \param Priority_Light_Vehicle
 *   Base targetting priority for light vehicle targets, or 0 to ignore light vehicles
 * \param Weapon_Light_Vehicle
-*   Weapon to use against light vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against light vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_Heavy_Vehicle
 *   Base targetting priority for heavy vehicle targets, or 0 to ignore heavy vehicles
 * \param Weapon_Heavy_Vehicle
-*   Weapon to use against heavy vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against heavy vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_VTOL
 *   Base targetting priority for flying targets, or 0 to ignore flying targets
 * \param Weapon_VTOL
-*   Weapon to use against flying targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against flying targets: 1 for primary fire, 2 for secondary fire
 * \param Min_Attack_Range
 *   Minimum distance at which the turret can engage enemies when using primary fire
 * \param Max_Attack_Range
@@ -546,22 +546,22 @@ class dp88_AI_PopupTurret_Spotter : public ScriptImpClass
 * \param Priority_Infantry
 *   Base targetting priority for infantry targets, or 0 to ignore infantry
 * \param Weapon_Infantry
-*   Weapon to use against infantry targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against infantry targets: 1 for primary fire, 2 for secondary fire
 * \param Splash_Infantry
 *   Determines if we should try to damage infantry with splash instead of hitting them directly.
 *   This is useful for slow / inaccurate weapons which do splash damage: 1 to enable, 0 to disable
 * \param Priority_Light_Vehicle
 *   Base targetting priority for light vehicle targets, or 0 to ignore light vehicles
 * \param Weapon_Light_Vehicle
-*   Weapon to use against light vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against light vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_Heavy_Vehicle
 *   Base targetting priority for heavy vehicle targets, or 0 to ignore heavy vehicles
 * \param Weapon_Heavy_Vehicle
-*   Weapon to use against heavy vehicle targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against heavy vehicle targets: 1 for primary fire, 2 for secondary fire
 * \param Priority_VTOL
 *   Base targetting priority for flying targets, or 0 to ignore flying targets
 * \param Weapon_VTOL
-*   Weapon to use against flying targets: 0 for primary fire, 1 for secondary fire
+*   Weapon to use against flying targets: 1 for primary fire, 2 for secondary fire
 * \param Min_Attack_Range
 *   Minimum distance at which the turret can engage enemies when using primary fire
 * \param Max_Attack_Range

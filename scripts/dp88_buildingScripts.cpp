@@ -810,8 +810,17 @@ void dp88_buildingScripts_functionProduceVehicles::OnBuildingOffline ( GameObjec
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_VehicleFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_VehicleFactoryGameObj()->Set_Disabled(true);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(true);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(true);
+  }
+
+  auto vehiclesDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != vehiclesDef)
+  {
+    vehiclesDef->Set_Page_Disabled(true);
+  }
+  auto secretVehiclesDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != secretVehiclesDef)
+  {
+    secretVehiclesDef->Set_Page_Disabled(true);
   }
 }
 
@@ -822,8 +831,17 @@ void dp88_buildingScripts_functionProduceVehicles::OnBuildingOnline ( GameObject
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_VehicleFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_VehicleFactoryGameObj()->Set_Disabled(false);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(false);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(false);
+  }
+
+  auto vehiclesDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != vehiclesDef)
+  {
+    vehiclesDef->Set_Page_Disabled(false);
+  }
+  auto secretVehiclesDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_SECRET_VEHICLES, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != secretVehiclesDef)
+  {
+    secretVehiclesDef->Set_Page_Disabled(false);
   }
 }
 
@@ -850,7 +868,12 @@ void dp88_buildingScripts_functionProduceAircraft::OnBuildingOffline ( GameObjec
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_AirFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_AirFactoryGameObj()->Set_Disabled(true);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_AIR,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(true);
+  }
+
+  auto airDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_AIR, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != airDef)
+  {
+    airDef->Set_Page_Disabled(true);
   }
 }
 
@@ -861,7 +884,12 @@ void dp88_buildingScripts_functionProduceAircraft::OnBuildingOnline ( GameObject
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_AirFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_AirFactoryGameObj()->Set_Disabled(false);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_AIR,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(false);
+  }
+
+  auto airDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_AIR, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != airDef)
+  {
+    airDef->Set_Page_Disabled(false);
   }
 }
 
@@ -888,7 +916,12 @@ void dp88_buildingScripts_functionProduceNavalUnits::OnBuildingOffline ( GameObj
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_NavalFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_NavalFactoryGameObj()->Set_Disabled(true);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_NAVAL,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(true);
+  }
+
+  auto navalDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_NAVAL, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != navalDef)
+  {
+    navalDef->Set_Page_Disabled(true);
   }
 }
 
@@ -899,7 +932,12 @@ void dp88_buildingScripts_functionProduceNavalUnits::OnBuildingOnline ( GameObje
   if (obj->As_BuildingGameObj() && obj->As_BuildingGameObj()->As_NavalFactoryGameObj())
   {
     obj->As_BuildingGameObj()->As_NavalFactoryGameObj()->Set_Disabled(false);
-    PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_NAVAL,(PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)))->Set_Page_Disabled(false);
+  }
+
+  auto navalDef = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_NAVAL, (PurchaseSettingsDefClass::TEAM)PTTEAM(Get_Object_Type(obj)));
+  if (NULL != navalDef)
+  {
+    navalDef->Set_Page_Disabled(false);
   }
 }
 

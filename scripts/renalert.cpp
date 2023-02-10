@@ -3074,7 +3074,7 @@ void RA_Ore_Truck_2::Custom(GameObject *obj, int type, int param, GameObject *se
 			{
 				Commands->Set_Animation(obj, Get_Parameter("Harvest_Anim"), false, 0, 0, -1, false);
 				scoops++; //take in scoop
-				Commands->Create_Sound(Get_Parameter("Harvest_Sound"),Commands->Get_Position(obj),0);
+				Commands->Create_Sound(Get_Parameter("Harvest_Sound"),Commands->Get_Position(obj),obj);
 				value += (field / Get_Int_Parameter("Max_Capacity")); //add scoop value to total value
 			}
 			harvesting = true; //now harvesting
@@ -3096,7 +3096,7 @@ void RA_Ore_Truck_2::Custom(GameObject *obj, int type, int param, GameObject *se
 	{
 		if (value) //only dump ore if there is ore to dump
 		{
-			Commands->Create_Sound(Get_Parameter("Dump_Sound"),Commands->Get_Position(obj),0);
+			Commands->Create_Sound(Get_Parameter("Dump_Sound"),Commands->Get_Position(obj),obj);
 			Commands->Set_Animation(obj, Get_Parameter("Deliver_Anim"), false, 0, 0, -1, false); 
 		}
 	}
@@ -3160,7 +3160,7 @@ void RA_Ore_Truck_2::Timer_Expired(GameObject *obj, int number)
 			{
 				Commands->Set_Animation(obj, Get_Parameter("Harvest_Anim"), false, 0, 0, -1, false);
 				scoops++; //take in scoop
-				Commands->Create_Sound(Get_Parameter("Harvest_Sound"),Commands->Get_Position(obj),0);
+				Commands->Create_Sound(Get_Parameter("Harvest_Sound"),Commands->Get_Position(obj),obj);
 				value += (field / Get_Int_Parameter("Max_Capacity")); //add now
 				//Note: variable 'field' can be changed if new enter message was received between 'scoops'
 				//This allows the truck to enter a new field type in middle of harvesting, 

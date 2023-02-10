@@ -19,6 +19,7 @@
 #include "MoveablePhysClass.h"
 #include "VehicleGameObj.h"
 #include "SimpleGameObj.h"
+#include "GameObjManager.h"
 struct TimerParams {
 	int number;
 	float time;
@@ -2221,6 +2222,284 @@ class JFW_Projectile_Sync : public ScriptImpClass
 	}
 };
 REGISTER_SCRIPT(JFW_Projectile_Sync, "Time:float");
+
+class JFW_Medic_Beacon : public ScriptImpClass
+{
+	bool fire;
+	void Created(GameObject *obj)
+	{
+		fire = true;
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+		Commands->Start_Timer(obj,this,1,3);
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		if (number == 1)
+		{
+			Commands->Destroy_Object(obj);
+		}
+		if (number == 2)
+		{
+			fire = true;
+		}
+		if (number == 3)
+		{
+			Commands->Start_Timer(obj,this,1,3);
+			if (!fire)
+			{
+				return;
+			}
+			SmartGameObj *o = obj->As_SmartGameObj();
+			if (!o)
+			{
+				return;
+			}
+			for (SLNode<SoldierGameObj>* node = GameObjManager::SoldierGameObjList.Head(); node; node = node->Next())
+			{
+				SoldierGameObj* object = node->Data();
+				if ((object->Get_Defense_Object()->Get_Health() == object->Get_Defense_Object()->Get_Health_Max()) && (object->Get_Defense_Object()->Get_Shield_Strength() == object->Get_Defense_Object()->Get_Shield_Strength()))
+				{
+					continue;
+				}
+				if (!o->Is_Teammate(object))
+				{
+					continue;
+				}
+				if (!object->Is_Visible())
+				{
+					continue;
+				}
+				if (!o->Is_Obj_Visible(object))
+				{
+					continue;
+				}
+				fire = false;
+				Commands->Apply_Damage(object,Get_Float_Parameter("Amount"),Get_Parameter("Warhead"),0);
+				Commands->Start_Timer(obj,this,Get_Float_Parameter("ROF"),2);
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Medic_Beacon, "Time:float,Amount:float,Warhead:string,ROF:float");
+
+class JFW_Medic_Beacon_Layer : public ScriptImpClass
+{
+	void Damaged(GameObject *obj, GameObject *damager, float amount)
+	{
+		unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+		if (warhead == Get_Damage_Warhead() && damager == obj)
+		{
+			SoldierGameObj *s = damager->As_SoldierGameObj();
+			if (s)
+			{
+				Vector3 v = Commands->Get_Position(damager);
+				GameObject *mine = Commands->Create_Object(Get_Parameter("Beacon_Preset"),v);
+				Commands->Set_Player_Type(mine,Commands->Get_Player_Type(damager));
+				PhysicalGameObj *p = mine->As_PhysicalGameObj();
+				p->Peek_Physical_Object()->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
+				ArmedGameObj *a = p->As_ArmedGameObj();
+				Matrix3D muzzle = a->Get_Muzzle();
+				Matrix3D transform(true);
+				transform.Rotate_Z(muzzle.Get_Z_Rotation());
+				transform.Set_Translation(muzzle.Get_Translation());
+				p->Peek_Physical_Object()->Set_Transform(transform);
+				MoveablePhysClass *m = p->Peek_Physical_Object()->As_MoveablePhysClass();
+				Vector3 velocity = muzzle.Get_X_Vector() * Get_Float_Parameter("Throw_Velocity");
+				m->Set_Velocity(velocity);
+				p->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Medic_Beacon_Layer, "Beacon_Preset:string,Throw_Velocity:float,Warhead:string");
+
+class RMV_Test_Big_Gun_Turning : public ScriptImpClass
+{
+private:
+	int DestroyedSamCount;
+	bool SoundHeardTrigger;
+	bool DestroyCinematicStarted;
+public:
+	void Register_Auto_Save_Variables()
+	{
+		Auto_Save_Variable(&DestroyedSamCount,4,1);
+		Auto_Save_Variable(&SoundHeardTrigger,1,2);
+		Auto_Save_Variable(&DestroyCinematicStarted,1,3);
+	}
+	void Created(GameObject *obj)
+	{
+		DestroyCinematicStarted = false;
+		DestroyedSamCount = 0;
+		SoundHeardTrigger = false;
+		Vector3 pos = Commands->Get_Position(obj);
+		Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
+		obj->As_VehicleGameObj()->Set_Targeting(pos + target_direction * 100);
+	}
+	void Killed(GameObject *obj,GameObject *killer)
+	{
+		Commands->Attach_Script(Commands->Create_Object("Invisible_Object",Vector3(0,0,0)),"Test_Cinematic","X3C_Bigguns2.txt");
+		Commands->Send_Custom_Event(obj,Commands->Find_Object(1100004),306,3,0);
+		Commands->Send_Custom_Event(obj,Commands->Find_Object(1100004),306,1,0);
+		Commands->Send_Custom_Event(obj,Commands->Find_Object(1100003),40027,0,0);
+	}
+	void Sound_Heard(GameObject *obj,const CombatSound & sound)
+	{
+		if (sound.sound == SOUND_TYPE_DESIGNER04)
+		{
+			Commands->Shake_Camera(sound.Position,40.0f,0.3f,1.0f);
+			if ( !SoundHeardTrigger && Commands->Get_Random(1.0f,5.0f) < 2.0f)
+			{
+				SoundHeardTrigger = true;
+			}
+		}
+	}
+	void Damaged(GameObject *obj, GameObject *damager, float amount)
+	{
+		if (DestroyCinematicStarted)
+		{
+			if (Commands->Get_Health(obj) < 1.0f)
+			{
+				Commands->Set_Health(obj,Commands->Get_Health(obj) + 1.0f);
+			}
+		}
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		if (number == 40024)
+		{
+			if (Commands->Find_Object(1100002))
+			{
+				Commands->Attach_Script(Commands->Create_Object("Invisible_Object",Vector3(0,0,0)),"Test_Cinematic","X3C_Bigguns.txt");
+				DestroyCinematicStarted = true;
+			}
+		}
+	}
+	void Custom(GameObject *obj,int type,int param,GameObject *sender)
+	{
+		if (type == 40026)
+		{
+			Commands->Action_Reset(obj,100.0);
+			Commands->Enable_Enemy_Seen(obj,0);
+		}
+		if (type == 1000 && param == 1000)
+		{
+			ActionParamsStruct params;
+			params.Set_Basic(Get_ID(),99,2);
+			params.Set_Attack(Commands->Find_Object(1100003),1000.0f,2.0f,true);
+			params.AttackCheckBlocked = false;
+			Commands->Action_Attack(obj,params);
+		}
+		if (type == 2000 && param == 2000)
+		{
+			DestroyedSamCount++;
+			if (DestroyedSamCount == 2)
+			{
+				if (Commands->Find_Object(1100003))
+				{
+					Commands->Start_Timer(obj,this,2.0f,40024);
+				}
+			}
+		}
+		if (type == 2450 && param == 2450)
+		{
+			GameObject *o = Commands->Find_Object(1100003);
+			if (o)
+			{
+				Commands->Send_Custom_Event(obj,o,8000,8000,0);
+			}
+			Commands->Destroy_Object(obj);
+		}
+	}
+};
+REGISTER_SCRIPT(RMV_Test_Big_Gun_Turning, "");
+
+class M08_Nod_Turret : public ScriptImpClass
+{
+	bool Attacking;
+public:
+	void Register_Auto_Save_Variables()
+	{
+		Auto_Save_Variable(&Attacking,1,1);
+	}
+	void Created(GameObject *obj)
+	{
+		Commands->Set_Player_Type(obj,0);
+		Commands->Enable_Enemy_Seen(obj,true);
+		Attacking = false;
+		Vector3 pos = Commands->Get_Position(obj);
+		Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
+		obj->As_VehicleGameObj()->Set_Targeting(pos + target_direction * 100);
+	}
+	void Enemy_Seen(GameObject *obj,GameObject *enemy)
+	{
+		if (!Attacking)
+		{
+			Attacking = true;
+			ActionParamsStruct params;
+			params.Set_Basic(Get_ID(),90,1);
+			params.Set_Attack(enemy,250,0,true);
+			params.AttackCheckBlocked = false;
+			Commands->Action_Attack(obj,params);
+			Commands->Start_Timer(obj,this,6.0f,0);
+		}
+	}
+	void Damaged(GameObject *obj, GameObject *damager, float amount)
+	{
+		if (!Attacking)
+		{
+			if (Commands->Get_Player_Type(damager))
+			{
+				Attacking = true;
+				ActionParamsStruct params;
+				params.Set_Basic(Get_ID(),90,1);
+				params.Set_Attack(damager,250,0,true);
+				params.AttackCheckBlocked = false;
+				Commands->Action_Attack(obj,params);
+				Commands->Start_Timer(obj,this,6.0f,0);
+			}
+		}
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		if (!number)
+		{
+			Attacking = false;
+		}
+	}
+};
+REGISTER_SCRIPT(M08_Nod_Turret, "");
+
+class M10_Turret : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Commands->Enable_Enemy_Seen(obj,true);
+		Vector3 pos = Commands->Get_Position(obj);
+		Vector3 target_direction = obj->As_VehicleGameObj()->Get_Muzzle(0).Get_X_Vector();
+		obj->As_VehicleGameObj()->Set_Targeting(pos + target_direction * 100);
+	}
+	void Enemy_Seen(GameObject *obj,GameObject *enemy)
+	{
+		ActionParamsStruct params;
+		params.Set_Basic(Get_ID(),90,0);
+		params.Set_Attack(enemy,100,4,true);
+		Commands->Action_Attack(obj,params);
+		Commands->Start_Timer(obj,this,10.0f,0);
+	}
+	void Killed(GameObject *obj,GameObject *killer)
+	{
+		Vector3 v = Commands->Get_Position(obj);
+		float facing = Commands->Get_Facing(obj);
+		GameObject *o = Commands->Create_Object("Nod_Turret_Destroyed",v);
+		Commands->Set_Facing(o,facing);
+		Commands->Attach_Script(o,"M10_Destroyed_Turret","");
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		Commands->Action_Reset(obj,99.0f);
+	}
+};
+REGISTER_SCRIPT(M10_Turret, "");
 
 ScriptRegistrant<JFW_Add_Objective> JFW_Add_Objective_Registrant("JFW_Add_Objective","Type:int,TypeVal:int,Objective_Num:int,Objective_Type:int,Title_ID:int,Unknown:int,Sound_Name:string,Description_ID:int,Timer_Custom:int,Trigger:int");
 ScriptRegistrant<JFW_Remove_Objective> JFW_Remove_Objective_Registrant("JFW_Remove_Objective","Type:int,TypeVal:int,Objective_Num:int,Timer_Custom:int");

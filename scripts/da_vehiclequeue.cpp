@@ -152,7 +152,7 @@ void DAVehicleQueueGameFeatureClass::Object_Created_Event(GameObject *obj) {
 	if (Team == 0 || Team == 1) {
 		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
 		if (VF && !VF->Is_Destroyed() && ((VehicleGameObj*)obj)->Peek_Physical_Object()->As_MoveablePhysClass() && (unsigned int)Get_Ground_Vehicle_Count(Team) == Get_Vehicle_Limit()) { //Clear the queue if the vehicle limit has been reached.
-			DA::Team_Color_Message(Team,GRAY,"Vehicle limit reached.");
+			DA::Team_Color_Message(Team,COLORGRAY,"Vehicle limit reached.");
 			for (int i = Queue[Team].Count()-1;i >= 0;i--) {
 				if (Queue[Team][i]->Cost != -1) {
 					delete Queue[Team][i];
@@ -193,7 +193,7 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 	int Team = Player->Get_Team();
 	if (Team == 0 || Team == 1) {
 		if (!Text.Size()) {
-			DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
+			DA::Private_Color_Message(Player,COLORGRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
 			if (Building[Team]) {
 				StringClass Name;
 				if (Building[Team]->Player) {
@@ -207,7 +207,7 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 						Name += " - ";
 					}
 				}
-				DA::Private_Color_Message(Player,GRAY,"Building: %s%s",Name,DATranslationManager::Translate(Building[Team]->Vehicle));
+				DA::Private_Color_Message(Player,COLORGRAY,"Building: %s%s",Name,DATranslationManager::Translate(Building[Team]->Vehicle));
 			}
 			for (int i = 0;i < Queue[Team].Count();++i) {
 				StringClass Name;
@@ -222,12 +222,12 @@ bool DAVehicleQueueGameFeatureClass::VQ_Chat_Command(cPlayer *Player,const DATok
 						Name += " - ";
 					}
 				}
-				DA::Private_Color_Message(Player,GRAY,"%d/%d: %s%s",i+1,Queue[Team].Count(),Name,DATranslationManager::Translate(Queue[Team][i]->Vehicle));
+				DA::Private_Color_Message(Player,COLORGRAY,"%d/%d: %s%s",i+1,Queue[Team].Count(),Name,DATranslationManager::Translate(Queue[Team][i]->Vehicle));
 			}
 		}
 		else if (Text[1] == "cancel" || Text[1] == "halt" || Text[1] == "stop" || Text[1] == "leave" || Text[1] == "end") {
 			if (Remove(Player->Get_Team(),Player)) {
-				DA::Private_Color_Message(Player,GRAY,"You have left the vehicle queue.");
+				DA::Private_Color_Message(Player,COLORGRAY,"You have left the vehicle queue.");
 			}
 		}
 	}
@@ -293,7 +293,7 @@ void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team)
 		}
 		else {
 			Timer_Expired(Number,Team);
-			DA::Private_Color_Message(Q->Player,GRAY,"Insufficient funds. You have been removed from the vehicle queue.");
+			DA::Private_Color_Message(Q->Player,COLORGRAY,"Insufficient funds. You have been removed from the vehicle queue.");
 			if (Team == 0) {
 				DA::Create_2D_Sound_Player(Q->Player,"M00EVAN_DSGN0024I1EVAN_snd.wav");
 			}
@@ -339,7 +339,7 @@ void DAVehicleQueueGameFeatureClass::Add(int Team,cPlayer *Player,const VehicleG
 			if (Queue[Team][i]->Player == Player) {
 				Queue[Team][i]->Vehicle = Vehicle;
 				Queue[Team][i]->Cost = Cost;
-				DA::Private_Color_Message(Player,GRAY,"You are in position %d/%d of the vehicle queue.",i+1,Queue[Team].Count());
+				DA::Private_Color_Message(Player,COLORGRAY,"You are in position %d/%d of the vehicle queue.",i+1,Queue[Team].Count());
 				return;
 			}
 		}
@@ -349,7 +349,7 @@ void DAVehicleQueueGameFeatureClass::Add(int Team,cPlayer *Player,const VehicleG
 		}
 		else {
 			Queue[Team].Add(new DAVehicleQueueStruct(Player,Vehicle,Cost));
-			DA::Private_Color_Message(Player,GRAY,"You are in position %d/%d of the vehicle queue.",Queue[Team].Count(),Queue[Team].Count());
+			DA::Private_Color_Message(Player,COLORGRAY,"You are in position %d/%d of the vehicle queue.",Queue[Team].Count(),Queue[Team].Count());
 		}
 	}
 	else if (Head) {
@@ -376,7 +376,7 @@ bool DAVehicleQueueGameFeatureClass::Remove(int Team,cPlayer *Player) {
 void DAVehicleQueueGameFeatureClass::Send_Positions(int Team) {
 	for (int i = 0;i < Queue[Team].Count();i++) {
 		if (Queue[Team][i]->Player) {
-			DA::Private_Color_Message(Queue[Team][i]->Player,GRAY,"You are now in position %d/%d of the vehicle queue.",i+1,Queue[Team].Count());
+			DA::Private_Color_Message(Queue[Team][i]->Player,COLORGRAY,"You are now in position %d/%d of the vehicle queue.",i+1,Queue[Team].Count());
 		}
 	}
 }

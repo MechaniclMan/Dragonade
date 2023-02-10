@@ -70,6 +70,7 @@ DA_API float Get_Distance_To_Closest_Building(const Vector3 &Position,int Team);
 DA_API float Get_Distance_To_Closest_PCT(const Vector3 &Position,int Team);
 DA_API float Get_Distance_To_Closest_Player(const Vector3 &Position,int Team = 2);
 DA_API BuildingGameObj *Get_Closest_Building(const Vector3 &Position,int Team);
+DA_API PhysicalGameObj *Get_Closest_Fake_Building(const Vector3 &Position,int Team);
 DA_API BuildingGameObj *Get_Random_Building(int Team);
 
 DA_API void Send_Custom_Event_Vehicle_Occupants(GameObject *obj,GameObject *Sender,int Message,int Param,float Delay,bool Driver);
@@ -230,5 +231,7 @@ DA_API void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDista
 DA_API void Send_Player_Kill_Message(int Killer,int Victim);
 
 DA_API bool Exit_Vehicle(SoldierGameObj *Soldier);
+
+DA_API void Reverse_Damage(GameObject *obj,float Amount);
 
 #endif

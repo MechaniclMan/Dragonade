@@ -65,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.7";
+	return "1.8";
 }
 
 void DA::Init() {
@@ -159,7 +159,7 @@ void DA::Private_Host_Message(cPlayer *Player,const char *Format,...) {
 		Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
 	}
 	else {
-		Send_Message_Player_By_ID(Player->Get_ID(),LIGHTBLUE,StringFormat("Host: %s",Message));
+		Send_Message_Player_By_ID(Player->Get_ID(),COLORLIGHTBLUE,StringFormat("Host: %s",Message));
 	}
 	Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"public_message.wav");
 }
@@ -296,7 +296,7 @@ void DA::Page_Player(cPlayer *Player,const char *Format,...) {
 		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 	}
 	else {
-		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Message));
+		Send_Message_Player_By_ID(ID,COLORLIGHTBLUE,StringFormat("Host: %s",Message));
 		Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 	}
 }
@@ -343,7 +343,7 @@ void DA::Color_Message_With_Team_Color(int Team,const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
 	if (Team != 0 && Team != 1) {
-		Color_Message(WHITE,"%s",Message);
+		Color_Message(COLORWHITE,"%s",Message);
 	}
 	else {
 		unsigned int Red = 0,Green = 0,Blue = 0;
@@ -468,7 +468,7 @@ void DA::Private_Color_Message_With_Team_Color(cPlayer *Player,int Team,const ch
 	char Message[256];
 	Format_String(Message);
 	if (Team != 0 && Team != 1) {
-		Private_Color_Message(ID,WHITE,"%s",Message);
+		Private_Color_Message(ID,COLORWHITE,"%s",Message);
 	}
 	else {
 		unsigned int Red = 0,Green = 0,Blue = 0;
@@ -626,7 +626,7 @@ public:
 				Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 			}
 			else {
-				Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
+				Send_Message_Player_By_ID(ID,COLORLIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
 				Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 			}
 		}
@@ -649,7 +649,7 @@ public:
 						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
 					}
 					else {
-						DA::Private_Color_Message(Player,LIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
+						DA::Private_Color_Message(Player,COLORLIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
 						Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"yo1.wav");
 					}
 				}

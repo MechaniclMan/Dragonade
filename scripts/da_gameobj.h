@@ -82,6 +82,7 @@ public:
 	DA_API static void Set_GameObj_TT_Only(GameObject *obj);
 	DA_API static void Set_GameObj_Stock_Only(GameObject *obj);
 	DA_API static void Set_GameObj_Invisible(GameObject *obj);
+	DA_API static void Set_GameObj_Invisible_No_Delete(GameObject *obj);
 
 private:
 	virtual void Think();

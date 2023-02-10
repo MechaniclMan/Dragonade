@@ -3,6 +3,9 @@
 
 #include "JmgUtility.h"
 #include "GameObjManager.h"
+#include "VehicleGameObj.h"
+#include "WeaponClass.h"
+#include "VehicleGameObjDef.h"
 bool JmgUtility::hasStatedDeathMessage[128] = {false};
 
 void JMG_Utility_Check_If_Script_Is_In_Library::Created(GameObject *obj)
@@ -254,6 +257,201 @@ void JMG_Utility_Poke_Send_Self_Custom::Timer_Expired(GameObject *obj,int number
 		Commands->Enable_HUD_Pokable_Indicator(obj,true);
 	}
 }
+void JMG_Turret_Spawn::Created(GameObject *obj)
+{
+	GameObject *turret = Commands->Create_Object(Get_Parameter("Turret_Preset"),Vector3());
+	if(!turret)
+	{
+		Console_Output("[%d:%s:%s] JMG_Turret_Spawn Critical Error: Failed to create an instance of the preset %s. Destroying script...\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name(), Get_Parameter("Turret_Preset"));
+		Destroy_Script();
+		return;
+	}
+	Commands->Attach_To_Object_Bone(turret,obj,Get_Parameter("Bone_Name"));
+	turretId = Commands->Get_ID(turret);
+	if (turret->As_VehicleGameObj())
+		turret->As_VehicleGameObj()->Set_Is_Scripts_Visible(false);
+	hasDriver = false;
+}
+void JMG_Turret_Spawn::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+	{
+		if (!hasDriver)
+		{
+			hasDriver = true;
+			GameObject *turret = Commands->Find_Object(turretId);
+			if (turret)
+			{
+				Commands->Set_Player_Type(turret,Commands->Get_Player_Type(sender));
+				Commands->Action_Reset(turret,100);
+			}
+		}
+	}
+	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		if (hasDriver && obj->As_VehicleGameObj() && !Get_Vehicle_Occupant_Count(obj))
+		{
+			hasDriver = false;
+			GameObject *turret = Commands->Find_Object(turretId);
+			if (turret)
+				Commands->Action_Reset(turret,100);
+		}
+	}
+}
+void JMG_Turret_Spawn::Destroyed(GameObject *obj)
+{
+	GameObject *turret = Commands->Find_Object(turretId);
+	if (turret)
+		Commands->Destroy_Object(turret);
+}
+ClientNetworkObjectPositionSync *clientNetworkObjectPositionSyncControl = NULL;
+void JMG_Utility_Sync_System_Object::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,2.5f,1);
+}
+void JMG_Utility_Sync_System_Object::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!clientNetworkObjectPositionSyncControl)
+		{
+			Console_Input("msg JMG_Utility_Sync_System_Object ERROR: Make sure there is a JMG_Utility_Sync_System_Controller on the map!");
+			return;
+		}
+		syncNode = clientNetworkObjectPositionSyncControl->addNode(obj);
+	}
+}
+void JMG_Utility_Sync_System_Object::Destroyed(GameObject *obj)
+{
+	if (The_Game()->Is_Game_Over())
+		return;
+	if (syncNode)
+	{
+		syncNode->id = 0;
+		syncNode->obj = NULL;
+	}
+}
+JMG_Utility_Sync_System_Controller::JMG_Utility_Sync_System_Controller()
+{
+	clientNetworkObjectPositionSyncControl = new ClientNetworkObjectPositionSync();
+}
+void JMG_Utility_Sync_System_Controller::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.25f,1);
+	Commands->Start_Timer(obj,this,0.25f,2);
+}
+void JMG_Utility_Sync_System_Controller::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (The_Game()->Is_Game_Over())
+		{
+			Destroyed(obj);
+			return;
+		}
+		else
+			clientNetworkObjectPositionSyncControl->checkForPlayersThatLeftTheGame();
+		Commands->Start_Timer(obj,this,0.25f,1);
+	}
+	if (number == 2)
+	{
+		if (The_Game()->Is_Game_Over())
+			return;
+		clientNetworkObjectPositionSyncControl->triggerSingleNetworkSync();
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Sync_Rate"),2);
+	}
+}
+void JMG_Utility_Sync_System_Controller::Destroyed(GameObject *obj)
+{
+	if (!clientNetworkObjectPositionSyncControl)
+		return;
+	clientNetworkObjectPositionSyncControl->Empty_List();
+	clientNetworkObjectPositionSyncControl = NULL;
+}
+void JMG_Utility_Sync_Object_Periodically::Created(GameObject *obj)
+{
+	Commands->Start_Timer(obj,this,0.25f,1);
+}
+void JMG_Utility_Sync_Object_Periodically::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Force_Position_Update(obj);
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Sync_Rate"),1);
+	}
+}
+void JMG_Utility_Basic_Spawner::Created(GameObject *obj)
+{
+	spawnedId = 0;
+	spawnLimit = Get_Int_Parameter("SpawnLimit");
+	enabled = Get_Int_Parameter("StartsEnabled") ? true : false;
+	CalculateRespawnTime();
+	Commands->Disable_All_Collisions(obj);
+	Commands->Set_Is_Rendered(obj,false);
+	Commands->Set_Is_Visible(obj,false);
+	Commands->Start_Timer(obj,this,0.1f,1);
+}
+void JMG_Utility_Basic_Spawner::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		if (!spawnedId && respawnTime > 0 && spawnLimit && enabled)
+		{
+			respawnTime -= 0.1f;
+			if (respawnTime <= 0)
+			{
+				Vector3 createPos = Commands->Get_Position(obj);
+				GameObject *spawnedObject = Commands->Create_Object(Get_Parameter("SpawnPreset"),createPos);
+				Commands->Set_Facing(spawnedObject,Commands->Get_Facing(obj));
+				MoveablePhysClass *mphys = spawnedObject->As_PhysicalGameObj() ? spawnedObject->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+				if (!mphys || mphys->Can_Teleport(Matrix3D(createPos)))
+				{
+					if (spawnLimit > 0)
+						spawnLimit--;
+					spawnedId = Commands->Get_ID(spawnedObject);
+					CalculateRespawnTime();
+					char params[256];
+					sprintf(params,"%d",Commands->Get_ID(obj));
+					Commands->Attach_Script(spawnedObject,"JMG_Utility_Basic_Spawner_Attach",params);
+				}
+				else
+				{
+					Commands->Destroy_Object(spawnedObject);
+					respawnTime = 0.1f;
+				}
+			}
+		}
+		Commands->Start_Timer(obj,this,0.1f,1);
+	}
+}
+void JMG_Utility_Basic_Spawner::Custom(GameObject *obj,int message,int param,GameObject *sender)
+{
+	if (Get_Int_Parameter("EnableMessage") && message == Get_Int_Parameter("EnableMessage"))
+	{
+		if (param)
+		{
+			enabled = true;
+			CalculateRespawnTime();
+		}
+		else
+			enabled = false;
+	}
+	if (message == 6873521)
+	{
+		CalculateRespawnTime();
+		spawnedId = 0;
+	}
+}
+void JMG_Utility_Basic_Spawner::CalculateRespawnTime()
+{
+	respawnTime = min(Get_Int_Parameter("DelayOnStartup") ? (Get_Float_Parameter("RespawnTime")+(Get_Float_Parameter("RespawnTimeRandom") ? Commands->Get_Random(-Get_Float_Parameter("RespawnTime"),Get_Float_Parameter("RespawnTime")) : 0.0f)) : 0,0.1f);
+}
+void JMG_Utility_Basic_Spawner_Attach::Destroyed(GameObject *obj)
+{
+	GameObject *spawner = Commands->Find_Object(Get_Int_Parameter("ControllerId"));
+	if (spawner)
+		Commands->Send_Custom_Event(obj,spawner,6873521,0,0.0f);
+}
 ScriptRegistrant<JMG_Utility_Check_If_Script_Is_In_Library> JMG_Utility_Check_If_Script_Is_In_Library_Registrant("JMG_Utility_Check_If_Script_Is_In_Library","ScriptName:string,CppName:string");
 ScriptRegistrant<JMG_Send_Custom_When_Custom_Sequence_Matched> JMG_Send_Custom_When_Custom_Sequence_Matched_Registrant("JMG_Send_Custom_When_Custom_Sequence_Matched","Success_Custom=0:int,Correct_Step_Custom=0:int,Partial_Failure_Custom=0:int,Failure_Custom=0:int,Send_To_ID=0:int,Custom_0=0:int,Custom_1=0:int,Custom_2=0:int,Custom_3=0:int,Custom_4=0:int,Custom_5=0:int,Custom_6=0:int,Custom_7=0:int,Custom_8=0:int,Custom_9=0:int,Disable_On_Success=1:int,Disable_On_Failure=0:int,Starts_Enabled=1:int,Enable_Custom=0:int,Correct_Step_Safty=0:int,Failure_Safty=1:int,Max_Failures=1:int");
 ScriptRegistrant<JMG_Utility_Change_Model_On_Timer> JMG_Utility_Change_Model_On_Timer_Registrant("JMG_Utility_Change_Model_On_Timer","Model=null:string,Time=0:float");
@@ -262,3 +460,9 @@ ScriptRegistrant<JMG_Utility_Display_HUD_Info_Text_To_All_Players_On_Custom> JMG
 ScriptRegistrant<JMG_Utility_Display_HUD_Info_Text_To_Sender_On_Custom> JMG_Utility_Display_HUD_Info_Text_To_Sender_On_Custom_Registrant("JMG_Utility_Display_HUD_Info_Text_To_Sender_On_Custom","Custom:int,StringId:int,ColorRGB:Vector3");
 ScriptRegistrant<JMG_Utility_Soldier_Transition_On_Custom> JMG_Utility_Soldier_Transition_On_Custom_Registrant("JMG_Utility_Soldier_Transition_On_Custom","Custom:int");
 ScriptRegistrant<JMG_Utility_Poke_Send_Self_Custom> JMG_Utility_Poke_Send_Self_Custom_Registrant("JMG_Utility_Poke_Send_Self_Custom","Custom:int,Param:int,Delay:float,LockoutTime=-1.0:float");
+ScriptRegistrant<JMG_Turret_Spawn> JMG_Turret_Spawn_Registrant("JMG_Turret_Spawn","Turret_Preset:string,Bone_Name=Tur_Mount:string");
+ScriptRegistrant<JMG_Utility_Sync_System_Object> JMG_Utility_Sync_System_Object_Registrant("JMG_Utility_Sync_System_Object","");
+ScriptRegistrant<JMG_Utility_Sync_System_Controller> JMG_Utility_Sync_System_Controller_Registrant("JMG_Utility_Sync_System_Controller","Sync_Rate=1.0:float");
+ScriptRegistrant<JMG_Utility_Sync_Object_Periodically> JMG_Utility_Sync_Object_Periodically_Registrant("JMG_Utility_Sync_Object_Periodically","Sync_Rate=1.0:float");
+ScriptRegistrant<JMG_Utility_Basic_Spawner> JMG_Utility_Basic_Spawner_Registrant("JMG_Utility_Basic_Spawner","SpawnPreset:string,RespawnTime=0.0:float,RespawnTimeRandom=0:float,StartsEnabled=1:int,EnableMessage=0:int,SpawnLimit=-1:int,DelayOnStartup=0:int");
+ScriptRegistrant<JMG_Utility_Basic_Spawner_Attach> JMG_Utility_Basic_Spawner_Attach_Registrant("JMG_Utility_Basic_Spawner_Attach","ControllerId:int");

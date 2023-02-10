@@ -51,21 +51,25 @@ void DATeamManager::Settings_Loaded_Event() {
 }
 
 void DATeamManager::Level_Loaded_Event() {
-	RemixCount++;
 	if (ForceTeam != -1) {
 		Set_Force_Team(ForceTeam);
 	}
-	else {
-		if (RemixFrequency && RemixCount >= RemixFrequency) {
+	else if (RemixFrequency) {
+		RemixCount++;
+		if (RemixCount >= RemixFrequency) {
 			Remix();
 			RemixCount = 0;
 		}
 		else if (Get_Random_Int(1,101) <= SwapChance) {
 			Swap();
 		}
-		if (EnableRebalance) {
-			Rebalance();
-		}
+		Rebalance();
+	}
+	else if (Get_Random_Int(1,101) <= SwapChance) {
+		Swap();
+	}
+	if (EnableRebalance) {
+		Rebalance();
 	}
 	Winner = -1;
 }
@@ -309,6 +313,7 @@ class DARemixConsoleFunctionClass : public ConsoleFunctionClass {
 	const char *Get_Help() { return "REMIX - Remix teams."; }
 	void Activate(const char *ArgumentsString) {
 		DATeamManager::Remix();
+		DATeamManager::Rebalance();
 	}
 };
 Register_Console_Function(DARemixConsoleFunctionClass);

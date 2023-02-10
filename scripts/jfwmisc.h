@@ -561,6 +561,12 @@ class JFW_Ion_Storm : public ScriptImpClass {
 	void Timer_Expired(GameObject *obj,int number);
 };
 
+class JFW_Ion_Storm_2 : public ScriptImpClass {
+	bool storm;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
 class JFW_Ion_Storm_Weather : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
@@ -653,6 +659,10 @@ class JFW_Send_Message_Preset_Death : public ScriptImpClass {
 class JMG_Send_Custom_To_Self_On_Timer : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
+};
+
+class JFW_Vehicle_Crate : public ScriptImpClass {
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 };
 
 class JFW_Warhead_Custom : public ScriptImpClass {

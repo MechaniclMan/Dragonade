@@ -24,6 +24,7 @@ our %additional_events = (
 	"Alert" => "Alert",
 	"Node" => "Node",
 	"Flag" => "Flag",
+	"Squad" => "Squad",
 );
 
 sub GetColor {
@@ -188,6 +189,15 @@ sub Flag {
 	if ($line =~ /^\[\d\d:\d\d:\d\d\]\s_FLAG\s(\d)\s(.+)$/) {
 		my $color = GetColor($1);
 		plugin::ircmsg("09[FLAG]$color $2","");
+	}
+}
+
+sub Squad {
+	my ( $kernel, $session, $heap, $args ) = @_[ KERNEL, SESSION, HEAP, ARG0 ];
+	my %args = %{$args};
+	my $line = $args->{'line'};
+	if ($line =~ /^\[\d\d:\d\d:\d\d\]\s_SQUAD\s(.+)$/) {
+		plugin::ircmsg("03[SQUAD] $1","");
 	}
 }
 

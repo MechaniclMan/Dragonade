@@ -386,7 +386,7 @@ void JFW_Per_Preset_Visible_Person_In_Vechicle::Custom(GameObject *obj,int type,
 		Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("BoneName"));
 		Commands->Send_Custom_Event(obj,sender,Get_Int_Parameter("Message"),Commands->Get_ID(object),0);
 		modelid = Commands->Get_ID(object);
-		Commands->Set_Is_Visible(object, !stealth);
+		Commands->Set_Is_Rendered(object, !stealth);
 	}
 	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
 	{
@@ -424,7 +424,7 @@ void JFW_Per_Preset_Visible_Person_In_Vechicle::Timer_Expired(GameObject *obj, i
 		stealth = b;
 		if (modelid)
 		{
-			Commands->Set_Is_Visible(Commands->Find_Object(modelid), !stealth);
+			Commands->Set_Is_Rendered(Commands->Find_Object(modelid), !stealth);
 		}
 	}
 	Commands->Start_Timer(obj, this, 1, 1);
@@ -441,7 +441,7 @@ void JFW_Per_Preset_Visible_People_In_Vechicle::Custom(GameObject *obj,int type,
 			Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("BoneName1"));
 			Commands->Send_Custom_Event(obj,sender,Get_Int_Parameter("Message1"),Commands->Get_ID(object),0);
 			modelid1 = Commands->Get_ID(object);
-			Commands->Set_Is_Visible(object, !stealth);
+			Commands->Set_Is_Rendered(object, !stealth);
 			driverid1 = Commands->Get_ID(sender);
 		}
 		else
@@ -453,7 +453,7 @@ void JFW_Per_Preset_Visible_People_In_Vechicle::Custom(GameObject *obj,int type,
 				Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("BoneName2"));
 				Commands->Send_Custom_Event(obj,sender,Get_Int_Parameter("Message2"),Commands->Get_ID(object),0);
 				modelid2 = Commands->Get_ID(object);
-				Commands->Set_Is_Visible(object, !stealth);
+				Commands->Set_Is_Rendered(object, !stealth);
 				driverid2 = Commands->Get_ID(sender);
 			}
 		}
@@ -484,6 +484,7 @@ void JFW_Per_Preset_Visible_People_In_Vechicle::Created(GameObject *obj)
 	modelid2 = 0;
 	driverid1 = 0;
 	driverid2 = 0;
+	stealth = false;
 	Commands->Start_Timer(obj, this, 1, 1);
 }
 
@@ -516,11 +517,11 @@ void JFW_Per_Preset_Visible_People_In_Vechicle::Timer_Expired(GameObject *obj, i
 		stealth = b;
 		if (modelid1)
 		{
-			Commands->Set_Is_Visible(Commands->Find_Object(modelid1), !stealth);
+			Commands->Set_Is_Rendered(Commands->Find_Object(modelid1), !stealth);
 		}
 		if (modelid2)
 		{
-			Commands->Set_Is_Visible(Commands->Find_Object(modelid2), !stealth);
+			Commands->Set_Is_Rendered(Commands->Find_Object(modelid2), !stealth);
 		}
 	}
 	Commands->Start_Timer(obj, this, 1, 1);
@@ -1228,6 +1229,7 @@ void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle::Created(GameObject *obj)
 {
 	SoldierObjects.Resize(Get_Vehicle_Seat_Count(obj));
 	stealth = false;
+	Commands->Start_Timer(obj, this, 1, 1);
 }
 
 void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -1242,7 +1244,7 @@ void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle::Custom(GameObject *obj,i
 		Commands->Attach_To_Object_Bone(object,obj,bone);
 		Commands->Send_Custom_Event(obj,sender,Get_Int_Parameter("Message"),Commands->Get_ID(object),0);
 		SoldierObjects[seat].ModelID = Commands->Get_ID(object);
-		Commands->Set_Is_Visible(object, !stealth);
+		Commands->Set_Is_Rendered(object, !stealth);
 		SoldierObjects[seat].SoldierID = Commands->Get_ID(sender);
 	}
 	if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -1293,7 +1295,7 @@ void JFW_Per_Preset_Visible_Multiple_People_In_Vehicle::Timer_Expired(GameObject
 				GameObject *o = Commands->Find_Object(SoldierObjects[i].ModelID);
 				if (o)
 				{
-					Commands->Set_Is_Visible(o, stealth);
+					Commands->Set_Is_Rendered(o, stealth);
 				}
 			}
 		}

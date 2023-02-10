@@ -48,34 +48,6 @@ void SH_PCT_Powerup::Custom(GameObject *obj,int type,int param,GameObject *sende
 	}
 }
 
-void SH_ConsoleCommand::Created(GameObject *obj) 
-{
-	Commands->Start_Timer(obj,this,0.1f,1);
-}
-
-void SH_ConsoleCommand::Timer_Expired(GameObject *obj,int number)
-{
-	char CommandRead[300];
-	CommandRead[299] = 0;
-	FILE* cc = fopen("ConsoleCommand.txt", "r");
-	if (cc)
-	{
-		while (fscanf(cc, "%299[^\n]", CommandRead) != EOF)
-		{
-			if (CommandRead[0] != '\0')
-			{
-				Console_Input(CommandRead);
-			}
-		}
-		fclose(cc);
-		if(!remove("ConsoleCommand.txt"))
-		{
-			Commands->Start_Timer(obj,this,0.1f,0);	
-		}
-	}
-
-}
-
 void SH_Spawn_Difficulty::Created(GameObject *obj)
 {
 	int level = Commands->Get_Difficulty_Level();
@@ -380,13 +352,32 @@ public:
     }
 };
 
+class SH_ResetDoorKeysOnCreated: public ScriptImpClass
+{
+    void Created(GameObject* obj)
+    {
+        for (int i = 0; i < 32; ++i) Commands->Grant_Key(obj, i, false);
+
+        char* keys = newstr(Get_Parameter("Keys"));
+        char* token = strtok(keys, ";");
+        while (token != NULL)
+        {
+            int key;
+            if (sscanf(token, "%d", &key) == 1)
+            {
+                Commands->Grant_Key(obj, key, true);
+            }
+            token = strtok(NULL, ";");
+        }
+        delete[] keys;
+    }
+};
+
 #define REGISTER_SCRIPT(name, params) ScriptRegistrant<name> name##Registrant(#name, params)
 
-ScriptRegistrant<SH_ConsoleCommand> SH_ConsoleCommand_Registrant("SH_ConsoleCommand","");
 ScriptRegistrant<SH_PCT_Powerup> SH_PCT_Powerup_Registrant("SH_PCT_Powerup","");
 ScriptRegistrant<SH_PCT_Custom> SH_PCT_On_Custom_Registrant("SH_PCT_On_Custom","Message:int");
 ScriptRegistrant<SH_Spawn_Difficulty> SH_Spawn_Difficulty_Created("SH_Spawn_Difficulty","ObjectEasy:string,ObjectEasyEnabled:int,ObjectMedium:string,ObjectMediumEnabled:int,ObjectHard:string,ObjectHardEnabled:int");
-ScriptRegistrant<SH_FileVerificationControllerScript> SH_FileVerificationControllerScript_Registrant("SH_FileVerificationController","INI:string");
 ScriptRegistrant<SH_PTHidePresetOnDeath> SH_PTHidePresetOnDeath_Registant("SH_PTHidePresetOnDeath","Presets:string,Player_Type:int");
 REGISTER_SCRIPT(SH_VehicleStealthedWhileEmpty, "");
 REGISTER_SCRIPT(SH_VehicleCanBeStolen, "");
@@ -400,4 +391,4 @@ REGISTER_SCRIPT(SH_C4FreeZone, "");
 REGISTER_SCRIPT(SH_VehicleAttachedC4FreeZone, "");
 REGISTER_SCRIPT(SH_VTOLAttachedC4FreeZone, "");
 REGISTER_SCRIPT(SH_Invulnerable, "");
-
+REGISTER_SCRIPT(SH_ResetDoorKeysOnCreated, "Keys:string");

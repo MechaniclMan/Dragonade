@@ -1904,6 +1904,224 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
+void JFW_Ion_Storm_2::Created(GameObject *obj)
+{
+	DisableEmp = false;
+	int chance = Commands->Get_Random_Int(0,100);
+	//FILE *f = fopen("ion.log","wt");
+	//fprintf(f,"Ion Storm script initializing, random chance chosen is %d, IonChance is %d\n",chance,Get_Int_Parameter("IonChance"));
+	//fclose(f);
+	if (chance <= Get_Int_Parameter("IonChance"))
+	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm random chance too low, no storms this game\n");
+		//fclose(f);
+		return;
+	}
+	storm = false;
+	float min = Get_Float_Parameter("Min_Delay");
+	float max = Get_Float_Parameter("Max_Delay");
+	if (max > The_Game()->Get_Time_Remaining_Seconds())
+	{
+		max = The_Game()->Get_Time_Remaining_Seconds();
+	}
+	if (min > The_Game()->Get_Time_Remaining_Seconds())
+	{
+		Destroy_Script();
+		return;
+	}
+	if (min > max)
+	{
+		Destroy_Script();
+		return;
+	}
+	float timer = Commands->Get_Random(min,max);
+	//FILE *f2 = fopen("ion.log","at");
+	//fprintf(f2,"Ion Storm timer starting, max delay is %f, min delay is %f, actual delay is %f\n",min,max,timer);
+	//fclose(f2);
+	Commands->Start_Timer(obj,this,timer,1);
+}
+void JFW_Ion_Storm_2::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1) //start storm
+	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm starting\n");
+		storm = true;
+		float min = Get_Float_Parameter("Min_Time");
+		float max = Get_Float_Parameter("Max_Time");
+		if (max > The_Game()->Get_Time_Remaining_Seconds())
+		{
+			max = The_Game()->Get_Time_Remaining_Seconds();
+		}
+		if (min > The_Game()->Get_Time_Remaining_Seconds())
+		{
+			Destroy_Script();
+			//fclose(f);
+			return;
+		}
+		if (min > max)
+		{
+			Destroy_Script();
+			//fclose(f);
+			return;
+		}
+		if (Get_Int_Parameter("DisableEmp"))
+		{
+			//fprintf(f,"Disable EMP\n");
+			DisableEmp = true;
+		}
+		if (Get_Int_Parameter("DisableStealth"))
+		{
+			//fprintf(f,"Disable Stealth\n");
+			Set_Global_Stealth_Disable(true);
+		}
+		float timer = Commands->Get_Random(min,max);
+		//fprintf(f,"Ion Storm run starting, max time is %f, min time is %f, actual time is %f\n",min,max,timer);
+		Commands->Start_Timer(obj,this,timer,2);
+		//fprintf(f,"Enable Ion Storm weather\n");
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("On_Weather_Custom"),0,0);
+		if (Get_Int_Parameter("DisableRadar"))
+		{
+			if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
+			{
+				//fprintf(f,"Disable Nod Radar\n");
+				Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
+			}
+			if (Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER))
+			{
+				//fprintf(f,"Disable GDI Radar\n");
+				Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
+			}
+		}
+		if (Get_Int_Parameter("DisablePower"))
+		{
+			if (Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT))
+			{
+				//fprintf(f,"Disable Nod Power\n");
+				Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
+			}
+			if (Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT))
+			{
+				//fprintf(f,"Disable GDI Power\n");
+				Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Disable_Custom"),0,0);
+			}
+		}
+		//fprintf(f,"Disable Base Defenses\n");
+		SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+		while (x)
+		{
+			VehicleGameObj *o = x->Data();
+			if (Get_Int_Parameter("DisableBaseDefenses"))
+			{
+				if (o && o->Get_Definition().Get_Encyclopedia_Type() == 3)
+				{
+					Commands->Send_Custom_Event(obj,0,CUSTOM_AI_DISABLEAI,0,0);
+				}
+			}
+			if (Is_Script_Attached(obj,"JFW_EMP_Mine") && Get_Int_Parameter("DestroyMines"))
+			{
+				Commands->Destroy_Object(obj);
+			}
+			x = x->Next();
+		}
+		Timer_Expired(obj,3);
+		Create_2D_Sound_Team(Get_Parameter("Announcement_Sound_Nod"),0);
+		Create_2D_Sound_Team(Get_Parameter("Announcement_Sound_GDI"),1);
+		const char *string = Get_Parameter("Announcement_String");
+		int red = Get_Int_Parameter("Red");
+		int green = Get_Int_Parameter("Green");
+		int blue = Get_Int_Parameter("Blue");
+		//fprintf(f,"Send Ion Storm starting message\n");
+		Send_Message(red,green,blue,string);
+		//fclose(f);
+	}
+	else if (number == 2) //storm ended
+	{
+		//FILE *f = fopen("ion.log","at");
+		//fprintf(f,"Ion Storm stopping\n");
+		storm = false;
+		//fprintf(f,"Enable Stealth\n");
+		Set_Global_Stealth_Disable(false);
+		if (Get_Int_Parameter("DisableEmp"))
+		{
+			//fprintf(f,"Enable EMP\n");
+			DisableEmp = false;
+		}
+		//fprintf(f,"Disable Ion Storm Weather\n");
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Off_Weather_Custom"),0,0);
+		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
+		{
+			//fprintf(f,"Enable Nod Radar\n");
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Enable_Custom"),0,0);
+		}
+		if (Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER))
+		{
+			//fprintf(f,"Enable GDI Radar\n");
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Enable_Custom"),0,0);
+		}
+		if (Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT))
+		{
+			//fprintf(f,"Enable Nod Power\n");
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Enable_Custom"),0,0);
+		}
+		if (Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT))
+		{
+			//fprintf(f,"Enable GDI Power\n");
+			Commands->Send_Custom_Event(obj,Find_Building_By_Type(1,BuildingConstants::TYPE_POWER_PLANT),Get_Int_Parameter("Enable_Custom"),0,0);
+		}
+		SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();
+		//fprintf(f,"Enable Base Defenses\n");
+		while (x)
+		{
+			VehicleGameObj *o = x->Data();
+			if (o && o->Get_Definition().Get_Encyclopedia_Type() == 3)
+			{
+				Commands->Send_Custom_Event(obj,0,CUSTOM_AI_ENABLEAI,0,0);
+			}
+			x = x->Next();
+		}
+		Create_2D_Sound_Team(Get_Parameter("End_Announcement_Sound_Nod"),0);
+		Create_2D_Sound_Team(Get_Parameter("End_Announcement_Sound_GDI"),1);
+		const char *string = Get_Parameter("End_Announcement_String");
+		int red = Get_Int_Parameter("Red");
+		int green = Get_Int_Parameter("Green");
+		int blue = Get_Int_Parameter("Blue");
+		//fprintf(f,"Send Ion Storm ending message\n");
+		Send_Message(red,green,blue,string);
+		float min = Get_Float_Parameter("Min_Delay");
+		float max = Get_Float_Parameter("Max_Delay");
+		if (max > The_Game()->Get_Time_Remaining_Seconds())
+		{
+			max = The_Game()->Get_Time_Remaining_Seconds();
+		}
+		if (min > The_Game()->Get_Time_Remaining_Seconds())
+		{
+			Destroy_Script();
+			//fclose(f);
+			return;
+		}
+		if (min > max)
+		{
+			Destroy_Script();
+			//fclose(f);
+			return;
+		}
+		float timer = Commands->Get_Random(min,max);
+		//fprintf(f,"Ion Storm timer restarting, max delay is %f, min delay is %f, actual delay is %f\n",min,max,timer);
+		Commands->Start_Timer(obj,this,timer,1);
+		//fclose(f);
+	}
+	else if (number == 3)
+	{
+		if (storm)
+		{
+			Commands->Create_2D_Sound(Get_Parameter("Ion_Effect_Sound"));
+			Commands->Start_Timer(obj,this,Get_Float_Parameter("Ion_Effect_Time"),3);
+		}
+	}
+}
+
 void JFW_Ion_Storm_Weather::Custom(GameObject *obj,int type,int param,GameObject *sender)
 {
 	if (type == Get_Int_Parameter("Message"))
@@ -2302,7 +2520,7 @@ void JFW_Ion_Lightning::Timer_Expired(GameObject *obj,int number)
 				v2.Z = res.ContactPoint.Z;
 				const AmmoDefinitionClass *def = WeaponManager::Find_Ammo_Definition(Get_Parameter("Ammo"));
 				Create_Lightning(def,v,v2);
-				Commands->Create_Sound(Get_Definition_Name(def->FireSoundDefID),v2,0);
+				Commands->Create_Sound(Get_Definition_Name(def->FireSoundDefID),v2,obj);
 				v2.Z += 0.1f;
 				Commands->Create_Explosion(Get_Definition_Name(def->ExplosionDefID),v2,0);
 				if (coltest.CollidedPhysObj)
@@ -2404,6 +2622,16 @@ void JMG_Send_Custom_To_Self_On_Timer::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
+void JFW_Vehicle_Crate::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_POWERUP_GRANTED)
+	{
+		Vector3 position = Commands->Get_Position(obj);
+		position += Get_Vector3_Parameter("Offset");
+		Force_Vehicle_Entry(sender,Commands->Create_Object(Get_Parameter("Preset"), position));
+	}
+}
+
 void JFW_Airstrike_Cinematic::Custom(GameObject *obj, int type, int param, GameObject *sender)
 {
 	if (type == Get_Int_Parameter("Message"))
@@ -2431,7 +2659,7 @@ void JFW_Spawner_Delay::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
-ScriptRegistrant<JFW_Tech_Level_Timer> JFW_Tech_Level_Timer_Registrant("JFW_Tech_Level_Timer","Display_Message:string,Red:int,Blue:int,Green:int,Sound:string,Time:float,Tech_Level:int");
+ScriptRegistrant<JFW_Tech_Level_Timer> JFW_Tech_Level_Timer_Registrant("JFW_Tech_Level_Timer", "Display_Message:string,Red:int,Blue:int,Green:int,Sound:string,Time:float,Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Startup> JFW_Tech_Level_Startup_Registrant("JFW_Tech_Level_Startup","Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Custom> JFW_Tech_Level_Custom_Registrant("JFW_Tech_Level_Custom","Message:int,Tech_Level:int");
 
@@ -2513,6 +2741,7 @@ ScriptRegistrant<JFW_Forward_Custom_Object> JFW_Forward_Custom_Object_Registrant
 ScriptRegistrant<JFW_Death_Send_Custom_Self> JFW_Death_Send_Custom_Self_Registrant("JFW_Death_Send_Custom_Self","Message:int");
 ScriptRegistrant<JFW_Hunter_Seeker> JFW_Hunter_Seeker_Registrant("JFW_Hunter_Seeker","Key:string,Explosion:string");
 ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int");
+ScriptRegistrant<JFW_Ion_Storm_2> JFW_Ion_Storm_2_Registrant("JFW_Ion_Storm_2","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int,DisableStealth:int,DisableRadar:int,DisablePower:int,DisableBaseDefenses:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather> JFW_Ion_Storm_Weather_Registrant("JFW_Ion_Storm_Weather","Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Message:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather_2> JFW_Ion_Storm_Weather_2_Registrant("JFW_Ion_Storm_Weather_2", "Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Enable_Message:int,Disable_Message:int");
 ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created", "Character:string");
@@ -2527,6 +2756,7 @@ ScriptRegistrant<JFW_Building_Zone> JFW_Building_Zone_Registrant("JFW_Building_Z
 ScriptRegistrant<JFW_Building_Zone_Controller> JFW_Building_Zone_Controller_Registrant("JFW_Building_Zone_Controler","ZoneSize:vector3,ZonePreset:string");
 ScriptRegistrant<JFW_Send_Message_Preset_Death> JFW_Send_Message_Preset_Death_Registrant("JFW_Send_Message_Preset_Death","Preset:string,Message:int");
 ScriptRegistrant<JMG_Send_Custom_To_Self_On_Timer> JMG_Send_Custom_To_Self_On_Timer_Registrant("JMG_Send_Custom_To_Self_On_Timer","Message:int,Param:int,Time:float,Timer_Number:int,Repeat:int");
+ScriptRegistrant<JFW_Vehicle_Crate> JFW_Vehicle_Crate_Registrant("JFW_Vehicle_Crate", "Preset:string,Offset:vector3");
 ScriptRegistrant<JFW_Airstrike_Cinematic> JFW_Airstrike_Cinematic_Registrant("JFW_Airstrike_Cinematic", "Script_Name:string,Message:int");
 ScriptRegistrant<JFW_Spy_Disguise_Target> JFW_Spy_Disguise_Target_Registrant("JFW_Spy_Disguise_Target", "Model:string,Warhead:string");
 ScriptRegistrant<JFW_Spawner_Delay> JFW_Spawner_Delay_Registrant("JFW_Spawner_Delay", "ID:int,time:float");

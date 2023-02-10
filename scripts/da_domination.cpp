@@ -359,10 +359,10 @@ void DADominationManagerClass::Send_Info_Message(int ID) {
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
 		DA::Private_Admin_Message(ID,"When you die you will be asked to use the Purchase Terminal to select a character to spawn as. Once selected you will spawn at either the closest node controlled by your team or your team's starting location.");
 	}
-	DA::Private_Color_Message(ID,WHITE,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to reach %.0f points wins.",WinningPoints);
+	DA::Private_Color_Message(ID,COLORWHITE,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to reach %.0f points wins.",WinningPoints);
 	DA::Private_Admin_Message(ID,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to reach %.0f points wins.",WinningPoints);
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
-		DA::Private_Color_Message(ID,WHITE,"When you die you will be asked to use the Purchase Terminal to select a character to spawn as. Once selected you will spawn at either the closest node controlled by your team or your team's starting location.");
+		DA::Private_Color_Message(ID,COLORWHITE,"When you die you will be asked to use the Purchase Terminal to select a character to spawn as. Once selected you will spawn at either the closest node controlled by your team or your team's starting location.");
 	}
 }
 
@@ -384,7 +384,7 @@ bool DADominationManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenC
 	}
 	int ID = Player->Get_ID();
 	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[2];it;++it) {
-		DA::Private_Color_Message(ID,WHITE,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
+		DA::Private_Color_Message(ID,COLORWHITE,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
 	}
 	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[0];it;++it) {
 		DA::Private_Color_Message_With_Team_Color(ID,0,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);

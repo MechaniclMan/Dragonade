@@ -453,6 +453,10 @@ void JMG_Metroid_Character_Control::Created(GameObject *obj)
 		{
 			JMG_Metroid_Game_Control::ParseBriefingString(Get_Translated_String(JMG_Metroid_Game_Control::currentBriefingId),PlayerID);
 			MetroidObjectiveSystemControl.Display_All_Objectives(obj);
+			int objectiveId = MetroidObjectiveSystemControl.Get_First_Pending_Objective_Of_Priority(NewObjectiveSystem::Primary);
+			int currentObjectiveText = MetroidObjectiveSystemControl.Get_Mission_Text_Id(objectiveId);
+			if (currentObjectiveText)
+				Set_HUD_Help_Text_Player(obj,currentObjectiveText,Vector3(0,1,0));
 		}
 	}
 	MetroidPSSControl.PlayerSettings[PlayerID]->ScreenColorZone = 0;
@@ -784,6 +788,7 @@ void JMG_Metroid_New_Ambush_Attack_Point::Timer_Expired(GameObject *obj,int numb
 }
 void JMG_Metroid_Move_To_Random_Ambush_Spot::Created(GameObject *obj)
 {
+	faceReset = 0;
 	currentEnemyID = 0;
 	MyLastPos = Commands->Get_Position(obj);
 	LastEnemyID = 0;
@@ -822,6 +827,8 @@ void JMG_Metroid_Move_To_Random_Ambush_Spot::Timer_Expired(GameObject *obj,int n
 {
 	if (1 == number)
 	{
+		if (faceReset)
+			faceReset--;
 		if (EnemySeen)
 			EnemySeen--;
 		else if (currentEnemyID)
@@ -919,7 +926,7 @@ void JMG_Metroid_Move_To_Random_Ambush_Spot::Action_Complete(GameObject *obj,int
 {
 	LastEnemyID = 0;
 	Commands->Action_Reset(obj,100.0f);
-	if (!ImAtPoint && Commands->Get_Health(obj))
+	if (!ImAtPoint && Commands->Get_Health(obj) && !faceReset)
 		FaceAmbushLocation(obj);
 	ImAtPoint = true;
 	if (!(Get_Int_Parameter("FindVantagePoint") || Get_Int_Parameter("FindHidingSpots")))
@@ -999,6 +1006,7 @@ void JMG_Metroid_Move_To_Random_Ambush_Spot::FaceAmbushLocation(GameObject *obj)
 {
 	if (CurrentAmbushPoint && !EnemySeen && JmgUtility::SimpleDistance(CurrentAmbushPoint->coverPos,Commands->Get_Position(obj)) < 4.0f)
 	{
+		faceReset = 5;
 		Commands->Action_Reset(obj,100.0f);
 		ActionParamsStruct params;
 		params.Set_Basic(this,10,1);
@@ -1066,7 +1074,10 @@ void JMG_Metroid_Mine_Tower_Control::Custom(GameObject *obj,int message,int para
 	if (message == 223424)
 	{
 		for (int x = 0;x < 3;x++)
+		{
 			MetroidObjectiveSystemControl.Add_Objective(30+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12810+x,"",12810+x,Commands->Get_Position(Commands->Find_Object(LockDownButtonIDs[x])));
+			JmgUtility::SetHUDHelpText(12810,Vector3(0,1,0));
+		}
 	}
 	if (message == 403025)
 	{
@@ -1136,6 +1147,7 @@ void JMG_Metroid_Mine_Tower_Control::Custom(GameObject *obj,int message,int para
 	if (message == 123425)
 	{
 		MetroidObjectiveSystemControl.Add_Objective(33,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(406329)));
+		JmgUtility::SetHUDHelpText(12813,Vector3(0,1,0));
 		MetroidGameControl.MainElevatorDown = true;
 	}
 	if (message == 406919)
@@ -1554,6 +1566,7 @@ void JMG_Metroid_Boss_Turret::Enemy_Seen(GameObject *obj,GameObject *seen)
 			ActionParamsStruct params;
 			params.Set_Basic(this,100,2);
 			params.Set_Attack(seen,Get_Float_Parameter("MaxAttackDistance"),0.0,MetroidGameControl.BossMode ? false : true);
+			params.AttackCheckBlocked = false;
 			Commands->Action_Attack(obj,params);
 		}
 	}
@@ -1637,6 +1650,20 @@ void JMG_Metroid_Boss_Turret::Timer_Expired(GameObject *obj,int number)
 		params.Set_Attack(Pos,0.0f,0.0f,true);
 		Commands->Action_Attack(obj,params);
 		Commands->Start_Timer(obj,this,0.05f*Get_Int_Parameter("SwivelTurret"),3);
+	}
+}
+void JMG_Metroid_Boss_Turret::Damaged(GameObject *obj,GameObject *damager,float damage)
+{
+	if (damage > 0 && !damager && obj != damager && !SeenID)
+	{
+		SeenID = Commands->Get_ID(damager);
+		ActionParamsStruct params;
+		params.Set_Basic(this,100,2);
+		params.Set_Attack(damager,Get_Float_Parameter("MaxAttackDistance"),1.0,MetroidGameControl.BossMode ? false : true);
+		params.AttackCheckBlocked = false;
+		params.AttackForceFire = true;
+		ClearTarget = Get_Int_Parameter("AttackTimer");
+		Commands->Action_Attack(obj,params);
 	}
 }
 void JMG_Metroid_Boss_Grinder_Kill_Zone::Entered(GameObject *obj,GameObject *enter)
@@ -1785,7 +1812,7 @@ void JMG_Metroid_Mine_Tower_Elevator::Custom(GameObject *obj,int message,int par
 		GameObject *LazerWall = Commands->Find_Object(LockdownMode);
 		if (!LazerWall)
 			return;
-		MetroidGameControl.DisplayHUDMessage(18);
+		MetroidGameControl.DisplayHUDMessage(6);
 		MetroidObjectiveSystemControl.Set_Objective_Status(29,NewObjectiveSystem::Accomplished);
 		Commands->Apply_Damage(LazerWall,9999.9f,"BlamoKiller",0);
 		Commands->Set_Animation(sender,"JG_Button.JG_Button",false,0,2.0f,3.0f,true);
@@ -1828,11 +1855,15 @@ void JMG_Metroid_Mine_Tower_Elevator::Custom(GameObject *obj,int message,int par
 	if (message == 406919)
 	{
 		MetroidObjectiveSystemControl.Add_Objective(29,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12813,"",12813,Commands->Get_Position(Commands->Find_Object(LockDownButtonID)));
+			JmgUtility::SetHUDHelpText(12813,Vector3(0,1,0));
 	}
 	if (message == 406920)
 	{
 		for (int x = 0;x < 3;x++)
+		{
 			MetroidObjectiveSystemControl.Add_Objective(34+x,NewObjectiveSystem::Primary,NewObjectiveSystem::Pending,12814+x,"",12814+x,Commands->Get_Position(Commands->Find_Object(MetroidGameControl.MineTerminalID[x])));
+			JmgUtility::SetHUDHelpText(12814+x,Vector3(0,1,0));
+		}
 	}
 }
 void JMG_Metroid_Mine_Tower_Elevator::Destroyed(GameObject *obj)
@@ -3514,13 +3545,33 @@ void JMG_Metroid_AI_Hunt_Equipment::GetClosestStar(GameObject *obj)
 }
 void JMG_Metroid_Base_Defense::Created(GameObject *obj)
 {
+	resetTime = 0;
 	Commands->Enable_Hibernation(obj,false);
 	Commands->Innate_Enable(obj);
 	Commands->Enable_Enemy_Seen(obj,true);
 	enemyID = 0;
 	MinDist = Get_Float_Parameter("MinAttackDistance")*Get_Float_Parameter("MinAttackDistance");
 	MaxDist = Get_Float_Parameter("MaxAttackDistance")*Get_Float_Parameter("MaxAttackDistance");
-	Commands->Start_Timer(obj,this,10,1);
+	Commands->Start_Timer(obj,this,0.1f,2);
+}
+void JMG_Metroid_Base_Defense::Enemy_Seen(GameObject *obj,GameObject *seen)
+{
+	GameObject *vehicle = Get_Vehicle(seen);
+	if (vehicle)
+		seen = vehicle;
+	float distance = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
+	int seenId = Commands->Get_ID(seen);
+	if (!enemyID && distance >= MinDist && distance <= MaxDist)
+	{
+		enemyID = seenId;
+		ActionParamsStruct params;
+		params.Set_Basic(this,100,2);
+		params.Set_Attack(seen,Get_Float_Parameter("MaxAttackDistance"),0.0,true);
+		Commands->Action_Attack(obj,params);
+		params.AttackCheckBlocked = false;
+	}
+	if (enemyID == seenId)
+		resetTime = Get_Float_Parameter("AttackTimer");
 }
 void JMG_Metroid_Base_Defense::Damaged(GameObject *obj,GameObject *damager,float damage)
 {
@@ -3532,33 +3583,28 @@ void JMG_Metroid_Base_Defense::Damaged(GameObject *obj,GameObject *damager,float
 		enemyID = Commands->Get_ID(damager);
 		ActionParamsStruct params;
 		params.Set_Basic(this,100,2);
-		params.Set_Attack(damager,Get_Float_Parameter("MaxAttackDistance"),0.0,true);
+		params.Set_Attack(damager,Get_Float_Parameter("MaxAttackDistance"),1.5,true);
+		params.AttackCheckBlocked = false;
+		params.AttackForceFire = true;
 		Commands->Action_Attack(obj,params);
-		Commands->Start_Timer(obj,this,Get_Float_Parameter("AttackTimer"),2);
-	}
-}
-void JMG_Metroid_Base_Defense::Enemy_Seen(GameObject *obj,GameObject *seen)
-{
-	GameObject *vehicle = Get_Vehicle(seen);
-	if (vehicle)
-		seen = vehicle;
-	float distance = JmgUtility::SimpleDistance(Commands->Get_Position(obj),Commands->Get_Position(seen));
-	if (distance >= MinDist && distance <= MaxDist)
-	{
-		enemyID = Commands->Get_ID(seen);
-		ActionParamsStruct params;
-		params.Set_Basic(this,100,2);
-		params.Set_Attack(seen,Get_Float_Parameter("MaxAttackDistance"),0.0,true);
-		Commands->Action_Attack(obj,params);
-		Commands->Start_Timer(obj,this,Get_Float_Parameter("AttackTimer"),2);
+		resetTime = Get_Float_Parameter("AttackTimer");
 	}
 }
 void JMG_Metroid_Base_Defense::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 2)
 	{
-		enemyID = 0;
-		Commands->Action_Reset(obj,100);
+		if (resetTime)
+		{
+			resetTime -= 0.1f;
+			if (resetTime <= 0.0f)
+			{
+				resetTime = 0.0f;
+				enemyID = 0;
+				Commands->Action_Reset(obj,100);
+			}
+		}
+		Commands->Start_Timer(obj,this,0.1f,2);
 	}
 }
 void JMG_Metroid_Camera_Behavior::Created(GameObject *obj)
@@ -4511,68 +4557,54 @@ void JMG_Metroid_Zone_Score_Monitor::Entered(GameObject *obj,GameObject *enter)
 }
 void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Created(GameObject *obj)
 {
-	Commands->Set_Model(obj,"jg_splCptr");
-	Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,1.0f,1.0f,false);
-	CompletedCombos = 1;
+	lastPoke = clock();
 	Timeout(obj);
+	Commands->Set_Model(obj,"hackterminal");
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,0.0f,0.0f,false);
 	Commands->Start_Timer(obj,this,0.1f,1);
 }
 void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Poked(GameObject *obj,GameObject *poker)
 {
 	if (!RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].GetLockdownInProgress())
 		return;
-	if (CompletedCombos && (triggerTime || (!triggerTime && !timeOutTime)))
-	{
-		Commands->Apply_Damage(poker,125.0f,"Electric",obj);
-		Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
-		CompletedCombos = 0;
-		timeOutTime = 0;
-		triggerTime = Commands->Get_Random_Int(1,20);
+	if (difftime(clock(),lastPoke) < 50)
 		return;
-	}
-	Timeout(obj);
-	CompletedCombos++;
-	if (CompletedCombos >= 10)
+	lastPoke = clock();
+	subtractionGrowth = 0;
+	pokeAmount += 0.33f;
+	if (pokeAmount >= 100.0f)
 	{
-		CompletedCombos = 0;
-		Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
 		RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].EndLockDown(true,300);
+		pokeAmount = 0;
+		Commands->Enable_HUD_Pokable_Indicator(obj,false);
+		Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,190.0f,190.0f,false);
 		Killed(obj,NULL);
 		return;
 	}
+	float frame = pokeAmount/100.0f*189.0f;
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,frame,frame,false);
 	Set_Shader_Number_Vector(obj,999,Vector4(4920037.0f,0.0f,0.0f,0.0f));
 }
 void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Timer_Expired(GameObject *obj,int number)
 {
 	if (number == 1)
 	{
+		if (!RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].GetLockdownInProgress())
+			return;
 		if (RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].GetLockdownInProgress())
 		{
-			if (CompletedCombos && !timeOutTime && !triggerTime)
+			if (pokeAmount)
 			{
-				Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,0.0f,0.0f,false);
-				CompletedCombos = 0;
-			}
-			if (timeOutTime)
-			{
-				timeOutTime--;
-				if (!timeOutTime)
-				{
-					CompletedCombos = 0;
-					Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
-				}
-			}
-			if (triggerTime)
-			{
-				triggerTime--;
-				if (!triggerTime)
-				{
-					Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,2.0f,2.0f,false);
-					timeOutTime = Commands->Get_Random_Int(20,30);
-				}
-			}
+				pokeAmount -= subtractionGrowth*0.02f;
+				if (pokeAmount <= 0.0f)
+					pokeAmount = 0.0f;
+				float frame = pokeAmount/100.0f*189.0f;
+				Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,frame,frame,false);
+			}		
+			if (subtractionGrowth < 500)
+				subtractionGrowth++;		
 		}
-		Commands->Start_Timer(obj,this,0.1f,1);
+		Commands->Start_Timer(obj,this,1.0f,1);
 	}
 }
 void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Killed(GameObject *obj,GameObject *killer)
@@ -4582,9 +4614,9 @@ void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Killed(GameOb
 }
 void JMG_Metroid_Lockdown_zComputer_Console_Special_Disarm_Script::Timeout(GameObject *obj)
 {
-	timeOutTime = 0;
-	triggerTime = Commands->Get_Random_Int(1,40);
-	Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,1.0f,1.0f,false);
+	pokeAmount = 0.0f;
+	subtractionGrowth = 0;
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,0.0f,0.0f,false);
 }
 void JMG_Metroid_Mine_Computer_Console_Script_Special::Created(GameObject *obj)
 {
@@ -4595,11 +4627,13 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Created(GameObject *obj)
 			MetroidGameControl.MineTerminalID[x] = Commands->Get_ID(obj);
 			break;
 		}
+	lastPoke = clock();
 	Commands->Enable_HUD_Pokable_Indicator(obj,true);
 	MetroidGameControl.MineTerminalReset[TerminalNumber] = 0;
-	Commands->Set_Model(obj,"jg_splCptr");
-	Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,1.0f,1.0f,false);
-	CompletedCombos = 0;
+	Commands->Set_Model(obj,"hackterminal");
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,1.0f,1.0f,false);
+	pokeAmount = 0.0f;
+	subtractionGrowth = 0;
 	Timeout(obj);
 	Commands->Start_Timer(obj,this,0.1f,1);
 	Commands->Start_Timer(obj,this,1.0f,2);
@@ -4608,25 +4642,21 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Poked(GameObject *obj,Gam
 {
 	if (MetroidGameControl.MineTerminalReset[TerminalNumber])
 		return;
-	if (CompletedCombos && (triggerTime || (!triggerTime && !timeOutTime)))
-	{
-		Commands->Apply_Damage(poker,125.0f,"Electric",obj);
-		Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
-		CompletedCombos = 0;
-		timeOutTime = 0;
-		triggerTime = Commands->Get_Random_Int(1,20);
+	if (difftime(clock(),lastPoke) < 50)
 		return;
-	}
-	Timeout(obj);
-	CompletedCombos++;
-	if (CompletedCombos >= 10)
+	lastPoke = clock();
+	subtractionGrowth = 0;
+	pokeAmount += 0.33f;
+	if (pokeAmount >= 100.0f)
 	{
-		CompletedCombos = 0;
 		MetroidGameControl.DeactivateTerminal(obj,Commands->Get_ID(obj));
+		pokeAmount = 0;
 		Commands->Enable_HUD_Pokable_Indicator(obj,false);
-		Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,0.0f,0.0f,false);
+		Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,190.0f,190.0f,false);
 		return;
 	}
+	float frame = pokeAmount/100.0f*189.0f;
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,frame,frame,false);
 	Set_Shader_Number_Vector(obj,999,Vector4(4920037.0f,0.0f,0.0f,0.0f));
 }
 void JMG_Metroid_Mine_Computer_Console_Script_Special::Timer_Expired(GameObject *obj,int number)
@@ -4635,31 +4665,18 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Timer_Expired(GameObject 
 	{
 		if (!MetroidGameControl.MineTerminalReset[TerminalNumber])
 		{
-			if (CompletedCombos && !timeOutTime && !triggerTime)
+			if (pokeAmount)
 			{
-				Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
-				CompletedCombos = 0;
-			}
-			if (timeOutTime)
-			{
-				timeOutTime--;
-				if (!timeOutTime)
-				{
-					CompletedCombos = 0;
-					Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,3.0f,3.0f,false);
-				}
-			}
-			if (triggerTime)
-			{
-				triggerTime--;
-				if (!triggerTime)
-				{
-					Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,2.0f,2.0f,false);
-					timeOutTime = Commands->Get_Random_Int(10,20);
-				}
-			}
+				pokeAmount -= subtractionGrowth*0.02f;
+				if (pokeAmount <= 0.0f)
+					pokeAmount = 0.0f;
+				float frame = pokeAmount/100.0f*189.0f;
+				Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,frame,frame,false);
+			}			
+			if (subtractionGrowth < 500)
+				subtractionGrowth++;
 		}
-		Commands->Start_Timer(obj,this,0.1f,1);
+		Commands->Start_Timer(obj,this,1.0f,1);
 	}
 	if (number == 2)
 	{
@@ -4671,7 +4688,6 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Timer_Expired(GameObject 
 				Commands->Enable_HUD_Pokable_Indicator(obj,true);
 				MetroidGameControl.NumberOfDeactivatedTerminals--;
 				MetroidGameControl.MineTerminalDeactivated[TerminalNumber] = false;
-				CompletedCombos = 0;
 				Timeout(obj);
 				for (int x = 1;x < 128;x++)
 				{
@@ -4687,9 +4703,9 @@ void JMG_Metroid_Mine_Computer_Console_Script_Special::Timer_Expired(GameObject 
 }
 void JMG_Metroid_Mine_Computer_Console_Script_Special::Timeout(GameObject *obj)
 {
-	timeOutTime = 0;
-	triggerTime = Commands->Get_Random_Int(1,40);
-	Commands->Set_Animation(obj,"jg_splCptr.jg_splCptr",false,0,1.0f,1.0f,false);
+	pokeAmount = 0.0f;
+	subtractionGrowth = 0;
+	Commands->Set_Animation(obj,"hackterminal.hackterminal",false,0,0.0f,0.0f,false);
 }
 void JMG_Metroid_Poke_Activate_Purchase_Terminal::Created(GameObject *obj)
 {
@@ -4751,6 +4767,7 @@ void JMG_Metroid_Objective_Update_On_Enter::Timer_Expired(GameObject *obj,int nu
 				MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),Commands->Get_Position(ObjectiveMarker));
 			else
 				MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+			JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),Vector3(0,1,0));
 		}
 	}
 }
@@ -4775,6 +4792,7 @@ void JMG_Metroid_Objective_Update_On_Pickup::Custom(GameObject *obj,int message,
 			MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),Commands->Get_Position(ObjectiveMarker));
 		else
 			MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+		JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),Vector3(0,1,0));
 	}
 }
 void JMG_Metroid_Objective_Update_On_Killed::Killed(GameObject *obj, GameObject *damager)
@@ -4796,6 +4814,7 @@ void JMG_Metroid_Objective_Update_On_Killed::Killed(GameObject *obj, GameObject 
 		MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),Commands->Get_Position(ObjectiveMarker));
 	else
 		MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+	JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),Vector3(0,1,0));
 }
 void JMG_Metroid_Objective_Update_On_Custom::Custom(GameObject *obj,int message,int param,GameObject *sender)
 {
@@ -4816,6 +4835,7 @@ void JMG_Metroid_Objective_Update_On_Custom::Custom(GameObject *obj,int message,
 			MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"),Commands->Get_Position(ObjectiveMarker));
 		else
 			MetroidObjectiveSystemControl.Add_Objective(Get_Int_Parameter("NewObjectiveID"),(NewObjectiveSystem::Priority)Get_Int_Parameter("NewObjectivePriority"),NewObjectiveSystem::Pending,Get_Int_Parameter("NewObjectiveStringID"),"",Get_Int_Parameter("NewObjectiveStringID"));
+		JmgUtility::SetHUDHelpText(Get_Int_Parameter("NewObjectiveStringID"),Vector3(0,1,0));
 	}
 }
 void JMG_AI_Artillery_Targeting_Fire_At_Custom::Created(GameObject *obj)

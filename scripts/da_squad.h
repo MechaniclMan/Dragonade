@@ -19,7 +19,7 @@
 #include "da_player.h"
 #include "engine_game.h"
 
-#define SQUADCOLOR GREEN
+#define SQUADCOLOR COLORGREEN
 
 class DASquadClass;
 class DASquadMemberClass;
@@ -69,12 +69,10 @@ class DA_API DASquadMemberClass : public DAPlayerObserverClass {
 public:
 	DASquadMemberClass(DASquadClass *squad) : DAPlayerObserverClass(), Squad(squad) { Set_Flags(DAPlayerFlags::PERSISTMAP); }
 	virtual void Init();
-	virtual void Name_Change();
 	virtual ~DASquadMemberClass();
 	virtual void Team_Change();
 	virtual void Created();
 	virtual void Player_Loaded();
-	virtual void Timer_Expired(int Number,unsigned int Data);
 	virtual void Vehicle_Enter(VehicleGameObj *Vehicle,int Seat);
 	virtual void Vehicle_Exit(VehicleGameObj *Vehicle,int Seat);
 	virtual void Character_Purchase(float Cost,const SoldierGameObjDef *Item);
@@ -85,14 +83,12 @@ public:
 	bool Promote_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType);
 	bool Info_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType);
 	bool SKick_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType);
-	bool Leave_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType);
 	bool Msg_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType);
 	
-	void Update_Radar(GameObject *Member = 0);
-	void Set_Radar_Soldier(GameObject *Member = 0);
-	void Set_Radar_Vehicle_Driver(GameObject *Member = 0);
-	void Set_Radar_Vehicle_Passenger(GameObject *Member = 0);
-	void Reset_Radar(GameObject *Member);
+	void Create_Radar();
+	void Update_Radar();
+	void Add_Radar(DASquadMemberClass *Member);
+	void Remove_Radar(DASquadMemberClass *Member);
 
 	virtual const char *Get_Observer_Name() {
 		return "DASquadMemberClass";
@@ -100,24 +96,24 @@ public:
 	inline DASquadClass *Get_Squad() {
 		return Squad;
 	}
-	inline void Leave_Squad() {
-		Set_Delete_Pending();
-	}
 	bool Is_Leader();
+	void Leave_Squad();
 
 private:
 	DASquadMemberClass();
 	DASquadClass *Squad;
+	ReferencerClass Radar;
 };
 
 class DA_API DASquadClass {
 public:
 	DASquadClass(cPlayer *Player);
-	bool Add(cPlayer *Player);
+	void Add(cPlayer *Player);
 	bool Remove(cPlayer *Player);
 	void Internal_Remove(DASquadMemberClass *Member);
 	void Disband();
 	
+	void Squad_Chat(cPlayer *Player,const char *Format,...);
 	void Squad_Message(const char *Format,...);
 	void Squad_Message_Except(cPlayer *Player,const char *Format,...);
 	void Leader_Message(const char *Format,...);
@@ -130,30 +126,8 @@ public:
 		}
 		return false;
 	}
-	inline bool Is_Member(int ID) {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i]->Get_ID() == ID) {
-				return true;
-			}
-		}
-		return false;
-	}
-	inline bool Is_Member(GameObject *obj) {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i]->Get_GameObj() == obj) {
-				return true;
-			}
-		}
-		return false;
-	}
 	inline bool Is_Leader(cPlayer *Player) {
 		return (Members.Count() && Members[0]->Get_Owner() == Player);
-	}
-	inline bool Is_Leader(int ID) {
-		return (Members.Count() && Members[0]->Get_ID() == ID);
-	}
-	inline bool Is_Leader(GameObject *obj) {
-		return (Members.Count() && Members[0]->Get_GameObj() == obj);
 	}
 	inline DASquadMemberClass *Find_Member(cPlayer *Player) {
 		for (int i = 0;i < Members.Count();i++) {
@@ -163,47 +137,29 @@ public:
 		}
 		return 0;
 	}
-	inline DASquadMemberClass *Find_Member(int ID) {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i]->Get_ID() == ID) {
-				Members[i];
-			}
-		}
-		return 0;
-	}
-	inline DASquadMemberClass *Find_Member(GameObject *obj) {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i]->Get_GameObj() == obj) {
-				Members[i];
-			}
-		}
-		return 0;
-	}
 	inline DASquadMemberClass *Get_Member(int Index) {
 		return Members[Index];
 	}
 	inline DASquadMemberClass *Get_Leader() {
-		return Members[0];
+		return Members.Count()?Members[0]:0;
 	}
 	void Set_Leader(cPlayer *Player);
 
 	inline int Get_Team() {
-		return Get_Leader()->Get_Team();
+		return Team;
 	}
-	void Set_Team(int team);
+	void Set_Team(int Team);
 	void Check_Team();
 
 	inline int Size() {
 		return Members.Count();
 	}
 	bool Is_Full();
-	inline void Destroy() {
-		delete this;
-	}
-	~DASquadClass();
+	int Active_Size();
 	
 private:
 	DynamicVectorClass<DASquadMemberClass*> Members;
+	int Team;
 	bool Disbanded;
 };
 
@@ -219,6 +175,7 @@ private:
 	virtual void Rebalance_Event();
 	virtual void Swap_Event();
 	virtual void Think();
+	virtual bool Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID);
 
 	bool List_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	bool Join_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
@@ -229,9 +186,6 @@ private:
 
 public:
 	DASquadClass *Create_Squad(cPlayer *Leader);
-	inline void Remove_Squad(DASquadClass *Squad) {
-		SquadList.DeleteObj(Squad);
-	}
 
 	void Invite(cPlayer *Player,cPlayer *Leader);
 	void Join_Accepted(int JoinIndex);
@@ -249,9 +203,9 @@ public:
 	bool Clear_Invites(cPlayer *Player);
 	bool Clear_WaitList(cPlayer *Player);
 
+	void Clear_Lists(cPlayer *Player);
+
 	DASquadClass *Find_Squad(cPlayer *Player);
-	DASquadClass *Find_Squad(int ID);
-	DASquadClass *Find_Squad(GameObject *obj);
 
 	inline DASquadClass *Get_Squad(int Index) {
 		return SquadList[Index];
@@ -260,8 +214,10 @@ public:
 		return SquadList.Count();
 	}
 
-	void Check_WaitList(cPlayer *Player);
-	unsigned int Get_Max_Squad_Size();
+	int Get_Max_Squad_Size();
+	bool Can_Create_Squads();
+	void Check_Teams();
+	void Check_Size();
 
 private:
 	DynamicVectorClass<DASquadInviteStruct> Invites;
@@ -270,7 +226,7 @@ private:
 	DynamicVectorClass<DASquadClass*> SquadList;
 
 	//Settings
-	unsigned int MaxSquadSize;
+	int MaxSquadSize;
 	bool RemixSquads;
 };
 

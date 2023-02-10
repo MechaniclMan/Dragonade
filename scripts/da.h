@@ -23,12 +23,12 @@ class SoldierGameObj;
 class ScriptableGameObj;
 typedef ScriptableGameObj GameObject;
 
-#define WHITE 255,255,240
-#define GRAY 178,178,178
-#define LIGHTBLUE 0,255,255
-#define GREEN 0,229,51
-#define BROWN 210,105,30
-#define PURPLE 210,115,247
+#define COLORWHITE 255,255,240
+#define COLORGRAY 178,178,178
+#define COLORLIGHTBLUE 0,255,255
+#define COLORGREEN 0,229,51
+#define COLORBROWN 210,105,30
+#define COLORPURPLE 210,115,247
 
 #define Format_String(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); vsnprintf(Buffer,255,Format,arg_list); va_end(arg_list); };
 #define Format_String_Prefix(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); strcpy(Buffer,MessagePrefix); vsnprintf(Buffer+MessagePrefix.Get_Length(),255-MessagePrefix.Get_Length(),Format,arg_list); va_end(arg_list); };

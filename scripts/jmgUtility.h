@@ -9,11 +9,21 @@
 #include "PhysicsSceneClass.h"
 #include "MoveablePhysClass.h"
 
+/*!
+* \brief Displays a message if the script named isn't in the scripts build on the server.
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Check_If_Script_Is_In_Library : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 };
 
+/*!
+* \brief Sends a custom when customs are sent in a certain order (kind of like a combo lock)
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Send_Custom_When_Custom_Sequence_Matched : public ScriptImpClass {
 	int depth;
 	int failCount;
@@ -23,11 +33,21 @@ class JMG_Send_Custom_When_Custom_Sequence_Matched : public ScriptImpClass {
 	void Send_Custom(GameObject *obj,int custom,int param);
 };
 
+/*!
+* \brief Changes a objects w3d model on a timer
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Change_Model_On_Timer : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 };
 
+/*!
+* \brief Turns an object into an object that emulates the damange system of DamageableStaticPhysics tiles
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Emulate_DamageableStaticPhys : public ScriptImpClass {
 	int team;
 	bool alive;
@@ -38,21 +58,55 @@ class JMG_Utility_Emulate_DamageableStaticPhys : public ScriptImpClass {
 	void Animation_Complete(GameObject *obj,const char *anim);
 	void Play_Animation(GameObject *obj,bool loop,float start,float end);
 };
+/*!
+* \brief Displays a hud message to all players on custom
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Display_HUD_Info_Text_To_All_Players_On_Custom : public ScriptImpClass {
 	void Custom(GameObject *obj,int message,int param,GameObject *sender);
 };
+/*!
+* \brief Displays a hud message to a player on custom
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Display_HUD_Info_Text_To_Sender_On_Custom : public ScriptImpClass {
 	void Custom(GameObject *obj,int message,int param,GameObject *sender);
 };
+/*!
+* \brief Soldier well enter the nearest vehicle on custom
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Soldier_Transition_On_Custom : public ScriptImpClass {
 	void Custom(GameObject *obj,int message,int param,GameObject *sender);
 };
+/*!
+* \brief On Poke sends custom to self
+* \author jgray
+* \ingroup JmgUtility
+*/
 class JMG_Utility_Poke_Send_Self_Custom : public ScriptImpClass {
 	bool poked;
 	void Created(GameObject *obj);
 	void Poked(GameObject *obj, GameObject *poker);
 	void Timer_Expired(GameObject *obj,int number);
 };
+/*!
+* \brief Basic turret attach script, turrets match team of vehicle attached to, turrets are destroyed by destroy event
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Turret_Spawn : public ScriptImpClass
+{
+  int turretId;
+  bool hasDriver;
+  void Created(GameObject *obj);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  void Destroyed(GameObject *obj);
+};
+
 class JmgUtility
 {
 public:
@@ -887,6 +941,18 @@ public:
 		}
 		return count;
 	}
+	int Get_Objective_Priority_Count(Priority requiredPriority,Status status = NotDefined)
+	{
+		int count = 0;
+		ObjectiveNode *current = objectiveNodeList;
+		while (current)
+		{
+			if (current->active && current->priority == requiredPriority && (status == NotDefined || current->status == status))
+				count++;
+			current = current->next;
+		}
+		return count;
+	}
 	void Display_Current_Objectives(GameObject *player,Priority priority)
 	{
 		messagePlayerAndColor(player,formatObjectiveString(objectiveListString,objectivePrioritieStrings[priority]),priority);
@@ -914,5 +980,226 @@ public:
 			if (counts[x])
 				Display_Current_Objectives(player,(Priority)x);
 	}
+	int Get_First_Pending_Objective_Of_Priority(Priority priority)
+	{
+		ObjectiveNode *current = objectiveNodeList;
+		while (current)
+		{
+			if (current->active && current->status == Pending && current->priority == priority && current->nameId)
+				return current->id;
+			current = current->next;
+		}
+		return 0;
+	}
 
+};
+
+class ClientNetworkObjectPositionSync
+{
+public:
+	struct SyncObjectNode
+	{
+		int id;
+		GameObject *obj;
+		float facing;
+		Vector3 position;
+		struct SyncObjectNode *next;
+		SyncObjectNode(GameObject *obj)
+		{
+			this->id = Commands->Get_ID(obj);
+			this->obj = obj;
+			this->facing = Commands->Get_Facing(obj);
+			this->position = Commands->Get_Position(obj);
+			this->next = NULL;
+		}
+
+	};
+private:
+	SyncObjectNode *syncObjectNodeList;
+	SyncObjectNode *currentSyncNodeListPosition;
+	struct SyncControl
+	{
+		bool playersSynced;
+		bool syncedPlayers[128];
+		SyncObjectNode *lastSyncNode[128];
+		SyncControl()
+		{
+			playersSynced = false;
+			for (int x = 0;x < 128;x++)
+			{
+				syncedPlayers[x] = false;
+				lastSyncNode[x] = NULL;
+			}
+		}
+		bool isSynced(int playerId,SyncObjectNode *currentSyncNode)
+		{
+			if (syncedPlayers[playerId])
+				return true;
+			if (!syncedPlayers[playerId] && !lastSyncNode[playerId])
+			{
+				lastSyncNode[playerId] = currentSyncNode;
+				return false;
+			}
+			if (!syncedPlayers[playerId] && lastSyncNode[playerId] == currentSyncNode)
+			{
+				syncedPlayers[playerId] = true;
+				return true;
+			}
+			return false;
+		}
+		void clientNoLongerSynced(int playerId)
+		{
+			syncedPlayers[playerId] = false;
+			lastSyncNode[playerId] = NULL;
+		}
+	};
+	SyncControl syncControl;
+	void updateSyncStates()
+	{
+		bool allPlayersSynced = true;
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			bool synced = syncControl.isSynced(x,currentSyncNodeListPosition);
+			if (!player && synced)
+				syncControl.clientNoLongerSynced(x);
+			if (player && !synced)
+				allPlayersSynced = false;
+		}
+		syncControl.playersSynced = allPlayersSynced;
+	}
+public:
+	ClientNetworkObjectPositionSync()
+	{
+		currentSyncNodeListPosition = NULL;
+		syncObjectNodeList = NULL;
+		syncControl = SyncControl();
+	}
+	SyncObjectNode *addNode(GameObject *obj)
+	{
+		int id = Commands->Get_ID(obj);
+		SyncObjectNode *current = syncObjectNodeList;
+		if (!syncObjectNodeList)
+			syncObjectNodeList = new SyncObjectNode(obj);
+		while (current)
+		{
+			if (!current->id)
+			{
+				current->id = id;
+				current->obj = obj;
+				current->facing = Commands->Get_Facing(obj);
+				current->position = Commands->Get_Position(obj);
+				return current;
+			}
+			if (current->id == id)
+				return current;
+			if (!current->next)
+			{
+				current->next = new SyncObjectNode(obj);
+				return current->next;
+			}
+			current = current->next;
+		}
+		return NULL;
+	};
+	void checkForPlayersThatLeftTheGame()
+	{
+		for (int x = 1;x < 128;x++)
+		{
+			GameObject *player = Get_GameObj(x);
+			if (!player && syncControl.lastSyncNode)
+				syncControl.clientNoLongerSynced(x);
+		}
+	}
+	void triggerSingleNetworkSync()
+	{
+		updateSyncStates();
+		if (syncControl.playersSynced)
+			return;
+		if (!currentSyncNodeListPosition)
+			currentSyncNodeListPosition = syncObjectNodeList;
+		else
+			currentSyncNodeListPosition = currentSyncNodeListPosition->next;
+		if (!currentSyncNodeListPosition)
+			return;
+		Force_Position_Update(currentSyncNodeListPosition->obj);
+	}
+	void Empty_List()
+	{
+		SyncObjectNode *temp = currentSyncNodeListPosition,*die;
+		while (temp)
+		{
+			die = temp;
+			temp = temp->next;
+			delete die;
+		}
+		currentSyncNodeListPosition = NULL;
+		syncObjectNodeList = NULL;
+		syncControl = SyncControl();
+	}
+};
+
+/*!
+* \brief An object that will have its position synced by JMG_Utility_Sync_System_Controller
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Sync_System_Object : public ScriptImpClass
+{
+	ClientNetworkObjectPositionSync::SyncObjectNode *syncNode;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Destroyed(GameObject *obj);
+public:
+	JMG_Utility_Sync_System_Object()
+	{
+		syncNode = NULL;
+	}
+};
+
+/*!
+* \brief Controls all objects that have the script JMG_Utility_Sync_System_Object
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Sync_System_Controller : public ScriptImpClass
+{
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Destroyed(GameObject *obj);
+public:
+	JMG_Utility_Sync_System_Controller();
+};
+
+/*!
+* \brief Syncs object positions between the client and the server
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Sync_Object_Periodically : public ScriptImpClass
+{
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
+/*!
+* \brief Turns a placed object into a renstyle spawner that can be sent customs like a normal object
+* \author jgray
+* \ingroup JmgUtility
+*/
+class JMG_Utility_Basic_Spawner : public ScriptImpClass
+{
+	int spawnLimit;
+	int spawnedId;
+	bool enabled;
+	float respawnTime;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+	void Custom(GameObject *obj,int message,int param,GameObject *sender);
+	void CalculateRespawnTime();
+};
+
+class JMG_Utility_Basic_Spawner_Attach : public ScriptImpClass
+{
+	void Destroyed(GameObject *obj);
 };

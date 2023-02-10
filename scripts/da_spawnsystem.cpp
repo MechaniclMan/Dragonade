@@ -94,7 +94,7 @@ void DASpawnPointClass::Think() {
 				Player->SpawnState = DASpawnState::SPAWNED;
 			}
 			else {
-				DA::Private_Color_Message(SpawnList[i],WHITE,"There are currently no available spawn points for your team.");
+				DA::Private_Color_Message(SpawnList[i],COLORWHITE,"There are currently no available spawn points for your team.");
 				Player->SpawnState = DASpawnState::WAITINGROOM;
 			}
 			SpawnList.Delete(i);
@@ -117,7 +117,7 @@ void DASpawnPointClass::Add_Spawn_List(GameObject *obj) {
 				Player->SpawnState = DASpawnState::SPAWNED;
 			}
 			else {
-				DA::Private_Color_Message(ID,WHITE,"There are currently no available spawn points for your team.");
+				DA::Private_Color_Message(ID,COLORWHITE,"There are currently no available spawn points for your team.");
 				Player->SpawnState = DASpawnState::WAITINGROOM;
 			}
 		}
@@ -125,10 +125,10 @@ void DASpawnPointClass::Add_Spawn_List(GameObject *obj) {
 			SpawnList.Add(ID);
 			Player->SpawnState = DASpawnState::SPAWNING;
 			if (!Get_Name().Is_Empty()) {
-				DA::Private_Color_Message(ID,WHITE,"You will spawn at the %s spawn point in %.1f second(s).",Get_Name(),(float)Time/1000);
+				DA::Private_Color_Message(ID,COLORWHITE,"You will spawn at the %s spawn point in %.1f second(s).",Get_Name(),(float)Time/1000);
 			}
 			else {
-				DA::Private_Color_Message(ID,WHITE,"You will spawn in %.1f second(s).",(float)Time/1000);
+				DA::Private_Color_Message(ID,COLORWHITE,"You will spawn in %.1f second(s).",(float)Time/1000);
 			}
 		}
 	}
@@ -143,17 +143,17 @@ void DASpawnPointClass::Check_Spawn_List() {
 				Player->SpawnState = DASpawnState::SPAWNED;
 			}
 			else {
-				DA::Private_Color_Message(SpawnList[i],WHITE,"There are currently no available spawn points for your team.");
+				DA::Private_Color_Message(SpawnList[i],COLORWHITE,"There are currently no available spawn points for your team.");
 				Player->SpawnState = DASpawnState::WAITINGROOM;
 			}
 			SpawnList.Delete(i);
 			i--;
 		}
 		else if (!Get_Name().Is_Empty()) {
-			DA::Private_Color_Message(SpawnList[i],WHITE,"You will spawn at the %s spawn point in %.1f second(s).",Get_Name(),(float)Time/1000);
+			DA::Private_Color_Message(SpawnList[i],COLORWHITE,"You will spawn at the %s spawn point in %.1f second(s).",Get_Name(),(float)Time/1000);
 		}
 		else {
-			DA::Private_Color_Message(SpawnList[i],WHITE,"You will spawn in %.1f second(s).",(float)Time/1000);
+			DA::Private_Color_Message(SpawnList[i],COLORWHITE,"You will spawn in %.1f second(s).",(float)Time/1000);
 		}
 	}
 }
@@ -337,7 +337,7 @@ void DASpawnManagerClass::PowerUp_Purchase_Event(cPlayer *Player,float Cost,cons
 bool DASpawnManagerClass::Suicide_Event(cPlayer *Player) {
 	DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
 	if (SpawnState == DASpawnState::WAITINGROOM || SpawnState == DASpawnState::SPAWNING) {
-		DA::Private_Color_Message(Player,WHITE,"Use the Purchase Terminal to select your spawn character.");
+		DA::Private_Color_Message(Player,COLORWHITE,"Use the Purchase Terminal to select your spawn character.");
 		DA::Private_Admin_Message(Player,"Use the Purchase Terminal to select your spawn character.");
 		Display_PT(Player->Get_GameObj());
 		return false;
@@ -349,7 +349,7 @@ bool DASpawnManagerClass::Chat_Command_Event(cPlayer *Player,TextMessageEnum Typ
 	if (Command == "!killme" || Command == "!unstuck" || Command == "!unstick" || Command == "!stuck" || Command == "!stick") {
 		DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
 		if (SpawnState == DASpawnState::WAITINGROOM || SpawnState == DASpawnState::SPAWNING) {
-			DA::Private_Color_Message(Player,WHITE,"Use the Purchase Terminal to select your spawn character.");
+			DA::Private_Color_Message(Player,COLORWHITE,"Use the Purchase Terminal to select your spawn character.");
 			DA::Private_Admin_Message(Player,"Use the Purchase Terminal to select your spawn character.");
 			Display_PT(Player->Get_GameObj());
 			return false;
@@ -397,7 +397,7 @@ void DASpawnManagerClass::Send_To_Waiting_Room(GameObject *obj) {
 	else if (Team == 1) {
 		Commands->Set_Position(obj,WaitingRoomPosition[1]);
 	}
-	DA::Private_Color_Message(obj,WHITE,"Use the Purchase Terminal to select your spawn character.");
+	DA::Private_Color_Message(obj,COLORWHITE,"Use the Purchase Terminal to select your spawn character.");
 }
 
 void DASpawnManagerClass::Display_PT(GameObject *obj) {
@@ -453,7 +453,7 @@ void DASpawnManagerClass::Add_Spawn_List(GameObject *obj) {
 		SpawnPoint->Add_Spawn_List(obj);
 	}
 	else {
-		DA::Private_Color_Message(obj,WHITE,"There are currently no available spawn points for your team.");
+		DA::Private_Color_Message(obj,COLORWHITE,"There are currently no available spawn points for your team.");
 	}
 }
 

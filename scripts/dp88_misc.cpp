@@ -2660,3 +2660,118 @@ ScriptRegistrant<dp88_RegenerateHitpoints> dp88_RegenerateHitpoints_Registrant(
   "Hitpoints_Elite:float,"
   "Mode=3:int"
 );
+
+
+
+
+
+
+
+
+
+
+
+/*------------------------
+Spawn Vehicle Part script
+--------------------------*/
+
+void dp88_CreateAttachedObject::Created(GameObject* obj)
+{
+  m_spawnedObjectId = NULL;
+  m_hasDriver = NULL != Get_Vehicle_Driver(obj);  // In theory, might not be attached at vehicle creation :) 
+
+  // Spawn the new object
+  GameObject* spawnedObject = Commands->Create_Object_At_Bone(obj, Get_Parameter("Preset"), Get_Parameter("Bone"));
+  if (NULL == spawnedObject)
+  {
+    Console_Output("[%d:%s:%s] Critical Error: Failed to create an instance of the preset %s. Destroying script...\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name(), Get_Parameter("Preset"));
+    Destroy_Script();
+    return;
+  }
+
+  // Attach it to the parent
+  Commands->Attach_To_Object_Bone(spawnedObject, obj, Get_Parameter("Bone"));
+  m_spawnedObjectId = Commands->Get_ID(spawnedObject);
+
+  // Configure linking features (health & veterancy)
+  if (1 == Get_Int_Parameter("EnableHealthLink"))
+  {
+    Attach_Script_Once_V(spawnedObject, "dp88_linkHealth", "%d", Commands->Get_ID(obj));
+  }
+  if (1 == Get_Int_Parameter("EnableVeterancyLink"))
+  {
+    Attach_Script_Once_V(spawnedObject, "dp88_linkVetPoints", "%d", Commands->Get_ID(obj));
+  }
+
+  // Configure AI visibility
+  if (0 == Get_Int_Parameter("VisibleToAI"))
+  {
+    Commands->Set_Is_Visible(spawnedObject, false);
+  }
+    
+  // If driver customrs are enabled, send the appropriate custom based on whether we have a driver
+  int driverCustom = (m_hasDriver) ? Get_Int_Parameter("DriverEnterCustom") : Get_Int_Parameter("DriverExitCustom");
+  if (0 != driverCustom)
+  {
+    Commands->Send_Custom_Event(obj, spawnedObject, driverCustom, 0, 0);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_CreateAttachedObject::Killed(GameObject* obj, GameObject *killer)
+{
+  if (NULL != m_spawnedObjectId)
+  {
+    GameObject* spawnedObject = Commands->Find_Object(m_spawnedObjectId);
+    if (NULL != spawnedObject)
+    {
+      Commands->Destroy_Object(spawnedObject);
+    }
+  }
+
+  m_spawnedObjectId = NULL;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_CreateAttachedObject::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+  if (type == CUSTOM_EVENT_VEHICLE_ENTERED || type == CUSTOM_EVENT_VEHICLE_EXITED)
+  {
+    GameObject* spawnedObject = Commands->Find_Object(m_spawnedObjectId);
+    if (NULL == spawnedObject)
+    {
+      return;
+    }
+
+    // Always sync the spawned objects team with our own
+    Commands->Set_Player_Type(spawnedObject, Commands->Get_Player_Type(obj));
+
+    // Decide which custom, if any, to send
+    bool hasDriver = NULL != Get_Vehicle_Driver(obj);
+    if (hasDriver != m_hasDriver)
+    {
+      m_hasDriver = hasDriver;
+
+      int driverCustom = (m_hasDriver) ? Get_Int_Parameter("DriverEnterCustom") : Get_Int_Parameter("DriverExitCustom");
+      if (0 != driverCustom)
+      {
+        Commands->Send_Custom_Event(obj, spawnedObject, driverCustom, 0, 0);
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_CreateAttachedObject> dp88_CreateAttachedObject_Registrant(
+  "dp88_CreateAttachedObject",
+  "Preset:string,"
+  "Bone:string,"
+  "EnableHealthLink=1:int,"
+  "EnableVeterancyLink=0:int,"
+  "VisibleToAI=0:int,"
+  "DriverEnterCustom=0:int,"
+  "DriverExitCustom=0:int"
+);

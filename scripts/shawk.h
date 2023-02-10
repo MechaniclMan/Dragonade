@@ -10,10 +10,6 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 #pragma once
-class SH_ConsoleCommand : public ScriptImpClass {
-	void Created(GameObject *sender);
-	void Timer_Expired(GameObject *sender,int number);
-};
 
 class SH_PCT_Custom : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
@@ -25,8 +21,4 @@ class SH_PCT_Powerup : public ScriptImpClass {
 
 class SH_Spawn_Difficulty : public ScriptImpClass {
 	void Created(GameObject *obj);
-};
-
-class SH_FileVerificationControllerScript: public ScriptImpClass
-{
 };

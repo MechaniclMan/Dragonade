@@ -95,7 +95,7 @@ void Enable_Stealth(GameObject *obj,bool Enable) {
 void DAGameObjManager::Init() {
 	static DAGameObjManager Instance;
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
-	Instance.Register_Event(DAEvent::PLAYERLOADED);
+	Instance.Register_Event(DAEvent::PLAYERLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEENTRYREQUEST,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEEXIT,INT_MAX);
@@ -175,11 +175,18 @@ void DAGameObjManager::Set_GameObj_Stock_Only(GameObject *obj) {
 
 void DAGameObjManager::Set_GameObj_Invisible(GameObject *obj) {
 	if (InvisibleGameObjs.ID(obj) == -1) {
-		InvisibleGameObjs.Add(obj);
+		Set_GameObj_Invisible_No_Delete(obj);
 		bool PendingSave = obj->Is_Delete_Pending();
 		obj->Set_Is_Delete_Pending(true);
 		Update_Network_Object(obj);
 		obj->Set_Is_Delete_Pending(PendingSave);
+	}
+}
+
+void DAGameObjManager::Set_GameObj_Invisible_No_Delete(GameObject *obj) {
+	if (InvisibleGameObjs.ID(obj) == -1) {
+		InvisibleGameObjs.Add(obj);
+		obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_CREATION,false);
 	}
 }
 

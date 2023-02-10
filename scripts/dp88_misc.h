@@ -1135,6 +1135,56 @@ private:
 // -------------------------------------------------------------------------------------------------
 
 /*!
+* \brief Create Attached Object
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Spawns a new object and attaches it to this object at a specific bone. This script incorporates
+* features from several other similar scripts together into a single script for the first time to
+* allow them to be used in any combination.
+*
+* <h3>Supported Features</h3>
+*    - <b>Health Link</b><br/>
+*        Synchronize the health of the spawned object with the parent object, in effect creating a
+*        shared health bar between the objects. Multiple attached objects can share health in this
+*        way to create multi-part objects with a single set of hitpoints
+*    - <b>Veterancy Link</b><br/>
+*        Works the same way as the Health Link feature but for veterancy points awarded. Only
+*        applicable when used alongside the \ref dp88_veterancyUnit script
+*    - <b>Enter/Exit Customs</b><br/>
+*        Sends a custom message to the spawned object when a driver enters or exits the vehicle.
+*        Only applicable when this script is attached to a vehicle.
+*
+* \param Preset
+*   The name of the preset to spawn an instance of
+* \param Bone
+*   The name of the bone to attach the spawned object to
+* \param EnableHealthLink
+*   Whether to enable the health linking feature. 1 to enable, 0 to disable
+* \param EnableVeterancyLink
+*   Whether to enable the veterancy linking feature. 1 to enable, 0 to disable
+* \param VisibleToAI
+*   Whether the spawned object should be visible to the AI, allowing them to target it independently
+*   of this object - generally this should be disabled. 1 to make it visible, 0 to disable
+* \param DriverEnterCustom
+*   Custom message to send to the spawned object when a driver enters the object
+* \param DriverExitCustom
+*   Custom message to send to the spawned object when a driver leaves the object
+*/
+class dp88_CreateAttachedObject : public ScriptImpClass
+{
+  void Created(GameObject* obj);
+  void Killed(GameObject* obj, GameObject *killer);
+  void Custom(GameObject *obj, int type, int param, GameObject *sender);
+
+  int m_spawnedObjectId;
+  bool m_hasDriver;
+};
+
+// -------------------------------------------------------------------------------------------------
+// Dynamic spawn system
+// -------------------------------------------------------------------------------------------------
+
+/*!
 * \brief Dynamic Spawner - Controller
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
 * \ingroup scripts_dynamicSpawner

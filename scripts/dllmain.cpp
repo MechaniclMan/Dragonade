@@ -261,7 +261,6 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Update_Network_Object_Player = (unop)Address(tt,"Update_Network_Object_Player");
 	Send_Client_Text = (sct)Address(tt,"Send_Client_Text");
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
-	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
 	AddShaderNotify = (asn)Address(tt,"AddShaderNotify");
 	RemoveShaderNotify = (rsn)Address(tt,"RemoveShaderNotify");
 	Do_Objectives_Dlg = (dod)Address(tt,"Do_Objectives_Dlg");
@@ -274,6 +273,8 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Send_Shader_Param_Obj = (sspo)Address(tt,"Send_Shader_Param_Obj");
 	Set_GDI_Soldier_Name = (ssn)Address(tt,"Set_GDI_Soldier_Name");
 	Set_Nod_Soldier_Name = (ssn)Address(tt,"Set_Nod_Soldier_Name");
+	Get_GDI_Soldier_Name = (gsnx)Address(tt,"Get_GDI_Soldier_Name");
+	Get_Nod_Soldier_Name = (gsnx)Address(tt,"Get_Nod_Soldier_Name");
 	Get_IP_Address = (Get_IP_Addressx)Address(tt,"Get_IP_Address");
 	Get_IP_Port = (Get_IP_Portx)Address(tt,"Get_IP_Port");
 	Get_IP = (Get_IPx)Address(tt,"Get_IP");
@@ -297,6 +298,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Client_Revision = (gpr)Address(tt,"Get_Client_Revision");
 	Get_Revision = (gpr)Address(tt,"Get_Revision");
 	Get_Damage_Warhead = (gdw)Address(tt,"Get_Damage_Warhead");
+	Get_Damage_Is_Explosion = (gdie)Address(tt, "Get_Damage_Is_Explosion");
 	Get_GameObj_By_Player_Name = (ggobpn)Address(tt,"Get_GameObj_By_Player_Name");
 	Send_Custom_All_Players = (scap)Address(tt,"Send_Custom_All_Players");
 	Steal_Team_Credits = (stc)Address(tt,"Steal_Team_Credits");
@@ -320,7 +322,20 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Waypoint_Position = (gwp)Address(tt,"Get_Waypoint_Position");
 	Create_Lightning = (cl)Address(tt,"Create_Lightning");
 	Set_Global_Stealth_Disable = (smie)Address(tt,"Set_Global_Stealth_Disable");
+	Get_Clouds = (gc) Address(tt, "Get_Clouds");
+	Get_Lightning = (gli) Address(tt, "Get_Lightning");
+	Get_Wind = (gw) Address(tt, "Get_Wind");
+	Get_Rain = (gp) Address(tt, "Get_Rain");
+	Get_Snow = (gp) Address(tt, "Get_Snow");
+	Get_Ash = (gp) Address(tt, "Get_Ash");
 	Update_Game_Options = (ugo) Address(tt, "Update_Game_Options");
+	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
+	GetTTRevision = (gttr)Address(tt,"GetTTRevision");
+	Set_HUD_Help_Text_Player = (htp)Address(tt,"Set_HUD_Help_Text_Player");
+	Change_String_Player = (csp)Address(tt,"Change_String_Player");
+	Force_Position_Update = (fpu)Address(tt,"Force_Position_Update");
+	Get_Random_Pathfind_Spot = (grps)Address(tt,"Get_Random_Pathfind_Spot");
+	Set_HUD_Help_Text_Player_Text = (htpt)Address(tt,"Set_HUD_Help_Text_Player_Text");
 	
 	DA::Init();
 

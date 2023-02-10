@@ -19,93 +19,56 @@
 #include "da_squad.h"
 #include "da_settings.h"
 #include "da_translation.h"
-
-bool DASquadMemberClass::Is_Leader() {
-	return Squad->Get_Leader() == this;
-}
+#include "da_log.h"
+#include "da_gameobj.h"
 
 void DASquadMemberClass::Init() {
 	Register_Chat_Command((DAPOCC)&DASquadMemberClass::Disband_Chat_Command,"!disband");
 	Register_Chat_Command((DAPOCC)&DASquadMemberClass::Promote_Chat_Command,"!promote",1);
 	Register_Chat_Command((DAPOCC)&DASquadMemberClass::Info_Chat_Command,"!sinfo");
 	Register_Chat_Command((DAPOCC)&DASquadMemberClass::SKick_Chat_Command,"!skick",1);
-	Register_Chat_Command((DAPOCC)&DASquadMemberClass::Leave_Chat_Command,"!leave");
 	Register_Chat_Command((DAPOCC)&DASquadMemberClass::Msg_Chat_Command,"!sm|!ms|!sc|!cs",1);
-	Name_Change();
-}
-
-void DASquadMemberClass::Name_Change() {
-	/*WideStringClass NameSave = Get_Name();
-	Get_Owner()->PlayerName = "#" + NameSave;
-	for (int i = 0;i < Squad->Size();i++) {
-		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
-		Get_Owner()->Set_Object_Dirty_Bit(Member->Get_Id(),NetworkObjectClass::BIT_CREATION);
-		//Send_Object_Update(Get_Owner(),Member->Get_Id()); //Send new member's updated name to squadmates
-
-		if (Member != Get_Owner()) {
-			WideStringClass NameSave2 = Member->Get_Name();
-			Member->PlayerName = "#" + Member->PlayerName;
-			Member->Set_Object_Dirty_Bit(Get_ID(),NetworkObjectClass::BIT_CREATION);
-			//Send_Object_Update(Member,Get_ID()); //Send updated squadmate's names to new member
-			Update_Network_Object(Member);
-			Member->PlayerName = NameSave2;
-		}
+	if (Get_GameObj()) {
+		Create_Radar();
 	}
-	Update_Network_Object(Get_Owner());
-	Get_Owner()->PlayerName = NameSave; //Restore old name on server*/
 }
 
 DASquadMemberClass::~DASquadMemberClass() {
-	for (int i = 0;i < Squad->Size();i++) {
-		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
-
-		Reset_Radar(Member->Get_GameObj()); //Reset radar for other players
-		//Get_Owner()->Set_Object_Dirty_Bit(Member->Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset name for other players
-
-		if (Get_Owner()->Is_Active()) {
-			Squad->Get_Member(i)->Reset_Radar(Get_GameObj()); //Reset other player's radar
-			//Member->Set_Object_Dirty_Bit(Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset other player's names
+	if (DASquadManager) {
+		Squad->Internal_Remove(this);
+		for (int i = 0;i < Squad->Size();i++) {
+			Squad->Get_Member(i)->Remove_Radar(this);
 		}
 	}
-	Squad->Internal_Remove(this); //Remove this observer from the squad's list of members
+	if (Radar) {
+		Radar->Set_Delete_Pending();
+	}
 }
 
 void DASquadMemberClass::Team_Change() {
 	if (Get_Team() != Squad->Get_Team()) {
-		Leave_Squad(); //Remove from squad if changing teams
+		Leave_Squad();
+	}
+	else if (Radar) {
+		((PhysicalGameObj*)Radar.Get_Ptr())->Set_Player_Type(Get_Team());
 	}
 }
 
 void DASquadMemberClass::Created() {
-	Start_Timer(2,0.5f);
+	Update_Radar();
+	Commands->Attach_To_Object_Bone(Radar,Get_GameObj(),"Origin");
 }
 
 void DASquadMemberClass::Player_Loaded() {
-	Start_Timer(1,0.5f);
-}
-
-void DASquadMemberClass::Timer_Expired(int Number,unsigned int Data) {
-	/*if (Number == 1) {
-		for (int i = 0;i < Squad->Size();i++) {
-			Squad->Get_Member(i)->Update_Radar(Get_GameObj());
-		}
-	}
-	else if (Number == 2) {
-		Update_Radar();
-	}*/
+	Create_Radar();
 }
 
 void DASquadMemberClass::Vehicle_Enter(VehicleGameObj *Vehicle,int Seat) {
-	if (Seat == 0) {
-		Set_Radar_Vehicle_Driver();
-	}
-	else {
-		Set_Radar_Vehicle_Passenger();
-	}
+	Update_Radar();
 }
 
 void DASquadMemberClass::Vehicle_Exit(VehicleGameObj *Vehicle,int Seat) {
-	Set_Radar_Soldier();
+	Update_Radar();
 }
 
 void DASquadMemberClass::Character_Purchase(float Cost,const SoldierGameObjDef *Item) {
@@ -127,7 +90,7 @@ bool DASquadMemberClass::Disband_Chat_Command(const DATokenClass &Text,TextMessa
 	else {
 		Squad->Disband();
 	}
-	return true;
+	return false;
 }
 
 bool DASquadMemberClass::Promote_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -145,7 +108,7 @@ bool DASquadMemberClass::Promote_Chat_Command(const DATokenClass &Text,TextMessa
 			}
 		}
 	}
-	return true;
+	return false;
 }
 
 bool DASquadMemberClass::Info_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -160,7 +123,7 @@ bool DASquadMemberClass::Info_Chat_Command(const DATokenClass &Text,TextMessageE
 		}
 	}
 	DA::Private_Color_Message(Get_ID(),SQUADCOLOR,"%s",Str);
-	return true;
+	return false;
 }
 
 bool DASquadMemberClass::SKick_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -186,105 +149,86 @@ bool DASquadMemberClass::SKick_Chat_Command(const DATokenClass &Text,TextMessage
 			}
 		}
 	}
-	return true;
-}
-
-bool DASquadMemberClass::Leave_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
-	Leave_Squad();
-	return true;
-}
-
-bool DASquadMemberClass::Msg_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
-	Squad->Squad_Message("%ls: %s",Get_Name(),Text[0]);
 	return false;
 }
 
-void DASquadMemberClass::Update_Radar(GameObject *Member) {
-	GameObject *Veh = Get_Vehicle(Get_GameObj());
-	if (Veh) {
-		if (Get_GameObj() == Get_Vehicle_Occupant(Veh,0)) {
-			Set_Radar_Vehicle_Driver(Member);
+bool DASquadMemberClass::Msg_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
+	Squad->Squad_Chat(Get_Owner(),"%s",Text[0]);
+	return false;
+}
 
+void DASquadMemberClass::Create_Radar() {
+	Radar = Create_Object_Attach_To_Object(Get_GameObj(),"Invisible_Object","Origin");
+	((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_OBJECTIVE);
+	((PhysicalGameObj*)Radar.Get_Ptr())->Set_Player_Type(Get_Team());
+	DAGameObjManager::Set_GameObj_Invisible_No_Delete(Radar);
+	Update_Radar();
+	for (int i = 0;i < Squad->Size();i++) {
+		if (Squad->Get_Member(i) != this) {
+			Add_Radar(Squad->Get_Member(i));
+			Squad->Get_Member(i)->Add_Radar(this);
+		}
+	}
+}
+
+void DASquadMemberClass::Update_Radar() {
+	if (Radar) {
+		SoldierGameObj *Soldier = Get_GameObj();
+		if (Soldier && Soldier->Get_Vehicle()) {
+			((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Color_Type(RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
 		}
 		else {
-			Set_Radar_Vehicle_Passenger(Member);
-		}
-	}
-	else {
-		Set_Radar_Soldier(Member);
-	}
-}
-
-void DASquadMemberClass::Set_Radar_Soldier(GameObject *Member) {
-	if (Member) {
-		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
-	}
-	else {
-		for (int i = 0;i < Squad->Size();i++) {
-			Member = Squad->Get_Member(i)->Get_GameObj();
-			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
+			((PhysicalGameObj*)Radar.Get_Ptr())->Set_Radar_Blip_Color_Type(RADAR_BLIP_COLOR_PRIMARY_OBJECTIVE);
 		}
 	}
 }
 
-void DASquadMemberClass::Set_Radar_Vehicle_Driver(GameObject *Member) {
-	if (Member) {
-		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
-	}
-	else {
-		for (int i = 0;i < Squad->Size();i++) {
-			Member = Squad->Get_Member(i)->Get_GameObj();
-			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_SECONDARY_OBJECTIVE);
-		}
+void DASquadMemberClass::Add_Radar(DASquadMemberClass *Member) {
+	if (Radar) {
+		Radar->Set_Object_Dirty_Bit(Member->Get_ID(),NetworkObjectClass::BIT_CREATION,true);
 	}
 }
 
-void DASquadMemberClass::Set_Radar_Vehicle_Passenger(GameObject *Member) {
-	if (Member) {
-		//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-		//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
-	}
-	else {
-		for (int i = 0;i < Squad->Size();i++) {
-			Member = Squad->Get_Member(i)->Get_GameObj();
-			//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_OBJECTIVE);
-			//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),RADAR_BLIP_COLOR_RENEGADE);
-		}
+void DASquadMemberClass::Remove_Radar(DASquadMemberClass *Member) {
+	if (Radar && !Radar->Is_Delete_Pending() && Member->Get_Owner()->Is_Active()) {
+		Radar->Set_Is_Delete_Pending(true);
+		Update_Network_Object_Player(Radar,Member->Get_ID());
+		Radar->Set_Is_Delete_Pending(false);
 	}
 }
 
-void DASquadMemberClass::Reset_Radar(GameObject *Member) {
-	//Set_Obj_Radar_Blip_Shape_Player(Member,Get_GameObj(),RADAR_BLIP_SHAPE_HUMAN);
-	//Set_Obj_Radar_Blip_Color_Player(Member,Get_GameObj(),Get_Team());
+bool DASquadMemberClass::Is_Leader() {
+	return Squad->Get_Leader() == this;
+}
+
+void DASquadMemberClass::Leave_Squad() {
+	Set_Delete_Pending();
 }
 
 
 
 
 DASquadClass::DASquadClass(cPlayer *Player) {
-	Disbanded = false;
-	if (!Player->Get_DA_Player()->Find_Observer("DASquadMemberClass")) {
-		DA::Private_Color_Message(Player,SQUADCOLOR,"You have created a squad.");
-		DASquadMemberClass *NewMember = new DASquadMemberClass(this);
-		Members.Add(NewMember);
-		Player->Get_DA_Player()->Add_Observer(NewMember);
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+		if (z->Data()->Is_Active() && z->Data() != Player) {
+			DA::Private_Color_Message(z->Data(),SQUADCOLOR,"%ls has created a squad.",Player->Get_Name());
+		}
 	}
+	DALogManager::Write_Log("_SQUAD","%ls has created a squad.",Player->Get_Name());
+	DA::Private_Color_Message(Player,SQUADCOLOR,"You have created a squad.");
+	DASquadMemberClass *NewMember = new DASquadMemberClass(this);
+	Player->Get_DA_Player()->Add_Observer(NewMember);
+	Members.Add(NewMember);
+	Team = Player->Get_Team();
 }
 
-bool DASquadClass::Add(cPlayer *Player) {
-	if (!Is_Full() && (Player->Get_Team() == Get_Team() || Player->Get_Team() == 2) && !Player->Get_DA_Player()->Find_Observer("DASquadMemberClass")) {
-		Squad_Message("%ls has joined the squad.",Player->Get_Name(),Player->Get_ID());
-		DA::Private_Color_Message(Player,SQUADCOLOR,"You have joined %ls squad.",Make_Possessive(Get_Leader()->Get_Name()));
-		DASquadMemberClass *NewMember = new DASquadMemberClass(this);
-		Members.Add(NewMember);
-		Player->Get_DA_Player()->Add_Observer(NewMember);
-		return true;
-	}
-	return false;
+void DASquadClass::Add(cPlayer *Player) {
+	Squad_Message("%ls has joined the squad.",Player->Get_Name());
+	DA::Private_Color_Message(Player,SQUADCOLOR,"You have joined %ls squad.",Make_Possessive(Get_Leader()->Get_Name()));
+	DASquadMemberClass *NewMember = new DASquadMemberClass(this);
+	Player->Get_DA_Player()->Add_Observer(NewMember);
+	Members.Add(NewMember);
+	Disbanded = false;
 }
 
 bool DASquadClass::Remove(cPlayer *Player) {
@@ -298,42 +242,44 @@ bool DASquadClass::Remove(cPlayer *Player) {
 }
 
 void DASquadClass::Internal_Remove(DASquadMemberClass *Member) {
-	if (!Disbanded) {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i] == Member) {
-				Members.Delete(i);
+	for (int i = 0;i < Members.Count();i++) {
+		if (Members[i] == Member) {
+			Members.Delete(i);
+			if (!Disbanded) {
 				Squad_Message("%ls has left the squad.",Member->Get_Name());
 				if (Member->Get_Owner()->Is_Active()) {
 					DA::Private_Color_Message(Member->Get_ID(),SQUADCOLOR,"You have left the squad.");
 				}
 				if (i == 0 && Members.Count() > 1) {
-					Squad_Message("%ls is now the squad leader.",Members[0]->Get_Name());
+					Squad_Message_Except(Get_Leader()->Get_Owner(),"%ls is now the squad leader.",Get_Leader()->Get_Name());
+					Leader_Message("You are now the squad leader.");
 				}
-				break;
+				if (Size() <= 1) {
+					Disband();
+				}
 			}
+			break;
 		}
-		if (Size() == 1) {
-			Disband();
-		}
-	}
-	else {
-		for (int i = 0;i < Members.Count();i++) {
-			if (Members[i] == Member) {
-				Members.Delete(i);
-			}
-		}
-	}
-	if (!Size()) {
-		Destroy();
 	}
 }
 
 void DASquadClass::Disband() {
-	Squad_Message("The squad has been disbanded.");
+	Squad_Message("Your squad has been disbanded.");
 	for (int i = 0;i < Members.Count();i++) {
 		Members[i]->Leave_Squad();
 	}
 	Disbanded = true;
+}
+
+void DASquadClass::Squad_Chat(cPlayer *Player,const char *Format,...) {
+	char Message[512];
+	Format_String(Message);
+	for (int i = 0;i < Members.Count();i++) {
+		if (Members[i]->Get_Owner()->Is_Active()) {
+			Create_2D_WAV_Sound_Player_By_ID(Members[i]->Get_ID(),"yo1.wav");
+			DA::Private_Color_Message(Members[i]->Get_ID(),SQUADCOLOR,"%ls: %s",Player->Get_Name(),Message);
+		}
+	}
 }
 
 void DASquadClass::Squad_Message(const char *Format,...) {
@@ -357,7 +303,7 @@ void DASquadClass::Squad_Message_Except(cPlayer *Player,const char *Format,...) 
 }
 
 void DASquadClass::Leader_Message(const char *Format,...) {
-	if (Get_Leader()->Get_Owner()->Is_Active()) {
+	if (Get_Leader() && Get_Leader()->Get_Owner()->Is_Active()) {
 		char Message[512];
 		Format_String(Message);
 		DA::Private_Color_Message(Get_Leader()->Get_ID(),SQUADCOLOR,"%s",Message);
@@ -377,33 +323,67 @@ void DASquadClass::Set_Leader(cPlayer *Player) {
 }
 
 void DASquadClass::Set_Team(int Team) {
-	for (int i = 0;i < Members.Count();i++) {
-		Change_Team_4(Members[i]->Get_Owner(),Team);
-		Members[i]->Get_Owner()->Get_DA_Player()->Set_Needs_Team(false);
+	this->Team = Team;
+	for (int i = Size()-1;i >= 0;i--) {
+		if (!Members[i]->Is_Delete_Pending()) {
+			Change_Team_4(Members[i]->Get_Owner(),Team);
+			Members[i]->Get_Owner()->Get_DA_Player()->Set_Needs_Team(false);
+		}
 	}
 }
 
 void DASquadClass::Check_Team() {
-	int Team = Get_Team();
-	for (int i = 1;i < Size();i++) {
-		if (Members[i]->Get_Team() != Team) {
-			Members[i]->Leave_Squad();
+	int TeamCount[2] = {0,0};
+	for (int i = 0;i < Size();i++) {
+		if (!Members[i]->Is_Delete_Pending()) {
+			if (Members[i]->Get_Team() == 0) {
+				TeamCount[0]++;
+			}
+			else if (Members[i]->Get_Team() == 1) {
+				TeamCount[1]++;
+			}
+		}
+	}
+	if (TeamCount[0] == 1 && TeamCount[1] == 1) {
+		if (Members[0]->Get_Team() != Get_Team()) {
+			Members[0]->Leave_Squad();
+		}
+		else {
+			Members[1]->Leave_Squad();
+		}
+	}
+	else {
+		if (TeamCount[0] > TeamCount[1]) {
+			Team = 0;
+		}
+		else if (TeamCount[1] > TeamCount[0]) {
+			Team = 1;
+		}
+		else {
+			Team = Get_Leader()->Get_Team();
+		}
+		for (int i = Size()-1;i >= 0;i--) {
+			if (Members[i]->Get_Team() != Team) {
+				Members[i]->Leave_Squad();
+			}
 		}
 	}
 }
 
 bool DASquadClass::Is_Full() {
-	if ((unsigned int)Members.Count() >= DASquadManager->Get_Max_Squad_Size()) {
-		return true;
-	}
-	return false;
+	return Size() >= DASquadManager->Get_Max_Squad_Size();
 }
 
-DASquadClass::~DASquadClass() {
-	if (DASquadManager) {
-		DASquadManager->Remove_Squad(this);
+int DASquadClass::Active_Size() {
+	int Ret = 0;
+	for (int i = 0;i < Size();i++) {
+		if (!Members[i]->Is_Delete_Pending()) {
+			Ret++;
+		}
 	}
+	return Ret;
 }
+
 
 
 
@@ -413,8 +393,10 @@ void DASquadManagerClass::Init() {
 	Register_Event(DAEvent::REMIX);
 	Register_Event(DAEvent::REBALANCE);
 	Register_Event(DAEvent::SWAP);
+	Register_Event(DAEvent::PLAYERLEAVE);
 	Register_Event(DAEvent::TEAMCHANGE);
 	Register_Event(DAEvent::THINK);
+	Register_Event(DAEvent::CHAT);
 	Register_Chat_Command((DAECC)&DASquadManagerClass::List_Chat_Command,"!squads|!squad");
 	Register_Chat_Command((DAECC)&DASquadManagerClass::Join_Chat_Command,"!join",1);
 	Register_Chat_Command((DAECC)&DASquadManagerClass::Invite_Chat_Command,"!invite",1);
@@ -426,78 +408,87 @@ void DASquadManagerClass::Init() {
 DASquadManagerClass::~DASquadManagerClass() {
 	for (int i = 0;i < SquadList.Count();i++) {
 		SquadList[i]->Disband();
+		delete SquadList[i];
 	}
+	SquadList.Delete_All();
 }
 
 void DASquadManagerClass::Level_Loaded_Event() {
-	if (!RemixSquads) {
-		for (int i = 0;i < SquadList.Count();i++) {
-			SquadList[i]->Check_Team();
-		}
-	}
+	Check_Teams();
+	Check_Size();
+	Invites.Delete_All();
+	Joins.Delete_All();
+	WaitList.Delete_All();
 }
 
 void DASquadManagerClass::Settings_Loaded_Event() {
 	RemixSquads = DASettingsManager::Get_Bool("RemixSquads",true);
-	MaxSquadSize = (unsigned int)DASettingsManager::Get_Int("MaxSquadSize",5);
+	MaxSquadSize = WWMath::Clamp_Int(DASettingsManager::Get_Int("MaxSquadSize",5),2,INT_MAX);
 }
 
 void DASquadManagerClass::Player_Leave_Event(cPlayer *Player) {
-	Remove_Join(Player);
-	Remove_Invite(Player);
-	Remove_WaitList(Player);
-	Clear_Joins(Player);
-	Clear_Invites(Player);
-	Clear_WaitList(Player);
+	Clear_Lists(Player);
 }
 
 void DASquadManagerClass::Team_Change_Event(cPlayer *Player) {
 	if (RemixSquads) {
-		Check_WaitList(Player);
+		for (int i = 0;i < WaitList.Count();i++) {
+			if (WaitList[i].Player == Player) {
+				DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
+				if (Squad) {
+					if (Squad->Get_Team() == Player->Get_Team() && Squad->Is_Leader(WaitList[i].Leader) && !Squad->Is_Full()) {
+						Squad->Add(Player);
+					}
+				}
+				else if (WaitList[i].Leader->Get_Team() == Player->Get_Team() && Can_Create_Squads()) {
+					DASquadClass *NewSquad = Create_Squad(WaitList[i].Leader);
+					NewSquad->Add(Player);
+				}
+				WaitList.Delete(i);
+				break;
+			}
+			else if (WaitList[i].Leader == Player) {
+				DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
+				if (Squad) {
+					if (Squad->Get_Team() == WaitList[i].Player->Get_Team() && Squad->Is_Leader(Player) && !Squad->Is_Full()) {
+						Squad->Add(WaitList[i].Player);
+					}
+				}
+				else if (WaitList[i].Leader->Get_Team() == Player->Get_Team() && Can_Create_Squads()) {
+					DASquadClass *NewSquad = Create_Squad(Player);
+					NewSquad->Add(WaitList[i].Player);
+				}
+				WaitList.Delete(i);
+				i--;
+			}
+		}
 	}
-	else {
-		Remove_Join(Player);
-		Remove_Invite(Player);
-		Remove_WaitList(Player);
-		Clear_Joins(Player);
-		Clear_Invites(Player);
-		Clear_WaitList(Player);
-	}
+	Clear_Lists(Player);
 }
 
 void DASquadManagerClass::Remix_Event() {
 	if (RemixSquads) {
+		Check_Size();
+		
 		for (int i = 0;i < WaitList.Count();i++) {
 			DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
-			if (!Squad) {
+			if (!Squad && Can_Create_Squads()) {
 				DASquadClass *NewSquad = Create_Squad(WaitList[i].Leader);
 				NewSquad->Add(WaitList[i].Player);
 			}
-			else if (Squad->Is_Leader(WaitList[i].Leader)) {
+			else if (Squad->Is_Leader(WaitList[i].Leader) && !Squad->Is_Full()) {
 				Squad->Add(WaitList[i].Player);
 			}
-			WaitList.Delete(i);
-			i--;
 		}
-	}
-	
-	for (int i = 0;i < SquadList.Count();i++) {
-		DASquadClass *Squad = SquadList[i];
-		for (int i = Squad->Size()-Get_Max_Squad_Size();i > 0;i--) {
-			DA::Private_Color_Message(Squad->Get_Member(Squad->Size()-i)->Get_ID(),SQUADCOLOR,"You have been removed from your squad to balance the teams.");
-			Squad->Get_Member(Squad->Size()-i)->Leave_Squad();
-		}
-	}
+		WaitList.Delete_All();
 
-	if (RemixSquads) {
 		if (SquadList.Count() == 1) { //If theres only one squad just put it on a random team.
-			int RandTeam = Get_Random_Bool();
-			SquadList[0]->Set_Team(RandTeam);	
+			SquadList[0]->Set_Team(Get_Random_Bool());	
 		}
 		else if (SquadList.Count() == 2) { //If there are two squads they go on opposite teams.
 			int RandTeam = Get_Random_Bool();
 			SquadList[0]->Set_Team(RandTeam);
-			SquadList[1]->Set_Team(RandTeam?0:1);
+			SquadList[1]->Set_Team(!RandTeam);
 		}
 		else if (SquadList.Count() >= 3) { //If there are three or more we make many possible team combinations and choose the one that puts the most balanced amount of squad members on each team.
 			int LeastDiff = 127;
@@ -506,9 +497,11 @@ void DASquadManagerClass::Remix_Event() {
 				int LoopTeamCount[2] = {0,0};
 				DynamicVectorClass<DASquadRemixStruct> SquadTeams;
 				for (int i = 0;i < SquadList.Count();i++) {
-					int RandTeam = Get_Random_Bool();
-					LoopTeamCount[RandTeam] += SquadList[i]->Size();
-					SquadTeams.Add(DASquadRemixStruct(SquadList[i],RandTeam));
+					if (SquadList[i]->Active_Size()) {
+						int RandTeam = Get_Random_Bool();
+						LoopTeamCount[RandTeam] += SquadList[i]->Active_Size();
+						SquadTeams.Add(DASquadRemixStruct(SquadList[i],RandTeam));
+					}
 				}
 				if (Diff(LoopTeamCount[0],LoopTeamCount[1]) < 2) { //Not going to get any better than this.
 					LeastDiffSquadTeams = SquadTeams;
@@ -521,8 +514,7 @@ void DASquadManagerClass::Remix_Event() {
 				}
 			}
 			for (int i = 0;i < LeastDiffSquadTeams.Count();i++) {
-				DASquadClass *Squad = LeastDiffSquadTeams[i].Squad;
-				Squad->Set_Team(LeastDiffSquadTeams[i].Team);
+				LeastDiffSquadTeams[i].Squad->Set_Team(LeastDiffSquadTeams[i].Team);
 			}
 		}
 	}
@@ -578,35 +570,44 @@ void DASquadManagerClass::Rebalance_Event() {
 			}
 		}
 	}
-	if ((TeamCount[OldTeam]-TeamCount[NewTeam]) > 1) { //Teams are still uneven, going to have to start removing people from squads.
+	
+	if ((TeamCount[OldTeam]-TeamCount[NewTeam]) > 1) { //Teams are still uneven, going to have to start changing people in squads.
 		for (int i = SquadList.Count()-1;i >= 0 && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;i--) { //Go until the teams are even or we run out of squads.
 			DASquadClass *Squad = SquadList[i];
 			for (int j = Squad->Size()-1;j >= 0 && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;j--) { //Start with the last member of the last squad and work backwards.
 				if (Squad->Get_Team() == OldTeam) {
 					DASquadMemberClass *Member = Squad->Get_Member(j);
-					DA::Private_Color_Message(Member->Get_ID(),SQUADCOLOR,"You have been removed from your squad to balance the teams.");
 					Change_Team_3(Member->Get_Owner(),NewTeam);
 					TeamCount[OldTeam]--;
 					TeamCount[NewTeam]++;
-					Member->Leave_Squad();
 				}
 			}
 		}
 	}
+	
+	Check_Teams();
 }
 
 void DASquadManagerClass::Swap_Event() {
 	for (int i = 0;i < SquadList.Count();i++) {
-		SquadList[i]->Set_Team(SquadList[i]->Get_Team()?0:1);
+		SquadList[i]->Set_Team(!SquadList[i]->Get_Team());
 	}
 }
 
 void DASquadManagerClass::Think() {
+	for (int i = SquadList.Count()-1;i >= 0;i--) {
+		if (!SquadList[i]->Size()) {
+			delete SquadList[i];
+			SquadList.Delete(i);
+		}
+	}
+
 	for (int i = Invites.Count()-1;i >= 0;i--) {
 		if (The_Game()->Get_Game_Duration_S()-Invites[i].Timeout >= 30) {
 			Invites.Delete(i);
 		}
 	}
+
 	for (int i = Joins.Count()-1;i >= 0;i--) {
 		if (The_Game()->Get_Game_Duration_S()-Joins[i].Timeout >= 30) {
 			Joins.Delete(i);
@@ -614,11 +615,22 @@ void DASquadManagerClass::Think() {
 	}
 }
 
+bool DASquadManagerClass::Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID) {
+	if (Type == TEXT_MESSAGE_PRIVATE && Player->Get_ID() == ReceiverID) {
+		DASquadClass *Squad = Find_Squad(Player);
+		if (Squad) {
+			Squad->Squad_Chat(Player,"%ls",Message);
+			return false;
+		}
+	}
+	return true;
+}
+
 bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	if (SquadList.Count()) {
 		for (int i = 0;i < SquadList.Count();i++) {
 			DASquadClass *Squad = SquadList[i];
-			if (Squad->Get_Team() == 0) {
+			if (Squad->Active_Size() && Squad->Get_Team() == 0) {
 				StringClass Str;
 				Str.Format("Leader: %ls - Members: ",Squad->Get_Leader()->Get_Name());
 				for (int x = 1;x < Squad->Size();x++) {
@@ -631,7 +643,7 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 
 		for (int i = 0;i < SquadList.Count();i++) {
 			DASquadClass *Squad = SquadList[i];
-			if (Squad->Get_Team() == 1) {
+			if (Squad->Active_Size() && Squad->Get_Team() == 1) {
 				StringClass Str;
 				Str.Format("Leader: %ls - Members: ",Squad->Get_Leader()->Get_Name());
 				for (int x = 1;x < Squad->Size();x++) {
@@ -641,13 +653,21 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 				DA::Private_Color_Message_With_Team_Color(Player,1,"%s",Str);
 			}
 		}
-		DA::Private_Color_Message(Player,SQUADCOLOR,"You can request to join one of these squads by typing \"!join <player name>\" in chat. Or create your own with \"!invite <player name>\".");
+		if (Can_Create_Squads()) {
+			DA::Private_Color_Message(Player,SQUADCOLOR,"You can request to join one of these squads by typing \"!join <player name>\" in chat. Or create your own with \"!invite <player name>\". The current maxiumum size for a squad is %d(%d) players.",Get_Max_Squad_Size(),MaxSquadSize);
+		}
+		else {
+			DA::Private_Color_Message(Player,SQUADCOLOR,"There are currently not enough players to create a squad. When there are, you can create one by typing \"!invite <player name>\".");
+		}
+	}
+	else if (Can_Create_Squads()) {
+		DA::Private_Color_Message(Player,SQUADCOLOR,"There are no squads. You can create one by typing \"!invite <player name>\" in chat. The current maxiumum size for a squad is %d(%d) players.",Get_Max_Squad_Size(),MaxSquadSize);
 	}
 	else {
-		DA::Private_Color_Message(Player,SQUADCOLOR,"There are currently no squads. You can create a squad by typing \"!invite <player name>\" in chat.");
+		DA::Private_Color_Message(Player,SQUADCOLOR,"There are currently not enough players to create a squad. When there are, you can create one by typing \"!invite <player name>\".");
 	}
 	
-	/*Console_InputF("msg squad  max size %u squads %d",Get_Max_Squad_Size(),SquadList.Count());
+	/*Console_InputF("msg squad max size %d squads %d",Get_Max_Squad_Size(),SquadList.Count());
 	for (int i = 0;i < SquadList.Count();i++) {
 	DASquadClass *Squad = SquadList[i];
 	Console_InputF("msg squad");
@@ -656,13 +676,13 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 		}
 	}
 	for (int i = 0;i < Joins.Count();i++) {
-		Console_InputF("msg joins %ls %d %d",Get_Wide_Player_Name_By_ID(Joins[i].PlayerID),Joins[i].LeaderID,Joins[i],Joins[i].Timeout);
+		Console_InputF("msg join %ls %ls %d",Joins[i].Player->Get_Name(),Joins[i].Leader->Get_Name(),Joins[i].Timeout);
 	}
 	for (int i = 0;i < Invites.Count();i++) {
-		Console_InputF("msg invites %ls %d %d",Get_Wide_Player_Name_By_ID(Invites[i].PlayerID),Invites[i].LeaderID,Invites[i],Invites[i].Timeout);
+		Console_InputF("msg invite %ls %ls %d",Invites[i].Player->Get_Name(),Invites[i].Leader->Get_Name(),Invites[i].Timeout);
 	}
 	for (int i = 0;i < WaitList.Count();i++) {
-		Console_InputF("msg wait list %ls %d %d",Get_Wide_Player_Name_By_ID(WaitList[i].PlayerID),WaitList[i].LeaderID,WaitList[i],WaitList[i].Timeout);
+		Console_InputF("msg join %ls %ls %d",WaitList[i].Player->Get_Name(),WaitList[i].Leader->Get_Name(),WaitList[i].Timeout);
 	}*/
 	return true;
 }
@@ -670,9 +690,6 @@ bool DASquadManagerClass::List_Chat_Command(cPlayer *Player,const DATokenClass &
 bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	if (Find_Squad(Player)) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"You are already in a squad.");
-	}
-	else if (The_Game()->Get_Current_Players() < 7) {
-		DA::Private_Color_Message(Player,SQUADCOLOR,"There are not enough players to create a squad.");
 	}
 	else {
 		cPlayer *MatchPlayer = Match_Player(Player,Text[1],false);
@@ -682,7 +699,7 @@ bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &
 				for (int i = 0;i < Invites.Count();i++) {
 					if (Invites[i].Player == MatchPlayer && Invites[i].Leader == Player) {
 						Invite_Accepted(i);
-						return true;
+						return false;
 					}
 				}
 				DA::Private_Color_Message(Player,SQUADCOLOR,"%ls is not in a squad.",MatchPlayer->Get_Name());
@@ -700,15 +717,10 @@ bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &
 				for (int i = 0;i < Invites.Count();i++) {
 					if (Invites[i].Player == Player && Squad->Is_Leader(Invites[i].Leader)) {
 						Invite_Accepted(i);
-						return true;
+						return false;
 					}
 				}
-				Remove_Join(Player);
-				Remove_WaitList(Player);
-				Remove_Invite(Player);
-				Clear_Joins(Player);
-				Clear_Invites(Player);
-				Clear_WaitList(Player);
+				Clear_Lists(Player);
 				DASquadInviteStruct Struct(Squad->Get_Leader()->Get_Owner(),Player);
 				Joins.Add(Struct);
 				DA::Private_Color_Message(Player,SQUADCOLOR,"You have requested to join %ls squad.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
@@ -716,7 +728,7 @@ bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &
 			}
 		}
 	}
-	return true;
+	return false;
 }
 
 bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -735,7 +747,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 					for (int i = 0;i < Joins.Count();i++) {
 						if (Joins[i].Leader == Player && Joins[i].Player == MatchPlayer) {
 							Join_Accepted(i);
-							return true;
+							return false;
 						}
 					}
 					if (Is_Invite_Pending(MatchPlayer) || Is_WaitList_Pending(MatchPlayer)) {
@@ -754,7 +766,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 			}
 		}
 	}
-	else if (The_Game()->Get_Current_Players() < 7) {
+	else if (!Can_Create_Squads()) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"There are not enough players to create a squad.");
 	}
 	else {
@@ -776,7 +788,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 			}
 		}
 	}
-	return true;
+	return false;
 }
 
 bool DASquadManagerClass::Accept_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -799,7 +811,7 @@ bool DASquadManagerClass::Accept_Chat_Command(cPlayer *Player,const DATokenClass
 			}
 		}
 	}
-	return true;
+	return false;
 }
 
 bool DASquadManagerClass::Decline_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
@@ -826,12 +838,15 @@ bool DASquadManagerClass::Decline_Chat_Command(cPlayer *Player,const DATokenClas
 			}
 		}
 	}
-	return true;
+	return false;
 }
 
-//This gets overridden by the one in DASquadMemberClass while in a squad.
 bool DASquadManagerClass::Leave_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	if (Remove_WaitList(Player)) {
+	DASquadClass *Squad = Find_Squad(Player);
+	if (Squad) {
+		Squad->Remove(Player);
+	}
+	else if (Remove_WaitList(Player)) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"You have left the squad wait list.");
 	}
 	else if (Remove_Join(Player)) {
@@ -840,7 +855,7 @@ bool DASquadManagerClass::Leave_Chat_Command(cPlayer *Player,const DATokenClass 
 	else if (Clear_Invites(Player)) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"You have rescinded your squad invitations.");
 	}
-	return true;
+	return false;
 }
 
 DASquadClass *DASquadManagerClass::Create_Squad(cPlayer *Player) {
@@ -859,20 +874,18 @@ void DASquadManagerClass::Invite(cPlayer *Player,cPlayer *Leader) {
 void DASquadManagerClass::Join_Accepted(int JoinIndex) {
 	cPlayer *Player = Joins[JoinIndex].Player;
 	DASquadClass *Squad = Find_Squad(Joins[JoinIndex].Leader);
-	if (Squad && Squad->Is_Leader(Joins[JoinIndex].Leader)) {
-		if (!Find_Squad(Player)) {
-			if (Squad->Get_Team() != Player->Get_Team()) {
-				DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is on the other team. You have been added to the wait list and will be teamed with them next game.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
-				Squad->Leader_Message("%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
-				WaitList.Add(Joins[JoinIndex]);
-			}
-			else if (Squad->Is_Full()) {
-				DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
-				Squad->Leader_Message("Your squad is full.");
-			}
-			else if (Squad->Add(Player)) {
-				DA::Private_Color_Message(Player,SQUADCOLOR,"%ls has accepted your request to join their squad.",Squad->Get_Leader()->Get_Name());
-			}
+	if (Squad && Squad->Is_Leader(Joins[JoinIndex].Leader) && !Find_Squad(Player)) {
+		if (Squad->Is_Full()) {
+			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
+			Squad->Leader_Message("Your squad is full.");
+		}
+		else if (Squad->Get_Team() != Player->Get_Team()) {
+			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is on the other team. You have been added to the wait list and will be teamed with them next game.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
+			Squad->Leader_Message("%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
+			WaitList.Add(Joins[JoinIndex]);
+		}
+		else {
+			Squad->Add(Player);
 		}
 	}
 	Joins.Delete(JoinIndex);
@@ -884,17 +897,17 @@ void DASquadManagerClass::Invite_Accepted(int InviteIndex) {
 	cPlayer *Player = Invites[InviteIndex].Player;
 	DASquadClass *Squad = Find_Squad(Invites[InviteIndex].Leader);
 	if (Squad) {
-		if (Squad->Get_Team() != Player->Get_Team()) {
+		if (Squad->Is_Full()) {
+			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
+			Squad->Leader_Message("Your squad is full.");
+		}
+		else if (Squad->Get_Team() != Player->Get_Team()) {
 			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is on the other team. You have been added to the wait list and will be teamed with them next game.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
 			Squad->Leader_Message("%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
 			WaitList.Add(Invites[InviteIndex]);
 		}
-		else if (Squad->Is_Full()) {
-			DA::Private_Color_Message(Player,SQUADCOLOR,"%ls squad is full.",Make_Possessive(Squad->Get_Leader()->Get_Name()));
-			Squad->Leader_Message("Your squad is full.");
-		}
-		else if (Squad->Add(Player)) {
-			Squad->Leader_Message("%ls has accepted your squad invitation.",Player->Get_Name());
+		else { 
+			Squad->Add(Player);
 		}
 	}
 	else if (Invites[InviteIndex].Leader->Get_Team() != Player->Get_Team()) {
@@ -902,8 +915,7 @@ void DASquadManagerClass::Invite_Accepted(int InviteIndex) {
 		DA::Private_Color_Message(Invites[InviteIndex].Leader,SQUADCOLOR,"%ls is on the other team. They have been added to the wait list and will be teamed with you next game.",Player->Get_Name());
 		WaitList.Add(Invites[InviteIndex]);
 	}
-	else {
-		DA::Private_Color_Message(Invites[InviteIndex].Leader,SQUADCOLOR,"%ls has accepted your squad invitation.",Player->Get_Name());
+	else if (Can_Create_Squads()) {
 		DASquadClass *NewSquad = Create_Squad(Invites[InviteIndex].Leader);
 		NewSquad->Add(Player);
 	}
@@ -1002,6 +1014,15 @@ bool DASquadManagerClass::Clear_WaitList(cPlayer *Player) {
 	return Return;
 }
 
+void DASquadManagerClass::Clear_Lists(cPlayer *Player) {
+	Remove_Join(Player);
+	Remove_Invite(Player);
+	Remove_WaitList(Player);
+	Clear_Joins(Player);
+	Clear_Invites(Player);
+	Clear_WaitList(Player);
+}
+
 DASquadClass *DASquadManagerClass::Find_Squad(cPlayer *Player) {
 	for (int i = 0;i < SquadList.Count();i++) {
 		if (SquadList[i]->Is_Member(Player)) {
@@ -1011,63 +1032,31 @@ DASquadClass *DASquadManagerClass::Find_Squad(cPlayer *Player) {
 	return 0;
 }
 
-DASquadClass *DASquadManagerClass::Find_Squad(int ID) {
-	for (int i = 0;i < SquadList.Count();i++) {
-		if (SquadList[i]->Is_Member(ID)) {
-			return SquadList[i];
-		}
-	}
-	return 0;
-}
-
-DASquadClass *DASquadManagerClass::Find_Squad(GameObject *obj) {
-	for (int i = 0;i < SquadList.Count();i++) {
-		if (SquadList[i]->Is_Member(obj)) {
-			return SquadList[i];
-		}
-	}
-	return 0;
-}
-
-void DASquadManagerClass::Check_WaitList(cPlayer *Player) {
-	for (int i = 0;i < WaitList.Count();i++) {
-		if (WaitList[i].Player == Player) {
-			DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
-			if (Squad) {
-				if (Squad->Get_Team() == Player->Get_Team() && Squad->Is_Leader(WaitList[i].Leader)) {
-					Squad->Add(Player);
-				}
-			}
-			else if (WaitList[i].Leader->Get_Team() == Player->Get_Team()) {
-				DASquadClass *NewSquad = Create_Squad(WaitList[i].Leader);
-				NewSquad->Add(Player);
-			}
-			WaitList.Delete(i);
-			break;
-		}
-		else if (WaitList[i].Leader == Player) {
-			DASquadClass *Squad = Find_Squad(WaitList[i].Leader);
-			if (Squad) {
-				if (Squad->Get_Team() == WaitList[i].Player->Get_Team() && Squad->Is_Leader(Player)) {
-					Squad->Add(WaitList[i].Player);
-				}
-			}
-			else if (WaitList[i].Leader->Get_Team() == Player->Get_Team()) {
-				DASquadClass *NewSquad = Create_Squad(Player);
-				NewSquad->Add(WaitList[i].Player);
-			}
-			WaitList.Delete(i);
-			i--;
-		}
-	}
-}
-
-unsigned int DASquadManagerClass::Get_Max_Squad_Size() {
-	unsigned int Size = (unsigned int)(The_Game()->Get_Current_Players()/2)-1;
+int DASquadManagerClass::Get_Max_Squad_Size() {
+	int Size = The_Game()->Get_Current_Players()/3;
 	if (Size < MaxSquadSize) {
 		return Size;
 	}
 	return MaxSquadSize;
+}
+
+bool DASquadManagerClass::Can_Create_Squads() {
+	return Get_Max_Squad_Size() >= 2;
+}
+
+void DASquadManagerClass::Check_Teams() {
+	for (int i = SquadList.Count()-1;i >= 0;i--) {
+		SquadList[i]->Check_Team();
+	}
+}
+
+void DASquadManagerClass::Check_Size() {
+	for (int i = SquadList.Count()-1;i >= 0;i--) {
+		DASquadClass *Squad = SquadList[i];
+		for (int x = Squad->Size()-1;x >= 0 && Squad->Active_Size() > Get_Max_Squad_Size();x--) {
+			Squad->Get_Member(x)->Leave_Squad();
+		}
+	}
 }
 
 DA_API Register_Game_Feature(DASquadManagerClass,"Squad System","EnableSquads",0);

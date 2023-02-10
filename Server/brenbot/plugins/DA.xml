@@ -17,5 +17,6 @@
   <hook event="Alert" regex="_ALERT"/>
   <hook event="Node" regex="_NODE"/>
   <hook event="Flag" regex="_FLAG"/>
+  <hook event="Squad" regex="_SQUAD"/>
   </gamelog_regex_hooks>
 </plugin>

@@ -168,6 +168,7 @@ SCRIPTS_API gpv Get_Client_Version;
 SCRIPTS_API gpr Get_Client_Revision;
 SCRIPTS_API gpr Get_Revision;
 SCRIPTS_API gdw Get_Damage_Warhead;
+SCRIPTS_API gdie Get_Damage_Is_Explosion;
 SCRIPTS_API ggobpn Get_GameObj_By_Player_Name;
 SCRIPTS_API scap Send_Custom_All_Players;
 SCRIPTS_API stc Steal_Team_Credits;
@@ -197,6 +198,7 @@ SCRIPTS_API htp Set_HUD_Help_Text_Player;
 SCRIPTS_API csp Change_String_Player;
 SCRIPTS_API fpu Force_Position_Update;
 SCRIPTS_API grps Get_Random_Pathfind_Spot;
+SCRIPTS_API htpt Set_HUD_Help_Text_Player_Text;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {

@@ -3423,14 +3423,18 @@ void JFW_Hijacker_Vehicle_2::Damaged(GameObject *obj,GameObject *damager,float a
 			{
 				if (Get_Vehicle_Occupant_Count(obj) == 1)
 				{
-					if (Commands->Get_Distance(Commands->Get_Position(obj),Commands->Get_Position(damager)) <= Get_Float_Parameter("Distance"))
+					GameObject *o = Get_Vehicle_Driver(obj);
+					if (o && o->As_SmartGameObj() && o->As_SmartGameObj()->Is_Control_Enabled())
 					{
-						Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
-						Force_Occupants_Exit(obj);
-						Commands->Start_Timer(obj,this,0.5,1);
-						HijackerID = Commands->Get_ID(damager);
-						damager->As_SoldierGameObj()->Set_Can_Drive_Vehicles(true);
-						jacking = true;
+						if (Commands->Get_Distance(Commands->Get_Position(obj),Commands->Get_Position(damager)) <= Get_Float_Parameter("Distance"))
+						{
+							Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
+							Force_Occupants_Exit(obj);
+							Commands->Start_Timer(obj,this,0.5,1);
+							HijackerID = Commands->Get_ID(damager);
+							damager->As_SoldierGameObj()->Set_Can_Drive_Vehicles(true);
+							jacking = true;
+						}
 					}
 				}
 			}

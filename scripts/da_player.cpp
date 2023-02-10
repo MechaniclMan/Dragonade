@@ -505,9 +505,7 @@ void DAPlayerClass::Join() {
 	Version = Get_Client_Version(Get_ID());
 	Revision = Get_Client_Revision(Get_ID());
 	for (int i = 0;i < Observers.Count();i++) {
-		if (Observers[i]->Has_Flag(DAPlayerFlags::PERSISTLEAVE)) {
-			Observers[i]->Join();
-		}
+		Observers[i]->Join();
 	}
 	Loaded = false;
 	ServerDamage = false;
@@ -516,11 +514,9 @@ void DAPlayerClass::Join() {
 void DAPlayerClass::Leave() {
 	AccessLevel = DAAccessLevel::NONE;
 	for (int i = 0;i < Observers.Count();i++) {
+		Observers[i]->Leave();
 		if (!Observers[i]->Has_Flag(DAPlayerFlags::PERSISTLEAVE)) {
 			Observers[i]->Set_Delete_Pending();
-		}
-		else {
-			Observers[i]->Leave();
 		}
 	}
 	
@@ -540,11 +536,9 @@ void DAPlayerClass::Leave() {
 
 void DAPlayerClass::Level_Loaded() {
 	for (int i = 0;i < Observers.Count();i++) {
+		Observers[i]->Level_Loaded();
 		if (!Observers[i]->Has_Flag(DAPlayerFlags::PERSISTMAP)) {
 			Observers[i]->Set_Delete_Pending();
-		}
-		else {
-			Observers[i]->Level_Loaded();
 		}
 	}
 
@@ -1323,15 +1317,15 @@ void DAPlayerManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDe
 }
 
 bool DAPlayerManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
-	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 30) {
+	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 28) {
 		return false;
 	}
 	return Player->Get_DA_Player()->Add_Weapon_Request(Weapon);
 }
 
 void DAPlayerManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
-	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 30) {
-		DA::Page_Player(Player,"You have reached the weapon limit of 30. To pick up additional weapons you will need to drop some of your current ones with the \"!drop\" command.");
+	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 28) {
+		DA::Page_Player(Player,"You have reached the weapon limit of 28. To pick up additional weapons you will need to drop some of your current ones with the \"!drop\" command.");
 	}
 	Player->Get_DA_Player()->Add_Weapon(Weapon);
 }

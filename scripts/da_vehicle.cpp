@@ -459,7 +459,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				if (Victim == Killer) {
 					if (!Owner) {
 						VictimName[0] = (char)toupper(VictimName[0]);
-						DA::Color_Message(WHITE,"2 %s destroyed itself.",VictimName);
+						DA::Color_Message(COLORWHITE,"2 %s destroyed itself.",VictimName);
 					}
 				else {
 						Message.Format("%d %s destroyed itself.",Owner->Get_Player_Type(),VictimName);
@@ -545,7 +545,7 @@ class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get ove
 		if (Team != 0 && Team != 1) {
 			return true;
 		}
-		DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
+		DA::Private_Color_Message(Player,COLORGRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
 		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
 		if (VF && VF->Is_Busy() && VF->Get_Generating_Vehicle_ID()) {
 			StringClass Name;
@@ -560,7 +560,7 @@ class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get ove
 					Name += " - ";
 				}
 			}
-			DA::Private_Color_Message(Player,GRAY,"Building: %s%s",Name,DATranslationManager::Translate(VF->Get_Generating_Vehicle_ID()));
+			DA::Private_Color_Message(Player,COLORGRAY,"Building: %s%s",Name,DATranslationManager::Translate(VF->Get_Generating_Vehicle_ID()));
 		}
 		return true;
 	}

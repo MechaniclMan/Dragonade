@@ -426,6 +426,7 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 				Commands->Set_Animation(obj,text,false,0,0,-1,0);
 				Commands->Control_Enable(Commands->Find_Object(PilotID),false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 			}
 		}
 		//redeploy!
@@ -441,6 +442,7 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 			Commands->Set_Animation(obj,text,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Control_Enable(Commands->Find_Object(PilotID),false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 		}
 	}
 }
@@ -782,6 +784,7 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 				Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
 				Commands->Control_Enable(sender,false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 				Commands->Enable_Vehicle_Transitions(obj,false);
 			}
 		}
@@ -794,6 +797,7 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 			Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Control_Enable(sender,false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 			Commands->Enable_Vehicle_Transitions(obj,false);
 		}
 	}
@@ -904,6 +908,7 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 				Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
 				Commands->Control_Enable(sender,false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 				Commands->Enable_Vehicle_Transitions(obj,false);
 			}
 		}
@@ -915,6 +920,7 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 			Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Control_Enable(sender,false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 			Commands->Enable_Vehicle_Transitions(obj,false);
 		}
 	}
@@ -1015,6 +1021,11 @@ void Reborn_IsMech::Timer_Expired(GameObject *obj,int number)
 		char movebanim[512];
 		sprintf(movebanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
 		Commands->Start_Timer(obj,this,(float)0.1,1);
+		if (obj->As_PhysicalGameObj() && obj->As_PhysicalGameObj()->Is_Attached_To_An_Object())
+		{	
+			Commands->Set_Animation(obj,moveanim,false,0,0,0,0);
+			return;
+		}
 		Vector3 position = Commands->Get_Bone_Position(obj,"Origin");
 		Vector3 pos;
 		if (Mode == 1)
@@ -1262,6 +1273,7 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 				Commands->Set_Animation(obj,deployanim,false,0,0,-1,0);
 				Commands->Control_Enable(sender,false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+				Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 				Commands->Enable_Vehicle_Transitions(obj,false);
 			}
 		}
@@ -1273,6 +1285,7 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 			Commands->Set_Animation(obj,deployanim,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Control_Enable(sender,false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 			Commands->Enable_Vehicle_Transitions(obj,false);
 		}
 	}
@@ -1409,6 +1422,7 @@ void Reborn_IsDeployableTank_4::Custom(GameObject *obj, int type, int param, Gam
 			Commands->Set_Animation(obj, deployanim, false, 0, Get_Float_Parameter("Last_Deploy_Frame"), 0, 0);
 			Commands->Control_Enable(sender, false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Create_Sound(Get_Parameter("UndeploySound"),Commands->Get_Position(obj),obj);
 			Commands->Enable_Vehicle_Transitions(obj, false);
 		}
 	}
@@ -1431,6 +1445,7 @@ void Reborn_IsDeployableTank_4::Timer_Expired(GameObject *obj, int number)
 	Commands->Set_Shield_Type(obj, Get_Parameter("Armor"));
 	Commands->Control_Enable(Commands->Find_Object(number), false);
 	obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+	Commands->Create_Sound(Get_Parameter("DeploySound"),Commands->Get_Position(obj),obj);
 	Commands->Enable_Vehicle_Transitions(obj, false);
 }
 
@@ -1502,10 +1517,10 @@ ScriptRegistrant<Reborn_MMK2_Turret_Spawn> Reborn_MMK2_Turret_Spawn_Registrant("
 ScriptRegistrant<Reborn_Diggable_Vehicle> Reborn_Diggable_Vehicle_Registrant("Reborn_Diggable_Vehicle","Mode:int,Dig_Delay:float,Z_Hieght_Adjust:float");
 ScriptRegistrant<Reborn_PlaySound_OnCreate> Reborn_PlaySound_OnCreate_Registrant("Reborn_PlaySound_OnCreate","Sound_Preset_Name=BLAH!:string");
 ScriptRegistrant<Reborn_Diggable_Vehicle_Animated> Reborn_Diggable_Vehicle_Animated_Registrant("Reborn_Diggable_Vehicle_Animated","Z_Hieght_Adjust:float,Dig_Animation:string,Surface_Animation:string");
-ScriptRegistrant<Reborn_IsDeployableMech> Reborn_IsDeployableMech_Registrant("Reborn_IsDeployableMech","Model_Name=none:string,Weapon_Name=none:string,Weapon_Powerup_Name=none:string,Last_Deploy_Frame=0.00:float,StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=10:int,Stomp1Frame_Backward=51:int,Stomp2Frame_Backward=40:int");
-ScriptRegistrant<Reborn_IsDeployableTank> Reborn_IsDeployableTank_Registrant("Reborn_IsDeployableTank","Model_Name=v_nod_art:string,Weapon_Name=weapon_artillery:string,Weapon_Powerup_Name=pow_artillery:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
-ScriptRegistrant<Reborn_IsDeployableTank_2> Reborn_IsDeployableTank_2_Registrant("Reborn_IsDeployableTank_2","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
-ScriptRegistrant<Reborn_IsDeployableTank_3> Reborn_IsDeployableTank_3_Registrant("Reborn_IsDeployableTank_3","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string");
-ScriptRegistrant<Reborn_IsDeployableTank_4> Reborn_IsDeployableTank_4_Registrant("Reborn_IsDeployableTank_4","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string,GroundBone:string,GroundDistance:float");
+ScriptRegistrant<Reborn_IsDeployableMech> Reborn_IsDeployableMech_Registrant("Reborn_IsDeployableMech","Model_Name=none:string,Weapon_Name=none:string,Weapon_Powerup_Name=none:string,Last_Deploy_Frame=0.00:float,StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=10:int,Stomp1Frame_Backward=51:int,Stomp2Frame_Backward=40:int,DeploySound:string,UndeploySound:string");
+ScriptRegistrant<Reborn_IsDeployableTank> Reborn_IsDeployableTank_Registrant("Reborn_IsDeployableTank","Model_Name=v_nod_art:string,Weapon_Name=weapon_artillery:string,Weapon_Powerup_Name=pow_artillery:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string,DeploySound:string,UndeploySound:string");
+ScriptRegistrant<Reborn_IsDeployableTank_2> Reborn_IsDeployableTank_2_Registrant("Reborn_IsDeployableTank_2","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string,DeploySound:string,UndeploySound:string");
+ScriptRegistrant<Reborn_IsDeployableTank_3> Reborn_IsDeployableTank_3_Registrant("Reborn_IsDeployableTank_3","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string,DeploySound:string,UndeploySound:string");
+ScriptRegistrant<Reborn_IsDeployableTank_4> Reborn_IsDeployableTank_4_Registrant("Reborn_IsDeployableTank_4","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string,GroundBone:string,GroundDistance:float,DeploySound:string,UndeploySound:string");
 ScriptRegistrant<Reborn_IsMech> Reborn_IsMech_Registrant("Reborn_IsMech", "StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=51:int,Stomp1Frame_Backward=10:int,Stomp2Frame_Backward=40:int");
 ScriptRegistrant<Reborn_Deployable_Vehicle_Player> Reborn_Deployable_Vehicle_Player_Registrant("Reborn_Deployable_Vehicle_Player","Key=Deploy:string,ID=0:int,Message=0:int");

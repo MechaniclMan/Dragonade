@@ -119,6 +119,7 @@ typedef void (*sbd) ();
 typedef float (*gpv) (int playerId);
 typedef uint (*gpr) (int playerId);
 typedef unsigned int (*gdw) ();
+typedef bool (*gdie) ();
 typedef void (*naee) (GameObject * obj, const ActionParamsStruct & params);
 typedef GameObject *(*ggobpn) (const char *name);
 typedef void (*scap) (int type,GameObject *sender,int team);
@@ -153,6 +154,7 @@ typedef void (*htp) (GameObject *obj, int string, Vector3 color);
 typedef void (*csp) (GameObject *obj,int id,const char *string);
 typedef void (*fpu) (GameObject *obj);
 typedef bool (*grps) (const Vector3 &center, float range, Vector3 *returnPosition);
+typedef void (*htpt) (GameObject *obj, int replaceStringId,const char *replaceText, Vector3 color);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -285,6 +287,7 @@ SCRIPTS_API extern gpv Get_Client_Version;
 SCRIPTS_API extern gpr Get_Client_Revision;
 SCRIPTS_API extern gpr Get_Revision;
 SCRIPTS_API extern gdw Get_Damage_Warhead;
+SCRIPTS_API extern gdie Get_Damage_Is_Explosion;
 SCRIPTS_API extern addConnectionAcceptanceFilterType addConnectionAcceptanceFilter;
 SCRIPTS_API extern removeConnectionAcceptanceFilterType removeConnectionAcceptanceFilter;
 SCRIPTS_API extern iwu Is_WOL_User;
@@ -308,6 +311,7 @@ SCRIPTS_API extern htp Set_HUD_Help_Text_Player;
 SCRIPTS_API extern csp Change_String_Player;
 SCRIPTS_API extern fpu Force_Position_Update;
 SCRIPTS_API extern grps Get_Random_Pathfind_Spot;
+SCRIPTS_API extern htpt Set_HUD_Help_Text_Player_Text;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:

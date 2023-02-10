@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1418,12 +1418,12 @@ void JFW_Vehicle_Weapon_Switcher::KeyHook()
 	if (newweap)
 	{
 		newweap = false;
-		Commands->Create_Sound(Get_Parameter("OldSound"),Commands->Get_Position(obj),0);
+		Commands->Create_Sound(Get_Parameter("OldSound"),Commands->Get_Position(obj),obj);
 	}
 	else
 	{
 		newweap = true;
-		Commands->Create_Sound(Get_Parameter("NewSound"),Commands->Get_Position(obj),0);
+		Commands->Create_Sound(Get_Parameter("NewSound"),Commands->Get_Position(obj),obj);
 	}
 	Commands->Start_Timer(obj,this,Get_Float_Parameter("SwitchTime"),1);
 }

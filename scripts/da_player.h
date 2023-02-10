@@ -301,9 +301,9 @@ public:
 	
 	virtual void Init() { } //Called when the observer is attached to a player.
 
-	virtual void Join() { } //Called when the player rejoins after leaving. Only called on observers with the PERSISTLEAVE flag.
-	virtual void Leave() { } //Called when the player leaves the game. Only called on observers with the PERSISTLEAVE flag.
-	virtual void Level_Loaded() { } //Called when a new level is loaded. Only called on observers with the PERSISTMAP flag.
+	virtual void Join() { } //Called when the player rejoins after leaving.
+	virtual void Leave() { } //Called when the player leaves the game.
+	virtual void Level_Loaded() { } //Called when a new level is loaded.
 	virtual void Player_Loaded() { } //Called after the player has loaded the map and spawned.
 	virtual void Name_Change() { } //Called after the player's name is changed for fake color messaging.
 	virtual void Team_Change() { } //Called when the player changes teams.

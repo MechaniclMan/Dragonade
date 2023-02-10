@@ -569,6 +569,7 @@ void dp88_AR_IFV::Timer_Expired( GameObject *obj, int number )
 	animation frame */
 	if ( number == TIMER_IFV_DEPLOYCOMPLETE )
 	{
+		Create_2D_Sound_Player(Commands->Find_Object(pilotID),Get_Parameter("Sound"));
 		isDeploying = false;
 
 		if ( isDeployed )
@@ -661,6 +662,7 @@ void dp88_AR_IFV::deploy()
 	// Set flags and start timer to complete deployment
 	isDeployed = true;
 	isDeploying = true;
+	Set_HUD_Help_Text_Player(Commands->Find_Object(pilotID),Get_Int_Parameter("String"),Get_Vector3_Parameter("Color"));
 	Commands->Start_Timer ( obj, this, (float)Get_Int_Parameter ( "Switch_Time" ), TIMER_IFV_DEPLOYCOMPLETE );
 }
 
@@ -684,6 +686,7 @@ void dp88_AR_IFV::undeploy()
 	// Set flags and start timer to complete deployment
 	isDeployed = false;
 	isDeploying = true;
+	Set_HUD_Help_Text_Player(Commands->Find_Object(pilotID),Get_Int_Parameter("String"),Get_Vector3_Parameter("Color"));
 	Commands->Start_Timer ( obj, this, (float)Get_Int_Parameter ( "Switch_Time" ), TIMER_IFV_DEPLOYCOMPLETE );
 }
 
@@ -876,5 +879,5 @@ ScriptRegistrant<dp88_AR_Tesla_Coil> dp88_AR_Tesla_Coil_Registrant(
 );
 
 // IFV
-ScriptRegistrant<dp88_AR_IFV> dp88_AR_IFV_Registrant( "dp88_AR_IFV", "Turret_Frames_Animation=v_all_ifv.v_all_ifv:string,Switch_Time=10:int,Switching_Anim_Frame=2:int,Keyhook=VDeploy:string" );
+ScriptRegistrant<dp88_AR_IFV> dp88_AR_IFV_Registrant( "dp88_AR_IFV", "Turret_Frames_Animation=v_all_ifv.v_all_ifv:string,Switch_Time=10:int,Switching_Anim_Frame=2:int,Keyhook=VDeploy:string,String:int,Color:vector3,Sound:string" );
 ScriptRegistrant<dp88_AR_IFVDriver> dp88_AR_IFVDriver_Registrant( "dp88_AR_IFVDriver", "IFV_ModelAnimFrame=1:int,IFV_WeaponPowerup_Rookie=null:string,IFV_WeaponPowerup_Veteran=null:string,IFV_WeaponPowerup_Elite=null:string" );

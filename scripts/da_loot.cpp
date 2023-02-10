@@ -685,7 +685,7 @@ void DALootGameFeatureClass::Clear_Weapons_Event(cPlayer *Player) {
 bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
 	DALootPlayerDataClass *PlayerData = Get_Player_Data(Player);
 	if (!PlayerData->Get_Weapon_Count() || !Player->Get_GameObj() || Player->Get_GameObj()->Get_Defense_Object()->Get_Health() == 0.0f) {
-		DA::Private_Color_Message(Player,WHITE,"You have no weapons to drop.");
+		DA::Private_Color_Message(Player,COLORWHITE,"You have no weapons to drop.");
 	}
 	else {
 		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
@@ -702,10 +702,10 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 				}
 				if (!Backpack->Get_Weapon_Count()) {
 					Backpack->Get_Owner()->Set_Delete_Pending();
-					DA::Private_Color_Message(Player,WHITE,"You have no weapons to drop.");
+					DA::Private_Color_Message(Player,COLORWHITE,"You have no weapons to drop.");
 				}
 				else {
-					DA::Private_Color_Message(Player,WHITE,"You have dropped all your weapons.");
+					DA::Private_Color_Message(Player,COLORWHITE,"You have dropped all your weapons.");
 					Backpack->Set_Expire_Time(DropCommandExpireTime);
 					Backpack->Start_Timer(6,5.0f);
 				}
@@ -716,7 +716,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 					const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
 					const char *Translation = DATranslationManager::Translate(WeaponDef);
 					if (PlayerData->Has_Weapon(WeaponDef) && stristr(Translation,Text[0]) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
-						DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",Translation);
+						DA::Private_Color_Message(Player,COLORWHITE,"You have dropped your %s.",Translation);
 						DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
 						Backpack->Set_Expire_Time(DropCommandExpireTime);
@@ -725,14 +725,14 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 						return true;
 					}
 				}
-				DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");
+				DA::Private_Color_Message(Player,COLORWHITE,"You cannot drop that weapon.");
 			}
 		}
 		else if (Bag->Get_Index()) {
 			WeaponClass *Weapon = Bag->Get_Weapon();
 			const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
 			if (PlayerData->Has_Weapon(WeaponDef) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
-				DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",DATranslationManager::Translate(Weapon));
+				DA::Private_Color_Message(Player,COLORWHITE,"You have dropped your %s.",DATranslationManager::Translate(Weapon));
 				DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 				Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
 				Backpack->Set_Expire_Time(DropCommandExpireTime);
@@ -741,7 +741,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 				Bag->Remove_Weapon(WeaponDef);
 				return true;
 			}
-			DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");
+			DA::Private_Color_Message(Player,COLORWHITE,"You cannot drop that weapon.");
 		}
 	}
 	return true;

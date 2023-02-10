@@ -186,6 +186,24 @@ BuildingGameObj *Get_Closest_Building(const Vector3 &Position,int Team) {
 	return Closest;
 }
 
+PhysicalGameObj *Get_Closest_Fake_Building(const Vector3 &Position,int Team) {
+	float ClosestDist = FLT_MAX;
+	PhysicalGameObj *Closest = 0;
+	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
+		if (z->Data()->As_PhysicalGameObj()) {
+			PhysicalGameObj *Phys = (PhysicalGameObj*)z->Data();
+			if (Phys->Get_Definition().Get_Encyclopedia_Type() == 3 && (Phys->Get_Player_Type() == Team || Team == 2) && Phys->Get_Defense_Object()->Get_Health() && Phys->Peek_Physical_Object()->Peek_Model()) {
+				float Dist = Commands->Get_Distance(Position,Phys->Get_Position());
+				if (Dist < ClosestDist) {
+					ClosestDist = Dist;
+					Closest = Phys;
+				}
+			}
+		}
+	}
+	return Closest;
+}
+
 BuildingGameObj *Get_Random_Building(int Team) {
 	BaseControllerClass *Base = BaseControllerClass::Find_Base(Team);
 	if (!Base || !Base->Get_Building_List().Count() || Base->Is_Base_Destroyed()) {
@@ -1408,4 +1426,21 @@ uint DA_API Send_Object_Update(NetworkObjectClass *Object, int ID) {
 
 void DA_API Update_Game_Settings(int ID) {
 	Update_Game_Options(ID);
+}
+
+void Reverse_Damage(GameObject *obj,float Amount) {
+	float Health = Commands->Get_Health(obj);
+	float Armor = Commands->Get_Shield_Strength(obj);
+	if (Health != Commands->Get_Max_Health(obj)) {
+		Health += Amount;
+		float OverFlow = Health-Commands->Get_Max_Health(obj);
+		if (OverFlow > 0) {
+			Armor += OverFlow;
+			Commands->Set_Shield_Strength(obj,Armor);
+		}
+		Commands->Set_Health(obj,Health);
+	}
+	else {
+		Commands->Set_Shield_Strength(obj,Armor+Amount);
+	}
 }

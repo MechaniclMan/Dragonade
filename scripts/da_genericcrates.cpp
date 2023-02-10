@@ -286,11 +286,11 @@ class DARegenerationCrateClass : public DACrateClass {
 
 	virtual void Activate(cPlayer *Player) {
 		if (Player->Get_GameObj()->Get_Vehicle()) {
-			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your vehicle's health will regenerate, up to a limit of its maximum health.");
+			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your vehicle's health will temporarily regenerate.");
 			Player->Get_GameObj()->Get_Vehicle()->Add_Observer(new DARegenerationCrateObserverClass);
 		}
 		else {
-			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your health will regenerate, up to a limit of your maximum health.");
+			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your health will temporarily regenerate.");
 			Player->Get_GameObj()->Add_Observer(new DARegenerationCrateObserverClass);
 		}
 	}
@@ -318,12 +318,12 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		Commands->Set_Lightning(1.0f,0.0f,1.0f,0.0f,1.0f,10.0f);
 		Commands->Set_Fog_Enable(true);
 		Commands->Set_Fog_Range(75.0f,100.0f,10.0f);
-		Send_Message(WHITE,"Detecting interference from approaching Ion Storm.");
+		Send_Message(COLORWHITE,"Detecting interference from approaching Ion Storm.");
 	}
 
 	virtual void Timer_Expired(int Number,unsigned int Data) {
 		if (Number == 1) {
-			Send_Message(WHITE,"Searching...");
+			Send_Message(COLORWHITE,"Searching...");
 			Commands->Set_Clouds(0.0f,0.0f,7.0f);
 			Commands->Set_Wind(0.0f,0.0f,0.0f,7.0f);
 			Commands->Set_Lightning(0.0f,0.0f,0.0f,0.0f,0.0f,7.0f);
@@ -334,11 +334,11 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		else if (Number == 2) {
 			Create_2D_WAV_Sound_Team("M00EVAN_DSGN0027I1EVAN_snd.wav",0);
 			Create_2D_WAV_Sound_Team("M00EVAG_DSGN0031I1EVAG_snd.wav",1);
-			Send_Message(WHITE,"Uplink established. Please standby.");
+			Send_Message(COLORWHITE,"Uplink established. Please standby.");
 			Start_Timer(3,2.0f);
 		}
 		else if (Number == 3) {
-			Send_Message(WHITE,"Re-initializing HUD sub-system.");
+			Send_Message(COLORWHITE,"Re-initializing HUD sub-system.");
 			Enable_HUD(true);
 			Unregister_Event(DAEvent::PLAYERJOIN);
 			Unregister_Event(DAEvent::GAMEOVER);
@@ -356,7 +356,7 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		else if (Number == 201) {
 			Create_2D_WAV_Sound_Team("M00EVAN_DSGN0031I1EVAN_snd.wav",0);
 			Create_2D_WAV_Sound_Team("M00EVAG_DSGN0035I1EVAG_snd.wav",1);
-			Send_Message(WHITE,"Uplink signal to global EVANet lost. Searching...");
+			Send_Message(COLORWHITE,"Uplink signal to global EVANet lost. Searching...");
 			Enable_HUD(false);
 			Stop_Timer(101);
 			Stop_Timer(102);
@@ -365,13 +365,13 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		else if (Number == 202) {
 			Create_2D_WAV_Sound_Team("M00EVAN_DSGN0028I1EVAN_snd.wav",0);
 			Create_2D_WAV_Sound_Team("M00EVAG_DSGN0032I1EVAG_snd.wav",1);
-			Send_Message(WHITE,"Unable to establish uplink.");
+			Send_Message(COLORWHITE,"Unable to establish uplink.");
 		}
 	}
 
 	virtual void Player_Join_Event(cPlayer *Player) { //Disable HUD for players that joined after the start.
-		Send_Message_Player_By_ID(Player->Get_ID(),WHITE,"Detecting interference from approaching Ion Storm.");
-		Send_Message_Player_By_ID(Player->Get_ID(),WHITE,"Uplink signal to global EVANet lost. Searching...");
+		Send_Message_Player_By_ID(Player->Get_ID(),COLORWHITE,"Detecting interference from approaching Ion Storm.");
+		Send_Message_Player_By_ID(Player->Get_ID(),COLORWHITE,"Uplink signal to global EVANet lost. Searching...");
 		Enable_HUD_Player_By_ID(Player->Get_ID(),false);
 		Set_Fog_Enable_Player_By_ID(Player->Get_ID(),true);
 		Set_Fog_Range_Player_By_ID(Player->Get_ID(),75.0f,100.0f,10.0f);
@@ -737,12 +737,28 @@ class DASecondWindCrateObserverClass : public DAGameObjObserverClass {
 
 	virtual void Damage_Received(ArmedGameObj *Damager,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type) {
 		DefenseObjectClass *Defense = ((SoldierGameObj*)Get_Owner())->Get_Defense_Object();
-		if (!Defense->Get_Health()) {
-			if (Defense->Get_Shield_Strength_Max()) {
-				Defense->Set_Health(Defense->Get_Health_Max());
+		if (Defense->Get_Health() <= 0) {
+			Reverse_Damage(Get_Owner(),(Defense->Get_Shield_Strength_Max()+Defense->Get_Health_Max())/2.0f);
+			SoldierGameObj *Soldier = Get_Owner()->As_SoldierGameObj();
+			if (Get_Owner()->As_VehicleGameObj()) {
+				VehicleGameObj *Vehicle = (VehicleGameObj*)Get_Owner();
+				for (int i = 0;i < Vehicle->Get_Definition().Get_Seat_Count();i++) {
+					if (Vehicle->Get_Occupant(i)) {
+						Soldier = Vehicle->Get_Occupant(i);
+						break;
+					}
+				}
 			}
-			else {
-				Defense->Set_Health(Defense->Get_Health_Max()/2);
+			if (Soldier && Soldier->Get_Player()) {
+				int ID = Soldier->Get_Player()->Get_ID();
+				if (Soldier->Get_Player_Type() == 0) {
+					Create_2D_WAV_Sound_Player_By_ID(ID,"M00EVAN_DSGN0022I1EVAN_SND.wav");
+				}
+				else if (Soldier->Get_Player_Type() == 1) {
+					Create_2D_WAV_Sound_Player_By_ID(ID,"M00EVAG_DSGN0026I1EVAG_SND.wav");
+				}
+				Console_InputF("icon %d o_em_cross.w3d",ID);
+				Console_InputF("icon2 %d o_em_cross.w3d",ID);
 			}
 			Set_Delete_Pending();
 		}
@@ -757,11 +773,11 @@ class DASecondWindCrateClass : public DACrateClass {
 	virtual void Activate(cPlayer *Player) {
 		if (Player->Get_GameObj()->Get_Vehicle()) {
 			Player->Get_GameObj()->Get_Vehicle()->Add_Observer(new DASecondWindCrateObserverClass);
-			DA::Page_Player(Player,"You picked up the Second Wind Crate. Your vehicle will be partially healed once when it would have otherwise died.");
+			DA::Page_Player(Player,"You picked up the Second Wind Crate. Your vehicle will be partially healed when near death.");
 		}
 		else {
 			Player->Get_GameObj()->Add_Observer(new DASecondWindCrateObserverClass);
-			DA::Page_Player(Player,"You picked up the Second Wind Crate. You will be partially healed once when you would have otherwise died.");
+			DA::Page_Player(Player,"You picked up the Second Wind Crate. You will be partially healed when near death.");
 		}
 	}
 };

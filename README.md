@@ -1,4 +1,4 @@
-Dragonade 1.7
+Dragonade 1.8
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,6 +25,29 @@ Installation:
 
 
 Update History:
+
+
+Version 1.8:
+  Additions:
+   - Added a message when squads are created.
+   - The beacon deployment team message now works with buildings that aren't BuildingGameObjs.
+   - Added an indication when the Second Wind Crate triggers.
+   - You can now talk in squad chat by paging yourself.
+
+  Changes:
+   - Squad radar has been re-enabled now that changing radar works again.
+   - Maximum squad size is now capped at a third of the current player count.
+
+  Bug Fixes:
+   - Added some missing functions/exports.
+   - Fixed the ban system not reading or writing to the ban database.
+   - Fixed various bugs in the squad system.
+   - Damage events doing 0 damage will once again call GameObjObserverClass::Damaged. (For real)
+   - Reduced weapon limit to 28 to prevent a crash/gameplay pending issue.
+   - Fixed pages to the host being logged twice.
+   - Fixed team rebalancing sometimes not occuring when it should have.
+   - Fixed Get_Damage_Warhead.
+
 
 
 Version 1.7:

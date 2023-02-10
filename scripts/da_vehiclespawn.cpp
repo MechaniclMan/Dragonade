@@ -176,7 +176,7 @@ void DAVehicleSpawnManagerClass::Spawn_Vehicle(int Team,const VehicleGameObjDef 
 		Start_Timer(1,10.0f,false,Team);
 	}
 	else {
-		DA::Private_Color_Message(Owner,WHITE,"There are currently no vehicle spawn points available for your team.");
+		DA::Private_Color_Message(Owner,COLORWHITE,"There are currently no vehicle spawn points available for your team.");
 	}
 }
 

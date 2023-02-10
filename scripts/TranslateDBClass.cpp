@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2015 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -200,6 +200,7 @@ bool TranslateDBClass::Load_Variables(ChunkLoadClass &cload)
 		}
 		cload.Close_Micro_Chunk();
 	}
+	m_VersionNumber = 145;
 	return true;
 }
 
