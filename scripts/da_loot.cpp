@@ -151,18 +151,7 @@ void DALootBackpackClass::PowerUp_Grant(cPlayer *Player) {
 	bool PickedUp = false;
 	bool CycleIcon = false;
 	for (int i = Weapons.Count()-1;i >= 0;i--) {
-		WeaponClass *Weapon = Bag->Find_Weapon(Weapons[i].Weapon);
-		if (Weapon) { //Only give them the weapon if they don't already have it...
-			if (Weapon->Get_Inventory_Rounds() < Weapon->Get_Definition()->MaxInventoryRounds) { //Or have less than max ammo.
-				Bag->Add_Weapon(Weapons[i].Weapon,Weapons[i].Rounds,true);
-				Weapons.Delete(i);
-				PickedUp = true;
-				if (i == IconIndex) {
-					CycleIcon = true;
-				}
-			}
-		}
-		else if (Bag->Add_Weapon(Weapons[i].Weapon,Weapons[i].Rounds,true)) { //Make sure something else didn't block them from receiving the weapon before we remove it from the backpack.
+		if (Bag->Add_Weapon(Weapons[i].Weapon,Weapons[i].Rounds,true)) { //Make sure they need and can receive the weapon before we remove it from the backpack.
 			Weapons.Delete(i);
 			PickedUp = true;
 			if (i == IconIndex) {
@@ -216,6 +205,9 @@ void DALootBackpackClass::Timer_Expired(GameObject *obj,int Number) {
 			Commands->Set_Model(Icon,Get_Weapon_PowerUp_Model(Weapons[IconIndex].Weapon));
 		}
 		Start_Timer(5,2.5f);
+	}
+	else if (Number == 6) { //Clear dropper.
+		Dropper = 0;
 	}
 	else {
 		DALootPowerUpClass::Timer_Expired(obj,Number);
@@ -391,18 +383,10 @@ void DALootGameFeatureClass::Init() {
 	Register_Event(DAEvent::REMOVEWEAPON);
 	Register_Event(DAEvent::CLEARWEAPONS);
 	Register_Event(DAEvent::CHANGECHARACTER);
-	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
 	Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER);
 }
 
 void DALootGameFeatureClass::Settings_Loaded_Event() {
-	//Drop command setting
-	EnableDropCommand = DASettingsManager::Get_Bool("Loot","EnableDropCommand",true);
-	Unregister_Chat_Command("!drop");
-	if (EnableDropCommand) {
-		Register_Chat_Command((DAECC)&DALootGameFeatureClass::Drop_Chat_Command,"!drop|!wdrop|!weapdrop|!weapondrop|!dropweap|!dropweapon|!rweapon|!removeweapon|WeapDrop");
-	}
-
 	//Expiration time and damager settings.
 	ExpireTime = DASettingsManager::Get_Float("Loot","ExpireTime",20.0f);
 	DropCommandExpireTime = DASettingsManager::Get_Float("Loot","DropCommandExpireTime",60.0f);
@@ -414,6 +398,25 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 	DropOdds.Weapon = DASettingsManager::Get_Int("Loot","WeaponOdds",100);
 	DropOdds.DNA = DASettingsManager::Get_Int("Loot","DNAOdds",0);
 	DropOdds.Total = DropOdds.PowerUp+DropOdds.Weapon+DropOdds.DNA;
+
+	//Drop command.
+	Unregister_Chat_Command("!drop");
+	if (DASettingsManager::Get_Bool("Loot","EnableDropCommand",true)) {
+		Register_Chat_Command((DAECC)&DALootGameFeatureClass::Drop_Chat_Command,"!drop|!wdrop|!weapdrop|!weapondrop|!dropweap|!dropweapon|!rweapon|!removeweapon|WeapDrop");
+	}
+
+	//Carry over.
+	Unregister_Object_Event(DAObjectEvent::CREATED);
+	if (DASettingsManager::Get_Bool("Loot","EnableWeaponCarryOver",true)) {
+		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
+	}
+
+	//Drop multiple weapons.
+	EnableMultiWeaponDrop = DASettingsManager::Get_Bool("Loot","EnableMultiWeaponDrop",true);
+
+	//Models
+	DASettingsManager::Get_String(WeaponModel,"Loot","WeaponModel","p_backpack");
+	DASettingsManager::Get_String(DNAModel,"Loot","DNAModel","p_tnanites");
 
 	//Per-character drop odds.
 	CharacterDropOdds.Remove_All();
@@ -456,10 +459,6 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 			}
 		}
 	}
-	
-	//Models
-	DASettingsManager::Get_String(WeaponModel,"Loot","WeaponModel","p_backpack");
-	DASettingsManager::Get_String(DNAModel,"Loot","DNAModel","p_tnanites");
 
 	//Default powerup drops.
 	DefaultPowerUps.Delete_All();
@@ -538,15 +537,20 @@ void DALootGameFeatureClass::Object_Created_Event(GameObject *obj) {
 }
 
 void DALootGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
-	DAPlayerClass *Player = ((SoldierGameObj*)obj)->Get_DA_Player();
+	SoldierGameObj *Soldier = (SoldierGameObj*)obj;
+	DAPlayerClass *Player = Soldier->Get_DA_Player();
 	if (!Player->Is_Spawning()) {
 		DALootPlayerDataClass *PlayerData = Get_Player_Data(Player);
-		DropOddsStruct Odds = CharacterDropOdds.Get((unsigned int)&obj->Get_Definition(),DropOdds);
+		DropOddsStruct Odds = CharacterDropOdds.Get((unsigned int)&Soldier->Get_Definition(),DropOdds);
+		if (!Soldier->Is_Visible()) {
+			Odds.Total -= Odds.DNA;
+			Odds.DNA = 0;
+		}
 Reselect:
 		int Rand = Get_Random_Int(1,Odds.Total+1);
 		int Total = 0;
 		if (Odds.PowerUp && Rand <= (Total+=Odds.PowerUp)) { //Drop powerup
-			DALootPowerUpClass *PowerUp = Create_PowerUp((SoldierGameObj*)obj);
+			DALootPowerUpClass *PowerUp = Create_PowerUp(Soldier);
 			if (PowerUp) {
 				if (DamagersOnlyTime >= 0.0f) {
 					PowerUp->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
@@ -559,23 +563,33 @@ Reselect:
 			}
 		}
 		else if (Odds.Weapon && Rand <= (Total+=Odds.Weapon)) { //Drop backpack
-			DALootBackpackClass *Backpack = Create_Backpack((SoldierGameObj*)obj);
-			const WeaponDefinitionClass *MainDrop = Get_Character_Weapon_Drop((SoldierGameObj*)obj);
-			WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
+			DALootBackpackClass *Backpack = Create_Backpack(Soldier);
+			const WeaponDefinitionClass *MainDrop = Get_Character_Weapon_Drop(Soldier);
+			WeaponBagClass *Bag = Soldier->Get_Weapon_Bag();
 			bool MainDropFound = false;
-			for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-				WeaponClass *Weapon = Bag->Peek_Weapon(i);
-				const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
-				if (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON)) { //Don't drop empty C4 or beacons.
-					if (PlayerData->Has_Weapon(WeaponDef)) {
-						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-					}
-					else if (WeaponDef == MainDrop) {
-						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-						MainDropFound = true;
+			if (EnableMultiWeaponDrop) { //Drop all picked up weapons.
+				for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+					WeaponClass *Weapon = Bag->Peek_Weapon(i);
+					const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
+					if (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON)) { //Don't drop empty C4 or beacons.
+						if (PlayerData->Has_Weapon(WeaponDef)) {
+							Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+						}
+						else if (WeaponDef == MainDrop) {
+							Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+							MainDropFound = true;
+						}
 					}
 				}
 			}
+			else if (MainDrop) { //Only drop main weapon.
+				WeaponClass *Weapon = Bag->Find_Weapon(MainDrop);
+				if (Weapon) {
+					Backpack->Add_Weapon(MainDrop,Weapon->Get_Total_Rounds());
+					MainDropFound = true;
+				}
+			}
+
 			if (MainDrop) {
 				if (!MainDropFound) { //Try to find a match by translation ID.
 					int IconID = MainDrop->IconNameID;
@@ -599,8 +613,8 @@ Reselect:
 						}
 					}
 				}
-				if (!MainDropFound && MainDrop->Style != STYLE_C4 && MainDrop->Style != STYLE_BEACON) { //Just going to have to drop an empty one then.
-					Backpack->Add_Weapon(MainDrop,0);
+				if (!MainDropFound) { //Just going to have to drop a full one then.
+					Backpack->Add_Weapon(MainDrop,MainDrop->ClipSize+MainDrop->MaxInventoryRounds);
 				}
 			}
 			if (!Backpack->Get_Weapon_Count()) { //No weapons to drop, remove chance to drop weapons and reselect.
@@ -614,7 +628,7 @@ Reselect:
 			}
 		}
 		else if (Odds.DNA && Rand <= (Total+=Odds.DNA)) { //Drop DNA
-			DALootDNAClass *DNA = Create_DNA((SoldierGameObj*)obj);
+			DALootDNAClass *DNA = Create_DNA(Soldier);
 			if (DamagersOnlyTime >= 0.0f) {
 				DNA->Init_Damagers(DamagersOnlyDistance,DamagersOnlyTime);
 			}
@@ -661,6 +675,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 			else {
 				DA::Private_Color_Message(Player,WHITE,"You have dropped all your weapons.");
 				Backpack->Set_Expire_Time(DropCommandExpireTime);
+				Backpack->Start_Timer(6,5.0f);
 			}
 		}
 		else {
@@ -674,6 +689,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 					DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
 					Backpack->Set_Expire_Time(DropCommandExpireTime);
+					Backpack->Start_Timer(6,5.0f);
 					Bag->Remove_Weapon(i);
 					return true;
 				}
@@ -690,6 +706,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 			DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 			Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
 			Backpack->Set_Expire_Time(DropCommandExpireTime);
+			Backpack->Start_Timer(6,5.0f);
 			Bag->Select_Next();
 			Bag->Remove_Weapon(WeaponDef);
 			return true;

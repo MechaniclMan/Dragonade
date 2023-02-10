@@ -57,8 +57,7 @@ BOOL SCRIPTSAPI __stdcall DllMain(HINSTANCE hinstDLL,
 		case DLL_PROCESS_ATTACH:
 			TT_ASSERT(Exe != 6);
 
-			if (Exe != 1)
-			{
+			if (Exe != 1) {
 				MessageBox(HWND_DESKTOP, "Fatal error: Dragonade only works on the FDS. Please replace your scripts.dll with an appropriate version for the Renegade client.", "Renegade", MB_OK | MB_ICONERROR);
 				exit(0);
 			}

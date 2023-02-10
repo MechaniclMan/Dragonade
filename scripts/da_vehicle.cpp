@@ -258,13 +258,8 @@ void DAVehicleManager::Object_Created_Event(GameObject *obj) {
 	if (Team == 0 || Team == 1) {
 		RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
 		if (Ref) {
-			if ((unsigned int)Ref->Get_Harvester_Def_ID() == obj->Get_Definition().Get_ID()) {
-				if (Ref->Is_Destroyed()) { //Fix bug where the GDI Harvester can still exist if it is building when the Refinery is killed.
-					obj->Set_Delete_Pending();
-				}
-				else {
-					((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false); //Fix defenses shooting at harvesters on some maps.
-				}
+			if ((unsigned int)Ref->Get_Harvester_Def_ID() == obj->Get_Definition().Get_ID() && Ref->Is_Destroyed()) { //Fix bug where the GDI Harvester can still exist if it is building when the Refinery is killed.
+				obj->Set_Delete_Pending();
 			}
 		}
 	}

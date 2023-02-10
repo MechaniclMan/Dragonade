@@ -19,19 +19,21 @@
 class DASoldierManager : public DAEventClass {
 public:
 	static void Init();
+	DA_API static HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>>  &Get_Exclusive_Weapons();
+	DA_API static HashTemplateClass<unsigned int,const WeaponDefinitionClass*> &Get_Replace_Weapons();
+	DA_API static HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>>  &Get_Remove_Weapons();
 
 private:
 	virtual void Settings_Loaded_Event();
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual int Character_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const SoldierGameObjDef *Item);
-	virtual bool Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon);
-	virtual void Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon);
 
 	//Settings
 	HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> GrantWeapons; //SoldierGameObjDef*,WeaponDefinitionClass*
-	HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> ExclusiveWeapons; //WeaponDefinitionClass*,WeaponDefinitionClass*
-	HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> RemoveWeapons; //WeaponDefinitionClass*,WeaponDefinitionClass*
+	static HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> ExclusiveWeapons; //WeaponDefinitionClass*,WeaponDefinitionClass*
+	static HashTemplateClass<unsigned int,const WeaponDefinitionClass*> ReplaceWeapons; //WeaponDefinitionClass*,WeaponDefinitionClass*
+	static HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> RemoveWeapons; //WeaponDefinitionClass*,WeaponDefinitionClass*
 };
 
 #endif

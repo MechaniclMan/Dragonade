@@ -32,14 +32,18 @@ void DACharacterRefundsGameFeatureClass::Settings_Loaded_Event() {
 
 void DACharacterRefundsGameFeatureClass::Character_Purchase_Event(cPlayer *Player,float Cost,const SoldierGameObjDef *Item) {
 	DACharacterRefundsPlayerDataClass *Data = Get_Player_Data(Player);
-	if (Data->Cost) {
+	if (Data->Cost && &Player->Get_GameObj()->Get_Definition() == Data->Def) {
 		Player->Increment_Money(Data->Cost*Percent);
 	}
 	Data->Cost = Cost;
+	Data->Def = Item;
 }
 
 void DACharacterRefundsGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
-	Get_Player_Data(obj)->Cost = 0.0f;
+	DAPlayerClass *Player = ((SoldierGameObj*)obj)->Get_DA_Player();
+	if (!Player->Is_Spawning()) {
+		Get_Player_Data(Player)->Cost = 0.0f;
+	}
 }
 
 Register_Game_Feature(DACharacterRefundsGameFeatureClass,"Character Refunds","CharacterRefunds",0);

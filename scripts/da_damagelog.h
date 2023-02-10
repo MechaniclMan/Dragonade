@@ -52,7 +52,7 @@ public:
 	DA_API void Clear_Damage();
 	virtual ~DADamageLogObserverClass();
 
-	DA_API SList<DADamageEventStruct> *Get_Damage_Events();
+	DA_API const SList<DADamageEventStruct> *Get_Damage_Events();
 
 	DA_API float Compile_Damage_Table_Team(DADamageTableStruct *DamageTable,int Team);
 	DA_API float Compile_Damage_Table_Other_Team(DADamageTableStruct *DamageTable,int Team);
@@ -63,6 +63,7 @@ public:
 	DA_API float Get_Percent_Team_Damage(int Team);
 	DA_API float Get_Percent_Other_Team_Damage(int Team);
 	DA_API float Get_Percent_Player_Damage(cPlayer *Player);
+	DA_API const DADamageEventStruct *Get_Last_Damage_Event();
 	
 	DA_API float Compile_Repair_Table_Team(DADamageTableStruct *DamageTable,int Team);
 	DA_API float Compile_Repair_Table_Other_Team(DADamageTableStruct *DamageTable,int Team);
@@ -73,6 +74,7 @@ public:
 	DA_API float Get_Percent_Team_Repairs(int Team);
 	DA_API float Get_Percent_Other_Team_Repairs(int Team);
 	DA_API float Get_Percent_Player_Repairs(cPlayer *Player);
+	DA_API const DADamageEventStruct *Get_Last_Repair_Event();
 	
 	virtual const char *Get_Name();
 private:
@@ -82,7 +84,11 @@ private:
 class DADamageLog : public DAEventClass {
 public:
 	static void Init();
+
 	DA_API static DADamageLogObserverClass *Get_Damage_Log(GameObject *obj);
+
+	DA_API static const SList<DADamageEventStruct> *Get_Damage_Events(GameObject *obj);
+
 	DA_API static float Compile_Damage_Table_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team);
 	DA_API static float Compile_Damage_Table_Other_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team);
 	DA_API static void Get_Damagers_By_Percent_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest);
@@ -92,6 +98,8 @@ public:
 	DA_API static float Get_Percent_Team_Damage(GameObject *obj,int Team);
 	DA_API static float Get_Percent_Other_Team_Damage(GameObject *obj,int Team);
 	DA_API static float Get_Percent_Player_Damage(GameObject *obj,cPlayer *Player);
+	DA_API static const DADamageEventStruct *Get_Last_Damage_Event(GameObject *obj);
+
 	DA_API static float Compile_Repair_Table_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team);
 	DA_API static float Compile_Repair_Table_Other_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team);
 	DA_API static void Get_Repairers_By_Percent_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest);
@@ -101,7 +109,8 @@ public:
 	DA_API static float Get_Percent_Team_Repairs(GameObject *obj,int Team);
 	DA_API static float Get_Percent_Other_Team_Repairs(GameObject *obj,int Team);
 	DA_API static float Get_Percent_Player_Repairs(GameObject *obj,cPlayer *Player);
-	
+	DA_API static const DADamageEventStruct *Get_Last_Repair_Event(GameObject *obj);
+
 private:
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Player_Leave_Event(cPlayer *Player);

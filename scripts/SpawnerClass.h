@@ -44,14 +44,14 @@ public:
 class SpawnerClass : public PersistClass {
 public:
 	int ID;
-	Matrix3D Transform1;
-	Matrix3D Transform2;
+	Matrix3D Transform;
+	Matrix3D SpawnEffectTransform;
 	SpawnerDefClass *Definition;
-	ReferencerClass Unknown1;
+	ReferencerClass CurrentObject;
 	bool Enable;
 	int SpawnCount;
 	float SpawnDelay;
-	DynamicVectorClass<Matrix3D> TransformList;
+	DynamicVectorClass<Matrix3D> AlternateTransforms;
 	DynamicVectorClass<StringClass> ScriptNameList;
 	DynamicVectorClass<StringClass> ScriptParameterList;
 };

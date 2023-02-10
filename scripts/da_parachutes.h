@@ -26,8 +26,6 @@ class DAParachutesObserverClass : public DAGameObjObserverClass {
 	virtual void Kill_Received(ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	virtual ~DAParachutesObserverClass();
 	ReferencerClass Parachute;
-	Vector3 StartPos;
-	Vector3 LastPos;
 };
 
 class DAParachutesGameFeatureClass : public DAEventClass, public DAGameFeatureClass {

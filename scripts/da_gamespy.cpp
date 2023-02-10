@@ -19,6 +19,7 @@
 #include "da_game.h"
 #include "da_settings.h"
 #include "da_translation.h"
+#include "da_log.h"
 #include "SysTimeClass.h"
 #include "HashTemplateClass.h"
 #include "GameDefinition.h"
@@ -26,23 +27,32 @@
 
 void DAGameSpyGameFeatureClass::Init() {
 	StringClass IP = Long_To_IP(The_Game()->Get_Ip_Address());
-	Port = (unsigned short)DASettingsClass("server.ini").Get_INI()->Get_Int("Server","GameSpyQueryPort",25300);
-	ClientAddressSize = sizeof(ClientAddress);
+	Port = (unsigned short)DASettingsManager::Get_Int("GameSpyQueryPort",DASettingsClass("server.ini").Get_INI()->Get_Int("Server","GameSpyQueryPort",25300));
 	QueryID = 0;
+	
+	hostent *HostInfo = 0;
+	sockaddr_in MasterAddress;
+	unsigned short MasterPort = htons(27900);
 
-	hostent *HostInfo;
-	HostInfo = gethostbyname("92.242.144.2");
-	if (HostInfo) {
-		MasterAddress1.sin_family = HostInfo->h_addrtype;
-		memcpy((char*)&MasterAddress1.sin_addr.s_addr,HostInfo->h_addr_list[0],HostInfo->h_length);
-		MasterAddress1.sin_port = htons(27900);
+	StringClass Masters;
+	DASettingsManager::Get_String(Masters,"GameSpyMasterServers","master.gamespy.com|renmaster.cncnet.org|master-gsa.renlist.n00b.hk");
+	DATokenParserClass Parser(Masters,'|');
+	while (char *Token = Parser.Get_String()) {
+		HostInfo = gethostbyname(Token);
+		if (HostInfo) {
+			MasterAddress.sin_family = HostInfo->h_addrtype;
+			memcpy((char*)&MasterAddress.sin_addr.s_addr,HostInfo->h_addr_list[0],HostInfo->h_length);
+			MasterAddress.sin_port = MasterPort;
+			MasterServers.Add(MasterAddress);
+		}
 	}
-	HostInfo = gethostbyname("master.gamespy.com");
-	if (HostInfo) {
-		MasterAddress2.sin_family = HostInfo->h_addrtype;
-		memcpy((char*)&MasterAddress2.sin_addr.s_addr,HostInfo->h_addr_list[0],HostInfo->h_length);
-		MasterAddress2.sin_port = htons(27900);
+
+	if (!MasterServers.Count()) {
+		const char *Error = "No valid GameSpy Master Servers found.";
+		Console_Output("%s\n",Error);
+		DALogManager::Write_Log("_ERROR","%s",Error);
 	}
+
 	ListenSocket = socket(AF_INET, SOCK_DGRAM,IPPROTO_IP);
 	int vals = 0;
 	setsockopt(ListenSocket,IPPROTO_IP,IP_DONTFRAGMENT,(const char*)&vals,sizeof(vals));
@@ -50,10 +60,11 @@ void DAGameSpyGameFeatureClass::Init() {
 	ioctlsocket(ListenSocket, FIONBIO, &on);
 	HostInfo = gethostbyname(IP);
 	if (HostInfo) {
+		sockaddr_in ServerAddress;
 		ServerAddress.sin_family = AF_INET;
 		memcpy((char*)&ServerAddress.sin_addr.s_addr,HostInfo->h_addr_list[0],HostInfo->h_length);
 		ServerAddress.sin_port = htons(Port);
-		bind(ListenSocket,(sockaddr *)&ServerAddress,sizeof(ServerAddress));
+		bind(ListenSocket,(sockaddr *)&ServerAddress,sizeof(sockaddr_in));
 		listen(ListenSocket,5);
 		Register_Event(DAEvent::THINK);
 		Register_Event(DAEvent::SETTINGSLOADED);
@@ -84,9 +95,11 @@ void DAGameSpyGameFeatureClass::Level_Loaded_Event() {
 }
 
 void DAGameSpyGameFeatureClass::Think() {
+	sockaddr_in ClientAddress;
+	static int SockSize = sizeof(sockaddr_in);
 	char Buffer[256];
 	memset(Buffer,0,256);
-	int retrecv = recvfrom(ListenSocket,Buffer,255,0,(sockaddr*)&ClientAddress,&ClientAddressSize);
+	int retrecv = recvfrom(ListenSocket,Buffer,255,0,(sockaddr*)&ClientAddress,&SockSize);
 	if (retrecv > 0) {
 		QueryID++;
 		if (!strcmp(Buffer,"\\status\\")) {
@@ -125,7 +138,7 @@ void DAGameSpyGameFeatureClass::Think() {
 			);
 
 			//Send what we have so far.
-			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
+			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
 
 			Send = "";
 			int PlayerCount = 0;
@@ -164,7 +177,7 @@ void DAGameSpyGameFeatureClass::Think() {
 				cPlayer *Player = z->Data();
 				if (Send.Get_Length() > 1000) {
 					Send += StringFormat("\\queryid\\%u.%d",QueryID,SendCount);
-					sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
+					sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,sizeof(sockaddr_in));
 					Send = "";
 					SendCount++;
 				}
@@ -178,16 +191,16 @@ void DAGameSpyGameFeatureClass::Think() {
 			}
 			if (!Send.Is_Empty()) {
 				Send += StringFormat("\\queryid\\%u.%d",QueryID,SendCount);
-				sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
+				sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
 				SendCount++;
 			}
 			Send.Format("\\final\\\\queryid\\%u.%d",QueryID,SendCount);
-			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
+			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
 		}
 		else if (strstr(Buffer,"\\echo\\")) {
 			StringClass Send;
 			Send.Format("%s\\final\\\\queryid\\%u.1",Buffer,QueryID);
-			sendto(ListenSocket,Send,Send.Get_Length()+ 1,0,(sockaddr *)&ClientAddress,ClientAddressSize);
+			sendto(ListenSocket,Send,Send.Get_Length()+ 1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
 		}
 	}
 }
@@ -195,8 +208,9 @@ void DAGameSpyGameFeatureClass::Think() {
 void DAGameSpyGameFeatureClass::Timer_Expired(int Number,unsigned int Data) {
 	StringClass Send;
 	Send.Format("\\heartbeat\\%u\\gamename\\ccrenegade",Port);
-	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress1,sizeof(MasterAddress1));
-	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress2,sizeof(MasterAddress2));
+	for (int i = 0;i < MasterServers.Count();i++) {
+		sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterServers[i],sizeof(sockaddr_in));
+	}
 }
 
 void DAGameSpyGameFeatureClass::Player_Join_Event(cPlayer *Player) {
@@ -214,8 +228,9 @@ void DAGameSpyGameFeatureClass::Player_Leave_Event(cPlayer *Player) {
 DAGameSpyGameFeatureClass::~DAGameSpyGameFeatureClass() { 
 	StringClass Send;
 	Send.Format("\\heartbeat\\%u\\gamename\\ccrenegade\\statechanged\\2",Port);
-	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress1,sizeof(MasterAddress1));
-	sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterAddress2,sizeof(MasterAddress2));
+	for (int i = 0;i < MasterServers.Count();i++) {
+		sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&MasterServers[i],sizeof(sockaddr_in));
+	}
 	closesocket(ListenSocket);
 }
 

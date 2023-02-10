@@ -21,17 +21,16 @@
 #include "da_parachutes.h"
 
 void DAParachutesObserverClass::Init() {
-	Get_Owner()->Get_Position(&StartPos);
-	LastPos = StartPos;
 	Start_Timer(1,0.1f);
 }
 
 void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
+	HumanStateClass *State = ((SoldierGameObj*)Get_Owner())->Get_Human_State();
 	Vector3 Pos;
 	Get_Owner()->Get_Position(&Pos);
 	if (Number == 1) { //Check if parachute should be deployed.
-		if (Pos.Z < LastPos.Z) { //Check if they're falling.
-			if (StartPos.Z - Pos.Z >= 10) { //Deploy parachute after 10 meters.
+		if (State->Get_State() == HumanStateClass::AIRBORNE) { //Falling.
+			if (State->Get_Jump_Transform().Get_Z_Translation() - Pos.Z >= 10) { //Deploy parachute after 10 meters.
 				Parachute = Create_Object("Soldier Powerups",((PhysicalGameObj*)Get_Owner())->Get_Transform()); //Powerups fall slower than infantry.
 				Commands->Set_Model(Parachute,"X5D_Parachute");
 				Commands->Attach_To_Object_Bone(Get_Owner(),Parachute,"Origin");
@@ -41,15 +40,14 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 			else {
 				Start_Timer(1,0.1f);
 			}
-			LastPos = Pos;
 		}
 		else {
 			Set_Delete_Pending();
 		}
 	}
 	else if (Number == 2) { //Check if landed.
-		((SoldierGameObj*)Get_Owner())->Get_Human_State()->Set_Jump_Transform(((SoldierGameObj*)Get_Owner())->Get_Transform()); //Reset beginning of fall to current position to prevent fall damage.
-		if (Pos.Z >= LastPos.Z) {
+		State->Set_Jump_Transform(((SoldierGameObj*)Get_Owner())->Get_Transform()); //Reset beginning of fall to current position to prevent fall damage.
+		if (State->Get_State() != HumanStateClass::AIRBORNE) { //Landed.
 			if (Parachute) {
 				Parachute->Set_Delete_Pending();
 				Commands->Create_3D_WAV_Sound_At_Bone("parachute_away.wav",Get_Owner(),"Origin");
@@ -57,7 +55,6 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 			Set_Delete_Pending();
 		}
 		else {
-			LastPos = Pos;
 			Start_Timer(2,0.1f);
 		}
 	}

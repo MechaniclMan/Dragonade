@@ -167,7 +167,6 @@ private:
 	float DamagersOnlyDistance;
 	DropOddsStruct DropOdds;
 	HashTemplateClass<unsigned int,DropOddsStruct> CharacterDropOdds; //SoldierGameObjDef*,DropOddsStruct
-	bool EnableDropCommand;
 
 	//PowerUp settings
 	DynamicVectorClass<const PowerUpGameObjDef*> DefaultPowerUps;
@@ -177,6 +176,7 @@ private:
 	StringClass WeaponModel;
 	DynamicVectorClass<const WeaponDefinitionClass*> UndroppableWeapons;
 	HashTemplateClass<unsigned int,const WeaponDefinitionClass*> CharacterWeapons; //SoldierGameObjDef*,WeaponDefinitionClass*
+	bool EnableMultiWeaponDrop;
 
 	//DNA settings
 	StringClass DNAModel;

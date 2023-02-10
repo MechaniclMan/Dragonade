@@ -12,6 +12,7 @@
 #include "general.h"
 #include "scripts.h"
 #include "agtfix.h"
+#include "engine_game.h"
 	
 void GDI_AGT::Created(GameObject* AGTObj)
 {
@@ -205,6 +206,9 @@ bool GDI_AGT_Gun::IsValidEnemy(GameObject* GunObj, GameObject* EnemyObj) {
 		return false;
 	
 	if (!Commands->Is_Object_Visible(GunObj, EnemyObj))
+		return false;
+
+	if (Is_Harvester(EnemyObj))
 		return false;
 	
 	Commands->Send_Custom_Event(GunObj, Commands->Find_Object(MissileID), 0, Commands->Get_ID(EnemyObj), 0);

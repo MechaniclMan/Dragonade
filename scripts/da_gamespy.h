@@ -30,12 +30,11 @@ public:
 
 private:
 	SOCKET ListenSocket;
-	sockaddr_in ClientAddress, ServerAddress, MasterAddress1, MasterAddress2;
-	int ClientAddressSize;
 	unsigned int QueryID;
 	WideStringClass Title;
 	
 	//Settings
+	SimpleDynVecClass<sockaddr_in> MasterServers;
 	unsigned short Port;
 	bool ShowPlayerCount;
 	DynamicVectorClass<StringClass> CustomRules;

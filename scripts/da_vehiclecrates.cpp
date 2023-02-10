@@ -197,20 +197,52 @@ class DAOverhaulCrateClass : public DACrateClass {
 
 		//Vehicles
 		Vehicles.Delete_All();
-		for (int Team = 0;Team < 2;Team++) { //Add all normal purchasable vehicles into vector.
-			PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition(PurchaseSettingsDefClass::TYPE_VEHICLES,(PurchaseSettingsDefClass::TEAM)Team);
-			if (PT) {
-				for (int i = 0;i < 10;i++) {
-					VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
-					if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
-						Vehicles.Add(Def);
+		if (Find_Vehicle_Factory(0) && Find_Vehicle_Factory(1)) {
+			for (int Team = 0;Team < 2;Team++) { //Add all purchasable vehicles into vector.
+				for (int Type = 0;Type < 7;Type++) {
+					PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
+					if (PT) {
+						for (int i = 0;i < 10;i++) {
+							VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
+							if (Def && Def->Get_Class_ID() == CID_Vehicle && Def->WeaponDefID && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+								DynamicVectorClass<const VehicleGameObjDef*> Vehs;
+								Vehs.Add(Def);
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,0));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && Def->WeaponDefID && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,1));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && Def->WeaponDefID && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,2));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && Def->WeaponDefID && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Vehicles.Add(Vehs);
+							}
+						}
 					}
 				}
 			}
-		}
-		VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike"); //Special case for Recon Bike.
-		if (Def) {
-			Vehicles.Add(Def);
+			bool Recon = true;
+			for (int i = 0;i < Vehicles.Count();i++) {
+				DynamicVectorClass<const VehicleGameObjDef*> &Vehs = Vehicles[i];
+				for (int x = 0;x < Vehs.Count();x++) {
+					if (stristr(Vehs[x]->Get_Name(),"Recon_Bike") || stristr(DATranslationManager::Translate(Vehs[x]),"Recon Bike")) {
+						Recon = false;
+						break;
+					}
+				}
+			}
+			if (Recon) { //Add the stock Recon Bike if the map doesn't have its own.
+				VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
+				if (Def) {
+					DynamicVectorClass<const VehicleGameObjDef*> Vehs;
+					Vehs.Add(Def);
+					Vehicles.Add(Vehs);
+				}
+			}
 		}
 	}
 
@@ -233,10 +265,12 @@ class DAOverhaulCrateClass : public DACrateClass {
 		Vehicle->Set_Delete_Pending(); //Destroy old vehicle.
 		Reselect:
 		int Rand = Get_Random_Int(0,Vehicles.Count()); //Get random vehicle.
-		const VehicleGameObjDef *Def = Vehicles[Rand];
-		if (Def == &Vehicle->Get_Definition()) { //Don't pick the same vehicle they had.
+		DynamicVectorClass<const VehicleGameObjDef*> &Vehs = Vehicles[Rand];
+		if (Vehs.ID(&Vehicle->Get_Definition()) != -1) { //Don't pick the vehicle they have.
 			goto Reselect;
 		}
+		Rand = Get_Random_Int(0,Vehs.Count());
+		const VehicleGameObjDef *Def = Vehs[Rand]; //Get random skin of that vehicle.
 		Vehicle = (VehicleGameObj*)Create_Object(Def,Vehicle->Get_Transform()); //Create new vehicle.
 		Vehicle->Set_Player_Type(-2);
 		Vehicle->Lock_Vehicle(Player->Get_GameObj(),5.0f);
@@ -247,7 +281,8 @@ class DAOverhaulCrateClass : public DACrateClass {
 		Fix_Stuck_Objects(Vehicle->Get_Position(),10.0f,15.0f);
 		DA::Page_Player(Player,"The Overhaul Crate has transformed your vehicle into %s.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
 	}
-	DynamicVectorClass<const VehicleGameObjDef*> Vehicles;
+
+	DynamicVectorClass<DynamicVectorClass<const VehicleGameObjDef*>> Vehicles;
 };
 
 Register_Crate(DAOverhaulCrateClass,"Overhaul",DACrateType::VEHICLE);

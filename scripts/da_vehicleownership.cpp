@@ -22,6 +22,7 @@
 #include "da_settings.h"
 #include "da_gameobjobservers.h"
 #include "da_game.h"
+#include "da_player.h"
 #include "GameObjManager.h"
 
 const char *Get_Icon_Bone(GameObject *obj,int IconNum) {
@@ -601,8 +602,10 @@ void DAVehicleOwnershipGameFeatureClass::Team_Change_Event(cPlayer *Player) {
 }
 
 void DAVehicleOwnershipGameFeatureClass::Object_Destroyed_Event(GameObject *obj) {
-	if (Unlock_Vehicle(((SoldierGameObj*)obj)->Get_Player())) {
-		DA::Page_Player(((SoldierGameObj*)obj)->Get_Player(),"Your vehicle has been unlocked.");
+	if (!((SoldierGameObj*)obj)->Get_Player()->Get_DA_Player()->Is_Spawning()) {
+		if (Unlock_Vehicle(((SoldierGameObj*)obj)->Get_Player())) {
+			DA::Page_Player(((SoldierGameObj*)obj)->Get_Player(),"Your vehicle has been unlocked.");
+		}
 	}
 }
 

@@ -22,8 +22,10 @@ class DACharacterRefundsPlayerDataClass : public DAPlayerDataClass {
 public:
 	virtual void Init() {
 		Cost = 0;
+		Def = 0;
 	}
 	float Cost;
+	const SoldierGameObjDef *Def;
 };
 
 class DACharacterRefundsGameFeatureClass : public DAEventClass, public DAGameFeatureClass, public DAPlayerDataManagerClass<DACharacterRefundsPlayerDataClass> {

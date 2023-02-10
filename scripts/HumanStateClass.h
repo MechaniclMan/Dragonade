@@ -135,6 +135,7 @@ public:
 	void				Set_Loiters_Allowed( bool allowed )						{ LoitersAllowed = allowed; }
 	void				Get_Information( StringClass & string );
 	void				Set_Jump_Transform(const Matrix3D &Transform) { JumpTM = Transform; }
+	const Matrix3D &	Get_Jump_Transform() { return JumpTM; }
 private:
 	bool					StateLocked;
 	HumanStateType		State;

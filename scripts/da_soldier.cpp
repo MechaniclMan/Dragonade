@@ -21,6 +21,10 @@
 #include "da_log.h"
 #include "TeamPurchaseSettingsDefClass.h"
 
+HashTemplateClass<unsigned int,const WeaponDefinitionClass*> DASoldierManager::ReplaceWeapons;
+HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> DASoldierManager::ExclusiveWeapons;
+HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>> DASoldierManager::RemoveWeapons;
+
 void DASoldierManager::Init() {
 	static DASoldierManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
@@ -89,12 +93,14 @@ void DASoldierManager::Settings_Loaded_Event() {
 	}
 
 	//Replace weapons
+	ReplaceWeapons.Remove_All();
 	Section = DASettingsManager::Get_Section("Replace_Weapons");
 	if (Section) {
 		for (INIEntry *i = Section->EntryList.First();i && i->Is_Valid();i = i->Next()) {
 			DefinitionClass *OldWeaponDef = Find_Named_Definition(i->Entry);
 			DefinitionClass *NewWeaponDef = Find_Named_Definition(i->Value);
 			if (OldWeaponDef && OldWeaponDef->Get_Class_ID() == CID_Weapon && NewWeaponDef && NewWeaponDef->Get_Class_ID() == CID_Weapon) {
+				ReplaceWeapons.Insert((unsigned int)OldWeaponDef,(WeaponDefinitionClass*)NewWeaponDef);
 				for (PowerUpGameObjDef *PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_First(CID_PowerUp);PowerUpDef;PowerUpDef = (PowerUpGameObjDef*)DefinitionMgrClass::Get_Next(PowerUpDef,CID_PowerUp)) {
 					if ((unsigned int)PowerUpDef->GrantWeaponID == OldWeaponDef->Get_ID()) {
 						PowerUpDef->GrantWeaponID = NewWeaponDef->Get_ID();
@@ -291,35 +297,14 @@ int DASoldierManager::Character_Purchase_Request_Event(BaseControllerClass *Base
 	return 3;
 }
 
-bool DASoldierManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
-	DynamicVectorClass<const WeaponDefinitionClass*> *ExWeapons = ExclusiveWeapons.Get((unsigned int)Weapon);
-	if (ExWeapons) {
-		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-		for (int i = 0;i < ExWeapons->Count();i++) {
-			if (Bag->Find_Weapon(ExWeapons->operator[](i))) { //Block grant if they have any of these weapons.
-				return false;
-			}
-		}
-	}
-	return true;
+HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>>  &DASoldierManager::Get_Exclusive_Weapons() {
+	return ExclusiveWeapons;
 }
 
-void DASoldierManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
-	DynamicVectorClass<const WeaponDefinitionClass*> *RemWeapons = RemoveWeapons.Get((unsigned int)Weapon->Get_Definition());
-	if (RemWeapons) {
-		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-		bool Select = false;
-		for (int i = 0;i < RemWeapons->Count();i++) { //Remove these weapons.
-			int Index = Bag->Get_Weapon_Position(RemWeapons->operator[](i));
-			if (Index) {
-				if (Index == Bag->Get_Index()) {
-					Select = true;
-				}
-				Bag->Remove_Weapon(Index);
-			}
-		}
-		if (Select) { //Select new weapon if current weapon was removed.
-			Bag->Select_Weapon(Weapon);
-		}
-	}
+HashTemplateClass<unsigned int,const WeaponDefinitionClass*> &DASoldierManager::Get_Replace_Weapons() {
+	return ReplaceWeapons;
+}
+
+HashTemplateClass<unsigned int,DynamicVectorClass<const WeaponDefinitionClass*>>  &DASoldierManager::Get_Remove_Weapons() {
+	return RemoveWeapons;
 }

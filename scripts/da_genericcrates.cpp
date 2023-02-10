@@ -122,85 +122,117 @@ static const char PowerOffSounds[2][2][50] = {
 };
 
 class DAPowerCrateClass : public DACrateClass, public DAEventClass {
+	virtual void Init() {
+		DACrateClass::Init();
+		Register_Event(DAEvent::GAMEOVER);
+	}
+	
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if there are no base defenses or already in effect.
-		BuildingGameObj *Ob = (BuildingGameObj*)Find_Base_Defense(0);
-		BuildingGameObj *AGT = (BuildingGameObj*)Find_Base_Defense(1);
-		return (!Defense && Ob && AGT && (!Ob->Is_Destroyed() || !AGT->Is_Destroyed()));
+		bool DefAlive[2] = {false,false};
+		for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
+			if ((z->Data()->Get_Player_Type() == 0 || z->Data()->Get_Player_Type() == 1) && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) {
+				DefAlive[z->Data()->Get_Player_Type()] = true;
+			}
+		}
+		return (!Is_Timer(2) && (DefAlive[0] || DefAlive[1]));
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		BuildingGameObj *Ally = (BuildingGameObj*)Find_Base_Defense(Player->Get_Team());
-		BuildingGameObj *Enemy = (BuildingGameObj*)Find_Base_Defense(!Player->Get_Team());
-		if (!Enemy->Is_Destroyed()) { //Choose which building and whether power is lost or restored.
-			if (Enemy->Is_Power_Enabled()) {
-				Defense = Enemy;
-				Toggle = false;
+		Timer_Expired(1,Player->Get_Team()?0:1); //Stagger each team so the sounds don't overlap.
+		if (Is_Timer(2)) {
+			Start_Timer(1,2.0f,false,Player->Get_Team());
+		}
+		else {
+			Timer_Expired(1,Player->Get_Team());
+		}
+	}
+	
+	virtual void Game_Over_Event() {
+		Clear_Timers();
+	}
+
+	virtual void Timer_Expired(int Number,unsigned int Team) {
+		if (Number == 1) { //Start
+			PowerState[Team] = BaseControllerClass::Find_Base(Team)->Is_Base_Powered();
+			BuildingGameObj *Building = 0;
+			int Count = 0;
+			for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
+				if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) { //Don't affect defenses that have their own power logic.
+					Building = z->Data();
+					Commands->Set_Building_Power(Building,!PowerState[Team]);
+					Count++;
+				}
 			}
-			else if (!Ally->Is_Destroyed()) {
-				Defense = Ally;
-				if (!Ally->Is_Power_Enabled()) {
-					Toggle = true;
+			if (Count) {
+				Start_Timer(2,Get_Random_Float(60.0f,90.0f),false,Team); //End
+				if (PowerState[Team]) {
+					StringClass Defenses;
+					if (Count == 1) {
+						Defenses.Format("The %s has",DATranslationManager::Translate(Building));
+					}
+					else {
+						Defenses.Format("Defenses have");
+					}
+					DA::Host_Message("Power surge detected in the %ls base. %s temporarily lost power.",Get_Wide_Team_Name(Team),Defenses);
+					Create_2D_WAV_Sound_Team(PowerOffSounds[Team][0],0);
+					Create_2D_WAV_Sound_Team(PowerOffSounds[Team][1],1);
 				}
 				else {
-					Toggle = false;
+					StringClass Defenses;
+					if (Count == 1) {
+						Defenses.Format("%s",DATranslationManager::Translate(Building));
+					}
+					else {
+						Defenses.Format("defenses");
+					}
+					DA::Host_Message("Power surge detected in the %ls base. Power has been temporarily restored to the %s.",Get_Wide_Team_Name(Team),Defenses);
+					Create_2D_WAV_Sound_Team(PowerOnSounds[Team][0],0);
+					Create_2D_WAV_Sound_Team(PowerOnSounds[Team][1],1);
 				}
 			}
-			else {
-				Defense = Enemy;
-				Toggle = true;
+		}
+		else if (Number == 2) { //End
+			if (PowerState[Team] == BaseControllerClass::Find_Base(Team)->Is_Base_Powered()) { //Don't restore power state if the PP died or was revived.
+				BuildingGameObj *Building = 0;
+				int Count = 0;
+				for (SLNode<BuildingGameObj> *z = GameObjManager::BuildingGameObjList.Head();z;z = z->Next()) {
+					if (z->Data()->Get_Player_Type() == (int)Team && z->Data()->Get_Definition().Get_Type() == BuildingConstants::TYPE_BASE_DEFENSE && !z->Data()->Is_Destroyed() && !z->Data()->Has_Observer("JFW_Power_Off")) {
+						Building = z->Data();
+						Commands->Set_Building_Power(Building,PowerState[Team]);
+						Count++;
+					}
+				}
+				if (Count) {
+					if (PowerState[Team]) {
+						StringClass Defenses;
+						if (Count == 1) {
+							Defenses.Format("%s",DATranslationManager::Translate_With_Team_Name(Building));
+						}
+						else {
+							Defenses.Format("%ls base defenses",Get_Wide_Team_Name(Team));
+						}
+						DA::Host_Message("Power has been restored to the %s.",Defenses);
+						Create_2D_WAV_Sound_Team(PowerOnSounds[Team][0],0);
+						Create_2D_WAV_Sound_Team(PowerOnSounds[Team][1],1);
+					}
+					else {
+						StringClass Defenses;
+						if (Count == 1) {
+							Defenses.Format("%s has",DATranslationManager::Translate_With_Team_Name(Building));
+						}
+						else {
+							Defenses.Format("%ls base defenses have",Get_Wide_Team_Name(Team));
+						}
+						DA::Host_Message("The %s lost power.",Defenses);
+						Create_2D_WAV_Sound_Team(PowerOffSounds[Team][0],0);
+						Create_2D_WAV_Sound_Team(PowerOffSounds[Team][1],1);
+					}
+				}
 			}
-		}
-		else if (!Ally->Is_Destroyed()) {
-			Defense = Ally;
-			if (Ally->Is_Power_Enabled()) {
-				Toggle = false;
-			}
-			else {
-				Toggle = true;
-			}
-		}
-		else {
-			return;
-		}
-		Commands->Set_Building_Power(Defense,Toggle);
-		Start_Timer(1,Get_Random_Float(60.0f,90.0f),false,Toggle); //End
-		int Team = Get_Object_Type(Defense);
-		if (Toggle) {
-			DA::Host_Message("Power surge detected in the %ls base. Power has been temporarily restored to the %s.",Get_Wide_Team_Name(Team),DATranslationManager::Translate(Defense));
-			Create_2D_WAV_Sound_Team(PowerOnSounds[Team][0],0);
-			Create_2D_WAV_Sound_Team(PowerOnSounds[Team][1],1);
-		}
-		else {
-			DA::Host_Message("Power surge detected in the %ls base. The %s has temporarily lost power.",Get_Wide_Team_Name(Team),DATranslationManager::Translate(Defense));
-			Create_2D_WAV_Sound_Team(PowerOffSounds[Team][0],0);
-			Create_2D_WAV_Sound_Team(PowerOffSounds[Team][1],1);
 		}
 	}
 
-	virtual void Timer_Expired(int Number,unsigned int Data) {
-		BuildingGameObj *Def = ((BuildingGameObj*)this->Defense.Get_Ptr());
-		if (Def && !Def->Is_Destroyed()) { //Don't do anything if the base defense died.
-			BuildingGameObj *PP = (BuildingGameObj*)Find_Power_Plant(Def->Get_Player_Type());
-			if (!Toggle) {
-				if (!PP || !PP->Is_Destroyed()) { //Don't restore power if the PP died.
-					Commands->Set_Building_Power(Def,true);
-					DA::Host_Message("Power has been restored to the %s.",DATranslationManager::Translate_With_Team_Name(Def));
-					Create_2D_WAV_Sound_Team(PowerOnSounds[Def->Get_Player_Type()][0],0);
-					Create_2D_WAV_Sound_Team(PowerOnSounds[Def->Get_Player_Type()][1],1);
-				}
-			}
-			else if (!PP || PP->Is_Destroyed()) { //Don't lose power if the PP was revived.
-				Commands->Set_Building_Power(Def,false);
-				DA::Host_Message("The %s has lost power.",DATranslationManager::Translate_With_Team_Name(Def));
-				Create_2D_WAV_Sound_Team(PowerOffSounds[Def->Get_Player_Type()][0],0);
-				Create_2D_WAV_Sound_Team(PowerOffSounds[Def->Get_Player_Type()][1],1);
-			}
-		}
-		Defense = 0;
-	}
-
-	ReferencerClass Defense;
-	bool Toggle;
+	bool PowerState[2];
 };
 
 Register_Crate(DAPowerCrateClass,"Power",DACrateType::INFANTRY | DACrateType::VEHICLE);
@@ -254,11 +286,11 @@ class DARegenerationCrateClass : public DACrateClass {
 
 	virtual void Activate(cPlayer *Player) {
 		if (Player->Get_GameObj()->Get_Vehicle()) {
-			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your vehicle will regenerate health, up to a limit of its maximum health.");
+			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your vehicle's health will regenerate, up to a limit of its maximum health.");
 			Player->Get_GameObj()->Get_Vehicle()->Add_Observer(new DARegenerationCrateObserverClass);
 		}
 		else {
-			DA::Page_Player(Player,"You picked up the Regeneration Crate. You will regenerate health, up to a limit of your maximum health.");
+			DA::Page_Player(Player,"You picked up the Regeneration Crate. Your health will regenerate, up to a limit of your maximum health.");
 			Player->Get_GameObj()->Add_Observer(new DARegenerationCrateObserverClass);
 		}
 	}
@@ -280,6 +312,7 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		Start_Timer(201,Get_Random_Float(3.0f,5.0f)); //Disable HUD.
 		Register_Event(DAEvent::PLAYERJOIN);
 		Register_Event(DAEvent::GAMEOVER);
+		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
 		Commands->Set_Clouds(1.0f,1.0f,10.0f); //Set weather.
 		Commands->Set_Wind(0.0f,1.0f,0.0f,10.0f);
 		Commands->Set_Lightning(1.0f,0.0f,1.0f,0.0f,1.0f,10.0f);
@@ -309,6 +342,7 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 			Enable_HUD(true);
 			Unregister_Event(DAEvent::PLAYERJOIN);
 			Unregister_Event(DAEvent::GAMEOVER);
+			Unregister_Object_Event(DAObjectEvent::CREATED);
 			Commands->Set_Fog_Enable(false);
 		}
 		else if (Number == 101) {
@@ -341,6 +375,10 @@ class DAIonStormCrateClass : public DACrateClass, public DAEventClass {
 		Enable_HUD_Player_By_ID(Player->Get_ID(),false);
 		Set_Fog_Enable_Player_By_ID(Player->Get_ID(),true);
 		Set_Fog_Range_Player_By_ID(Player->Get_ID(),75.0f,100.0f,10.0f);
+	}
+
+	virtual void Object_Created_Event(GameObject *obj) {
+		Enable_HUD_Player_By_ID(((SoldierGameObj*)obj)->Get_Player()->Get_ID(),false);
 	}
 	
 	virtual void Game_Over_Event() { //Don't want stuff to carry over to the next game.
@@ -435,7 +473,7 @@ class DASpyCrateSoldierObserverClass : public DAGameObjObserverClass {
 	}
 };
 
-class DASpyCrateClass : public DACrateClass, public DAEventClass {
+class DASpyCrateClass : public DACrateClass {
 	virtual bool Can_Activate(cPlayer *Player) { //Prevent crate from triggering if enemy base defense is dead or powered down.
 		BuildingGameObj *Defense = (BuildingGameObj*)Find_Base_Defense(!Player->Get_Team());
 		return (Defense && !Defense->Is_Destroyed() && Defense->Is_Power_Enabled() && (Player->Get_GameObj()->Get_Vehicle()?Player->Get_GameObj()->Get_Vehicle()->Get_Is_Scripts_Visible():Player->Get_GameObj()->Is_Visible()));
@@ -546,6 +584,7 @@ private:
 class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 	virtual void Init() {
 		DACrateClass::Init();
+		Register_Event(DAEvent::GAMEOVER);
 		Team = -1;
 	}
 
@@ -557,7 +596,6 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 		Team = Player->Get_Team();
 		DA::Host_Message("A %ls player just picked up the UAV Crate. All %ls units are now marked on radar.",Get_Wide_Team_Name(Team),Get_Wide_Team_Name(!Team));
 		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::SOLDIER | DAObjectEvent::VEHICLE | DAObjectEvent::BEACON);
-		Register_Event(DAEvent::GAMEOVER);
 		Start_Timer(1,Get_Random_Float(60.0f,90.0f)); //End timer.
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { //Mark all enemy infantry.
 			if (x->Data()->Get_Player_Type() != Team) {
@@ -580,7 +618,7 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 
 	virtual void Game_Over_Event() {
 		Clear_Timers();
-		Start_Timer(1,0.0f);
+		Timer_Expired(1,0);
 	}
 	
 	virtual void Timer_Expired(int Number,unsigned int Data) {
@@ -602,7 +640,6 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 		}
 		Team = -1;
 		Unregister_Object_Event(DAObjectEvent::CREATED);
-		Unregister_Event(DAEvent::GAMEOVER);
 	}
 
 	int Team;
@@ -711,3 +748,30 @@ class DASecondWindCrateClass : public DACrateClass {
 Register_Crate(DASecondWindCrateClass,"Second Wind",DACrateType::INFANTRY | DACrateType::VEHICLE);
 
 /********************************************************************************************************************************/
+
+class DAStealthCrateClass : public DACrateClass {
+	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already stealth.
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			return !Player->Get_GameObj()->Get_Vehicle()->Is_Stealth_Enabled();
+		}
+		else {
+			return !Player->Get_GameObj()->Is_Stealth_Enabled();
+		}
+	}
+	
+	virtual void Activate(cPlayer *Player) {
+		if (Player->Get_GameObj()->Get_Vehicle()) {
+			Commands->Enable_Stealth(Player->Get_GameObj()->Get_Vehicle(),true);
+			DA::Page_Player(Player,"Your vehicle has been equipped with a Lazarus Shield generator by the Stealth Crate.");
+		}
+		else {
+			Commands->Enable_Stealth(Player->Get_GameObj(),true);
+			DA::Page_Player(Player,"You have been equipped with a Lazarus Shield suit by the Stealth Crate.");
+		}
+	}
+};
+
+Register_Crate(DAStealthCrateClass,"Stealth",DACrateType::INFANTRY | DACrateType::VEHICLE);
+
+/********************************************************************************************************************************/
+

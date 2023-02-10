@@ -62,6 +62,7 @@ public:
 	virtual void Set_Money(float money);
 	virtual void Increment_Money(float money);
 	virtual bool Purchase_Item(int money);
+	bool Purchase_Item(float money);
 	virtual void Apply_Damage_Points(float points,DamageableGameObj *damager);
 	virtual void Apply_Death_Points(float points,DamageableGameObj *damager);
 	void Export_Occasional(BitStreamClass &BitStream);

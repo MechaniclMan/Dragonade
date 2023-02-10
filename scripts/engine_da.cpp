@@ -365,10 +365,10 @@ void Change_Team_5(cPlayer *Player,int Team) {
 
 cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOnly,bool AllowSelf) {
 	cPlayer *Return = 0;
-	int Team = Player->Get_Team();
+	int Team = Player?Player->Get_Team():2;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Is_Active() && (AllowSelf || Player != z->Data())) {
-			if (!TeamOnly || Team == z->Data()->Get_Player_Type()) {
+			if (!TeamOnly || Team == z->Data()->Get_Player_Type() || Team == 2) {
 				if (!_stricmp(StringClass(z->Data()->Get_Name().Peek_Buffer()),Nick)) {
 					return z->Data();
 				}

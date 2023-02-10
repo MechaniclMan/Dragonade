@@ -44,12 +44,12 @@ public:
 	void				Import_Ammo_List(BitStreamClass & packet);
 	void				Export_Ammo_List(BitStreamClass & packet);
 	int				Get_Index( void )					{ return WeaponIndex; }
-	void				Select_Index( int index );
+	SCRIPTS_API void	Select_Index( int index );
 	SCRIPTS_API void	Select_Next( void );
-	void				Select_Prev( void );
+	SCRIPTS_API void	Select_Prev( void );
 	void				Select_Key_Number( int key_number );
-	void				Select_Weapon( WeaponClass * weapon );
-	void				Select_Weapon_ID( int weapon_id );
+	SCRIPTS_API void	Select_Weapon( WeaponClass * weapon );
+	SCRIPTS_API void	Select_Weapon_ID( int weapon_id );
 	SCRIPTS_API void	Select_Weapon_Name( const char * name );
 	void				Deselect( void );
  	bool				Is_Changed( void )					{ return IsChanged; }

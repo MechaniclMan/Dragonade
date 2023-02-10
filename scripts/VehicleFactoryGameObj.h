@@ -40,14 +40,15 @@ public:
 	void					Set_Disabled(bool disabled)         { IsDisabled = disabled; Set_Object_Dirty_Bit (BIT_RARE, true);}
 	int					Get_Team_Vehicle_Count(void) const; 
 	bool					SCRIPTS_API Request_Vehicle (int defintion_id, float generation_time,SoldierGameObj * player = NULL);
-	const Matrix3D &	Get_Creation_TM (void)						{ return CreationTM; }
-	void					Set_Creation_TM (const Matrix3D &tm)	{ CreationTM = tm; }
+	const Matrix3D &Get_Creation_TM(void) { return CreationTM; }
+	const OBBoxClass &Get_Generating_Region(void) { return GeneratingRegion; }
+	void					Set_Creation_TM(const Matrix3D &tm)	{ CreationTM = tm; }
+	void					Set_Generating_Region(const OBBoxClass &box)	{ GeneratingRegion = box; }
 	void					Import_Rare (BitStreamClass &packet);
 	void					Export_Rare (BitStreamClass &packet);
 	static void			Set_Max_Vehicles_Per_Team(int max)		{ MaxVehiclesPerTeam = max; }
 	static int			Get_Max_Vehicles_Per_Team(void)			{ return MaxVehiclesPerTeam; }
-	void Set_Busy(bool busy)
-	{
+	void Set_Busy(bool busy) {
 		IsBusy = busy;
 		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
 	}

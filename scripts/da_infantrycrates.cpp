@@ -42,17 +42,20 @@ class DARandomCharacterCrateClass : public DACrateClass {
 				if (PT) {
 					for (int i = 0;i < 10;i++) {
 						SoldierGameObjDef *Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Definition(i));
-						if (Def && Def->Get_Class_ID() == CID_Soldier && !stristr(Def->Get_Name(),"Mutant")) {
+						if (Def && Def->Get_Class_ID() == CID_Soldier) {
 							DynamicVectorClass<const SoldierGameObjDef*> Chars;
 							Chars.Add(Def);
-							if (PT->Get_Alt_Definition(i,0)) {
-								Chars.Add((SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,0)));
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,0));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Chars.Add(Def);
 							}
-							if (PT->Get_Alt_Definition(i,1)) {
-								Chars.Add((SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,1)));
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,1));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Chars.Add(Def);
 							}
-							if (PT->Get_Alt_Definition(i,2)) {
-								Chars.Add((SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,2)));
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,2));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Chars.Add(Def);
 							}
 							Characters.Add(Chars);
 						}
@@ -100,19 +103,54 @@ class DARandomVehicleCrateClass : public DACrateClass {
 						for (int i = 0;i < 10;i++) {
 							VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Definition(i));
 							if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
-								Vehicles.Add(Def);
+								DynamicVectorClass<const VehicleGameObjDef*> Vehs;
+								Vehs.Add(Def);
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,0));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,1));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Def = (VehicleGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,2));
+								if (Def && Def->Get_Class_ID() == CID_Vehicle && (Def->Get_Type() != VEHICLE_TYPE_FLYING || Is_Map_Flying()) && Def->Get_Type() != VEHICLE_TYPE_BOAT && Def->Get_Type() != VEHICLE_TYPE_SUB) {
+									Vehs.Add(Def);
+								}
+								Vehicles.Add(Vehs);
 							}
 						}
 					}
 				}
 			}
-			VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike"); //Special case for Recon Bike.
-			if (Def) {
-				Vehicles.Add(Def);
+			bool Recon = true;
+			bool SSM = true;
+			for (int i = 0;i < Vehicles.Count();i++) {
+				DynamicVectorClass<const VehicleGameObjDef*> &Vehs = Vehicles[i];
+				for (int x = 0;x < Vehs.Count();x++) {
+					if (stristr(Vehs[x]->Get_Name(),"Recon_Bike") || stristr(DATranslationManager::Translate(Vehs[x]),"Recon Bike")) {
+						Recon = false;
+					}
+					if (stristr(Vehs[x]->Get_Name(),"SSM") || stristr(DATranslationManager::Translate(Vehs[x]),"Surface")) {
+						SSM = false;
+					}
+				}
 			}
-			Def = (VehicleGameObjDef*)Find_Named_Definition("Nod_SSM_Launcher_Player"); //Special case for SSM.
-			if (Def) {
-				Vehicles.Add(Def);
+			if (Recon) { //Add the stock Recon Bike if the map doesn't have its own.
+				VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
+				if (Def) {
+					DynamicVectorClass<const VehicleGameObjDef*> Vehs;
+					Vehs.Add(Def);
+					Vehicles.Add(Vehs);
+				}
+			}
+			if (SSM) { //Add the stock SSM Launcher if the map doesn't have its own.
+				VehicleGameObjDef *Def = (VehicleGameObjDef*)Find_Named_Definition("Nod_SSM_Launcher_Player"); //Special case for SSM.
+				if (Def) {
+					DynamicVectorClass<const VehicleGameObjDef*> Vehs;
+					Vehs.Add(Def);
+					Vehicles.Add(Vehs);
+				}
 			}
 		}
 		
@@ -129,7 +167,9 @@ class DARandomVehicleCrateClass : public DACrateClass {
 	
 	virtual void Activate(cPlayer *Player) {
 		int Rand = Get_Random_Int(0,Vehicles.Count()); //Get random vehicle.
-		const VehicleGameObjDef *Def = Vehicles[Rand];
+		DynamicVectorClass<const VehicleGameObjDef*> Vehs = Vehicles[Rand];
+		Rand = Get_Random_Int(0,Vehs.Count());
+		const VehicleGameObjDef *Def = Vehs[Rand]; //Get random skin of that vehicle.
 		VehicleGameObj *Vehicle = (VehicleGameObj*)Create_Object(Def,Vector3());
 		Vehicle->Lock_Vehicle(Player->Get_GameObj(),44.0f);
 		DAVehicleManager::Air_Drop_Vehicle(Player->Get_Team(),Vehicle,Position[Player->Get_Team()],Facing[Player->Get_Team()]);
@@ -139,7 +179,7 @@ class DARandomVehicleCrateClass : public DACrateClass {
 		DA::Page_Player(Player,"You have received %s from the Random Vehicle Crate. It will be dropped at your position momentarily.",a_or_an_Prepend(DATranslationManager::Translate(Def)));
 	}
 
-	DynamicVectorClass<VehicleGameObjDef*> Vehicles;
+	DynamicVectorClass<DynamicVectorClass<const VehicleGameObjDef*>> Vehicles;
 	Vector3 Position[2];
 	float Facing[2];
 };
@@ -207,24 +247,6 @@ Register_Crate(DADemolitionKitCrateClass,"Demolition Kit",DACrateType::INFANTRY)
 
 /********************************************************************************************************************************/
 
-/*class DABeaconCrateClass : public DACrateClass {
-	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if no beacon is available.
-		TeamPurchaseSettingsDefClass *PT = TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(Player->Get_Team()));
-		return PT->Get_Beacon_Definition();
-	}
-
-	virtual void Activate(cPlayer *Player) {
-		TeamPurchaseSettingsDefClass *PT = TeamPurchaseSettingsDefClass::Get_Definition((TeamPurchaseSettingsDefClass::TEAM)PTTEAM(Player->Get_Team()));
-		WeaponDefinitionClass *Beacon = (WeaponDefinitionClass*)Find_Definition(PT->Get_Beacon_Definition());
-		Player->Get_GameObj()->Get_Weapon_Bag()->Add_Weapon(Beacon,1);
-		DA::Page_Player(Player,"You have received %s from the Beacon Crate.",a_or_an_Prepend(DATranslationManager::Translate(Beacon)));
-	}
-};
-
-Register_Crate(DABeaconCrateClass,"Beacon",DACrateType::INFANTRY);*/
-
-/********************************************************************************************************************************/
-
 class DAAdrenalineCrateObserverClass : public DAGameObjObserverClass {
 	virtual const char *Get_Name() { 
 		return "DAAdrenalineCrateObserverClass"; 
@@ -253,32 +275,6 @@ class DAAdrenalineCrateClass : public DACrateClass {
 };
 
 Register_Crate(DAAdrenalineCrateClass,"Adrenaline",DACrateType::INFANTRY);
-
-/********************************************************************************************************************************/
-
-/*class DAButterFingersCrateClass : public DACrateClass {
-	virtual void Activate(cPlayer *Player) {
-		Commands->Clear_Weapons(Player->Get_GameObj());
-		DA::Page_Player(Player,"You just picked up the Butter Fingers Crate. You have dropped all of your weapons.");
-	}
-};
-
-Register_Crate(DAButterFingersCrateClass,"Butter Fingers",DACrateType::INFANTRY);*/
-
-/********************************************************************************************************************************/
-
-class DAStealthCrateClass : public DACrateClass {
-	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already stealth.
-		return !Player->Get_GameObj()->Is_Stealth_Enabled();
-	}
-	
-	virtual void Activate(cPlayer *Player) {
-		Commands->Enable_Stealth(Player->Get_GameObj(),true);
-		DA::Page_Player(Player,"You have been equipped with a stealth suit by the Stealth Crate.");
-	}
-};
-
-Register_Crate(DAStealthCrateClass,"Stealth",DACrateType::INFANTRY);
 
 /********************************************************************************************************************************/
 

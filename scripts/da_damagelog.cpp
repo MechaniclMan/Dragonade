@@ -85,6 +85,10 @@ DADamageLogObserverClass::~DADamageLogObserverClass() {
 	Clear_Damage();
 }
 
+const SList<DADamageEventStruct> *DADamageLogObserverClass::Get_Damage_Events() {
+	return &DamageEvents;
+}
+
 float DADamageLogObserverClass::Compile_Damage_Table_Team(DADamageTableStruct *DamageTable,int Team) {
 	float TotalDamage = 0.0f;
 	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;z = z->Next()) {
@@ -258,6 +262,16 @@ float DADamageLogObserverClass::Get_Percent_Player_Damage(cPlayer *Player) {
 		return 0.0f;
 	}
 	return PlayerDamage/TotalDamage;
+}
+
+const DADamageEventStruct *DADamageLogObserverClass::Get_Last_Damage_Event() {
+	const DADamageEventStruct *Return = 0;
+	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;z = z->Next()) {
+		if (z->Data()->Damage > 0.0f) {
+			Return = z->Data();
+		}
+	}
+	return Return;
 }
 
 float DADamageLogObserverClass::Compile_Repair_Table_Team(DADamageTableStruct *DamageTable,int Team) {
@@ -435,6 +449,16 @@ float DADamageLogObserverClass::Get_Percent_Player_Repairs(cPlayer *Player) {
 	return PlayerDamage/TotalDamage;
 }
 
+const DADamageEventStruct *DADamageLogObserverClass::Get_Last_Repair_Event() {
+	const DADamageEventStruct *Return = 0;
+	for (SLNode<DADamageEventStruct> *z = DamageEvents.Head();z;z = z->Next()) {
+		if (z->Data()->Damage < 0.0f) {
+			Return = z->Data();
+		}
+	}
+	return Return;
+}
+
 const char *DADamageLogObserverClass::Get_Name() {
 	return ObserverName;
 }
@@ -452,6 +476,14 @@ DADamageLogObserverClass *DADamageLog::Get_Damage_Log(GameObject *obj) {
 		if (Observers[i]->Get_Name() == ObserverName) {
 			return (DADamageLogObserverClass*)Observers[i];
 		}
+	}
+	return 0;
+}
+
+const SList<DADamageEventStruct> *DADamageLog::Get_Damage_Events(GameObject *obj) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Damage_Events();
 	}
 	return 0;
 }
@@ -526,6 +558,14 @@ float DADamageLog::Get_Percent_Player_Damage(GameObject *obj,cPlayer *Player) {
 	return 0;
 }
 
+const DADamageEventStruct *DADamageLog::Get_Last_Damage_Event(GameObject *obj) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Last_Damage_Event();
+	}
+	return 0;
+}
+
 float DADamageLog::Compile_Repair_Table_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team) {
 	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
 	if (Log) {
@@ -592,6 +632,14 @@ float DADamageLog::Get_Percent_Player_Repairs(GameObject *obj,cPlayer *Player) {
 	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
 	if (Log) {
 		return Log->Get_Percent_Player_Repairs(Player);
+	}
+	return 0;
+}
+
+const DADamageEventStruct *DADamageLog::Get_Last_Repair_Event(GameObject *obj) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Last_Repair_Event();
 	}
 	return 0;
 }

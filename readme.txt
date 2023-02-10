@@ -1,4 +1,4 @@
-Dragonade 1.5
+Dragonade 1.6
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -6,6 +6,7 @@ Vloktboky, original auther of DA and creator of server-side modding in general.
 Jonwil, creating scripts.dll and tt.dll.
 Ma1kel, input and ideas on various things.
 ExEric3, providing hosting and test servers.
+dblaney1, misc. code and fixes.
 ...and everyone that supported BC over the years.
 
 
@@ -24,6 +25,28 @@ Installation:
 
 
 Update History:
+
+
+Version 1.6:
+  Additions:
+   - Added support for broadcasting to multiple GameSpy master servers.
+   - Added settings "EnableMultiWeaponDrop" and "EnableWeaponCarryOver" to the Loot Game Feature.
+   - Added vehicle drop off positions for more fan maps.
+   
+  Changes:
+   - Players can now repickup weapons they've dropped with the "!drop" command after a short delay.
+   - The Power Crate will now affect both teams instead of just one.
+   - The Stealth Crate can now be picked up by vehicles on servers that are TT only.
+   - Tweaked the Exclusive and Remove Weapon systems so they work better on servers without infinite ammo.
+   - The Random Vehicle and Overhaul Crates can now grant vehicles from the alternate skin slots of the PT.
+   - Moved "GameSpyQueryPort" setting to da.ini.
+
+  Bug Fixes:
+   - Fixed possible crash on building death.
+   - Character Refunds now work again.
+   - Fixed Power Crate not working correctly on maps with multiple base defenses.
+   - Fixed vehicles unlocking when their owner switches characters.
+   - Fixed crate spawners not working on some fan maps.
 
 
 Version 1.5:

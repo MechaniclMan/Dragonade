@@ -2800,7 +2800,7 @@ void RA_Vehicle_Regen::Damaged(GameObject *obj, GameObject *damager, float amoun
 
 void RA_Vehicle_Regen::Timer_Expired(GameObject *obj, int number)
 {
-	if (number == Get_Float_Parameter("TimerID"))
+	if (number == Get_Float_Parameter("TimerID") && Commands->Get_Health(obj))
 	{
 		float max_total = Commands->Get_Max_Health(obj) + Commands->Get_Max_Shield_Strength(obj);
 		float cur_total = Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);

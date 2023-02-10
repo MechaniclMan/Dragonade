@@ -303,7 +303,8 @@ bool Obelisk_Weapon_CnC_Ground::IsValidEnemy(GameObject* WeaponObj, GameObject* 
 	if (Commands->Get_Player_Type(EnemyObj) != 1) return false;
 	if (Commands->Get_Health(EnemyObj) <= 0) return false;
 	if (!Commands->Is_Object_Visible(WeaponObj, EnemyObj)) return false;
-
+	if (Is_Harvester(EnemyObj)) return false;
+	
 	Vector3 WeaponObjPos = Commands->Get_Position(WeaponObj);
 	Vector3 WeaponObjPosXY = WeaponObjPos;
 	WeaponObjPosXY.Z = 0;

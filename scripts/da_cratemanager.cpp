@@ -186,16 +186,16 @@ void DACrateManager::Settings_Loaded_Event() {
 	DASettingsManager::Get_String(SpawnTime,"CrateSpawnTime","120-180");
 	DATokenParserClass Parser(SpawnTime,'-');
 	if (!Parser.Get_Float(SpawnTimeMin) || !Parser.Get_Float(SpawnTimeMax)) {
-		SpawnTimeMin = 60.0f;
-		SpawnTimeMax = 120.0f;
+		SpawnTimeMin = 120.0f;
+		SpawnTimeMax = 180.0f;
 	}
 	DASettingsManager::Get_String(SpawnTime,"FirstCrateSpawnTime","60-90");
 	Parser.Set(SpawnTime,'-');
 	if (!Parser.Get_Float(FirstSpawnTimeMin) || !Parser.Get_Float(FirstSpawnTimeMax)) {
-		FirstSpawnTimeMin = SpawnTimeMin;
-		FirstSpawnTimeMax = SpawnTimeMax;
+		FirstSpawnTimeMin = 60.0f;
+		FirstSpawnTimeMax = 90.0f;
 	}
-
+	
 	//Crates
 	for (int i = 0;i < Crates.Count();i++) {
 		if (Crates[i]->Get_Instance()) {
@@ -238,7 +238,9 @@ void DACrateManager::Settings_Loaded_Event() {
 			Vector3 Buffer;
 			DASettingsManager::Get_Vector3(Buffer,StringFormat("Crate%d",i),Buffer);
 			if (Buffer.X || Buffer.Y || Buffer.Z) {
-				Spawners.Add(Buffer);
+				if (Spawners.ID(Buffer) == -1) {
+					Spawners.Add(Buffer);
+				}
 			}
 			else {
 				break;
@@ -249,8 +251,16 @@ void DACrateManager::Settings_Loaded_Event() {
 		for (int i = 0;i < SpawnerList.Count();i++) {
 			SpawnerDefClass *Def = SpawnerList[i]->Definition;
 			if (Def->SpawnDefinitionIDList.Count() && stristr(Get_Definition_Name(Def->SpawnDefinitionIDList[0]),"Crate")) {
-				for (int x = 0;x < SpawnerList[i]->TransformList.Count();x++) {
-					Spawners.Add(SpawnerList[i]->TransformList[x].Get_Translation()); //Add old spawner.
+				Vector3 Buffer;
+				for (int x = 0;x < SpawnerList[i]->AlternateTransforms.Count();x++) { //Alternate positions.
+					SpawnerList[i]->AlternateTransforms[x].Get_Translation(&Buffer);
+					if (Spawners.ID(Buffer) == -1 && (Buffer.X || Buffer.Y || Buffer.Z)) {
+						Spawners.Add(Buffer);
+					}
+				}
+				SpawnerList[i]->Transform.Get_Translation(&Buffer); //Default position.
+				if (Spawners.ID(Buffer) == -1 && (Buffer.X || Buffer.Y || Buffer.Z)) {
+					Spawners.Add(Buffer);
 				}
 				SpawnerList[i]->Enable = false; //Disable default crate spawner.
 			}
@@ -341,7 +351,7 @@ void DACrateManager::Timer_Expired(int Number,unsigned int Data) {
 }
 
 void DACrateManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDef *PowerUp,PowerUpGameObj *PowerUpObj) {
-	if (PowerUpObj && CrateObjs.ID(PowerUpObj) != -1) {
+	if (PowerUpObj && CrateObjs.ID(PowerUpObj) != -1 && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) {
 		DACrateClass *Crate = DACrateManager::Select_Crate(Player);
 		if (Crate) {
 			SoldierGameObj *Soldier = Player->Get_GameObj();
@@ -369,7 +379,7 @@ bool DACrateManager::Crate_Chat_Command(cPlayer *Player,const DATokenClass &Text
 			DA::Page_Player(Player,"A crate could not be selected.");
 		}
 	}
-	else if (Player->Get_DA_Player()->Get_Access_Level() >= DAAccessLevel::ADMINISTRATOR) {
+	else if (Player->Get_DA_Player()->Get_Access_Level() >= DAAccessLevel::ADMINISTRATOR && (Player->Get_Team() == 0 || Player->Get_Team() == 1)) {
 		DACrateClass *Crate = Get_Crate(Text[0]);
 		if (Crate) {
 			if (!Crate->Check_Type(Player) || !Crate->Can_Activate(Player)) {
@@ -501,7 +511,7 @@ bool DACrateManager::ShowCrateSpawners_Chat_Command(cPlayer *Player,const DAToke
 		Commands->Set_Model(Marker,"dsp_holo");
 		Marker->Add_Observer(new DAShowCrateSpawnersObserverClass(i+1));
 	}
-	DA::Host_Message("Spawned markers for %d crate spawners.",i+1);
+	DA::Host_Message("Created markers for %d crate spawners.",i);
 	return true;
 }
 

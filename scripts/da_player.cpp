@@ -1482,6 +1482,14 @@ void cPlayer::Decrement_Deaths() {
 	}
 }
 
+bool PlayerDataClass::Purchase_Item(float money) {
+	if (money > Money) {
+		return false;
+	}
+	Set_Money(Money-money);
+	return true;
+}
+
 class DALegacyTagConsoleFunctionClass : public ConsoleFunctionClass {
 	const char *Get_Name() { return "tag"; }
 	const char *Get_Help() { return "TAG <playerid> <tag> - Legacy command to set the custom name tag on a player. Persists through leaving or multiple maps; defaults to position 0"; }
@@ -1758,7 +1766,7 @@ class DAUnStuckChatCommandClass: public DAChatCommandClass {
 			Phys = Player->Get_GameObj();
 		}
 		if (Phys->Is_Attached_To_An_Object() || ((MoveablePhysClass*)Phys->Peek_Physical_Object())->Can_Teleport(Phys->Get_Transform())) {
-			DA::Page_Player(Player,"You are not stuck.");
+			DA::Page_Player(Player,"You are not stuck. Use the !killme command if this is incorrect.");
 		}
 		else if (Fix_Stuck_Object(Phys,10.0f)) {
 			DA::Page_Player(Player,"You have been unstuck.");

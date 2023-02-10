@@ -22,7 +22,7 @@ class DADonateGameFeatureClass : public DAEventClass, public DAGameFeatureClass 
 	virtual void Settings_Loaded_Event();
 	virtual void Timer_Expired(int Number,unsigned int Data);
 	bool Donate_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
-	int TimeLimit;
+	unsigned int TimeLimit;
 };
 
 #endif
