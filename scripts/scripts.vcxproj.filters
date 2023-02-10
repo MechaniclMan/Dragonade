@@ -544,6 +544,9 @@
     <ClCompile Include="DBVehicleBypass.cpp">
       <Filter>Scripts</Filter>
     </ClCompile>
+    <ClCompile Include="DB_Innate.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">
@@ -1592,6 +1595,9 @@
     </ClInclude>
     <ClInclude Include="da_chatsounds.h">
       <Filter>DA Game Features</Filter>
+    </ClInclude>
+    <ClInclude Include="DB_Innate.h">
+      <Filter>Scripts</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

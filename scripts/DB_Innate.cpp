@@ -154,7 +154,6 @@ void DB_Innate_Soldier::Created(GameObject *obj)
 	SoldierGameObj *Soldier = Smart->As_SoldierGameObj();
 	if(Soldier)
 	{
-		Soldier->Set_Override_Muzzle_Direction(true);
 		Aggressiveness =  Get_Float_Parameter("Aggressiveness");
 		float HomeRange =  Get_Float_Parameter("HomeRange");
 		if(HomeRange > 0)
@@ -272,6 +271,10 @@ void DB_Innate_Soldier::Sound_Heard(GameObject *obj,const CombatSound & sound)
 		}
 		if (sound.sound == SOUND_TYPE_BULLET_HIT)
 		{
+			if (!sobj->Is_Innate_Enabled(SOLDIER_INNATE_EVENT_BULLET_HEARD))
+			{
+				return;
+			}
 			Vector3 pos = sound.Position;
 			if (pobj && FreeRandom.Get_Float() < 0.7)
 			{

@@ -71,6 +71,7 @@ void DALogManager::Think() {
 		else if (Receive > 0) {
 			char *LineStartPos = Connections[i]->Buffer;
 			char *EndPos = Connections[i]->Buffer + Connections[i]->BufferFilled+Receive;
+			LastLine
 			for (;;) {
 				char* LineEndPos = (char*)memchr(LineStartPos,'\n',EndPos-LineStartPos);
 				if (!LineEndPos) break;

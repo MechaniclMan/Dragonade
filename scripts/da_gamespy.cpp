@@ -198,6 +198,13 @@ void DAGameSpyGameFeatureClass::Think() {
 			Send.Format("\\final\\\\queryid\\%u.%d",QueryID,SendCount);
 			sendto(ListenSocket,Send,Send.Get_Length()+1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
 		}
+		else if (!strcmp(Buffer,"\\info\\")) {
+			StringClass Send;
+			Send.Format(
+				"\\hostname\\%ls\\hostport\\%d\\mapname\\%s\\gametype\\%s\\numplayers\\%i\\maxplayers\\%i\\final\\\\queryid\\%u.1",
+				Title,The_Game()->Get_Port(),The_Game()->Get_Map_Name(),DAGameManager::Get_Game_Mode_Long_Name(),The_Game()->Get_Current_Players(),The_Game()->Get_Max_Players(),QueryID);
+				sendto(ListenSocket,Send,Send.Get_Length()+ 1,0,(sockaddr*)&ClientAddress,sizeof(sockaddr_in));
+		}
 		else if (strstr(Buffer,"\\echo\\")) {
 			StringClass Send;
 			Send.Format("%s\\final\\\\queryid\\%u.1",Buffer,QueryID);

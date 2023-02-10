@@ -257,6 +257,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="DBIKScripts.cpp" />
     <ClCompile Include="DBScripts.cpp" />
     <ClCompile Include="DBVehicleBypass.cpp" />
+    <ClCompile Include="DB_Innate.cpp" />
     <ClCompile Include="DB_Research_Terminals.cpp" />
     <ClCompile Include="DefinitionFactoryClass.cpp" />
     <ClCompile Include="DefinitionFactoryMgrClass.cpp" />
@@ -473,6 +474,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_weapons.h" />
     <ClInclude Include="DBIKScripts.h" />
     <ClInclude Include="DB_General.h" />
+    <ClInclude Include="DB_Innate.h" />
     <ClInclude Include="DB_Research_Terminals.h" />
     <ClInclude Include="DefenseObjectDefClass.h" />
     <ClInclude Include="Definition.h" />

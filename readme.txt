@@ -1,4 +1,4 @@
-Dragonade 1.9.4
+Dragonade 1.9.5
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,6 +25,11 @@ Installation:
 
 
 Update History:
+
+Version 1.9.5:
+Swapped the radio command for 'thank you' and the rush with vehicle command.
+Applied a fix to Vehicle shells that allows C4 to properly stick to them instead of falling inside.
+GSA Code updated.
 
 Version 1.9.4:
 Fixed some bugs.
