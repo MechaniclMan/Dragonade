@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2017 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,6 +19,7 @@
 #include "HashTemplateClass.h"
 #include "SList.h"
 #include "cPlayer.h"
+#include "PhysDefClass.h"
 class ConnectionAcceptanceFilter;
 class WideStringClass;
 class cScTextObj;
@@ -51,6 +52,7 @@ typedef void (*rkh) (int pos);
 typedef void (*ss) (GameObject *obj,int scope);
 typedef void (*ss2) (GameObject *obj,ScriptClass *script,int number);
 typedef bool (*htm) (GameObject *obj,ScriptClass *script,int number);
+
 typedef void (*ach) (ChatHook h);
 typedef void (*ahh) (HostHook h);
 typedef void (*arh) (RefillHook h);
@@ -173,6 +175,14 @@ typedef void (*sbgmo) (GameObject *obj,const char *music,float startoffset);
 typedef void (*setcam) (GameObject *obj,const char *camera);
 typedef void (*settran) (GameObject *obj,int defid,int stringid);
 typedef void (*setnur) (GameObject *obj,int rate);
+typedef void (*fou) (GameObject *obj);
+typedef void (*foup) (GameObject *player,GameObject *obj);
+typedef int (*cwscp) (GameObject *obj,const char *soundname);
+typedef void (*ftu) (GameObject *obj);
+typedef void (*ftup) (GameObject *player,GameObject *obj);
+typedef void (*fvu) (GameObject *obj);
+typedef void (*fvup) (GameObject *player,GameObject *obj);
+typedef void (*schn) (GameObject *obj);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -347,6 +357,14 @@ SCRIPTS_API extern sbgmo Set_Background_Music_Player_Offset;
 SCRIPTS_API extern setcam Set_Camera_Player;
 SCRIPTS_API extern settran Set_Definition_TranslationID_Player;
 SCRIPTS_API extern setnur Set_Net_Update_Rate_Player;
+SCRIPTS_API extern fou Force_Orientation_Update;
+SCRIPTS_API extern foup Force_Orientation_Update_Player;
+SCRIPTS_API extern cwscp Create_2D_Wave_Sound_Cinematic_Player;
+SCRIPTS_API extern ftu Force_Turret_Update;
+SCRIPTS_API extern ftup Force_Turret_Update_Player;
+SCRIPTS_API extern fvu Force_Velocity_Update;
+SCRIPTS_API extern fvup Force_Velocity_Update_Player;
+SCRIPTS_API extern schn Set_Camera_Host_Network;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
 	Renegade Role Play 2 Scripts
-	Copyright 2017 Jerad Gray
+	Copyright 2012 Jerad Gray
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under			
@@ -87,8 +87,8 @@ void MetroidGame::WinMap()
 		GameObject *BossMusic = Commands->Find_Object(MetroidGameControl.BossDefeatedMusicID);
 		if (BossMusic)
 			Commands->Destroy_Object(BossMusic);
-		for (int x = 0;x < 128;x++)
-			DefenseModeSystemControl.DefensePlayerDataNodes[x].TelepadID = 0;
+		for (int y = 0;y < 128;y++)
+			DefenseModeSystemControl.DefensePlayerDataNodes[y].TelepadID = 0;
 		DefenseModeSystemControl.RemoveAllButSpecial();
 		MetroidRoomObjectives.Set_Objective_Status(7,NewObjectiveSystem::Accomplished);
 	}
@@ -1965,9 +1965,9 @@ void JMG_Metroid_Mine_Computer_Console::Timer_Expired(GameObject *obj,int number
 }
 void JMG_Metroid_Mine_Computer_Console::Poked(GameObject *obj,GameObject *poker)
 {
-	int ID = Commands->Get_ID(obj);
+	int id = Commands->Get_ID(obj);
 	for (int x = 0;x < 3;x++)
-		if (ID == MetroidGameControl.MineTerminalID[x])
+		if (id == MetroidGameControl.MineTerminalID[x])
 			if (MetroidGameControl.MineTerminalDeactivated[x])
 			{
 				MetroidGameControl.DisplayDialogMessage(poker,21);
@@ -2292,7 +2292,7 @@ void JMG_Metroid_Support_Health_Powerup_Beacon::Created(GameObject *obj)
 	//GameObject *Medpack = Commands->Create_Object(Commands->Get_Random(0.0f,1.0f) < 0.75 ? "NSE_POW_Health_025" : (Commands->Get_Random(0.0f,1.0f) < 0.75 ? "NSE_POW_Health_050" : "NSE_POW_Health_100"),PlacePosition);
 	GameObject *Medpack = Commands->Create_Object("NSE_POW_Health_025",PlacePosition);
 	Commands->Set_Facing(Medpack,Commands->Get_Facing(Player));
-	int PlayerID = JmgUtility::JMG_Get_Player_ID(Player);
+	PlayerID = JmgUtility::JMG_Get_Player_ID(Player);
 	char params[256];
 	sprintf(params,"%d",PlayerID);
 	Commands->Attach_Script(Medpack,"JMG_Metroid_Support_Health_Powerup",params);
@@ -2685,12 +2685,6 @@ void JMG_Metroid_Lockdown_Controller::Timer_Expired(GameObject *obj,int number)
 		RoomLockdownControl[Get_Int_Parameter("LockDownZoneID")].Update();
 		Commands->Start_Timer(obj,this,1.0f,1);
 	}
-}
-void JMG_Metroid_Lockdown_Controller::Destroyed(GameObject *obj)
-{
-	char msg[220];
-	sprintf(msg,"msg controller destroyed %d",Get_Int_Parameter("LockDownZoneID"));
-	Console_Input(msg);
 }
 void JMG_Metroid_Lockdown_Lockdown_Object::Created(GameObject *obj)
 {
