@@ -201,6 +201,7 @@ class z_Created_Send_Custom_Param : public ScriptImpClass {
 };
 
 class z_NoDamageMoneyPoints : public ScriptImpClass {
+	void Created(GameObject *obj);
 	void Damaged(GameObject *obj, GameObject *damager, float damage);
 };
 

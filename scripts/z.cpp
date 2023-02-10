@@ -291,11 +291,13 @@ void z_Created_Send_Custom_Param::Created(GameObject *obj)
 	Commands->Send_Custom_Event(obj,Commands->Find_Object(Get_Int_Parameter("ID")),Get_Int_Parameter("Message"),Get_Int_Parameter("param"),0);
 }
 
+void z_NoDamageMoneyPoints::Created(GameObject *obj)
+{
+	Set_Damage_Points(obj,0.0f);
+}
 void z_NoDamageMoneyPoints::Damaged(GameObject *obj, GameObject *damager, float damage)
 {
 	Commands->Set_Health(obj,Commands->Get_Max_Health(obj));
-	Commands->Give_Points(damager,(float)(damage*-1.0),false);
-	Commands->Give_Money(damager,(float)(damage*-1.0),false);
 }
 
 void z_Set_Team::Created(GameObject *obj)

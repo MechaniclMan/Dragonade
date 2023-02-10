@@ -93,6 +93,54 @@ void JFW_Turret_Spawn_2::Killed(GameObject *obj,GameObject *killer)
 	Commands->Create_Explosion(Get_Parameter("Explosion_Preset"),tmb,0);
 }
 
+void JFW_Turret_Spawn_3::Created(GameObject *obj)
+{
+  Vector3 sp;
+  GameObject *object;
+  sp.X = 0;
+  sp.Y = 0;
+  sp.Z = 0;
+  object = Commands->Create_Object(Get_Parameter("Turret_Preset"),sp);
+  Commands->Attach_To_Object_Bone(object,obj,Get_Parameter("Bone_Name"));
+  turID = Commands->Get_ID(object);
+  Commands->Send_Custom_Event(obj,Commands->Find_Object(turID),Get_Int_Parameter("Driver_Exited_Custom"),0,0);
+  Attach_Script_Once_V(object,"dp88_linkHealth","%d",Commands->Get_ID(obj));
+  m_bHasDriver = false;
+}
+
+void JFW_Turret_Spawn_3::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+  if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
+  {
+    if ( !m_bHasDriver )
+    {
+      m_bHasDriver = true;
+      Commands->Set_Player_Type(Commands->Find_Object(turID),Commands->Get_Player_Type(sender));
+      Commands->Send_Custom_Event(obj,Commands->Find_Object(turID),Get_Int_Parameter("Driver_Entered_Custom"),0,0);
+    }
+  }
+  if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+  {
+    if ( m_bHasDriver && obj->As_VehicleGameObj() && obj->As_VehicleGameObj()->Get_Occupant(0) == NULL )
+    {
+      m_bHasDriver = false;
+      Commands->Send_Custom_Event(obj,Commands->Find_Object(turID),Get_Int_Parameter("Driver_Exited_Custom"),0,0);
+    }
+  }
+}
+
+void JFW_Turret_Spawn_3::Register_Auto_Save_Variables()
+{
+	Auto_Save_Variable(&turID,4,1);
+}
+
+void JFW_Turret_Spawn_3::Killed(GameObject *obj,GameObject *killer)
+{
+	Vector3 tmb;
+	tmb = Commands->Get_Bone_Position(obj,Get_Parameter("Explosion_Bone"));
+	Commands->Create_Explosion(Get_Parameter("Explosion_Preset"),tmb,0);
+}
+
 void JFW_Drive_To_Player::Created(GameObject *obj)
 {
 	ActionParamsStruct params;
@@ -1041,6 +1089,7 @@ ScriptRegistrant<JFW_Vehicle_Model_Weapon> JFW_Vehicle_Model_Weapon_Registrant("
 ScriptRegistrant<JFW_Vechicle_Animation_Trigger> JFW_Vechicle_Animation_Trigger_Registrant("JFW_Vechicle_Animation_Trigger","Animation:string,Subobject:string,FirstFrame:float,LastFrame:float,Blended:int,Time:float,TimerNum:int,UpAnimation:string,UpSubobject:string,UpFirstFrame:float,UpLastFrame:float,UpBlended:int,DownAnimation:string,DownSubobject:string,DownFirstFrame:float,DownLastFrame:float,DownBlended:int,UpTrigger:int,DownTrigger:int");
 ScriptRegistrant<JFW_Vechicle_Animation_2> JFW_Vechicle_Animation_2_Registrant("JFW_Vechicle_Animation_2","Animation:string,Subobject:string,FirstFrame:float,LastFrame:float,Blended:int,Time:float,TimerNum:int,UpAnimation:string,UpSubobject:string,UpFirstFrame:float,UpLastFrame:float,UpBlended:int,DownAnimation:string,DownSubobject:string,DownFirstFrame:float,DownLastFrame:float,DownBlended:int");
 ScriptRegistrant<JFW_Turret_Spawn_2> JFW_Turret_Spawn_2_Registrant("JFW_Turret_Spawn_2","Turret_Preset:string,Bone_Name=Tur_Mount:string,Explosion_Preset:string,Explosion_Bone:string");
+ScriptRegistrant<JFW_Turret_Spawn_3> JFW_Turret_Spawn_3_Registrant("JFW_Turret_Spawn_3","Turret_Preset:string,Bone_Name=Tur_Mount:string,Explosion_Preset:string,Explosion_Bone:string,Driver_Entered_Custom:int,Driver_Exited_Custom:int");
 ScriptRegistrant<JFW_Drive_To_Player> JFW_Drive_To_Player_Registrant("JFW_Drive_To_Player","Speed:float,Arrive_Distance:float");
 ScriptRegistrant<JFW_Vechicle_Animation> JFW_Vechicle_Animation_Registrant("JFW_Vechicle_Animation","Animation:string,Subobject:string,FirstFrame:float,LastFrame:float,Blended:int,Time:float,TimerNum:int");
 ScriptRegistrant<JFW_Visible_Person_In_Vechicle> JFW_Visible_Person_In_Vechicle_Registrant("JFW_Visible_Person_In_Vechicle","BoneName:string,ModelName:string,Animation:string,SubObject:string,FirstFrame:float,LastFrame:float,Blended:int");

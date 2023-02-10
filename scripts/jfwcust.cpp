@@ -1600,6 +1600,31 @@ void JFW_Startup_Custom_Self::Created(GameObject *obj)
 	Destroy_Script();
 }
 
+void JFW_Send_Custom_On_Damage::Created(GameObject *obj)
+{
+	above = true;
+}
+
+void JFW_Send_Custom_On_Damage::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	float hp = Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);
+	float val = Get_Float_Parameter("Health");
+	if (hp < val && above)
+	{
+		above = false;
+		int msg = Get_Int_Parameter("Message1");
+		int ID = Get_Int_Parameter("ID1");
+		Commands->Send_Custom_Event(obj,Commands->Find_Object(ID),msg,0,0);
+	}
+	else if (hp > val && !above)
+	{
+		above = true;
+		int msg = Get_Int_Parameter("Message2");
+		int ID = Get_Int_Parameter("ID2");
+		Commands->Send_Custom_Event(obj,Commands->Find_Object(ID),msg,0,0);
+	}
+}
+
 ScriptRegistrant<JFW_Send_Custom_Distance_Objects_Timer> JFW_Send_Custom_Distance_Objects_Timer_Registrant("JFW_Send_Custom_Distance_Objects_Timer","Distance:float,Message:int,Time:float,TimerNum:int,Player_Type:int");
 ScriptRegistrant<JFW_Send_Custom_Distance_Objects_Custom> JFW_Send_Custom_Distance_Objects_Custom_Registrant("JFW_Send_Custom_Distance_Objects_Custom","Distance:float,Message:int,Player_Type:int,ListenMessage:int");
 ScriptRegistrant<JFW_Send_Custom_All_Objects_Timer> JFW_Send_Custom_All_Objects_Timer_Registrant("JFW_Send_Custom_All_Objects_Timer","Message:int,Time:float,TimerNum:int,Player_Type:int");
@@ -1688,3 +1713,4 @@ ScriptRegistrant<JFW_Custom_Send_Random_Custom> JFW_Custom_Send_Random_Custom_Re
 ScriptRegistrant<JFW_Startup_Custom_Self> JFW_Startup_Custom_Self_Registrant("JFW_Startup_Custom_Self","Message:int");
 ScriptRegistrant<JFW_Set_Skin_Custom> JFW_Set_Skin_Custom_Registrant("JFW_Set_Skin_Custom","Message:int,Armour:string");
 ScriptRegistrant<JFW_Set_Armor_Custom> JFW_Set_Armor_Custom_Registrant("JFW_Set_Armor_Custom","Message:int,Armour:string");
+ScriptRegistrant<JFW_Send_Custom_On_Damage> JFW_Send_Custom_On_Damage_Registrant("JFW_Send_Custom_On_Damage","Message1:int,ID1:int,Message2:int,ID2:int,Health:float");

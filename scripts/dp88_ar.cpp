@@ -261,7 +261,7 @@ void dp88_AR_Vehicle::Killed( GameObject *obj, GameObject *killer )
 
 
 void dp88_AR_Vehicle::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
+{/*
 	// Look for vehicle entry
 	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED )
 	{
@@ -291,7 +291,7 @@ void dp88_AR_Vehicle::Custom( GameObject *obj, int type, int param, GameObject *
 	
 	
 	// Look for a message from the attacking terror drone telling us it died
-	/*else if ( type == CUSTOM_TD_TD_DIED )
+	else if ( type == CUSTOM_TD_TD_DIED )
 	{
 		attackingTerrorDroneID = 0;
 	}*/
@@ -346,159 +346,6 @@ void dp88_AR_Vehicle::Animation_Complete ( GameObject *obj, const char *animatio
 
 
 
-/*------------------------
-Script for health / armour regeneration based on veterancy
---------------------------*/
-
-void dp88_AR_Veterancy_HealthArmourRegen::Created( GameObject *obj )
-{
-	// Set initial veterancy level
-	veterancyLevel = 0;
-	
-	// Start timer
-	Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
-}
-
-
-void dp88_AR_Veterancy_HealthArmourRegen::Timer_Expired( GameObject *obj, int number )
-{
-	// Only process this if we are not dead...
-	if ( Commands->Get_Health ( obj ) > 0.0f )
-	{
-		// Check if unit is below full health
-		if ( Commands->Get_Health ( obj ) < Commands->Get_Max_Health ( obj ) )
-		{
-			// Work out how much health we can regenerate
-			float healthRegenAmount = (float)(( veterancyLevel == 0 ) ? Get_Int_Parameter ( "rookie_healthRegenAmount" ) : ( veterancyLevel == 1 ) ? Get_Int_Parameter ( "veteran_healthRegenAmount" ) : Get_Int_Parameter ( "elite_healthRegenAmount" ));
-		
-			// If current health + regen amount > max health set to max health
-			if ( Commands->Get_Health ( obj ) + healthRegenAmount >= Commands->Get_Max_Health ( obj ) )
-				Commands->Set_Health ( obj, Commands->Get_Max_Health ( obj ) );
-
-			// Otherwise add on health regen amount
-			else
-				Commands->Set_Health ( obj, Commands->Get_Health( obj ) + healthRegenAmount );
-		}
-
-		// Check if unit is below full armour
-		if ( Commands->Get_Shield_Strength ( obj ) < Commands->Get_Max_Shield_Strength ( obj ) )
-		{
-			// Work out how much armour we can regenerate
-			float armourRegenAmount = (float)(( veterancyLevel == 0 ) ? Get_Int_Parameter ( "rookie_armourRegenAmount" ) : ( veterancyLevel == 1 ) ? Get_Int_Parameter ( "veteran_armourRegenAmount" ) : Get_Int_Parameter ( "elite_armourRegenAmount" ));
-
-			// If current armour + regen amount > max armour set to max armour
-			if ( Commands->Get_Shield_Strength ( obj ) + armourRegenAmount >= Commands->Get_Max_Shield_Strength ( obj ) )
-				Commands->Set_Shield_Strength ( obj, Commands->Get_Max_Shield_Strength ( obj ) );
-
-			// Otherwise add on armour regen amount
-			else
-				Commands->Set_Shield_Strength ( obj, Commands->Get_Shield_Strength( obj ) + armourRegenAmount );
-		}
-
-		// Start timer
-		Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
-	}
-}
-
-
-void dp88_AR_Veterancy_HealthArmourRegen::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
-	// If custom == CUSTOM_VETERANCY_PROMOTED update veterancyLevel
-	if ( type == CUSTOM_VETERANCY_PROMOTED )
-		veterancyLevel = param;
-}
-
-
-
-
-
-
-/*------------------------
-Grant Default Weapon Scripts
-Replaces m00_GrantPowerup_Created
---------------------------*/
-
-void dp88_AR_grantDefaultWeapon::Created( GameObject *obj )
-{
-	//Console_Output ( "Created dp88_AR_grantDefaultWeapon\n" );
-	strcpy_s ( weaponName, sizeof(weaponName), Get_Powerup_Weapon ( Get_Parameter ( "powerupPreset" ) ) );
-	strcpy_s ( oldWeapon, sizeof(oldWeapon), "null" );
-	Commands->Give_PowerUp ( obj, Get_Parameter ( "powerupPreset" ), true );
-}
-
-void dp88_AR_grantDefaultWeapon::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
-	if ( type == CUSTOM_VETERANCY_PROMOTED )
-	{
-		// Work out if we need to grant them a new weapon
-		char weaponPowerup[64] = "null";
-		switch ( param )
-		{
-			case 1:
-				if ( strcmp ( Get_Parameter( "powerupPreset_veteran" ), "null" ) != 0 )
-					strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "powerupPreset_veteran" ) );
-				break;
-			case 2:
-				if ( strcmp ( Get_Parameter( "powerupPreset_elite" ), "null" ) != 0 )
-					strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "powerupPreset_elite" ) );
-				else if ( strcmp ( Get_Parameter( "powerupPreset_veteran" ), "null" ) != 0 )
-					strcpy_s ( weaponPowerup, sizeof(weaponPowerup), Get_Parameter ( "powerupPreset_veteran" ) );
-				break;
-		}
-
-		// If we found a powerup to give them then grant it
-		if ( strcmp ( weaponPowerup, "null" ) != 0 )
-		{
-			if ( Is_Valid_Preset ( weaponPowerup ) )
-			{
-				// Give new weapon, and select if if they were using that weapon
-				if ( strcmp ( Get_Current_Weapon ( obj ), weaponName ) == 0 )
-				{
-					Commands->Give_PowerUp( obj, weaponPowerup, true );
-					strcpy_s ( oldWeapon, sizeof(oldWeapon), weaponName );
-					Commands->Start_Timer ( obj, this, 0.1f, TIMER_REMOVE_OLDWEAPON );
-					Commands->Select_Weapon ( obj, Get_Powerup_Weapon(weaponPowerup) );
-				}
-				else
-				{
-					char curWep[128];
-					strcpy_s ( curWep, sizeof(curWep), Get_Current_Weapon ( obj ) );
-					Commands->Give_PowerUp( obj, weaponPowerup, true );
-					Remove_Weapon ( obj, weaponName );
-					Commands->Select_Weapon ( obj, curWep );
-				}
-
-				// Set this weapon as their default for future reference
-				strcpy_s ( weaponName, sizeof(weaponName), Get_Powerup_Weapon(weaponPowerup) );
-			}
-		}
-	}
-}
-
-void dp88_AR_grantDefaultWeapon::Timer_Expired ( GameObject *obj, int number )
-{
-	if ( number == TIMER_REMOVE_OLDWEAPON && strcmp ( oldWeapon, "null" ) != 0 )
-	{
-		char curWep[128];
-		strcpy_s ( curWep, sizeof(curWep), Get_Current_Weapon ( obj ) );
-		if ( strcmp ( curWep, oldWeapon ) == 0 )
-		{
-			Commands->Select_Weapon ( obj, weaponName );
-			Commands->Start_Timer ( obj, this, 0.1f, TIMER_REMOVE_OLDWEAPON );
-		}
-		else
-		{
-			Remove_Weapon ( obj, oldWeapon );
-			Commands->Select_Weapon ( obj, curWep );
-			strcpy_s ( oldWeapon, sizeof(oldWeapon), "null" );
-		}
-	}
-}
-
-
-
-
-
 
 
 
@@ -541,7 +388,6 @@ void dp88_AR_Deployable_Infantry::Created( GameObject *obj )
 	if ( cannotDeployStringId && (soundId = Get_String_Sound_ID(cannotDeployStringId)) != 0 && Is_Valid_Preset_ID(soundId) && Find_Definition(soundId)->Get_Class_ID() == 0x5000 )
 		cannotDeploySoundId = soundId;
 
-
 	// Install keyhook
 	if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
 		InstallHook( Get_Parameter("deployKeyhook"), obj );
@@ -558,13 +404,14 @@ void dp88_AR_Deployable_Infantry::KeyHook()
 	if ( deployed )
 	{
 		// If deployed for less than undeployTime seconds dont allow undeploy
-		if ( time(NULL) - lastDeploy < Get_Float_Parameter("undeployTime") )
-		{
-			StringClass str;
-			str.Format("You cannot undeploy yet, you must wait at least %f seconds after deploying to undeploy.",Get_Float_Parameter("undeployTime"));
-			Send_Message_Player(obj,153,204,25,str);
-			return;
-		}
+    float undeployTime = Get_Float_Parameter("undeployTime");
+    if ( time(NULL) - lastDeploy < undeployTime )
+    {
+      StringClass str(true);
+      str.Format("You cannot undeploy yet, you must wait at least %.*f seconds after deploying to undeploy.", (((int)undeployTime)==undeployTime)?0:2, undeployTime);
+      Send_Message_Player(obj, DP88_RGB_WARNING_MSG, str);
+      return;
+    }
 
 		// Destroy the defensive structure
 		if ( deployedObjectId != NULL )
@@ -577,17 +424,23 @@ void dp88_AR_Deployable_Infantry::KeyHook()
 		const char* powerup = GetWeaponPowerup(currentVetLevel);
 		if ( powerup )
 			Remove_Weapon ( obj, Get_Powerup_Weapon ( powerup ) );
+
+    // Re-enable loiters and vehicle entry
+    if ( SoldierGameObj* sObj = obj->As_SoldierGameObj() )  // Should always be true, but safety first...
+      sObj->Set_Can_Drive_Vehicles(m_bCanDrive);
+    Commands->Set_Loiters_Allowed(obj,true);
 	}
 	else
 	{
 		// If deployed for less than deployTime seconds dont allow deploy
-		if ( time(NULL) - lastDeploy < Get_Float_Parameter("deployTime") )
-		{
-			StringClass str;
-			str.Format("You cannot deploy yet, you must wait at least %f seconds after undeploying to deploy again.",Get_Float_Parameter("deployTime"));
-			Send_Message_Player(obj,153,204,25,str);
-			return;
-		}
+    float deployTime = Get_Float_Parameter("deployTime");
+    if ( time(NULL) - lastDeploy < deployTime )
+    {
+      StringClass str(true);
+      str.Format("You cannot deploy yet, you must wait at least %.*f seconds after undeploying to deploy again.",(((int)deployTime)==deployTime)?0:2, deployTime);
+      Send_Message_Player(obj, DP88_RGB_WARNING_MSG, str);
+      return;
+    }
 
 		// Get velocity of deployer
 		Vector3 velocity = Get_Velocity(obj);
@@ -629,6 +482,14 @@ void dp88_AR_Deployable_Infantry::KeyHook()
 
 			deployed = true;
 			lastDeploy = time(NULL);
+
+      // Disable loiters and vehicle entry
+      if ( SoldierGameObj* sObj = obj->As_SoldierGameObj() )  // Should always be true, but safety first...
+      {
+        m_bCanDrive = sObj->Can_Drive_Vehicles(); // Save value for when we undeploy...
+        sObj->Set_Can_Drive_Vehicles(false);
+      }
+      Commands->Set_Loiters_Allowed(obj,false);
 
 			// TEMP - Start timer to check position
 			Commands->Start_Timer(obj,this,2.0f,154785);
@@ -730,7 +591,7 @@ void dp88_AR_Deployable_Infantry::Timer_Expired ( GameObject* obj, int number )
 			// Remove script to punish abusers
 			StringClass message;
 			message.Format ("Deployment abuse detected, disabling deploy script... (distance from deployment: %.2fm)", distance);
-			Send_Message_Player(obj,255,50,50,message);
+			Send_Message_Player(obj, DP88_RGB_ERROR_MSG, message);
 			RemoveHook();
 			Destroy_Script();
 		}
@@ -984,6 +845,10 @@ void dp88_AR_CLEG_target::Timer_Expired( GameObject *obj, int number )
 
 
 
+
+
+
+
 /*------------------------
 AR Miner Script - Base Class
 
@@ -991,304 +856,392 @@ This base class is used by both dp88_AR_Chrono_Miner and dp88_AR_War_Miner
 and implements common functionality used by both scripts
 --------------------------*/
 
-void dp88_AR_Miner::Created ( GameObject *obj )
+void dp88_Ore_Miner::Created ( GameObject *obj )
 {
-	oreFieldRand = 0;
-	oreFieldValue = 0;
-	oreLoadLevel = 0;
-	oreValue = 0;
-	animating = false;
+  m_aiState       = MINER_AISTATE_IDLE;
+  m_oreMined      = 0;
+  m_oreValue      = 0;
 
-	useAI = ( Get_Int_Parameter ( "enableAI" ) == 1 ) ? true : false;
-	aiState = MINER_AISTATE_IDLE;
+  m_bUseAI        = ( Get_Int_Parameter ( "Use_AI" ) == 1 ) ? true : false;
+  m_oreCapacity   = Get_Int_Parameter("Ore_Capacity");
+  m_oreMiningTime = Get_Float_Parameter("Ore_Mining_Time");
+  m_oreDumpTime   = Get_Float_Parameter("Ore_Dump_Time");
 
-	/* If this miner is AI controlled then send the ore unload complete event in 10
-	seconds, which will cause the AI to set off towards an ore field. Note that the
-	delay is required to prevent the normal harvester AI taking over */
-	if ( useAI )
-		Commands->Send_Custom_Event( obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 1, (float)Get_Int_Parameter("aiStartDelay") );
-	if (strlen(Get_Parameter("idleAnimation")) > 0)
-		Commands->Set_Animation(obj,Get_Parameter("idleAnimation"),true,0,0,-1,false);
+  m_oreFieldId    = 0;
+  m_oreFieldRand  = 0;
+
+  // Load animation settings
+  m_animations[MINER_ANIM_IDLE]     = Get_Parameter("Idle_Animation");
+  m_animations[MINER_ANIM_MINING]   = Get_Parameter("Mining_Animation");
+  m_animations[MINER_ANIM_DUMPING]  = Get_Parameter("Dump_Animation");
+  m_animSounds[MINER_ANIM_IDLE]     = NULL;
+  m_animSounds[MINER_ANIM_MINING]   = Get_Parameter("Mining_Sound");
+  m_animSounds[MINER_ANIM_DUMPING]  = Get_Parameter("Dump_Sound");
+
+  for ( int i = MINER_ANIM_IDLE; i < MINER_ANIM_DUMPING; ++i )
+  {
+    if (m_animations[i] != NULL && strlen(m_animations[i]) < 0)
+      m_animations[i] = NULL;
+    if (m_animSounds[i] != NULL && strlen(m_animSounds[i]) < 0)
+      m_animSounds[i] = NULL;
+  }
+
+  // Set the initial animation state
+  m_currentAnimId = MINER_ANIM_DUMPING;
+  UpdateAnimation(obj, MINER_ANIM_IDLE);
+
+  /* For AI miners send a message to ourselves to start searching for an ore field - note the delay
+  * which is required to prevent the default harvester AI taking over */
+  if ( m_bUseAI )
+    Commands->Send_Custom_Event( obj, obj, CUSTOM_MINER_AI_SEARCH_FOR_ORE, 1, (float)Get_Int_Parameter("AI_Init_Delay") );
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::Custom ( GameObject *obj, int type, int param, GameObject *sender )
+void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *sender )
 {
-	// Message from an ore field notifying us that we have entered it. Start
-	// collecting ore and call EnteredOreField()
-	if ( type == CUSTOM_MINER_ENTERED_ORE_FIELD && oreLoadLevel < Get_Int_Parameter("loadLevels") )
-	{
-		// Store the value of the ore field and generate a random integer to identify
-		// this trip into the ore field - prevents glitching the timers by entering
-		// and exiting constantly
-		oreFieldValue = param;
-		oreFieldRand = Commands->Get_Random_Int(2,10240);
-
-		// Set AI state
-		if ( useAI )
-			aiState = MINER_AISTATE_COLLECTING_ORE;
-
-		// Send message to increase ore load and, if a player vehicle, inform the driver
-		// that we have started collecting ore
-		Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_INCREASE_ORE_LOAD, oreFieldRand, Get_Float_Parameter("timePerLoadLevel") );
-		if ( Get_Vehicle_Driver(obj) != NULL )
-			Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, "Collecting ore..." );
-
-		// Call EnteredOreField()
-		EnteredOreField(obj, sender);
-	}
-
-
-	// Message from an ore field notifying us that we have left it. Stop
-	// collecting ore and call ExitedOreField()
-	else if ( type == CUSTOM_MINER_EXITED_ORE_FIELD )
-	{
-		// Reset ore field parameters
-		oreFieldValue = 0;
-		oreFieldRand = 0;
-
-		// Call ExitedOreField()
-		ExitedOreField(obj, sender);
-	}
-
-
-  // Message to ourselves to increase our ore load
-  else if ( type == CUSTOM_MINER_INCREASE_ORE_LOAD && param == oreFieldRand )
+  // Message from an ore field indicating we have entered it
+  if ( type == CUSTOM_MINER_ENTERED_ORE_FIELD )
   {
-    // Unless we are already full increase our load level and the value of our load
-    if ( oreLoadLevel < Get_Int_Parameter("loadLevels") )
-    {
-      // Play the mining sound
-      if (strlen(Get_Parameter("miningSound")) > 0)
-        Commands->Create_Sound(Get_Parameter("miningSound"),Commands->Get_Position(obj),obj);
+    EnteredOreField(obj, sender);
+  }
 
-      oreLoadLevel++;
-      oreValue += oreFieldValue*Get_Int_Parameter("orePerLoadLevel");
+
+  // Message from an ore field indicating we have left it
+  else if ( type == CUSTOM_MINER_EXITED_ORE_FIELD )
+  {
+    ExitedOreField(obj, sender);
+  }
+
+
+  // Message to ourselves to mine another ore load
+  else if ( type == CUSTOM_MINER_INCREASE_ORE_LOAD && param == m_oreFieldRand )
+  {
+    GameObject* pOreField = Commands->Find_Object(m_oreFieldId);
+    dp88_Ore_Field* pOreFieldScript = (!pOreField) ? NULL : (dp88_Ore_Field *)(Find_Script_On_Object(pOreField,"dp88_Ore_Field"));
+
+    // Unless we are already full increase our load level and the value of our load
+    if ( m_oreMined < m_oreCapacity && pOreFieldScript )
+    {
+      if ( pOreFieldScript->RemoveOre(1) == 1 )
+      {
+        // Play the mining sound
+        if ( m_animSounds[MINER_ANIM_MINING] != NULL )
+          Commands->Create_Sound(m_animSounds[MINER_ANIM_MINING],Commands->Get_Position(obj),obj);
+
+        m_oreMined++;
+        m_oreValue += pOreFieldScript->GetOreValue();
+      }
     }
 
     // If we are still not full start send a delayed custom to increase it again
-    if ( oreLoadLevel < Get_Int_Parameter("loadLevels") )
-      Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_INCREASE_ORE_LOAD, oreFieldRand, Get_Float_Parameter("timePerLoadLevel") );
+    if ( m_oreMined < m_oreCapacity && pOreFieldScript && (pOreFieldScript->IsInfinite() || pOreFieldScript->NumOreUnits() > 0) )
+      Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_INCREASE_ORE_LOAD, m_oreFieldRand, m_oreMiningTime );
 
 
-    // Otherwise we are full of ore...
+    // Otherwise we are full of ore... or the ore field is depleted...
     else
     {
-      // Stop the mining animation
-      animating = false;
-      obj->As_PhysicalGameObj()->Clear_Animation();
-      if (strlen(Get_Parameter("idleAnimation")) > 0)
-         Commands->Set_Animation(obj,Get_Parameter("idleAnimation"),true,0,0,-1,false);
+      UpdateAnimation(obj, MINER_ANIM_IDLE);
+
       // If using the AI start driving to the refinery
-      if ( useAI )
-      {
-        aiState = MINER_AISTATE_RETURN_TO_REFINERY;
+      if ( m_bUseAI )
         ReturnToRefinery(obj);
-      }
 
       // Or, if we are a player driven miner, tell the driver we are full
       else if ( Get_Vehicle_Driver(obj) != NULL )
-        Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, "Fully loaded with ore, dock at the Refinery to smelt the ore into credits" );
+      {
+        if ( m_oreMined < m_oreCapacity )
+          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "The ore field is depleted, find another ore field or dock at the Refinery to smelt the ore you have collected so far..." );
+        else
+          Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Fully loaded with ore, dock at the Refinery to smelt the ore into credits" );
+      }
     }
   }
 
 
-	// Message from the ore dump zone notifying us that we have entered it. If
-	// we have ore to unload then immobilize the vehicle and begin unloading it
-	else if ( type == CUSTOM_MINER_ENTERED_DUMP_ZONE && oreLoadLevel > 0 )
-	{
-		// Inform driver we are unloading
-		if ( Get_Vehicle_Driver(obj) != NULL )
-			Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, "Unloading ore, please stand by..." );
-
-		// Set AI state
-		if ( useAI )
-			aiState = MINER_AISTATE_UNLOADING_ORE;
-
-		// Send a timed event to notify us when the ore unload is completed and
-		// call the DockedAtRefinery() event
-		Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 0, Get_Float_Parameter("unloadTime") );
-		DockedAtRefinery(obj);
-	}
-
-
-	// Message to ourselves to indicate ore unloading is complete, grant money
-	// to the team and set off to collect some more ore
-	if ( type == CUSTOM_MINER_UNLOAD_ORE_COMPLETE )
-	{
-		// Inform the driver that we have finished unloading
-		if ( Get_Vehicle_Driver(obj) != NULL )
-		{
-			StringClass message;
-			message.Format ("Ore unloaded successfully, you have earned %d credits for each player and %d points for yourself", oreValue, oreValue/10 );
-			Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, message );
-			Commands->Give_Points(Get_Vehicle_Driver(obj),(float)oreValue/10.0f,false);
-		}
-
-		// Grant money to team and reset ore load level
-		Commands->Give_Money ( obj, (float)oreValue, true );
-		oreLoadLevel = 0;
-		oreValue = 0;
-
-		// Call UndockedFromRefinery
-		UndockedFromRefinery(obj);
-	}
-}
-
-
-void dp88_AR_Miner::Action_Complete ( GameObject *obj, int action_id, ActionCompleteReason complete_reason )
-{
-	// If the completed action was RETURN_TO_REFINERY then set the AI state to
-	// docking and call DockAtRefinery();
-	if ( action_id == MINER_ACTIONID_RETURN_TO_REFINERY )
-	{
-		//Console_Output ( "dp88_AR_Miner: Arrived at refinery... start docking\n" );
-		aiState = MINER_AISTATE_DOCK_AT_REFINERY;
-		DockAtRefinery(obj);
-	}
-}
-
-
-void dp88_AR_Miner::DriveToOreField ( GameObject *obj )
-{
-	/* Find and drive to an ore field */
-	GameObject* zone = Find_Closest_Object_With_Script("dp88_AR_Ore_Field_Zone", Commands->Get_Position(obj));
-	if ( zone != NULL )
-	{
-		Vector3 position = Commands->Get_Position(zone);
-		//Console_Output ( "dp88_AR_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
-
-		/* Setup parameters and get going! */
-		ActionParamsStruct params;
-		params.Set_Basic( this, 100.0f, MINER_ACTIONID_DRIVE_TO_ORE );
-		params.Set_Movement ( position, 1.0f, 1.0f );
-		params.MovePathfind = true;
-		params.ShutdownEngineOnArrival = true;
-		params.AttackActive = false;
-		Commands->Action_Goto( obj, params );
-	}
-}
-
-
-void dp88_AR_Miner::EnteredOreField ( GameObject *obj, GameObject* oreField )
-{
-  // If we are using AI then reset the action now that we have arrived
-  if ( useAI )
-    Commands->Action_Reset ( obj, 101.0f );
-
-  // Start the mining animation if it is not already running
-  if ((strlen(Get_Parameter("miningAnimation")) > 0) && !animating)
+  // Message from the ore dump zone notifying us that we have entered it. If
+  // we have ore to unload then immobilize the vehicle and begin unloading it
+  else if ( type == CUSTOM_MINER_ENTERED_DUMP_ZONE && m_oreMined > 0 )
   {
-    animating = true;
-    Commands->Set_Animation(obj,Get_Parameter("miningAnimation"),true,0,0,-1,false);
+    // Inform driver we are unloading
+    if ( Get_Vehicle_Driver(obj) != NULL )
+      Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Unloading ore, please stand by..." );
+
+    // Set AI state
+    if ( m_bUseAI )
+      m_aiState = MINER_AISTATE_UNLOADING_ORE;
+
+    // Send a timed event to notify us when the ore unload is completed and
+    // call the DockedAtRefinery() event
+    Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 0, m_oreDumpTime );
+    DockedAtRefinery(obj);
+  }
+
+
+  // Message to ourselves to indicate ore unloading is complete, grant money
+  // to the team and set off to collect some more ore
+  else if ( type == CUSTOM_MINER_UNLOAD_ORE_COMPLETE )
+  {
+    // Inform the driver that we have finished unloading
+    if ( Get_Vehicle_Driver(obj) != NULL )
+    {
+      StringClass message(true);
+      message.Format ("Ore unloaded successfully, you have earned %d credits for each player and %d points for yourself", m_oreValue, m_oreValue/10 );
+      Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, message );
+      Commands->Give_Points(Get_Vehicle_Driver(obj),(float)m_oreValue/10.0f,false);
+    }
+
+    // Grant money to team and reset ore load level
+    Commands->Give_Money ( obj, (float)m_oreValue, true );
+    m_oreMined = 0;
+    m_oreValue = 0;
+
+    // Call UndockedFromRefinery
+    UndockedFromRefinery(obj);
+  }
+
+
+  // AI message to search for an ore field...
+  else if ( type == CUSTOM_MINER_AI_SEARCH_FOR_ORE )
+  {
+    DriveToOreField(obj);
   }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::ExitedOreField ( GameObject *obj, GameObject* oreField )
+void dp88_Ore_Miner::Action_Complete ( GameObject *obj, int action_id, ActionCompleteReason complete_reason )
 {
+  // If the completed action was RETURN_TO_REFINERY then set the AI state to
+  // docking and call DockAtRefinery();
+  if ( action_id == MINER_ACTIONID_RETURN_TO_REFINERY )
+  {
+    //Console_Output ( "dp88_Ore_Miner: Arrived at refinery... start docking\n" );
+    m_aiState = MINER_AISTATE_DOCK_AT_REFINERY;
+    DockAtRefinery(obj);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Miner::DriveToOreField ( GameObject *obj )
+{
+  m_aiState = MINER_AISTATE_SEARCH_FOR_ORE;
+
+  // \todo Check number of units available in an ore field and find one with a sufficient quantity - 
+  //       ideally 1.5x our capacity to avoid it being depleted before we get there!
+  SList<GameObject> oreFields;
+  Find_All_Objects_With_Script_By_Distance ( "dp88_Ore_Field", oreFields, Commands->Get_Position(obj));
+
+  for ( SLNode<GameObject>* oreFieldNode = oreFields.Head(); oreFieldNode != NULL; oreFieldNode = oreFieldNode->Next() )
+  {
+    if ( GameObject* oreField = oreFieldNode->Data() )
+    {
+      dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(oreField,"dp88_Ore_Field"));
+      if ( !pOreFieldScript || (!pOreFieldScript->IsInfinite() && pOreFieldScript->NumOreUnits() < 15) )    // 15 is a magic number currently, should fix...
+        continue;
+
+      Vector3 position = Commands->Get_Position(oreField);
+      //Console_Output ( "dp88_Ore_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
+
+      /* Setup parameters and get going! */
+      m_aiState = MINER_AISTATE_DRIVE_TO_ORE;
+      ActionParamsStruct params;
+      params.Set_Basic( this, 100.0f, MINER_ACTIONID_DRIVE_TO_ORE );
+      params.Set_Movement ( position, 1.0f, 1.0f );
+      params.MovePathfind = true;
+      params.ShutdownEngineOnArrival = true;
+      params.AttackActive = false;
+      Commands->Action_Goto( obj, params );
+
+      return;
+    }
+  }
+
+  // No ore fields are available at the moment... send ourselves a message to have another look in 5 seconds...
+  Commands->Send_Custom_Event( obj, obj, CUSTOM_MINER_AI_SEARCH_FOR_ORE, 1, (float)5.0f );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Miner::EnteredOreField ( GameObject *obj, GameObject* oreField )
+{
+  // Ignore this if we are already full
+  if ( m_oreMined >= m_oreCapacity )
+    return;
+
+  // Check if this is a valid ore field
+  dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(oreField,"dp88_Ore_Field"));
+  if ( !pOreFieldScript )
+    return;
+
+  // Set AI state, notify driver or abort if neither AI controlled nor player driven...
+  if ( m_bUseAI )
+  {
+    m_aiState = MINER_AISTATE_COLLECTING_ORE;
+    Commands->Action_Reset ( obj, 101.0f );
+  }
+  else if ( Get_Vehicle_Driver(obj) != NULL )
+    Send_Message_Player ( Get_Vehicle_Driver(obj), DP88_RGB_GENERAL_MSG, "Collecting ore..." );
+  else
+    return;
+
+  // Save the ore field ID and generate a random integer to identify this trip into the ore field
+  // to prevent glitching the timers by entering and exiting constantly
+  m_oreFieldId    = Commands->Get_ID(oreField);
+  m_oreFieldRand  = Commands->Get_Random_Int(2,10240);
+
+  // Send delayed message to increase ore load
+  Commands->Send_Custom_Event ( obj, obj, CUSTOM_MINER_INCREASE_ORE_LOAD, m_oreFieldRand, m_oreMiningTime );
+
+  UpdateAnimation(obj, MINER_ANIM_MINING);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Miner::ExitedOreField ( GameObject *obj, GameObject* oreField )
+{
+  // Reset ore field parameters
+  m_oreFieldId    = 0;
+  m_oreFieldRand  = 0;
+
   // Stop the mining animation
-  animating = false;
-  obj->As_PhysicalGameObj()->Clear_Animation();
-  if (strlen(Get_Parameter("idleAnimation")) > 0)
-    Commands->Set_Animation(obj,Get_Parameter("idleAnimation"),true,0,0,-1,false);
+  UpdateAnimation(obj, MINER_ANIM_IDLE);
 
   // If this is an AI miner and our state is still collecting ore then we were probably shoved out
   // of the ore field by some bully in a vehicle so drive back in to finish mining
-  if ( useAI && aiState == MINER_AISTATE_COLLECTING_ORE )
+  if ( m_bUseAI && m_aiState == MINER_AISTATE_COLLECTING_ORE )
     DriveToOreField(obj);
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::ReturnToRefinery ( GameObject *obj )
+void dp88_Ore_Miner::ReturnToRefinery ( GameObject *obj )
 {
-	/* Find and drive to the refinery */
-	GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
-	if ( refinery != NULL )
-	{
-		GameObject* zone = Find_Closest_Object_With_Script("dp88_AR_Ore_Deposit_Zone", Commands->Get_Position(refinery));
-		if ( zone != NULL )
-		{
-			Vector3 position = Commands->Get_Position(zone);
-			//Console_Output ( "dp88_AR_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
+  /* Find and drive to the refinery */
+  m_aiState = MINER_AISTATE_RETURN_TO_REFINERY;
+  GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
+  if ( refinery != NULL )
+  {
+    GameObject* zone = Find_Closest_Object_With_Script("dp88_Ore_Dump_Zone", Commands->Get_Position(refinery));
+    if ( zone != NULL )
+    {
+      Vector3 position = Commands->Get_Position(zone);
+      //Console_Output ( "dp88_Ore_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
 
-			/* Setup parameters and get going! */
-			ActionParamsStruct params;
-			params.Set_Basic( this, 100.0f, MINER_ACTIONID_RETURN_TO_REFINERY );
-			params.Set_Movement ( position, 1.0f, 25.0f );
-			params.MovePathfind = true;
-			params.ShutdownEngineOnArrival = true;
-			params.AttackActive = false;
-			Commands->Action_Goto( obj, params );
-		}
-	}
+      /* Setup parameters and get going! */
+      ActionParamsStruct params;
+      params.Set_Basic( this, 100.0f, MINER_ACTIONID_RETURN_TO_REFINERY );
+      params.Set_Movement ( position, 1.0f, 25.0f );
+      params.MovePathfind = true;
+      params.ShutdownEngineOnArrival = true;
+      params.AttackActive = false;
+      Commands->Action_Goto( obj, params );
+    }
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::DockAtRefinery ( GameObject *obj )
+void dp88_Ore_Miner::DockAtRefinery ( GameObject *obj )
 {
-	// Reset current action
-	Commands->Action_Reset(obj, 101.0f);
+  // Reset current action
+  Commands->Action_Reset(obj, 101.0f);
 
-	/* Find and drive to the refinery unloading area */
-	GameObject* zone = Find_Closest_Object_With_Script("dp88_AR_Ore_Deposit_Zone", Commands->Get_Position(obj));
-	if ( zone != NULL )
-	{
-		Vector3 position = Commands->Get_Position(zone);
-		//Console_Output ( "dp88_AR_Miner: Docking at location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
+  /* Find and drive to the refinery unloading area */
+  GameObject* zone = Find_Closest_Object_With_Script("dp88_Ore_Dump_Zone", Commands->Get_Position(obj));
+  if ( zone != NULL )
+  {
+    Vector3 position = Commands->Get_Position(zone);
+    //Console_Output ( "dp88_Ore_Miner: Docking at location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
 
-		/* Setup parameters and get going! */
-		ActionParamsStruct params;
-		params.Set_Basic( this, 100.0f, 3 );
-		params.Set_Movement ( position, 1.0f, 1.0f );
-		params.MoveBackup = true;
-		params.ShutdownEngineOnArrival = true;
-		params.MovePathfind = true;
-		Commands->Action_Goto(obj, params);
-	}
+    /* Setup parameters and get going! */
+    ActionParamsStruct params;
+    params.Set_Basic( this, 100.0f, 3 );
+    params.Set_Movement ( position, 1.0f, 1.0f );
+    params.MoveBackup = true;
+    params.ShutdownEngineOnArrival = true;
+    params.MovePathfind = true;
+    Commands->Action_Goto(obj, params);
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::DockedAtRefinery ( GameObject *obj )
+void dp88_Ore_Miner::DockedAtRefinery ( GameObject *obj )
 {
-	// Start dock animation and sound
-	if (strlen(Get_Parameter("dockAnimation")) > 0)
-		Commands->Set_Animation(obj,Get_Parameter("dockAnimation"),false,0,0,-1,false);
-	if (strlen(Get_Parameter("dockSound")) > 0)
-		Commands->Create_Sound(Get_Parameter("dockSound"),Commands->Get_Position(obj),obj);
+  UpdateAnimation(obj, MINER_ANIM_DUMPING);
 
-	// If we are using AI then reset the action now that we have arrived
-	if (useAI)
-		Commands->Action_Reset ( obj, 101.0f );
+  // If we are using AI then reset the action now that we have arrived
+  if (m_bUseAI)
+    Commands->Action_Reset ( obj, 101.0f );
 
-	// Immobilize the vehicle and disable engine sounds
-	if ( obj->As_VehicleGameObj() )
-	{
-		obj->As_VehicleGameObj()->Set_Immovable(true);
-		Commands->Enable_Engine ( obj, false );
-	}
+  // Immobilize the vehicle and disable engine sounds
+  if ( obj->As_VehicleGameObj() )
+  {
+    obj->As_VehicleGameObj()->Set_Immovable(true);
+    Commands->Enable_Engine ( obj, false );
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Miner::UndockedFromRefinery ( GameObject *obj )
+void dp88_Ore_Miner::UndockedFromRefinery ( GameObject *obj )
 {
-	// Un-immobilize the vehicle and enable engine sounds
-	if ( obj->As_VehicleGameObj() )
-	{
-		obj->As_VehicleGameObj()->Set_Immovable(false);
-		Commands->Enable_Engine ( obj, true );
-	}
+  // Un-immobilize the vehicle and enable engine sounds
+  if ( obj->As_VehicleGameObj() )
+  {
+    obj->As_VehicleGameObj()->Set_Immovable(false);
+    Commands->Enable_Engine ( obj, true );
+  }
 
-	// If using the AI then set the AI state and start driving to the ore field
-	if ( useAI )
-	{
-		aiState = MINER_AISTATE_DRIVE_TO_ORE;
-		DriveToOreField(obj);
-	}
-	obj->As_PhysicalGameObj()->Clear_Animation();
-	if (strlen(Get_Parameter("idleAnimation")) > 0)
-		Commands->Set_Animation(obj,Get_Parameter("idleAnimation"),true,0,0,-1,false);
+  // If using the AI then set the AI state and start driving to the ore field
+  if ( m_bUseAI )
+  {
+    DriveToOreField(obj);
+  }
+
+  UpdateAnimation(obj, MINER_ANIM_IDLE);
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Miner::UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId )
+{
+  if ( animId == m_currentAnimId )
+    return;
+
+  pObj->As_PhysicalGameObj()->Clear_Animation();
+
+  if ( animId < sizeof(m_animations) && m_animations[animId] != NULL )
+  {
+    bool bLooping = (animId == MINER_ANIM_DUMPING) ? true : false;
+    Commands->Set_Animation(pObj,m_animations[animId],bLooping,0,0,-1,false);
+  }
+
+  if ( animId < sizeof(m_animSounds) && m_animSounds[animId] != NULL && animId != MINER_ANIM_DUMPING )
+    Commands->Create_Sound(m_animSounds[animId],Commands->Get_Position(pObj),pObj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_Ore_Miner> dp88_Ore_Miner_Registrant(
+  "dp88_Ore_Miner",
+  "Use_AI=1:int,"
+  "Ore_Capacity=10:int,"
+  "Ore_Mining_Time=2.0:float,"
+  "Ore_Dump_Time=8.0:float,"
+  "AI_Init_Delay=10:int,"
+  "Dump_Animation:string,"
+  "Dump_Sound:string,"
+  "Mining_Animation:String,"
+  "Mining_Sound:string,"
+  "Idle_Animation:string"
+);
+
+
+
 
 
 
@@ -1299,279 +1252,294 @@ Chrono Miner Scripts (AI and non-AI)
 
 void dp88_AR_Chrono_Miner::Created( GameObject *obj )
 {
-	dp88_AR_Miner::Created(obj);
-	objectId = Commands->Get_ID(obj);
-	driverId = NULL;
+  dp88_Ore_Miner::Created(obj);
+  objectId = Commands->Get_ID(obj);
+  driverId = NULL;
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Chrono_Miner::Damaged( GameObject *obj, GameObject *damager, float amount )
 {
-	// If AI miner health drops below the emergency chronoshift health threshold and we are driving to
-	// the ore field or collecting ore then begin an emergency chronoshift
-	if ( useAI && Commands->Get_Health(obj) < (Commands->Get_Max_Health(obj)*(Get_Float_Parameter("emergencyChronoshiftHealthThreshold")/100.0f))
-		&& (aiState == MINER_AISTATE_COLLECTING_ORE && oreLoadLevel > 0) )
-	{
-		// Attempt to start a chronoshift - if it fails don't bother
-		// with anything else, driving away won't help...
-		Start_Chronoshift(obj);
-	}
+  // If AI miner health drops below the emergency chronoshift health threshold and we are driving to
+  // the ore field or collecting ore then begin an emergency chronoshift
+  if ( m_bUseAI && Commands->Get_Health(obj) < (Commands->Get_Max_Health(obj)*(Get_Float_Parameter("emergencyChronoshiftHealthThreshold")/100.0f))
+    && (m_aiState == MINER_AISTATE_COLLECTING_ORE && m_oreMined > 0) )
+  {
+    // Attempt to start a chronoshift - if it fails don't bother with anything else, driving away
+    // won't help...
+    Start_Chronoshift(obj);
+  }
 }
 
-	
+// -------------------------------------------------------------------------------------------------
+
 void dp88_AR_Chrono_Miner::Custom( GameObject *obj, int type, int param, GameObject *sender )
 {
-	// Look for vehicle entry
-	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && driverId == NULL )
-	{
-		driverId = Commands->Get_ID(sender);
-		InstallHook( Get_Parameter("chronoshiftKeyhook"), sender );
-	}
+  // Look for vehicle entry
+  if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && driverId == NULL )
+  {
+    driverId = Commands->Get_ID(sender);
+    InstallHook( Get_Parameter("chronoshiftKeyhook"), sender );
+  }
 
 
-	// Look for vehicle exit
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && Commands->Get_ID(sender) == driverId )
-	{
-		driverId = NULL;
-		RemoveHook();
-	}
-	
-	
-	// AI miner failed to chronoshift back to the refinery, if we are still more than 150m
-	// from the target then try again
-	else if ( type == CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT && aiState == MINER_AISTATE_RETURN_TO_REFINERY )
-	{
-		GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
-		if ( refinery != NULL && Commands->Get_Distance(Commands->Get_Position(refinery),Commands->Get_Position(obj)) > 150.0f )
-		{
-			// Try to chronoshift and, on failure, set timer to try again in 5 seconds
-			if ( !Start_Chronoshift(obj) )
-				Commands->Send_Custom_Event(obj,obj,CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT,0,5.0f);
-		}
-	}
-	
-	
-	// Time to perform a chronoshift!
-	else if ( type == CUSTOM_CHRONO_MINER_DO_CHRONOSHIFT )
-	{
-		Do_Chronoshift(obj,param);
-	}
+  // Look for vehicle exit
+  else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && Commands->Get_ID(sender) == driverId )
+  {
+    driverId = NULL;
+    RemoveHook();
+  }
+  
+  
+  // AI miner failed to chronoshift back to the refinery, if we are still more than 150m
+  // from the target then try again
+  else if ( type == CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT && m_aiState == MINER_AISTATE_RETURN_TO_REFINERY )
+  {
+    GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
+    if ( refinery != NULL && Commands->Get_Distance(Commands->Get_Position(refinery),Commands->Get_Position(obj)) > 150.0f )
+    {
+      // Try to chronoshift and, on failure, set timer to try again in 5 seconds
+      if ( !Start_Chronoshift(obj) )
+        Commands->Send_Custom_Event(obj,obj,CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT,0,5.0f);
+    }
+  }
+  
+  
+  // Time to perform a chronoshift!
+  else if ( type == CUSTOM_CHRONO_MINER_DO_CHRONOSHIFT )
+  {
+    Do_Chronoshift(obj,param);
+  }
 
 
-	// Otherwise pass the message on to the base class
-	else
-		dp88_AR_Miner::Custom ( obj, type, param, sender );
+  // Otherwise pass the message on to the base class
+  else
+    dp88_Ore_Miner::Custom ( obj, type, param, sender );
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Chrono_Miner::KeyHook()
 {
-	// Find object
-	GameObject* obj = Commands->Find_Object ( objectId );
-	if ( !obj )
-		return;
+  // Find object
+  GameObject* obj = Commands->Find_Object ( objectId );
+  if ( !obj )
+    return;
 
-	if ( aiState != CMINER_AISTATE_CHRONOSHIFTING )
-	{
-		if ( !Start_Chronoshift(obj) )
-			Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, "Unable to chronoshift, all target zones are unavailable..." );
-	}
+  if ( m_aiState != CMINER_AISTATE_CHRONOSHIFTING )
+  {
+    if ( !Start_Chronoshift(obj) )
+      Send_Message_Player ( Get_Vehicle_Driver(obj), 153, 204, 25, "Unable to chronoshift, all target zones are unavailable..." );
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Chrono_Miner::ReturnToRefinery ( GameObject *obj )
 {
-	// Attempt to chronoshift to the refinery
-	if ( !Start_Chronoshift(obj) )
-	{
-		// Can't chronoshift... drive there instead!
-		dp88_AR_Miner::ReturnToRefinery(obj);
-		Send_Message_Team ( Get_Object_Type(obj), 153, 204, 25, "The AI Chronominer was unable to chronoshift, please clear the area around the refinery" );
+  // Attempt to chronoshift to the refinery
+  if ( !Start_Chronoshift(obj) )
+  {
+    // Can't chronoshift... drive there instead!
+    dp88_Ore_Miner::ReturnToRefinery(obj);
+    Send_Message_Team ( Get_Object_Type(obj), 153, 204, 25, "The AI Chronominer was unable to chronoshift, please clear the area around the refinery" );
 
-		// Send a delayed custom to retry the chronoshift in 5 seconds
-		Commands->Send_Custom_Event(obj,obj,CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT,0,5.0f);
-	}
+    // Send a delayed custom to retry the chronoshift in 5 seconds
+    Commands->Send_Custom_Event(obj,obj,CUSTOM_CHRONO_MINER_RETRY_CHRONOSHIFT,0,5.0f);
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 bool dp88_AR_Chrono_Miner::Start_Chronoshift( GameObject *obj )
 {
-	// If we are currently chronoshifting then bail out
-	if ( aiState == CMINER_AISTATE_CHRONOSHIFTING )
-		return false;
+  // If we are currently chronoshifting then bail out
+  if ( m_aiState == CMINER_AISTATE_CHRONOSHIFTING )
+    return false;
 
-	/* Find a zone to chronoshift in to */
-	GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
-	if ( refinery != NULL )
-	{
-		// Check the refinery is not dead - if it is then the target script zones will
-		// all be gone, so we have nowhere to go...
-		if ( Commands->Get_Health(refinery) == 0 )
-			return false;
+  /* Find a zone to chronoshift in to */
+  GameObject *refinery = Find_Refinery(Commands->Get_Player_Type(obj));
+  if ( refinery != NULL )
+  {
+    // Check the refinery is not dead - if it is then the target script zones will
+    // all be gone, so we have nowhere to go...
+    if ( Commands->Get_Health(refinery) == 0 )
+      return false;
 
-		SList<GameObject> chronoZones;
-		Find_All_Objects_With_Script ( "dp88_AR_Chrono_Miner_Chronozone", chronoZones );
+    // Define the maximum distance we will shift from the refinery - this prevents us
+    // from going to the enemy refinery
+    const float maxDist = 50.0f;
+    Vector3 refineryPos = Commands->Get_Position(refinery);
 
-		GameObject* zone = NULL;
-		dp88_AR_Chrono_Miner_Chronozone *chronozone_script = NULL;
+    SList<GameObject> chronoZones;
+    Find_All_Objects_With_Script_By_Distance ( "dp88_AR_Chrono_Miner_Chronozone", chronoZones, refineryPos );
 
-		// Define the maximum distance we will shift from the refinery - this prevents us
-		// from going to the enemy refinery
-		const float maxDist = 50.0f;
+    for ( SLNode<GameObject>* x = chronoZones.Head(); x != NULL; x = x->Next() )
+    {
+      GameObject* zone = x->Data();
+      dp88_AR_Chrono_Miner_Chronozone *chronozone_script = NULL;
 
-		// Search for the closest zone which we can chronoshift to
-		Vector3 pos = Commands->Get_Position(refinery);
-		while ( zone == NULL && !chronoZones.Is_Empty() )
-		{
-			float closestdist = 0.0f;
+      if ( !zone )
+        continue;
 
-			// Find the closest zone
-			SLNode<GameObject> *x = chronoZones.Head();
-			while (x)
-			{
-				GameObject *o = x->Data();
-				x = x->Next();
+      // OK, got a candidate zone, can we chronoshift here?
+      Vector3 zonePos = Commands->Get_Position(zone);
+      if ( Commands->Get_Distance(zonePos,refineryPos) > maxDist || !CanChronoshiftToLocation(obj, zonePos) )
+        continue;
 
-				float dist = Commands->Get_Distance(Commands->Get_Position(o),pos);
-				if ( dist > maxDist )
-					chronoZones.Remove(o);
-
-				else if (zone == NULL || dist < closestdist)
-				{
-					closestdist = dist;
-					zone = o;
-				}
-			}
-
-			if (!zone)
-				break;
-
-			// OK, got the closest... can we chronoshift there?
-
-			// Get physical game object and moveable phys class references (used to check if we can move to the zone)
-			MoveablePhysClass* mphys = ( obj->As_PhysicalGameObj() ) ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
-
-			// Can we move to this position without getting stuck?
-			if ( !mphys->Can_Teleport( Matrix3D( Commands->Get_Position(zone)) ) )
-			{
-				// Nope, we can't... eliminate this zone from the list of possibilities and
-				// loop around for another try
-				chronoZones.Remove(zone);
-				zone = NULL;
-			}
-
-			// Is this zone in use for another chronoshift operation? If so then we cannot use it
-			chronozone_script = (dp88_AR_Chrono_Miner_Chronozone*)Find_Script_On_Object(zone, "dp88_AR_Chrono_Miner_Chronozone");
-			if ( !chronozone_script || (chronozone_script->chronominer_id != NULL
-										&& Commands->Find_Object(chronozone_script->chronominer_id)
-										&& Commands->Get_Health(Commands->Find_Object(chronozone_script->chronominer_id)) > 0) )
-			{
-				// Yes, it's in use... eliminate this zone from the list of possibilities and
-				// loop around for another try
-				chronoZones.Remove(zone);
-				chronozone_script = NULL;
-				zone = NULL;
-			}
-		}
+      // Is this zone in use for another chronoshift operation? If so then we cannot use it
+      chronozone_script = (dp88_AR_Chrono_Miner_Chronozone*)Find_Script_On_Object(zone, "dp88_AR_Chrono_Miner_Chronozone");
+      if ( !chronozone_script || (chronozone_script->chronominer_id != NULL
+                    && Commands->Find_Object(chronozone_script->chronominer_id)
+                    && Commands->Get_Health(Commands->Find_Object(chronozone_script->chronominer_id)) > 0) )
+      {
+        continue;
+      }
 
 
-		// If we failed to find a suitable target zone bail out
-		if ( !zone )
-			return false;
+      // OK, got ourselves a target zone, lock the zone to our ID and set up for chronoshift...
+      chronozone_script->chronominer_id = Commands->Get_ID(obj);
 
-		// Set the chronominer_id of the script zone to our own ID to prevent other
-		// miners trying to use it
-		chronozone_script->chronominer_id = Commands->Get_ID(obj);
+      // NB: We use the AI state flag to determine if we are currently in the middle of
+      // a chronoshift for player driven miners too
+      m_aiState = CMINER_AISTATE_CHRONOSHIFTING;
+    
+      // Immobilise the vehicle
+      if ( obj->As_VehicleGameObj() )
+        obj->As_VehicleGameObj()->Set_Immovable(true);
 
-		// NB: We use the AI state flag to determine if we are currently in the middle of
-		// a chronoshift for player driven miners too
-		aiState = CMINER_AISTATE_CHRONOSHIFTING;
-		
-		// Immobilise the vehicle
-		if ( obj->As_VehicleGameObj() )
-			obj->As_VehicleGameObj()->Set_Immovable(true);
-
-		// Send a delayed custom to perform the chronoshift
-		Commands->Send_Custom_Event ( obj, obj, CUSTOM_CHRONO_MINER_DO_CHRONOSHIFT, Commands->Get_ID(zone), Get_Float_Parameter("chronoshift_time") );
+      // Send a delayed custom to perform the chronoshift
+      Commands->Send_Custom_Event ( obj, obj, CUSTOM_CHRONO_MINER_DO_CHRONOSHIFT, Commands->Get_ID(zone), Get_Float_Parameter("chronoshift_time") );
 
 
-		/* If we have an out effect preset to spawn then spawn it at the origin */
-		if ( Is_Valid_Preset(Get_Parameter("chronoshift_out_effect_preset")) )
-		{
-			// Create effect object
-			GameObject* effectObject = Commands->Create_Object ( Get_Parameter("chronoshift_out_effect_preset"), Commands->Get_Position(obj) );
+      /* If we have an out effect preset to spawn then spawn it at the origin */
+      if ( Is_Valid_Preset(Get_Parameter("chronoshift_out_effect_preset")) )
+      {
+        // Create effect object
+        GameObject* effectObject = Commands->Create_Object ( Get_Parameter("chronoshift_out_effect_preset"), Commands->Get_Position(obj) );
 
-			// Attach script to clean up effect
-			StringClass params(true);
-			params.Format ( "%.2f,%d", Get_Float_Parameter("chronoshift_out_effect_time"), 983142 );
-			Commands->Attach_Script ( effectObject, "JFW_Destroy_Self_Timer", params.Peek_Buffer() );
-		}
+        // Attach script to clean up effect
+        StringClass params(true);
+        params.Format ( "%.2f,%d", Get_Float_Parameter("chronoshift_out_effect_time"), 983142 );
+        Commands->Attach_Script ( effectObject, "JFW_Destroy_Self_Timer", params.Peek_Buffer() );
+      }
 
 
-		/* If we have an in effect preset to spawn then spawn it at the destination */
-		if ( Is_Valid_Preset(Get_Parameter("chronoshift_in_effect_preset")) )
-		{
-			// Create effect object
-			GameObject* effectObject = Commands->Create_Object ( Get_Parameter("chronoshift_in_effect_preset"), Commands->Get_Position ( zone ) );
-			
-			// Attach script to clean up effect
-			StringClass params(true);
-			params.Format ( "%.2f,%d", Get_Float_Parameter("chronoshift_in_effect_time"), 983142 );
-			Commands->Attach_Script ( effectObject, "JFW_Destroy_Self_Timer", params.Peek_Buffer() );
-		}
+      /* If we have an in effect preset to spawn then spawn it at the destination */
+      if ( Is_Valid_Preset(Get_Parameter("chronoshift_in_effect_preset")) )
+      {
+        // Create effect object
+        GameObject* effectObject = Commands->Create_Object ( Get_Parameter("chronoshift_in_effect_preset"), Commands->Get_Position ( zone ) );
+      
+        // Attach script to clean up effect
+        StringClass params(true);
+        params.Format ( "%.2f,%d", Get_Float_Parameter("chronoshift_in_effect_time"), 983142 );
+        Commands->Attach_Script ( effectObject, "JFW_Destroy_Self_Timer", params.Peek_Buffer() );
+      }
 
-		return true;
-	}
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Chrono_Miner::Do_Chronoshift( GameObject *obj, int target_zone_id )
 {
-	// Unimmobilise the vehicle
-	if ( obj->As_VehicleGameObj() )
-		obj->As_VehicleGameObj()->Set_Immovable(false);
+  // Unimmobilise the vehicle
+  if ( obj->As_VehicleGameObj() )
+    obj->As_VehicleGameObj()->Set_Immovable(false);
 
-	/* Get the target chronoshift zone */
-	GameObject *zone = Commands->Find_Object(target_zone_id);
-	if ( zone != NULL )
-	{
-		// Get a reference to the chronozone script and check if the chronominer_id
-		// matches ours. If so zero it and continue, otherwise bail out...
-		dp88_AR_Chrono_Miner_Chronozone *chronozone_script = (dp88_AR_Chrono_Miner_Chronozone*)Find_Script_On_Object(zone, "dp88_AR_Chrono_Miner_Chronozone");
-		if ( !chronozone_script || chronozone_script->chronominer_id != Commands->Get_ID(obj) )
-			return;
-		
-		chronozone_script->chronominer_id = 0;
-		
-		// NB: We use the AI state flag to determine if we are currently in the middle
-		// of a chronoshift for player driven miners too
-		aiState = MINER_AISTATE_IDLE;
+  /* Get the target chronoshift zone */
+  GameObject *zone = Commands->Find_Object(target_zone_id);
+  if ( zone != NULL )
+  {
+    // NB: We use the AI state flag to determine if we are currently in the middle
+    // of a chronoshift for player driven miners too
+    m_aiState = MINER_AISTATE_IDLE;
 
-		// Chronoshift to position of zone (resetting rotation in the process)
-		Set_Transform(obj, Matrix3D(Commands->Get_Position(zone)) );
-	}
+    // Get a reference to the chronozone script and check if the chronominer_id
+    // matches ours. If so zero it and continue, otherwise bail out...
+    dp88_AR_Chrono_Miner_Chronozone *chronozone_script = (dp88_AR_Chrono_Miner_Chronozone*)Find_Script_On_Object(zone, "dp88_AR_Chrono_Miner_Chronozone");
+    if ( !chronozone_script || chronozone_script->chronominer_id != Commands->Get_ID(obj) )
+    {
+      // Have another go at a chronoshift...
+      ReturnToRefinery(obj);
+      return;
+    }
+
+    chronozone_script->chronominer_id = 0;
+
+    // Chronoshift to position of zone (resetting rotation in the process)
+    Vector3 zonePos = Commands->Get_Position(zone);
+    if ( CanChronoshiftToLocation(obj, zonePos) )
+      Set_Transform(obj, Matrix3D(zonePos) );
+    else
+    {
+      // Oh noes! Some dipstick has driven into the chronoshift zone... try again
+      ReturnToRefinery(obj);
+      return;
+    }
+  }
 
 
-	/* If using AI start driving to refinery now */
-	if ( useAI )
-	{
-		if ( oreLoadLevel > 0 )
-		{
-			aiState = MINER_AISTATE_RETURN_TO_REFINERY;
-			dp88_AR_Miner::ReturnToRefinery(obj);
-		}
+  /* If using AI start driving to refinery now */
+  if ( m_bUseAI )
+  {
+    if ( m_oreMined > 0 )
+    {
+      dp88_Ore_Miner::ReturnToRefinery(obj);
+    }
 
-		// No ore collected... guess we must have chronoshifted away from an attack
-		// so lets set off towards the ore field again... what a waste of time!
-		else
-		{
-			aiState = MINER_AISTATE_DRIVE_TO_ORE;
-			dp88_AR_Miner::DriveToOreField(obj);
-		}
-	}
+    // No ore collected... guess we must have chronoshifted away from an attack
+    // so lets set off towards the ore field again... what a waste of time!
+    else
+    {
+      DriveToOreField(obj);
+    }
+  }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+bool dp88_AR_Chrono_Miner::CanChronoshiftToLocation ( GameObject* obj, Vector3& location )
+{
+  // Get physical game object and moveable phys class references
+  MoveablePhysClass* mphys = ( obj->As_PhysicalGameObj() ) ? obj->As_PhysicalGameObj()->Peek_Physical_Object()->As_MoveablePhysClass() : NULL;
+
+  // Can we move to this position without getting stuck?
+  return mphys->Can_Teleport( Matrix3D(location) );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_Chrono_Miner> dp88_AR_Chrono_Miner_Registrant(
+  "dp88_AR_Chrono_Miner",
+  "Use_AI=1:int,"
+  "chronoshift_time=2.5:float,"
+  "chronoshift_out_effect_preset:string,"
+  "chronoshift_out_effect_time:float,"
+  "chronoshift_in_effect_preset:string,"
+  "chronoshift_in_effect_time:float,"
+  "chronoshiftKeyhook=VDeploy:string,"
+  "Ore_Capacity=5:int,"
+  "Ore_Mining_Time=1.00:float,"
+  "Ore_Dump_Time=4.0:float,"
+  "emergencyChronoshiftHealthThreshold=30.0:float,"
+  "AI_Init_Delay=10:int,"
+  "Dump_Animation:string,"
+  "Dump_Sound:string,"
+  "Mining_Animation:String,"
+  "Mining_Sound:string,"
+  "Idle_Animation:string"
+);
+
+
+
+
 
 
 
@@ -1582,35 +1550,267 @@ Chronoshift Zone Controller
 
 void dp88_AR_Chrono_Miner_Chronozone::Created ( GameObject *obj )
 {
-	// If the game controller does not exist then bail out
-	GameObject *gameController = Find_Object_With_Script("dp88_ar_gameController");
-	if ( !gameController )
-	{
-		Console_Output ( "dp88_AR_Chrono_Miner_Chronozone - Unable to find Game Controller, unable to continue. Destroying script...\n" );
-		Destroy_Script();
-		return;
-	}
+  // If the game controller does not exist then bail out
+  GameObject *gameController = Find_Object_With_Script("dp88_ar_gameController");
+  if ( !gameController )
+  {
+    Console_Output ( "dp88_AR_Chrono_Miner_Chronozone - Unable to find Game Controller, unable to continue. Destroying script...\n" );
+    Destroy_Script();
+    return;
+  }
 
-	chronominer_id = NULL;
+  chronominer_id = NULL;
 }
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_Chrono_Miner_Chronozone> dp88_AR_Chrono_Miner_Chronozone_Registrant(
+  "dp88_AR_Chrono_Miner_Chronozone",
+  ""
+);
+
+
+
 
 
 
 
 
 /*------------------------
-Ore Field Zone Controller
+Ore Field
 --------------------------*/
 
-void dp88_AR_Ore_Field_Zone::Entered( GameObject *obj, GameObject *enterer )
+void dp88_Ore_Field::Created ( GameObject* pObj )
 {
-	Commands->Send_Custom_Event( obj, enterer, CUSTOM_MINER_ENTERED_ORE_FIELD, Get_Int_Parameter("oreValue"), 0 );
+  m_myObjId = Commands->Get_ID(pObj);
+
+
+  m_oreValue = Get_Int_Parameter("Ore_Value");
+  m_oreCapacity = Get_Int_Parameter("Ore_Capacity");
+  m_nOreUnits = Get_Int_Parameter("Ore_Units");
+
+  if ( m_nOreUnits > m_oreCapacity )
+    m_nOreUnits =  m_oreCapacity;
+
+
+  m_strAnimation = Get_Parameter("Animation_Name");
+  if ( strlen(m_strAnimation) <= 0 )
+    m_strAnimation = NULL;
+  else
+  {
+    m_nAnimationFullFrame = Get_Int_Parameter("Animation_Full_Frame");
+    m_nAnimationEmptyFrame = Get_Int_Parameter("Animation_Empty_Frame");
+    UpdateAnimationFrame();
+  }
+
+
+  m_zoneSizeFull = Get_Vector3_Parameter("Zone_Size");
+  if ( m_strAnimation )
+  {
+    m_zoneStepX = Get_Float_Parameter("Zone_Anim_Step_X");
+    m_zoneStepY = Get_Float_Parameter("Zone_Anim_Step_Y");
+  }
+
+
+  // Create the miner script zone
+  Matrix3 rotation(true);
+  rotation.Rotate_Z(Commands->Get_Facing(pObj));
+
+  // Define the bounding box and create the zone
+  OBBoxClass zoneBoundingBox ( Commands->Get_Position(pObj), m_zoneSizeFull, rotation );
+  if ( GameObject* pMinerZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
+  {
+    m_minerZoneId = Commands->Get_ID(pMinerZone);
+
+    // Attach observer to the script zone
+    m_pZoneObserver = new dp88_Ore_Field_Observer(this);
+    pMinerZone->Add_Observer(m_pZoneObserver);
+
+    return;
+  }
+
+
+  m_pZoneObserver = NULL;
+  Console_Output ( "[%d:%s:%s] Critical Error: Unable to create the miner script zone. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+  Destroy_Script();
 }
 
-void dp88_AR_Ore_Field_Zone::Exited ( GameObject *obj, GameObject *exiter )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::Detach ( GameObject* pObj )
 {
-	Commands->Send_Custom_Event( obj, exiter, CUSTOM_MINER_EXITED_ORE_FIELD, 0, 0 );
+  ScriptImpClass::Detach(pObj);
+
+  if ( m_pZoneObserver != NULL )
+  {
+    if ( GameObject* pMinerZone = Commands->Find_Object(m_minerZoneId) )
+      pMinerZone->Remove_Observer(m_pZoneObserver);
+    delete m_pZoneObserver;
+    m_pZoneObserver = NULL;
+  }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::Entered ( GameObject* pZoneObj, GameObject* pEnterer )
+{
+  if ( pZoneObj == Commands->Find_Object(m_minerZoneId) )
+  {
+    GameObject* pObj = Commands->Find_Object(m_myObjId);
+
+    Commands->Send_Custom_Event( pObj, pEnterer, CUSTOM_MINER_ENTERED_ORE_FIELD, 0, 0 );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::Exited ( GameObject* pZoneObj, GameObject* pExiter )
+{
+  if ( pZoneObj == Commands->Find_Object(m_minerZoneId) )
+  {
+    GameObject* pObj = Commands->Find_Object(m_myObjId);
+
+    Commands->Send_Custom_Event( pObj, pExiter, CUSTOM_MINER_EXITED_ORE_FIELD, 0, 0 );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::AddOre ( unsigned int nUnits )
+{
+  if ( m_oreCapacity != 0 )
+  {
+    m_nOreUnits += min(nUnits,m_oreCapacity-m_nOreUnits);
+    UpdateAnimationFrame();
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+unsigned int dp88_Ore_Field::RemoveOre ( unsigned int nUnits )
+{
+  if ( m_oreCapacity != 0 )
+  {
+    nUnits = min(nUnits,m_nOreUnits);
+    m_nOreUnits -= nUnits;
+    UpdateAnimationFrame();
+  }
+  return nUnits;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::UpdateAnimationFrame()
+{
+  if ( GameObject* pObj = Commands->Find_Object(m_myObjId) )
+    UpdateAnimationFrame(pObj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Field::UpdateAnimationFrame( GameObject* pObj )
+{
+  if ( m_oreCapacity != 0 && m_strAnimation != NULL )
+  {
+    int frame = m_nAnimationFullFrame - (int)ceil((m_nAnimationFullFrame-m_nAnimationEmptyFrame)*((float)m_nOreUnits/m_oreCapacity));
+    Commands->Set_Animation_Frame(pObj, m_strAnimation, frame);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_Ore_Field> dp88_Ore_Field_Registrant(
+  "dp88_Ore_Field",
+  "Ore_Value:int,"
+  "Ore_Capacity:int,"
+  "Ore_Units:int,"
+  "Animation_Name:string,"
+  "Animation_Full_Frame:int,"
+  "Animation_Empty_Frame:int,"
+  "Zone_Size:vector3,"
+  "Zone_Anim_Step_X:float,"
+  "Zone_Anim_Step_Y:float"
+);
+
+
+
+
+
+
+
+
+/*------------------------
+Ore Extractor
+--------------------------*/
+
+void dp88_Ore_Extractor::Created ( GameObject* pObj )
+{
+  if ( GameObject* pOreField = Find_Closest_Object_With_Script("dp88_Ore_Field", Commands->Get_Position(pObj)) )
+  {
+    m_oreFieldId = Commands->Get_ID(pOreField);
+
+    m_nOreUnits = Get_Int_Parameter("Ore_Units");
+    m_interval = Get_Int_Parameter("Extraction_Interval");
+    m_strAnimation = Get_Parameter("Extraction_Animation");
+    if ( strlen(m_strAnimation) <= 0 )
+      m_strAnimation = NULL;
+
+    Commands->Start_Timer(pObj, this, (float)m_interval, TIMER_OREMINING_EXTRACTOR );
+    return;
+  }
+
+
+  Console_Output ( "[%d:%s:%s] Critical Error: Unable to locate an ore field zone. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+  Destroy_Script();
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Extractor::Timer_Expired ( GameObject* pObj, int number )
+{
+  if ( number == TIMER_OREMINING_EXTRACTOR )
+  {
+    if ( m_strAnimation )
+      Commands->Set_Animation ( pObj, m_strAnimation, false, NULL, 0, -1, false );
+    else
+      Animation_Complete(pObj, NULL);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Ore_Extractor::Animation_Complete ( GameObject* pObj, const char* animationName )
+{
+  if ( (m_strAnimation == NULL && animationName == NULL) || _stricmp(m_strAnimation,animationName) == 0 )
+  {
+    // Populate ore field with additional ore
+    GameObject* pOreField = Commands->Find_Object(m_oreFieldId);
+    if ( !pOreField )
+      Destroy_Script();
+
+    dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(pOreField, "dp88_Ore_Field"));
+    if ( !pOreFieldScript )
+      Destroy_Script();
+
+    pOreFieldScript->AddOre(m_nOreUnits);
+
+    // Set timer for next extraction
+    Commands->Start_Timer(pObj, this, (float)m_interval, TIMER_OREMINING_EXTRACTOR );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_Ore_Extractor> dp88_Ore_Extractor_Registrant(
+  "dp88_Ore_Extractor",
+  "Ore_Units:int,"
+  "Extraction_Interval:int,"
+  "Extraction_Animation:string"
+);
+
+
+
+
 
 
 
@@ -1619,11 +1819,22 @@ void dp88_AR_Ore_Field_Zone::Exited ( GameObject *obj, GameObject *exiter )
 Ore Deposit Zone Controller
 --------------------------*/
 
-void dp88_AR_Ore_Deposit_Zone::Entered( GameObject *obj, GameObject *enterer )
+void dp88_Ore_Dump_Zone::Entered( GameObject *obj, GameObject *enterer )
 {
-	if ( Get_Object_Type(enterer) == Get_Int_Parameter( "teamID" ) )
-		Commands->Send_Custom_Event( obj, enterer, CUSTOM_MINER_ENTERED_DUMP_ZONE, Get_Int_Parameter( "teamID" ), 0 );
+  if ( Get_Object_Type(enterer) == Get_Int_Parameter( "Team" ) )
+    Commands->Send_Custom_Event( obj, enterer, CUSTOM_MINER_ENTERED_DUMP_ZONE, Get_Int_Parameter( "Team" ), 0 );
 }
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_Ore_Dump_Zone> dp88_Ore_Dump_Zone_Registrant(
+  "dp88_Ore_Dump_Zone",
+  "Team=0:int"
+);
+
+
+
+
 
 
 
@@ -1635,57 +1846,72 @@ Aircraft Landing Zone Scripts
 // Landing Zone
 void dp88_Aircraft_LandingZone::Entered( GameObject *obj, GameObject *enterer )
 {
-	Commands->Send_Custom_Event( obj, enterer, CUSTOM_ENTERED_VTOL_LAND_ZONE, 1, 0 );
+  Commands->Send_Custom_Event( obj, enterer, CUSTOM_TRANSITION_VTOL_LAND_ZONE, 1, 0 );
 }
 
 void dp88_Aircraft_LandingZone::Exited( GameObject *obj, GameObject *exiter )
 {
-	Commands->Send_Custom_Event( obj, exiter, CUSTOM_EXITED_VTOL_LAND_ZONE, 1, 0 );
+  Commands->Send_Custom_Event( obj, exiter, CUSTOM_TRANSITION_VTOL_LAND_ZONE, 0, 0 );
 }
 
 
 // Landing Zone - Aircraft
 void dp88_Aircraft_LandingZone_Aircraft::Created ( GameObject *obj )
 {
-	driverID = 0;
-	landingZoneCount = 0;
+  driverID = 0;
+  landingZoneCount = 0;
+}
+
+void dp88_Aircraft_LandingZone_Aircraft::Killed ( GameObject *obj, GameObject* killer )
+{
+  // We can't simply kill the pilot because things go horribly wrong... instead use the script
+  // JFW_Timer_Destroy_Object to kill them as soon as possible.
+  if ( driverID != 0 && landingZoneCount == 0 && Get_Int_Parameter("require_landing_zone") >= 1 )
+  {
+    if ( GameObject* driver = Commands->Find_Object(driverID) )
+      Commands->Attach_Script ( driver, "JFW_Timer_Destroy_Object", "1.0,547859,5000.0,Death" );
+  }
 }
 
 void dp88_Aircraft_LandingZone_Aircraft::Custom ( GameObject *obj, int type, int param, GameObject *sender )
 {
-	if ( type == CUSTOM_ENTERED_VTOL_LAND_ZONE )
-	{
-		landingZoneCount++;
-		
-		// Play landing animation if this is the first zone we have entered
-		if ( landingZoneCount == 1 )
-			Commands->Set_Animation( obj,Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_first_frame"), Get_Float_Parameter("landing_anim_last_frame"), false );
-	}
+  if ( type == CUSTOM_TRANSITION_VTOL_LAND_ZONE && param == 1 )
+  {
+    landingZoneCount++;
 
-	else if ( type == CUSTOM_EXITED_VTOL_LAND_ZONE )
-	{
-		landingZoneCount--;
-		
-		// Play take off animation if this is the last zone we were in (landing anim in reverse...)
-		if ( landingZoneCount == 0 )
-			Commands->Set_Animation( obj, Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_last_frame"), Get_Float_Parameter("landing_anim_first_frame"), true );
-	}
+    // Play landing animation if this is the first zone we have entered
+    if ( landingZoneCount == 1 )
+      Commands->Set_Animation( obj,Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_first_frame"), Get_Float_Parameter("landing_anim_last_frame"), false );
+  }
 
-	else if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && driverID == NULL )
-		driverID = Commands->Get_ID(sender);
+  else if ( type == CUSTOM_TRANSITION_VTOL_LAND_ZONE && param == 0 )
+  {
+    landingZoneCount--;
 
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && Commands->Get_ID(sender) == driverID )
-	{
-		driverID = NULL;
+    // Play take off animation if this is the last zone we were in (landing anim in reverse...)
+    if ( landingZoneCount == 0 )
+      Commands->Set_Animation( obj, Get_Parameter("landing_anim_name"), false, 0, Get_Float_Parameter("landing_anim_last_frame"), Get_Float_Parameter("landing_anim_first_frame"), false );
+  }
 
-		// If the driver exited outside of a landing zone then kablooey!
-		if ( Get_Int_Parameter("require_landing_zone") >= 1 && landingZoneCount == 0 )
-		{
-			Commands->Apply_Damage(sender, 10000.00f, "Death", obj );
-			Commands->Apply_Damage(obj, 10000.00f, "Death", obj );
-		}
-	}
+  else if ( type == CUSTOM_EVENT_VEHICLE_ENTERED && driverID == NULL )
+    driverID = Commands->Get_ID(sender);
+
+  else if ( type == CUSTOM_EVENT_VEHICLE_EXITED && Commands->Get_ID(sender) == driverID )
+  {
+    driverID = NULL;
+
+    // If the driver exited outside of a landing zone then kablooey!
+    if ( Get_Int_Parameter("require_landing_zone") >= 1 && landingZoneCount == 0 )
+    {
+      Commands->Apply_Damage(sender, 10000.0f, "Death", obj );
+      Commands->Apply_Damage(obj, 10000.0f, "Death", obj );
+    }
+  }
 }
+
+
+
+
 
 
 
@@ -2405,29 +2631,161 @@ void dp88_AR_paradrop_Console::Poked ( GameObject *obj, GameObject *poker )
 	}
 }
 
+// -------------------------------------------------------------------------------------------------
+
+// Registrar goes here...
+//
 
 
-void dp88_AR_paradrop::Created( GameObject *obj )
+
+
+
+
+
+
+void dp88_AR_Paradrop::Created( GameObject* pObj )
 {
-	//Console_Output ( "Created dp88_AR_paradrop\n" );
-	hit_ground = false;
+  if ( !pObj->As_SoldierGameObj() )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: This script is only compatible with soldier game objects. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+    return;
+  }
+
+  //Console_Output ( "Created dp88_AR_paradrop\n" );
+  earth_warhead = ArmorWarheadManager::Get_Warhead_Type("Earth");
+  m_nParachuteModel = 0;
+
+  const char* parachute_model = Get_Parameter("Parachute_Model");
+  if ( strlen(parachute_model) > 0 )
+  {
+    GameObject* pParachute = Commands->Create_Object("Invisible_Object",Commands->Get_Position(pObj));
+    Commands->Set_Model ( pParachute, parachute_model );
+    Commands->Attach_To_Object_Bone(pParachute, pObj, Get_Parameter("Parachute_Bone"));
+    m_nParachuteModel = Commands->Get_ID(pParachute);
+  }
+
+  Vector3 velocity = Get_Velocity(pObj);
+  m_fallRate = velocity.Z;
+  Commands->Start_Timer(pObj, this, 1.0f, TIMER_PARADROP_CHECKFALLRATE );
+
+  if ( strlen(Get_Parameter("Animation")) > 0 )
+  {
+    m_pAnimController = new LoopedAnimationController(pObj);
+    m_pAnimController->PlayAnimation ( Get_Parameter("Animation"), Get_Int_Parameter("Animation_First_Frame"), Get_Int_Parameter("Animation_Last_Frame"), (Get_Int_Parameter("Animation_Looped")==1) );
+  }
 }
 
-void dp88_AR_paradrop::Damaged( GameObject *obj, GameObject* damager, float amount )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Paradrop::Damaged( GameObject* pObj, GameObject* pDamager, float amount )
 {
-	if ( hit_ground )
-	{
-		/* Spawn new infantry preset */
-		if ( Is_Valid_Preset(Get_Parameter("infantry_preset")) )
-			Change_Character(obj, Get_Parameter("infantry_preset") );
-	}
+  if ( Get_Damage_Warhead() == earth_warhead )
+  {
+    // Repair the falling damage. Note that, in stock Renegade and most mods, falling damage ignores
+    // armour, so we can't use Apply_Damage to heal the damage, it has to be done manually
+    float health = Commands->Get_Health(pObj);
+    float max = Commands->Get_Max_Health(pObj);
+    health =+ amount;
+    if ( health > max )
+    {
+      amount = abs(max-health);
+      health = max;
+    }
+    else
+      amount = 0.0f;
+    Commands->Set_Health(pObj, health);
+
+    // Apply any left-over repairs to the armour (to support mods where armour takes falling damage)
+    if ( amount > 0 )
+    {
+      health = Commands->Get_Shield_Strength(pObj);
+      max = Commands->Get_Max_Shield_Strength(pObj);
+      health += amount;
+      if ( health > max )
+        health = max;
+      Commands->Set_Shield_Strength(pObj, health);
+    }
+
+    Landed(pObj);
+  }
 }
 
-void dp88_AR_paradrop::Custom( GameObject *obj, int type, int param, GameObject *sender )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Paradrop::Killed( GameObject* pObj, GameObject* pKilled )
 {
-	if ( type == CUSTOM_EVENT_FALLING_DAMAGE )
-		hit_ground = true;
+  // Despawn the parachute model
+  if ( m_nParachuteModel != 0 )
+    Commands->Destroy_Object(Commands->Find_Object(m_nParachuteModel));
+  m_nParachuteModel = 0;
+
+  // Prevent anything else happening, such as Timer_Expired
+  Destroy_Script();
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Paradrop::Timer_Expired( GameObject* pObj, int number )
+{
+  if ( number == TIMER_PARADROP_CHECKFALLRATE )
+  {
+    Vector3 velocity = Get_Velocity(pObj);
+    if ( velocity.Z > m_fallRate )
+      Landed(pObj);
+    else
+    {
+      m_fallRate = velocity.Z;
+      Commands->Start_Timer(pObj, this, 1.0f, TIMER_PARADROP_CHECKFALLRATE );
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Paradrop::Detach()
+{
+  delete m_pAnimController;
+  m_pAnimController = NULL;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Paradrop::Landed ( GameObject* pObj )
+{
+  // Despawn the parachute model
+  if ( m_nParachuteModel != 0 )
+    Commands->Destroy_Object(Commands->Find_Object(m_nParachuteModel));
+  m_nParachuteModel = 0;
+
+
+  // Swap to new infantry preset
+  const char* infantry_preset = Get_Parameter("Infantry_Preset");
+  if ( strlen(infantry_preset) > 0 && Is_Valid_Preset(infantry_preset) )
+  {
+    float health = Commands->Get_Health(pObj);
+    float armour = Commands->Get_Shield_Strength(pObj);
+    Change_Character(pObj, infantry_preset );
+    Commands->Set_Health(pObj, health);
+    Commands->Set_Shield_Strength(pObj, armour);
+  }
+
+  // Prevent anything else happening, such as Timer_Expired
+  Destroy_Script();
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_Paradrop> dp88_AR_Paradrop_Registrant(
+  "dp88_AR_Paradrop",
+  "Infantry_Preset:string,"
+  "Parachute_Model:string,"
+  "Parachute_Bone:string,"
+  "Animation:string,"
+  "Animation_First_Frame:int,"
+  "Animation_Last_Frame:int,"
+  "Animation_Looped:int"
+);
 
 
 
@@ -2669,44 +3027,31 @@ bool dp88_AR_Prism_Tower::calculateTowerMapPathSearch(int* sortedConnections, in
 		{
 			// If this is a connection between the towers we are searching for then
 			// return success
-			if ( sortedConnections[i*4] == tower1 && sortedConnections[(i*4)+1] == tower2
-				|| sortedConnections[i*4] == tower2 && sortedConnections[(i*4)+1] == tower1 )
+			if ( (sortedConnections[i*4] == tower1 && sortedConnections[(i*4)+1] == tower2)
+				|| (sortedConnections[i*4] == tower2 && sortedConnections[(i*4)+1] == tower1) )
 				return true;
 
-			// If one of the towers in this connection matches tower 1 then look for
-			// a path between the other tower in the connection and tower 2. We do this
-			// by temporaraily marking the connection as 'bad' before recursing, otherwise
-			// we cause an infinite recursion, which is bad!
-			if ( sortedConnections[i*4] == tower1 )
-			{
-				sortedConnections[(i*4)+3] = 1;
-				bool result = calculateTowerMapPathSearch(sortedConnections,numConnections,tower2,sortedConnections[(i*4)+1]);
-				sortedConnections[(i*4)+3] = 0;
-				return result;
-			}
-			if ( sortedConnections[(i*4)+1] == tower1 )
-			{
-				sortedConnections[(i*4)+3] = 1;
-				bool result = calculateTowerMapPathSearch(sortedConnections,numConnections,tower2,sortedConnections[i*4]);
-				sortedConnections[(i*4)+3] = 0;
-				return result;
-			}
+      bool bFound = false;
 
-			// Ditto for tower 2
-			if ( sortedConnections[i*4] == tower2 )
-			{
-				sortedConnections[(i*4)+3] = 1;
-				bool result = calculateTowerMapPathSearch(sortedConnections,numConnections,tower1,sortedConnections[(i*4)+1]);
-				sortedConnections[(i*4)+3] = 0;
-				return result;
-			}
-			if ( sortedConnections[(i*4)+1] == tower2 )
-			{
-				sortedConnections[(i*4)+3] = 1;
-				bool result = calculateTowerMapPathSearch(sortedConnections,numConnections,tower1,sortedConnections[i*4]);
-				sortedConnections[(i*4)+3] = 0;
-				return result;
-			}
+      // Temporarily mark this connection as "bad" to prevent infinite recursion
+      sortedConnections[(i*4)+3] = 1;
+
+      // If either of the two towers in this connection matches the desired tower then check for a
+      // path between the other desired tower and the third party tower it is connected to...
+      if ( sortedConnections[i*4] == tower1 )
+        bFound = calculateTowerMapPathSearch(sortedConnections,numConnections,tower2,sortedConnections[(i*4)+1]);
+      else if ( sortedConnections[(i*4)+1] == tower1 )
+        bFound = calculateTowerMapPathSearch(sortedConnections,numConnections,tower2,sortedConnections[i*4]);
+      else if ( sortedConnections[i*4] == tower2 )
+        bFound = calculateTowerMapPathSearch(sortedConnections,numConnections,tower1,sortedConnections[(i*4)+1]);
+      else if ( sortedConnections[(i*4)+1] == tower2 )
+        bFound = calculateTowerMapPathSearch(sortedConnections,numConnections,tower1,sortedConnections[i*4]);
+
+      // Restore this connection as "good"
+      sortedConnections[(i*4)+3] = 0;
+
+      if ( bFound )
+        return true;
 		}
 	}
 
@@ -2723,7 +3068,8 @@ bool dp88_AR_Prism_Tower::calculateTowerMapPathSearch(int* sortedConnections, in
 
 void dp88_AR_Prism_Tower::Created( GameObject *obj )
 {
-  dp88_AI_ChargedTurret::Created(obj);
+  loadSettings(obj, false, false);
+  Init(obj);
 
   // Initialise member variables
   isAssistingTower = false;
@@ -3090,13 +3436,6 @@ ScriptRegistrant<dp88_AR_GameController> dp88_AR_GameController_Registrant( "dp8
 // Unit scripts
 //ScriptRegistrant<dp88_AR_Vehicle> dp88_AR_Vehicle_Registrant( "dp88_AR_Vehicle", "TD_attack_animName=modelfile.animfile:string,TD_attack_firstFrame=0.0:float,TD_attack_lastFrame=30.0:float,CLEG_Resistance=10:int" );
 
-
-// Replacement for m00_GrantPowerup_Created
-ScriptRegistrant<dp88_AR_grantDefaultWeapon> dp88_AR_grantDefaultWeapon_Registrant("dp88_AR_grantDefaultWeapon","powerupPreset=presetname:string,powerupPreset_veteran=null:string,powerupPreset_elite=null:string");
-
-// Veterancy stuff
-ScriptRegistrant<dp88_AR_Veterancy_HealthArmourRegen> dp88_AR_Veterancy_HealthArmourRegen_Registrant("dp88_AR_Veterancy_HealthArmourRegen","rookie_healthRegenAmount=0:int,rookie_armourRegenAmount=0:int,veteran_healthRegenAmount=1:int,veteran_armourRegenAmount=0:int,elite_healthRegenAmount=3:int,elite_armourRegenAmount=2:int");
-
 // Deployable Infantry
 ScriptRegistrant<dp88_AR_Deployable_Infantry> dp88_AR_Deployable_Infantry_Registrant("dp88_AR_Deployable_Infantry","deployedObjectPreset=null:string,deployedObjectSpaceRequired=6:float,deployAnimation=obj.obj:string,deployTime=4:float,undeployAnimation=obj.obj:string,undeployTime=4:float,deployedWeaponPowerup=null:string,deployedWeaponPowerup_veteran=null:string,deployedWeaponPowerup_elite=null:string,cannotDeployStringId=0:int,deployKeyhook=IDeploy:string,deployedArmourType=null:string,deployedArmourType_veteran=null:string,deployedArmourType_elite=null:string");
 
@@ -3106,12 +3445,6 @@ ScriptRegistrant<dp88_AR_CLEG> dp88_AR_CLEG_Registrant("dp88_AR_CLEG","");
 // CLEG resistance script
 ScriptRegistrant<dp88_AR_CLEG_target> dp88_AR_CLEG_target_Registrant( "dp88_AR_CLEG_target", "resistance=20:int,clegEffectPreset=null:string" );
 
-// Ore Miners
-ScriptRegistrant<dp88_AR_Miner> dp88_AR_Miner_Registrant("dp88_AR_War_Miner","enableAI=1:int,loadLevels=10:int,orePerLoadLevel=100:int,timePerLoadLevel=2.0:float,unloadTime=8.0:float,aiStartDelay=10:int,dockAnimation:string,dockSound:string,miningAnimation:String,miningSound:string,idleAnimation:string");
-ScriptRegistrant<dp88_AR_Chrono_Miner> dp88_AR_Chrono_Miner_Registrant("dp88_AR_Chrono_Miner","enableAI=1:int,chronoshift_time=2.5:float,chronoshift_out_effect_preset:string,chronoshift_out_effect_time:float,chronoshift_in_effect_preset:string,chronoshift_in_effect_time:float,chronoshiftKeyhook=VDeploy:string,loadLevels=10:int,orePerLoadLevel=50:int,timePerLoadLevel=1.00:float,unloadTime=4.0:float,emergencyChronoshiftHealthThreshold=30.0:float,aiStartDelay=10:int,dockAnimation:string,dockSound:string,miningAnimation:String,miningSound:string,idleAnimation:string");
-ScriptRegistrant<dp88_AR_Chrono_Miner_Chronozone> dp88_AR_Chrono_Miner_Chronozone_Registrant("dp88_AR_Chrono_Miner_Chronozone","");
-ScriptRegistrant<dp88_AR_Ore_Field_Zone> dp88_AR_Ore_Field_Zone_Registrant("dp88_AR_Ore_Field_Zone","oreValue=1:int");
-ScriptRegistrant<dp88_AR_Ore_Deposit_Zone> dp88_AR_Ore_Deposit_Zone_Registrant("dp88_AR_Ore_Deposit_Zone","teamID=0:int");
 
 
 // Aircraft Landing Zone
@@ -3133,10 +3466,10 @@ ScriptRegistrant<dp88_AR_DemoTruck> dp88_AR_DemoTruck_Registrant("dp88_AR_DemoTr
 
 // Paradrop scripts
 ScriptRegistrant<dp88_AR_paradrop_Console> dp88_AR_paradrop_Console_Registrant("dp88_AR_paradrop_Console","team=1:int");
-ScriptRegistrant<dp88_AR_paradrop> dp88_AR_paradrop_Registrant("dp88_AR_paradrop","infantry_preset:string");
+
 
 // Prism Tower script
-ScriptRegistrant<dp88_AR_Prism_Tower> dp88_AR_Prism_Tower_Registrant("dp88_AR_Prism_Tower","Priority_Infantry=1.0:float,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Priority_Heavy_Vehicle=7.0:float,Priority_VTOL=0.0:float,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Animation_Model:string,Animation_Model_Bone:string,Animation:string,Animation_Idle_Start_Frame:int,Animation_Idle_End_Frame:int,Animation_Unpowered_Start_Frame:int,Animation_Unpowered_End_Frame:int,Animation_Charge_Start_Frame:int,Animation_Charge_End_Frame:int,Charge_Sound:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.25:float,Requires_Power=1:int,Debug=0:int");
+ScriptRegistrant<dp88_AR_Prism_Tower> dp88_AR_Prism_Tower_Registrant("dp88_AR_Prism_Tower","Priority_Infantry=1.0:float,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Priority_Heavy_Vehicle=7.0:float,Priority_VTOL=0.0:float,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Animation_Model:string,Animation_Model_Bone:string,Animation:string,Animation_Idle_Start_Frame:int,Animation_Idle_End_Frame:int,Animation_Unpowered_Start_Frame:int,Animation_Unpowered_End_Frame:int,Animation_Charge_Start_Frame:int,Animation_Charge_End_Frame:int,Charge_Sound:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.25:float,Requires_Power=1:int,Debug=0:int,Detects_Stealth=1:int");
 
 // Health link script
 ScriptRegistrant<dp88_linkHealth> dp88_linkHealth_Registrant("dp88_linkHealth","parentObjectId=0:int");

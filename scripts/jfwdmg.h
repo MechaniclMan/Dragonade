@@ -80,6 +80,8 @@ class JFW_Timer_Destroy_Building : public ScriptImpClass {
 *
 * \param Time
 *   Number of seconds to wait before triggering
+* \param TimerNum
+*   Internal ID to use for the timer to avoid clashing with any other timers on the same object
 * \param Amount
 *   Amount of damage to apply to the object the script is attached to
 * \param Warhead

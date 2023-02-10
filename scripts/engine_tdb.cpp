@@ -18,6 +18,7 @@
 #include "TranslateDBClass.h"
 #include "Engine_Obj.h"
 #include "Engine_Def.h"
+
 const wchar_t *VehicleGameObj::Get_Vehicle_Name()
 {
 	if (( Get_Definition().VehicleNameID != 0 ) && (Get_Definition().VehicleNameID < TranslateDBClass::Get_Object_Count())) {

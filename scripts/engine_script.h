@@ -35,8 +35,83 @@ SCRIPTS_API GameObject *Find_Building_With_Script(int Team,int Type,const char *
 SCRIPTS_API GameObject *Find_Object_With_Script(const char *script); //Find the first object with this script on it
 SCRIPTS_API GameObject *Find_Closest_Object_With_Script(const char *script, Vector3 pos); //Find the closest object to pos with this script on it
 SCRIPTS_API void Find_All_Objects_With_Script(const char *script, SList<GameObject>& objects); // Find all objects with this script on it
+
+/*!
+* \brief Find Objects With Script - Distance Sorted
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup api_objectfind
+*
+* Finds all GameObjects with one or more instances of the specified script attached and returns them
+* in a list which is sorted by the distance from that object to a specified position
+*
+* \param[in] script
+*   Name of the script to search for on the object
+* \param[out] objects
+*   Reference to an SList<GameObject> in which the results should be stored
+* \param[in] position
+*   The position to calculate distance from
+*/
+SCRIPTS_API void Find_All_Objects_With_Script_By_Distance(const char *script, SList<GameObject>& objects, Vector3 position);
+
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script( GameObject *sender, const char *script, int message, int param, float delay ); // Script to send a custom to all objects with a specific script
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script_Ranged( GameObject *sender, const char *script, int message, int param, float delay, float range ); // Script to send a custom to all objects with a specific script in a specified range
 SCRIPTS_API ScriptImpClass* Find_Script_On_Object(GameObject* obj, const char *script); // Returns a pointer to the first instance of the named script on the given object, or NULL if not found
 SCRIPTS_API void Attach_Script_Occupants(GameObject *obj,const char *script,const char *params); //attaches a script to all occupants of a vehicle
+
+/*!
+* \brief Attach Script with Formatted Parameters
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup api_scripts
+*
+* This is a variant of ScriptCommands::Attach_Script which uses a variable length arguments list to
+* format the script parameters, rather than having to do it manually inside scripts using a string
+* variable of some sort.
+*
+* \param[in] pObj
+*   The object to attach this script to
+* \param[in] script
+*   The name of the script to be attached to the object
+* \param[in] params
+*   The format string for the script parameters
+*/
+SCRIPTS_API void Attach_Script_V ( GameObject* pObj, const char* script, const char* params, ... );
+
+/*!
+* \brief Attach Script with Formatted Parameters (va_list)
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup api_scripts
+*
+* A variant of Attach_Script which takes a va_list object rather than a variable number of arguments
+* so it can be called from within another function which itself takes a variable number of arguments
+*
+* \param[in] pObj
+*   The object to attach this script to
+* \param[in] script
+*   The name of the script to be attached to the object
+* \param[in] params
+*   The format string for the script parameters
+* \param[in] vargs
+*   The variable arguments object
+*/
+SCRIPTS_API void Attach_Script_V ( GameObject* pObj, const char* script, const char* params, va_list vargs );
+
+/*!
+* \brief Attach Script Once with Formatted Parameters
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup api_scripts
+*
+* This is a variant of Attach_Script_Once which uses a variable length arguments list to format the
+* script parameters, rather than having to do it manually inside scripts using a string variable of
+* some sort.
+*
+* \param[in] pObj
+*   The object to attach this script to
+* \param[in] script
+*   The name of the script to be attached to the object
+* \param[in] params
+*   The format string for the script parameters
+*/
+SCRIPTS_API void Attach_Script_Once_V ( GameObject* pObj, const char* script, const char* params, ... );
+
+
 #endif

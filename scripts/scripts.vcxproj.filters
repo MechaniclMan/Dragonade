@@ -658,6 +658,9 @@
     <ClCompile Include="engine_tt.cpp">
       <Filter>DA Engine</Filter>
     </ClCompile>
+    <ClCompile Include="Quaternion.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">
@@ -829,9 +832,6 @@
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="vector4.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="VehicleFactoryGameObj.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="VehicleFactoryGameObjDef.h">
@@ -1581,9 +1581,6 @@
     <ClInclude Include="SpawnerClass.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
-    <ClInclude Include="cGameOptionsEvent.h">
-      <Filter>DA Engine</Filter>
-    </ClInclude>
     <ClInclude Include="cTeam.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
@@ -1810,6 +1807,9 @@
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="engine_tt.h">
+      <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="VehicleFactoryGameObj.h">
       <Filter>DA Engine</Filter>
     </ClInclude>
   </ItemGroup>

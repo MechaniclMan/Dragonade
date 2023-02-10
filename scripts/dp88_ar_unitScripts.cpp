@@ -23,69 +23,179 @@
 Rocketeer Script Functions
 --------------------------*/
 
-void dp88_AR_Rocketeer::Created ( GameObject *obj )
+void dp88_AR_Rocketeer::Created ( GameObject* pObj )
 {
-	objectID = Commands->Get_ID ( obj );
-	isFlying = false;
-	isDead = false;
-	lastDeploy = 0;
+  if ( m_nSoldierID != 0 )  // Triggered by the flight vehicle we are also listening too
+    return;
 
-	if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
-		InstallHook( Get_Parameter("Keyhook"), obj );
-	else
-		Destroy_Script();
+  if ( !pObj->As_SoldierGameObj() )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: This script is only compatible with soldier game objects. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+    return;
+  }
+
+  if ( strlen(Get_Parameter("Flying_Preset")) <= 0 || !Is_Valid_Preset(Get_Parameter("Flying_Preset")) )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: The specified flying preset, \"%s\", is not vaild. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name(), Get_Parameter("Flying_Preset") );
+    Destroy_Script();
+    return;
+  }
+
+  m_nSoldierID    = Commands->Get_ID(pObj);
+  m_nVehicleID    = 0;
+  m_lastDeploy    = 0;
+  m_bCanDrive     = (pObj->As_SoldierGameObj())->Can_Drive_Vehicles();
+
+  m_minWalkTime   = Get_Int_Parameter("Minimum_Walk_Time");
+  m_minFlightTime = Get_Int_Parameter("Minimum_Flight_Time");
+
+  // Only attach keyhooks to players... but for AI units we might do something clever in future so
+  // don't destroy the script if it's not an actual player
+  if (Get_Player_ID(pObj) >= 0)
+    InstallHook( Get_Parameter("Keyhook"), pObj );
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Rocketeer::Destroyed ( GameObject *obj )
+void dp88_AR_Rocketeer::Custom( GameObject* pObj, int type, int param, GameObject* pSender )
 {
-	isDead = true;
-	RemoveHook();
+  // Only interested in the flight vehicle being destroyed
+  if ( m_nVehicleID == Commands->Get_ID(pSender) && type == CUSTOM_ROCKETEER_VEHICLEKILLED )
+  {
+    Commands->Attach_Script ( pObj, "RA_DriverDeath", "" );
+    RemoveHook();
+    m_nVehicleID = 0;
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Rocketeer::Killed( GameObject *obj, GameObject *killer )
+void dp88_AR_Rocketeer::Timer_Expired ( GameObject* pObj, int number )
 {
-	isDead = true;
-	RemoveHook();
+  // Ignore any timer events from the flight vehicle
+  if ( m_nSoldierID != Commands->Get_ID(pObj) )
+    return;
+
+  if ( number == TIMER_ROCKETEER_ENTERVEHICLE )
+  {
+    //Console_Output ( "[%d:%s:%s] Transitioning driver into vehicle\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
+    if ( GameObject* pVehicle = Commands->Find_Object(m_nVehicleID) )
+    {
+      Commands->Set_Position( pObj, Commands->Get_Position(pVehicle) );
+      Soldier_Transition_Vehicle(pObj);
+    }
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Rocketeer::KeyHook()
 {
-	// Find object
-	GameObject* obj = Commands->Find_Object ( objectID );
-	if ( !obj || isDead || Get_Vehicle(obj) || ((SoldierGameObj*)obj)->Is_On_Ladder() )
-		return;
+  // Find the soldier object and check they are alive and not on a ladder
+  GameObject* pObj = Commands->Find_Object(m_nSoldierID);
+  if ( !pObj || Commands->Get_Health(pObj) <= 0.0f || ((SoldierGameObj*)pObj)->Is_On_Ladder() )
+    return;
 
-	if ( (isFlying && time(NULL) - lastDeploy > Get_Int_Parameter("Minimum_Flight_Time")) || 
-		!isFlying && time(NULL) - lastDeploy > Get_Int_Parameter("Minimum_Walk_Time"))
-	{
-		isFlying = !isFlying;
-		Toggle_Fly_Mode(obj);
-		lastDeploy = time(NULL);
-	}
-	else
-	{
-		StringClass message;
-		message.Format("You must wait at least %d seconds before %s flying mode", (isFlying) ? Get_Int_Parameter("Minimum_Flight_Time") : Get_Int_Parameter("Minimum_Walk_Time"), (isFlying) ? "deactivating": "activating");
-		Send_Message_Player(obj,153,204,25,message);
-	}
+  // If we are not currently flying then toggle flight mode on
+  if ( m_nVehicleID == 0 && !Get_Vehicle(pObj) )
+  {
+    if (time(NULL) - m_lastDeploy < m_minWalkTime)
+    {
+      StringClass message;
+      message.Format("You must wait at least %d seconds before activating flying mode", m_minWalkTime );
+      Send_Message_Player(pObj, DP88_RGB_WARNING_MSG, message);
+    }
+    else
+      Toggle_Flight_Mode ( pObj->As_SoldierGameObj(), true );
+  }
+
+  // If we are currently flying then toggle flight mode off
+  else if ( m_nVehicleID != 0 )
+  {
+    if (time(NULL) - m_lastDeploy < m_minFlightTime)
+    {
+      StringClass message;
+      message.Format("You must wait at least %d seconds before deactivating flying mode", m_minFlightTime );
+      Send_Message_Player(pObj, DP88_RGB_WARNING_MSG, message);
+    }
+    else
+      Toggle_Flight_Mode ( pObj->As_SoldierGameObj(), false );
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
-dp88_AR_Rocketeer::~dp88_AR_Rocketeer()
+void dp88_AR_Rocketeer::Toggle_Flight_Mode ( SoldierGameObj* pSoldier, bool bState )
 {
-	// Turn flying mode off if we buy a new infantry unit...
-	if ( isFlying && !isDead )
-	{
-		GameObject* obj = Commands->Find_Object(objectID);
-		if ( obj != NULL )
-		{
-			Toggle_Fly_Mode(obj);
-		}
-	}
+  if ( !pSoldier )
+    return;
+
+  if ( bState && m_nVehicleID == 0 )
+  {
+    if ( !m_bCanDrive )
+      (pSoldier->As_SoldierGameObj())->Set_Can_Drive_Vehicles(true);
+
+    // Spawn flight vehicle and listen to its events (specifically the Killed event)
+    Vector3 pos = Commands->Get_Position(pSoldier);
+    pos.Z += 0.25;
+    GameObject* pVehicle = Commands->Create_Object(Get_Parameter("Flying_Preset"),pos);
+    Commands->Set_Facing(pVehicle, Commands->Get_Facing(pSoldier));
+    m_nVehicleID = Commands->Get_ID(pVehicle);
+
+    Attach_Script_V ( pVehicle, "JFW_Death_Send_Custom", "%d,%d,0", Commands->Get_ID(pSoldier), CUSTOM_ROCKETEER_VEHICLEKILLED );
+
+    // Set the flight vehicles health/armour to match ours
+    Set_Max_Health(pVehicle,Commands->Get_Max_Health(pSoldier));
+    Set_Max_Shield_Strength(pVehicle,Commands->Get_Max_Shield_Strength(pSoldier));
+
+    Commands->Set_Health(pVehicle,Commands->Get_Health(pSoldier));
+    Commands->Set_Shield_Strength(pVehicle,Commands->Get_Shield_Strength(pSoldier));
+
+    // Need to wait for an engine tick before transitioning the soldier into the vehicle
+    Commands->Set_Is_Rendered(pSoldier,false);
+    Commands->Start_Timer ( pSoldier, this, 0.5f, TIMER_ROCKETEER_ENTERVEHICLE );
+
+    m_lastDeploy = time(NULL);
+  }
+
+
+
+
+  else if ( !bState && m_nVehicleID != 0 )
+  {
+    GameObject* pVehicle = Commands->Find_Object(m_nVehicleID);
+    if ( pVehicle )
+    {
+      Commands->Set_Health(pSoldier,Commands->Get_Health(pVehicle));
+      Commands->Set_Shield_Strength(pSoldier,Commands->Get_Shield_Strength(pVehicle));
+
+      Commands->Destroy_Object(pVehicle);
+    }
+
+    m_nVehicleID = 0;
+    m_lastDeploy = time(NULL);
+
+    Commands->Set_Is_Rendered(pSoldier,true);
+
+    if ( !m_bCanDrive )
+      (pSoldier->As_SoldierGameObj())->Set_Can_Drive_Vehicles(false);
+  }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_Rocketeer> dp88_AR_Rocketeer_Registrant(
+  "dp88_AR_Rocketeer",
+  "Flying_Preset:string,"
+  "Keyhook=IDeploy:string,"
+  "Minimum_Flight_Time=5:int,"
+  "Minimum_Walk_Time=5:int"
+);
+
+
+
+
 
 
 
@@ -214,11 +324,11 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
 			Commands->Disable_All_Collisions ( mirage );
 			mirageID = Commands->Get_ID ( mirage );
 
-			// Setup tank variables
-			Commands->Enable_Stealth ( obj, true );			// Disable targeting box
-			Commands->Set_Is_Rendered ( obj, false );		// Disables rendering
-			Commands->Set_Is_Visible ( obj, false );		// Prevents AI seeing tank
-			Commands->Enable_Engine ( obj, false );			// Disable engine sounds
+      // Setup tank variables
+      Commands->Enable_Stealth ( obj, true );     // Disable targeting box
+      Commands->Set_Is_Rendered ( obj, false );   // Disables rendering
+      Set_Vehicle_Is_Visible(obj, false);         // Prevents AI seeing tank
+      Commands->Enable_Engine ( obj, false );     // Disable engine sounds
 
 			hidden = true;
 		}
@@ -231,11 +341,11 @@ void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
 		Commands->Destroy_Object ( Commands->Find_Object ( mirageID ) );
 		mirageID = 0;
 
-		// Setup tank variables
-		Commands->Enable_Engine ( obj, true );
-		Commands->Set_Is_Visible ( obj, true );
-		Commands->Set_Is_Rendered ( obj, true );
-		Commands->Enable_Stealth ( obj, false );
+    // Setup tank variables
+    Commands->Enable_Engine ( obj, true );
+    Set_Vehicle_Is_Visible(obj, true);
+    Commands->Set_Is_Rendered ( obj, true );
+    Commands->Enable_Stealth ( obj, false );
 		
 		hidden = false;
 	}
@@ -563,109 +673,165 @@ Tesla Coil Script
 
 void dp88_AR_Tesla_Coil::Created( GameObject *obj )
 {
-	// Let the base class handle the main initialization
-	dp88_AI_Turret::Init(obj);
-	dp88_AI_Turret::loadSettings(obj, false, false);
-
-	// Initialize our charge level to 0
-	m_chargeLevel = 0;
-	m_isSupercharged = false;
-
-	// Load settings
-	m_chargeDuration = Get_Int_Parameter("Charge_Duration");
-	m_chargesPowerOn = Get_Int_Parameter("Charges_Power_On");
-	m_chargesSupercharge = Get_Int_Parameter("Charges_Supercharge");
-
-	// Grant the supercharged weapon powerup preset and save the name of the default weapon preset
-	if ( Is_Valid_Preset(Get_Parameter("Supercharged_Weapon_Powerup_Preset")) )
-	{
-		m_defaultWeapon = Get_Current_Weapon(obj);
-		m_defaultWeaponRange = this->primary_maxRange;
-
-		Commands->Give_PowerUp(obj, Get_Parameter("Supercharged_Weapon_Powerup_Preset"), false);
-		m_superchargedWeapon = Get_Powerup_Weapon(Get_Parameter("Supercharged_Weapon_Powerup_Preset"));
-		m_superchargedWeaponRange = Get_Int_Parameter("Supercharged_Weapon_Range");
-	}
+  loadSettings(obj, false, false);  // No need to support secondary fire
+  Init(obj);
 }
 
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Tesla_Coil::Init ( GameObject* pSelf )
+{
+  dp88_AI_ChargedTurret::Init(pSelf);
+
+  // Initialize our charge level to 0
+  m_chargeLevel = 0;
+  m_isSupercharged = false;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_Tesla_Coil::loadSettings ( GameObject* pSelf, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings )
+{
+  dp88_AI_ChargedTurret::loadSettings(pSelf, loadSecondaryFireSettings, loadBuildingTargetSettings);
+
+  // Load settings
+  m_chargeWarheadID     = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Charge_Warhead"));
+  m_chargeDuration      = Get_Int_Parameter("Charge_Duration");
+  m_chargesPowerOn      = Get_Int_Parameter("Charges_Power_On");
+  m_chargesSupercharge  = Get_Int_Parameter("Charges_Supercharge");
+
+  // Grant the supercharged weapon powerup preset and save the name of the default weapon preset
+  if ( Is_Valid_Preset(Get_Parameter("Supercharged_Weapon_Powerup_Preset")) )
+  {
+    m_defaultWeapon       = Get_Current_Weapon(pSelf);
+    m_defaultWeaponRange  = primary_maxRange;
+
+    Commands->Give_PowerUp(pSelf, Get_Parameter("Supercharged_Weapon_Powerup_Preset"), false);
+    m_superchargedWeapon      = Get_Powerup_Weapon(Get_Parameter("Supercharged_Weapon_Powerup_Preset"));
+    m_superchargedWeaponRange = Get_Int_Parameter("Supercharged_Weapon_Range");
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Tesla_Coil::Damaged ( GameObject *obj, GameObject *damager, float amount )
 {
-	// If the damager has the script dp88_AR_Tesla_Coil_Charger attached then
-	// increase our charge level - unless their last charge time is within 1
-	// second of the current time - prevents double charges due to explosion
-	// damage
-	dp88_AR_Tesla_Coil_Charger* chargerScript = (dp88_AR_Tesla_Coil_Charger *)(Find_Script_On_Object(damager, "dp88_AR_Tesla_Coil_Charger"));
-	if ( chargerScript && chargerScript->m_lastChargeTime < time(NULL)-1 )
-	{
-		// Increase charge level
-		m_chargeLevel++;
+  // If the damage was done with the right warhead then increase our charge level, unless the last
+  // charge from this unit wss within 1 second of the current time - prevents double charges due to
+  // explosion damage
+  // \todo fix the 1 second limit
+  if ( Get_Damage_Warhead() == m_chargeWarheadID /*&& chargerScript->m_lastChargeTime < time(NULL)-1*/ )
+  {
+    // Increase charge level
+    m_chargeLevel++;
 
-		// Set chargers last charge time
-		chargerScript->m_lastChargeTime = time(NULL);
+    // Set chargers last charge time
+    //chargerScript->m_lastChargeTime = time(NULL);
 
-		// Have we reached a sufficient level to become supercharged?
-		if ( !m_isSupercharged && ((Is_Base_Powered(Get_Object_Type(obj)) && m_chargeLevel >= m_chargesSupercharge) || m_chargeLevel >= m_chargesPowerOn + m_chargesSupercharge) )
-			setSuperchargedState(obj, true);
+    // Have we reached a sufficient level to become supercharged?
+    int supercharge_chargesRequired = (dp88_AI_ChargedTurret::checkPowerState(obj)) ? m_chargesSupercharge : m_chargesPowerOn + m_chargesSupercharge;
+    if ( !m_isSupercharged && m_chargeLevel >= supercharge_chargesRequired )
+      setSuperchargedState(obj, true);
 
-		// Start timer to decrement charge level
-		Commands->Start_Timer(obj, this, (float)m_chargeDuration, TIMER_TESLACOIL_DECREMENT_CHARGE );
-	}
+    // Start timer to decrement charge level
+    Commands->Start_Timer(obj, this, (float)m_chargeDuration, TIMER_TESLACOIL_DECREMENT_CHARGE );
+  }
+
+  // Call base class damaged function
+  dp88_AI_ChargedTurret::Damaged(obj, damager, amount);
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AR_Tesla_Coil::Timer_Expired ( GameObject* obj, int number )
 {
-	if (number == TIMER_TESLACOIL_DECREMENT_CHARGE)
-	{
-		if ( m_chargeLevel > 0 )
-			m_chargeLevel--;
+  if (number == TIMER_TESLACOIL_DECREMENT_CHARGE)
+  {
+    if ( m_chargeLevel > 0 )
+      m_chargeLevel--;
 
-		// Have we dropped out of supercharged status?
-		if ( m_isSupercharged && !((Is_Base_Powered(Get_Object_Type(obj)) && m_chargeLevel >= m_chargesSupercharge) || m_chargeLevel >= m_chargesPowerOn + m_chargesSupercharge) )
-			setSuperchargedState(obj, false);
-	}
+    // Have we dropped out of supercharged status?
+    int supercharge_chargesRequired = (dp88_AI_ChargedTurret::checkPowerState(obj)) ? m_chargesSupercharge : m_chargesPowerOn + m_chargesSupercharge;
+    if ( m_isSupercharged && m_chargeLevel < supercharge_chargesRequired )
+      setSuperchargedState(obj, false);
+  }
 
-	// Call base class timer expired
-	dp88_AI_Turret::Timer_Expired(obj, number);
+  // Call base class timer expired
+  dp88_AI_ChargedTurret::Timer_Expired(obj, number);
 }
 
+// -------------------------------------------------------------------------------------------------
 
 // Returns true if the base is powered, if the defence does not require power, or
 // if the defence has been charged sufficiently to provide base power
 bool dp88_AR_Tesla_Coil::checkPowerState ( GameObject* obj )
 {
-	return ( !requiresPower || Is_Base_Powered(Get_Object_Type(obj)) || m_chargeLevel >= Get_Int_Parameter("Charges_Power_On") );
+  return ( dp88_AI_ChargedTurret::checkPowerState(obj) || m_chargeLevel >= Get_Int_Parameter("Charges_Power_On") );
 }
 
+// -------------------------------------------------------------------------------------------------
 
 // Set the supercharged state
 void dp88_AR_Tesla_Coil::setSuperchargedState(GameObject* obj, bool state)
 {
-	if (! m_superchargedWeapon.Is_Empty() )
-	{
-		// If we are setting supercharged to true then switch weapons
-		if ( state )
-		{
-			Commands->Select_Weapon(obj, m_superchargedWeapon);
-			primary_maxRange = m_superchargedWeaponRange;
-		}
-		else
-		{
-			Commands->Select_Weapon(obj, m_defaultWeapon);
-			primary_maxRange = m_defaultWeaponRange;
-		}
+  if ( !m_superchargedWeapon.Is_Empty() )
+  {
+    // If we are setting supercharged to true then switch weapons
+    if ( state )
+    {
+      Commands->Select_Weapon(obj, m_superchargedWeapon);
+      primary_maxRange = m_superchargedWeaponRange;
+    }
+    else
+    {
+      Commands->Select_Weapon(obj, m_defaultWeapon);
+      primary_maxRange = m_defaultWeaponRange;
+    }
 
-		m_isSupercharged = state;
-	}
+    m_isSupercharged = state;
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_Tesla_Coil> dp88_AR_Tesla_Coil_Registrant(
+  "dp88_AR_Tesla_Coil",
+  "Priority_Infantry=1.0:float,"
+  "Splash_Infantry=0:int,"
+  "Priority_Light_Vehicle=5.0:float,"
+  "Priority_Heavy_Vehicle=7.0:float,"
+  "Priority_VTOL=5.0:float,"
+  "Min_Attack_Range=0:int,"
+  "Max_Attack_Range=80:int,"
+  "Animation_Model:string,"
+  "Animation_Model_Bone:string,"
+  "Animation:string,"
+  "Animation_Idle_Start_Frame:int,"
+  "Animation_Idle_End_Frame:int,"
+  "Animation_Unpowered_Start_Frame:int,"
+  "Animation_Unpowered_End_Frame:int,"
+  "Animation_Charge_Start_Frame:int,"
+  "Animation_Charge_End_Frame:int,"
+  "Charge_Sound:string,"
+  "Charge_Warhead=Tesla:string,"
+  "Charge_Duration=5:int,"
+  "Charges_Supercharge=1:int,"
+  "Charges_Power_On=2:int,"
+  "Supercharged_Weapon_Powerup_Preset:string,"
+  "Supercharged_Weapon_Range=100:int,"
+  "Modifier_Distance=0.25:float,"
+  "Modifier_Target_Damage=0.1:float,"
+  "Modifier_Target_Value=0.05:float,"
+  "Requires_Power=1:int,"
+  "Debug=0:int,"
+  "Detects_Stealth=1:int"
+);
 
 
 
 
-// Rocketeer
-ScriptRegistrant<dp88_AR_Rocketeer> dp88_AR_Rocketeer_Registrant( "dp88_AR_Rocketeer", "Flying_Preset:string,Keyhook=IDeploy:string,Minimum_Flight_Time=5:int,Minimum_Walk_Time=5:int" );
+
+
 
 // Mirage Tank
 ScriptRegistrant<dp88_AR_MirageTank> dp88_AR_MirageTank_Registrant( "dp88_AR_MirageTank", "" );
@@ -673,7 +839,3 @@ ScriptRegistrant<dp88_AR_MirageTank> dp88_AR_MirageTank_Registrant( "dp88_AR_Mir
 // IFV
 ScriptRegistrant<dp88_AR_IFV> dp88_AR_IFV_Registrant( "dp88_AR_IFV", "Turret_Frames_Animation=v_all_ifv.v_all_ifv:string,Switch_Time=10:int,Switching_Anim_Frame=2:int,Keyhook=VDeploy:string" );
 ScriptRegistrant<dp88_AR_IFVDriver> dp88_AR_IFVDriver_Registrant( "dp88_AR_IFVDriver", "IFV_ModelAnimFrame=1:int,IFV_WeaponPowerup_Rookie=null:string,IFV_WeaponPowerup_Veteran=null:string,IFV_WeaponPowerup_Elite=null:string" );
-
-// Tesla Coil
-ScriptRegistrant<dp88_AR_Tesla_Coil> dp88_AR_Tesla_Coil_Registrant("dp88_AR_Tesla_Coil","Priority_Infantry=1.0:float,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Priority_Heavy_Vehicle=7.0:float,Priority_VTOL=5.0:float,Min_Attack_Range=0:int,Max_Attack_Range=80:int,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=1:int,Charge_Duration=5:int,Charges_Supercharge=1:int,Charges_Power_On=2:int,Supercharged_Weapon_Powerup_Preset:string,Supercharged_Weapon_Range=100:int,Debug=0:int");
-ScriptRegistrant<dp88_AR_Tesla_Coil_Charger> dp88_AR_Tesla_Coil_Charger_Registrant("dp88_AR_Tesla_Coil_Charger","");

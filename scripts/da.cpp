@@ -61,6 +61,10 @@ DADisableListManager::Level_Loaded (INT_MAX-1) - Load disable list
 Any other level loaded events
 */
 
+const char *DA::Get_Version() {
+	return "1.2";
+}
+
 void DA::Init() {
 	DAEventManager::Init(); //These must be initialized in this order.
 	DASettingsManager::Init();
@@ -108,7 +112,6 @@ void DA::Shutdown() {
 	DAGameManager::Shutdown();
 	DAPlayerManager::Shutdown();
 	DASettingsManager::Shutdown();
-	DAEventManager::Shutdown();
 }
 
 void DA::Host_Message(const char *Format,...) {

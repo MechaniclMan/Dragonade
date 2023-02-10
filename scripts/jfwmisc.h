@@ -35,35 +35,153 @@ class JFW_Debug_Text_File : public ScriptImpClass {
 	void Exited(GameObject *obj,GameObject *exiter);
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Set Building Power State On Custom
+* \author jonwil
+* \ingroup scripts_teamcontrol scripts_customconsumers
+*
+* Attached to a building controller, this script sets the power state of the building upon receiving
+* a custom message. Despite the name it can be used to turn the power on as well as turning it off.
+* Only really has an impact on base defences, other types of buildings will continue to operate as
+* normal (just as they would if base power was disabled)
+*
+* \param Message_Off
+*   ID of the custom message to turn off building power
+* \param Message_On
+*   ID of the custom message to turn on building power
+*/
 class JFW_Power_Off : public ScriptImpClass {
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Follow Waypath
+* \author jonwil
+*
+* This script causes the SmartGameObject it is attached to to try and follow a specified waypath ID
+* without attacking any objects en route.
+*
+* \param Waypathid
+*   ID of the waypath to follow
+* \param speed
+*   The speed at which the unit should follow the waypath
+*/
 class JFW_Follow_Waypath : public ScriptImpClass {
-	void Created(GameObject *obj);
+  void Created(GameObject *obj);
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Draw a Series of Models
+* \author jonwil
+* \ingroup scripts_customconsumers
+*
+* Draws a series of W3D models at a specified location, iterating to the next model in the series
+* when a custom is received. Will loop back to the first model after reaching the end of the list.
+*
+* \pre
+*   A cinematic preset with the name "Generic_Cinematic" must exist
+*
+* \note
+*   No model will be drawn until the custom message is received for the first time
+*
+* \param Location
+*   The location at which to draw the models
+* \param Custom
+*   ID of the custom message to iterate to the next model
+* \param BaseName
+*   Common part of the W3D filename, this will have a number appended to it to generate the full
+*   filename, such as BaseName1.w3d, BaseName2.w3d etc.
+* \param Count
+*   The number of models in the series
+* \param Facing
+*   The direction the models should face when drawn
+*/
 class JFW_Object_Draw_In_Order : public ScriptImpClass {
-	int currentmodelnumber;
-	int currentmodelid;
-	void Created(GameObject *obj);
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	public: void Register_Auto_Save_Variables();
+  int currentmodelnumber;
+  int currentmodelid;
+  void Created(GameObject *obj);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  public: void Register_Auto_Save_Variables();
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Draw a Subset of a Series of Models
+* \author jonwil
+* \ingroup scripts_customconsumers
+*
+* A modified verison of JFW_Object_Draw_In_Order which can show a subset of the model series, from
+* model [i]Start_Number[/i] to model [i]Count[/i].
+*
+* \pre
+*   A cinematic preset with the name "Generic_Cinematic" must exist
+*
+* \note
+*   No model will be drawn until the custom message is received for the first time
+*
+* \param Location
+*   The location at which to draw the models
+* \param Custom
+*   ID of the custom message to iterate to the next model
+* \param BaseName
+*   Common part of the W3D filename, this will have a number appended to it to generate the full
+*   filename, such as BaseName1.w3d, BaseName2.w3d etc.
+* \param Count
+*   The number of models in the series, or the last model number from the series to draw
+* \param Facing
+*   The direction the models should face when drawn
+* \param Start_Number
+*   The first model number in the series to draw
+*/
 class JFW_Object_Draw_In_Order_2 : public ScriptImpClass {
-	int currentmodelnumber;
-	int currentmodelid;
-	void Created(GameObject *obj);
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	public: void Register_Auto_Save_Variables();
+  int currentmodelnumber;
+  int currentmodelid;
+  void Created(GameObject *obj);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  public: void Register_Auto_Save_Variables();
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Draw a Randomised Series of Models
+* \author jonwil
+* \ingroup scripts_customconsumers
+*
+* A modified verison of JFW_Object_Draw_In_Order which randomly picks one of the available models to
+* draw each time the custom message is received, which might be the same as the previously drawn
+* model.
+*
+* \pre
+*   A cinematic preset with the name "Generic_Cinematic" must exist
+*
+* \note
+*   No model will be drawn until the custom message is received for the first time
+*
+* \param Location
+*   The location at which to draw the models
+* \param Custom
+*   ID of the custom message to iterate to the next model
+* \param BaseName
+*   Common part of the W3D filename, this will have a number appended to it to generate the full
+*   filename, such as BaseName1.w3d, BaseName2.w3d etc.
+* \param Count
+*   The number of models in the series, or the last model number from the series to draw
+* \param Facing
+*   The direction the models should face when drawn
+*/
 class JFW_Object_Draw_Random : public ScriptImpClass {
-	int currentmodelid;
-	void Created(GameObject *obj);
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	public: void Register_Auto_Save_Variables();
+  int currentmodelid;
+  void Created(GameObject *obj);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+public: void Register_Auto_Save_Variables();
 };
 
 class JFW_Play_Animation_Destroy_Object : public ScriptImpClass {
@@ -153,8 +271,27 @@ class JFW_Object_Counter : public ScriptImpClass {
 	public: void Register_Auto_Save_Variables();
 };
 
+/*!
+* \brief Change Spawn Character
+* \author jonwil
+*
+* Sets the spawn character preset for a team to the specified infantry preset. To set the spawn
+* character for a map this script should be attached to an editor only object such as a daves
+* arrow and one copy of that object should be placed on the map. To modify the spawn character
+* for both teams simply add two copies of this script to that object.
+*
+* It is possible to modify the spawn character at any point during the game by causing a copy
+* of this script to be created, for example by using JFW_Attach_Script_Custom to attach copies of
+* this script to an object at runtime, allowing the spawn character to be changed in response to
+* events that occur during the game.
+*
+* \param Player_Type
+*   ID of the team to set the spawn character of. 0 = Nod / Soviet, 1 = GDI / Allies
+* \param Character
+*   The name of an infantry preset to use as the teams new spawn character
+*/
 class JFW_Change_Spawn_Character : public ScriptImpClass {
-	void Created(GameObject *obj);
+  void Created(GameObject *obj);
 };
 
 class JFW_Show_Info_Texture : public ScriptImpClass {
@@ -383,6 +520,7 @@ class JFW_Cyborg_Reaper : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
+	void Timer_Expired(GameObject *obj,int number);
 };
 
 class JFW_Limpet_Drone : public ScriptImpClass {
@@ -411,6 +549,10 @@ class JFW_Ion_Storm : public ScriptImpClass {
 	bool storm;
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
+};
+
+class JFW_Ion_Storm_Weather : public ScriptImpClass {
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
 class JFW_Tech_Level_Custom : public ScriptImpClass {

@@ -45,7 +45,12 @@ GameObject SCRIPTS_API *Create_Zone(const char *preset,OBBoxClass &box); //Creat
 bool SCRIPTS_API PointInZone(GameObject *obj,const Vector3 &v); //Is a point in a zone
 bool SCRIPTS_API Is_Available_For_Purchase(GameObject *factory); //Is it possible to purchase a vehicle from this factory
 GameObject SCRIPTS_API *Get_Vehicle_Gunner_Pos(GameObject *obj); //Get the vehicle gunner, returns zero if there is no gunner
-void SCRIPTS_API Set_Vehicle_Is_Visible(GameObject *obj,bool visible); //works like Set_Is_Visible but for vehicles, makes them be ignored by Enemy_Seen
+
+/*!
+* Set whether a VehicleGameObj is visible to AIs utilising the Enemy_Seen logic. For soldiers use
+* the ScriptCommands::Set_Is_Visible function instead.
+*/
+void SCRIPTS_API Set_Vehicle_Is_Visible(GameObject *obj,bool visible);
 void SCRIPTS_API Set_Vehicle_Gunner(GameObject *obj,int seat); //set gunner for this vehicle
 bool SCRIPTS_API Is_Spy(GameObject *obj); //Is this soldier object a spy
 SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team); //Get the player count in a zone

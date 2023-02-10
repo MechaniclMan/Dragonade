@@ -20,7 +20,7 @@
 
 class DAChatCommandClass abstract {
 public:
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 	DAAccessLevel::Level AccessLevel;
 	DAChatType::Type ChatType;
 	int Parameters;
@@ -29,7 +29,7 @@ public:
 };
 
 struct DAEventChatCommandStruct {
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 	DAAccessLevel::Level AccessLevel;
 	DAChatType::Type ChatType;
 	int Parameters;
@@ -39,13 +39,13 @@ struct DAEventChatCommandStruct {
 
 class DAKeyHookClass abstract {
 public:
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 	virtual void Activate(cPlayer *Player) = 0;
 	virtual ~DAKeyHookClass() { }
 };
 
 struct DAEventKeyHookStruct {
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 	DAEventClass *Base;
 	DAEKH Func;
 };
@@ -56,55 +56,15 @@ public:
 	static void Shutdown();
 	virtual bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
 	virtual bool Key_Hook_Event(cPlayer *Player,const StringClass &Key);
-	template<class T> static void Register_Chat_Command(const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL) {
-		DAChatCommandClass *Base = new T;
-		Base->AccessLevel = AccessLevel;
-		Base->ChatType = ChatType;
-		Base->Parameters = Parameters;
-		DATokenParserClass Parser(Triggers,'|');
-		while (char *Token = Parser.Get_String()) {
-			_strlwr(Token);
-			Base->Triggers.Add(Get_Hash(Token));
-		}
-		ChatCommands.Add(Base);
-	}
-	static void Register_Event_Chat_Command(DAEventClass *Base,DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL) {
-		DAEventChatCommandStruct *Struct = new DAEventChatCommandStruct;
-		Struct->AccessLevel = AccessLevel;
-		Struct->ChatType = ChatType;
-		Struct->Parameters = Parameters;
-		DATokenParserClass Parser(Triggers,'|');
-		while (char *Token = Parser.Get_String()) {
-			_strlwr(Token);
-			Struct->Triggers.Add(Get_Hash(Token));
-		}
-		Struct->Base = Base;
-		Struct->Func = Func;
-		EventChatCommands.Add(Struct);
-	}
-	template<class T> static void Register_Key_Hook(const char *Triggers) {
-		DAKeyHookClass *Base = new T;
-		DATokenParserClass Parser(Triggers,'|');
-		while (char *Token = Parser.Get_String()) {
-			_strlwr(Token);
-			Base->Triggers.Add(Get_Hash(Token));
-		}
-		KeyHooks.Add(Base);
-	}
-	static void Register_Event_Key_Hook(DAEventClass *Base,DAEKH Func,const char *Triggers) {
-		DAEventKeyHookStruct *Struct = new DAEventKeyHookStruct;
-		DATokenParserClass Parser(Triggers,'|');
-		while (char *Token = Parser.Get_String()) {
-			_strlwr(Token);
-			Struct->Triggers.Add(Get_Hash(Token));
-		}
-		Struct->Base = Base;
-		Struct->Func = Func;
-		EventKeyHooks.Add(Struct);
-	}
+	static void Register_Chat_Command(DAChatCommandClass *Base,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	static void Register_Event_Chat_Command(DAEventClass *Base,DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	static void Register_Key_Hook(DAKeyHookClass *Base,const char *Triggers);
+	static void Register_Event_Key_Hook(DAEventClass *Base,DAEKH Func,const char *Triggers);
 	static void Unregister_Chat_Command(const char *Trigger);
-	static void Clear_Event_Chat_Commands(DAEventClass *Base);
+	static void Unregister_Event_Chat_Command(DAEventClass *Base,const char *Trigger);
 	static void Unregister_Key_Hook(const char *Trigger);
+	static void Unregister_Event_Key_Hook(DAEventClass *Base,const char *Trigger);
+	static void Clear_Event_Chat_Commands(DAEventClass *Base);
 	static void Clear_Event_Key_Hooks(DAEventClass *Base);
 
 private:
@@ -118,7 +78,7 @@ private:
 template <class T> class DAChatCommandRegistrant {
 public:
 	DAChatCommandRegistrant(const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL) {
-		DAChatCommandManager::Register_Chat_Command<T>(Triggers,Parameters,AccessLevel,ChatType);
+		DAChatCommandManager::Register_Chat_Command(new T,Triggers,Parameters,AccessLevel,ChatType);
 	}
 };
 #define Register_Simple_Chat_Command(ClassName,Triggers) DAChatCommandRegistrant<ClassName> ClassName##Registrant(Triggers); //This has to be named as such so it doesn't break the various functions named Register_Chat_Command.
@@ -128,7 +88,7 @@ public:
 template <class T> class DAKeyHookRegistrant {
 public:
 	DAKeyHookRegistrant(const char *Triggers) {
-		DAChatCommandManager::Register_Key_Hook<T>(Triggers);
+		DAChatCommandManager::Register_Key_Hook(new T,Triggers);
 	}
 };
 #define Register_Simple_Key_Hook(ClassName,Triggers) DAKeyHookRegistrant<ClassName> ClassName##Registrant(Triggers); //This has to be named as such so it doesn't break the various functions named Register_Key_Hook.

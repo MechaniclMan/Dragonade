@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added functions to set cost and definition.
 #ifndef TT_INCLUDE_PURCHASESETTINGSDEFCLASS_H
 #define TT_INCLUDE_PURCHASESETTINGSDEFCLASS_H
 #include "Definition.h"
@@ -20,6 +18,8 @@
 #endif
 #include "NetworkObjectClass.h"
 #include "ExtendedNetworkObject.h"
+#include "BuildingGameObjDef.h"
+using namespace BuildingConstants;
 #define PTTEAM(t) (t?0:1) //Convert a normal team into a PT team
 class PurchaseSettingsDefClass abstract : public DefinitionClass, public NetworkObjectClass  {
 public:
@@ -48,6 +48,9 @@ public:
 	uint32 Get_Class_ID() const;
 	PersistClass *Create() const;
 	static SCRIPTS_API PurchaseSettingsDefClass *Find_Definition(TYPE type,TEAM team);
+#ifdef DDBEDIT
+	virtual void                        Dump (FileClass &file);
+#endif
 	DECLARE_EDITABLE(PurchaseSettingsDefClass,DefinitionClass);
 	void Delete(void)
 	{
@@ -96,6 +99,34 @@ public:
 	TYPE Get_Type()
 	{
 		return type;
+	}
+	int Get_Tech_Level(int index)
+	{
+		return TechLevel[index];
+	}
+	bool Get_Factory_Not_Required(int index)
+	{
+		return FactoryNotRequired[index];
+	}
+	BuildingType Get_Factory_Building(int index)
+	{
+		return Factory[index];
+	}
+	BuildingType Get_Tech_Building(int index)
+	{
+		return TechBuilding[index];
+	}
+	void Set_Tech_Level(int index,int level)
+	{
+		TechLevel[index] = level;
+	}
+	void Set_Factory_Building(int index,BuildingType type)
+	{
+		Factory[index] = type;
+	}
+	void Set_Tech_Building(int index,BuildingType type)
+	{
+		TechBuilding[index] = type;
 	}
 	bool Get_Hidden(int index)
 	{
@@ -160,7 +191,6 @@ public:
 	void Set_Cost(int index,int cost) {
 		costs[index] = cost;
 	}
-
 #endif
 private:
 	TEAM team;
@@ -172,6 +202,10 @@ private:
 	bool Hidden[10];
 	bool Disabled[10];
 	bool Busy[10];
+	int TechLevel[10];
+	BuildingType Factory[10];
+	BuildingType TechBuilding[10];
+	bool FactoryNotRequired[10];
 	int altpresetids[10][3];
 	StringClass alttextures[10][3];
 	bool PageHidden;

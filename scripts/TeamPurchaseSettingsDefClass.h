@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added functions to set cost and definition.
 #ifndef TT_INCLUDE_TEAMPURCHASESETTINGSDEFCLASS_H
 #define TT_INCLUDE_TEAMPURCHASESETTINGSDEFCLASS_H
 #include "Definition.h"
@@ -37,6 +35,9 @@ public:
 	uint32 Get_Class_ID() const;
 	virtual PersistClass *Create() const;
 	static SCRIPTS_API TeamPurchaseSettingsDefClass *Get_Definition(TEAM team);
+#ifdef DDBEDIT
+	virtual void                        Dump (FileClass &file);
+#endif
 	DECLARE_EDITABLE(TeamPurchaseSettingsDefClass,DefinitionClass);
 	void Delete(void)
 	{
@@ -133,7 +134,7 @@ public:
 		Busy[index] = b;
 		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 	}
-	void Set_Beacon_Definition(int preset) {
+		void Set_Beacon_Definition(int preset) {
 		beaconpresetid = preset;
 	}
 	void Set_Beacon_Cost(int cost) {
@@ -142,7 +143,6 @@ public:
 	void Set_Enlisted_Definition(int index,int preset) {
 		presetids[index] = preset;
 	}
-
 #endif
 private:
 	TEAM team;

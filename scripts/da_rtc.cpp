@@ -39,8 +39,7 @@ void DARTCGameFeatureClass::Settings_Loaded_Event() {
 }
 
 bool DARTCGameFeatureClass::Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID) {
-	uint CommandHash = Command.GetHash();
-	if (DisablingCommands.Find(CommandHash) != -1) {
+	if (DisablingCommands.Find(Command) != -1) {
 		Set_Can_RTC(Player,false);
 	}
 	return true;
@@ -101,6 +100,9 @@ bool DARTCGameFeatureClass::Team_Change_Request_Event(cPlayer *Player) {
 	if (DATeamManager::Get_Force_Team() != -1) {
 		DA::Page_Player(Player,"You can not request a team change while force teaming is in effect.");
 	}
+	else if (Team != 0 && Team != 1) {
+		DA::Page_Player(Player,"You can not request a team change while on the neutral team.");
+	}
 	else if (TeamCount[Team]-TeamCount[OtherTeam] > 1) { //If their team has 2+ more players let them change regardless.
 		Change_Team_3(Player,OtherTeam);
 		Set_Can_RTC(Player,false);
@@ -108,11 +110,11 @@ bool DARTCGameFeatureClass::Team_Change_Request_Event(cPlayer *Player) {
 			DA::Host_Message("%ls has changed teams.",Player->Get_Name());
 		}
 	}
-	else if (!Get_Can_RTC(Player) || (int)Player->Get_Score() >= ScoreLimit) {
-		DA::Page_Player(Player,"You can not request a team change as you have already started playing.");
-	}
 	else if (Is_RTC(Player)) {
 		DA::Page_Player(Player,"You already have a team change request pending.");
+	}
+	else if (!Get_Can_RTC(Player) || (int)Player->Get_Score() >= ScoreLimit) {
+		DA::Page_Player(Player,"You can not request a team change as you have already started playing.");
 	}
 	else if (Queue[OtherTeam].Count()) { //If there's someone in the queue swap with them.
 		cPlayer *RTCPlayer = Queue[OtherTeam][0].Player;

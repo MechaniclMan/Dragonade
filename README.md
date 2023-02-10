@@ -1,4 +1,4 @@
-Dragonade 1.1
+Dragonade 1.2
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -14,8 +14,8 @@ ExEric3, providing hosting and test servers.
 
 Installation:
 
-1. Download and install the latest server version of scripts.dll from http://www.tiberiantechnologies.org/downloads. Note that version 1.1 of DA 
-   was designed to work with 4.0 RC1. It will not work with earlier versions and may or may not work with later versions.
+1. Download and install the latest server version of scripts.dll from http://www.tiberiantechnologies.org/downloads. 
+   Note that DA was designed to work with Scripts 4.0. It will not work with earlier versions and may or may not work with later versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini and the relevant gamemode.ini to your liking.
 
@@ -25,15 +25,47 @@ Installation:
 
 Update History:
 
+Version 1.2:
+  Additions:
+   - Added setting "ForceTT". This can be used in three ways:
+     0: Allow non-TT clients to join the server.
+     1: Allow non-TT clients to join the server and use server damage extrapolation for them. This means they will be unable to use any kind of damage modifying cheat, but their game will appear laggier.
+     2: Allow only TT clients to join the server.
+   - New Console functions to toggle server damage extrapolation for a player.
+   - Added setting "TTRevision". This should be set to the latest publicly released TT revision to ensure all TT players are running that revision.
+   - Added setting "DropCommandExpireTime" to the Loot Game Feature.
+   - Parachutes now have sounds.
+   - Headshot kill messages will now work when the killer is AI controlled.
+   - Added "!unstuck" chat command that will attempt to move a player if they are stuck.
+   - Added version of the "!vlimit" chat command that works when the Vehicle Queue is disabled.
+
+  Changes:
+   - Team remixing should now be more random.
+   - Team rebalancing has been improved.
+   - All beacon log messages now include the owner of the beacon.
+   - Headshot kill messages will now be more accurate when the killer is a non-TT client.
+   - The functions relating to fixing stuck objects have been improved.
+   - Updated some out of date scripts files.
+
+  Bug Fixes:
+   - Fixed a bug in the partial nick matching used in various commands.
+   - GameSpy should now display the correct next map.
+   - Fixed some bugs in the chat command system.
+   - Fixed page sound not playing for the player sending the page.
+   - Beacon disarm log messages now trigger when the beacon is disarmed by means other than damage.
+   - Fixed possible crash in RTC Game Feature when a player is on the neutral team.
+   - Fixed some bugs in the Squad System.
+
+
 Version 1.1:
   Additions:
    - The Drop Weapons Game Feature is now the Loot Game Feature and includes support for dropping backpacks, DNA powerups, and generic powerups(health/armor/weapons).
      The odds for what type of powerup will drop, and many other things, can be configured in the settings file.
    - Backpacks, and the newly added DNA poweups, will now have an icon above them that shows what weapons or character they contain.
    - The Parachutes Game Feature has been added. If enabled parachutes will automatically deploy when a player exits a flying vehicle above a certain height.
-   - Messages have been added for when players steal an enemy vehicle.
-   - Setting BlockFakeBeacons has been added and will prevent players from deploying beacons that would not damage an enemy building.
-   - Settings EnablePlayerKillMessages, EnableVehicleKillMessages, EnableBuildingKillMessages, and EnableBotKillMessages have been added to the Advanced Kill Messages Game Feature.
+   - Messages have been added for when a player steals an enemy vehicle.
+   - Setting "BlockFakeBeacons" has been added and will prevent players from deploying beacons that would not damage an enemy building.
+   - Settings "EnablePlayerKillMessages", "EnableVehicleKillMessages", "EnableBuildingKillMessages", and "EnableBotKillMessages" have been added to the Advanced Kill Messages Game Feature.
    - Support for the vote keyboard shortcuts has been added.
    - Keyboard shortcut "VehKick" has been added to trigger "!vkick all". Clients will need to add and bind this key in the extended options menu to use it.
    - New console function "teammessage"/"thmsg" to send a host message to a specific team.
@@ -51,9 +83,9 @@ Version 1.1:
 
   Bug Fixes:
    - Fixed some memory leaks.
-   - CanRepairBuildings, IsFriendlyFirePermitted, and BeaconPlacementEndsGame now work correctly when used in da.ini or gamemode.ini.
+   - "CanRepairBuildings", "IsFriendlyFirePermitted", and "BeaconPlacementEndsGame" now work correctly when used in da.ini or gamemode.ini.
    - Fixed some color messages not working for players with scripts 2.6-3.4.
-   - Fixed DA not being able to compile in debug mode.
+   - Fixed not being able to compile in debug mode.
    - Black Hand Rocket Soldiers in Domination mode will now work correctly with the Loot Game Feature.
 
 

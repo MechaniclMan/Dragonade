@@ -52,6 +52,7 @@ public:
 	DALootPowerUpClass(SoldierGameObj *Soldier) {
 		Dropper = Soldier->Get_Player();
 	}
+	void Set_Expire_Time(float Time);
 	void Init_Damagers(float Range,float ExpireTime);
 	void Init_Damagers(float Range,float ExpireTime,SoldierGameObj *Soldier);
 	void Add_Damager(cPlayer *Player);
@@ -166,6 +167,7 @@ private:
 
 	//Main settings
 	float ExpireTime;
+	float DropCommandExpireTime;
 	float DamagersOnlyTime;
 	float DamagersOnlyDistance;
 	DropOddsStruct DropOdds;

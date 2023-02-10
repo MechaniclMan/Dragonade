@@ -12,6 +12,8 @@
 #ifndef TT_INCLUDE__HTREECLASS_H
 #define TT_INCLUDE__HTREECLASS_H
 #include "Matrix3D.h"
+#include "engine_3dre.h"
+
 struct PivotClass
 {
 	char Name[16]; //0
@@ -23,9 +25,11 @@ struct PivotClass
 	bool IsCaptured; //121
 	Matrix3D CapTransform; //124
 	bool WorldSpaceTranslation; //172
+
 	PivotClass() : Index(0), Parent(0), BaseTransform(true), Transform(true), IsVisible(true), IsCaptured(false), CapTransform(true), WorldSpaceTranslation(false)
 	{
 	}
+
 	void Capture_Update()
 	{
 		if (WorldSpaceTranslation)
@@ -51,41 +55,63 @@ class HTreeClass
 private:
 	char Name[16]; //0
 	int NumPivots; //16
-	PivotClass* Pivot; //20
+	PivotClass* Pivots; //20
 	float ScaleFactor; //24
+
 public:
+
+	HTreeClass();
+	HTreeClass(const HTreeClass& that);
+	~HTreeClass();
+
+	static HTreeClass* Create_Interpolated(const HTreeClass* base, const HTreeClass* a, const HTreeClass* b, float weightA, float weightB);
+
+	void			Init_Default();
+
+	WW3DErrorType	Load_W3D(ChunkLoadClass& cload);
+	void			Free();
+
+
 	const char* Get_Name() const;
 	const Matrix3D& HTreeClass::Get_Transform(int pivot) const;
 	void Get_Bone_Control(int, Matrix3D&) const;
+
 	int Num_Pivots() const
 	{
 		return NumPivots;
 	}
+
 	int Get_Parent_Index(int boneidx) const
 	{
-		if (Pivot[boneidx].Parent)
+		if (Pivots[boneidx].Parent)
 		{
-			return Pivot[boneidx].Parent->Index;
+			return Pivots[boneidx].Parent->Index;
 		}
 		else
 		{
 			return 0;
 		}
 	}
+
 	void Base_Update(Matrix3D& root)
 	{
-		Pivot->Transform = root;
-		Pivot->IsVisible = true;
+		Pivots->Transform = root;
+		Pivots->IsVisible = true;
 		for (int i = 1;i < NumPivots;i++)
 		{
-			Matrix3D::Multiply(Pivot[i].Parent->Transform,Pivot[i].BaseTransform,&Pivot[i].Transform);
-			Pivot[i].IsVisible = true;
-			if (Pivot[i].IsCaptured)
+			Matrix3D::Multiply(Pivots[i].Parent->Transform,Pivots[i].BaseTransform,&Pivots[i].Transform);
+			Pivots[i].IsVisible = true;
+			if (Pivots[i].IsCaptured)
 			{
-				Pivot[i].Capture_Update();
+				Pivots[i].Capture_Update();
 			}
 		}
 	}
+
+private:
+	HTreeClass& operator = (const HTreeClass& that); // unimplemented
+
+	WW3DErrorType read_pivots(ChunkLoadClass& cload, bool create_root);
 };
 
 #endif

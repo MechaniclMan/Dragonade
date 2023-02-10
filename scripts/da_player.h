@@ -113,6 +113,8 @@ public:
 	void Inc_Flood_Counter();
 	void Dec_Flood_Counter();
 	bool Is_Flooding();
+	void Set_Server_Damage(bool Damage);
+	bool Use_Server_Damage();
 	
 	void Join();
 	void Leave();
@@ -185,6 +187,7 @@ private:
 	unsigned long LastTibDamageTime;
 	DynamicVectorClass<unsigned long> FloodProtection;
 	bool Loaded;
+	bool ServerDamage;
 	StringClass Serial;
 	float Version;
 	unsigned int Revision;
@@ -196,7 +199,7 @@ private:
 
 typedef bool (DAPlayerObserverClass::*DAPOCC)(const DATokenClass &Text,TextMessageEnum ChatType);
 struct DAPlayerObserverChatCommandStruct {
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 	DAPOCC Func;
 	DAAccessLevel::Level AccessLevel;
 	int Parameters;
@@ -206,7 +209,7 @@ struct DAPlayerObserverChatCommandStruct {
 typedef void (DAPlayerObserverClass::*DAPOKH)(void);
 struct DAPlayerObserverKeyHookStruct {
 	DAPOKH Func;
-	DynamicVectorClass<unsigned int> Triggers;
+	DynamicVectorClass<StringClass> Triggers;
 };
 
 class DAPlayerObserverClass abstract {
@@ -472,9 +475,11 @@ private:
 	static DynamicVectorClass<DAPlayerClass*> Players;
 
 	//Settings
-	static WideStringClass DisallowedNickFirstCharacters;
-	static WideStringClass DisallowedNickCharacters;
-	static DynamicVectorClass<WideStringClass> DisallowedNicks;
+	WideStringClass DisallowedNickFirstCharacters;
+	WideStringClass DisallowedNickCharacters;
+	DynamicVectorClass<WideStringClass> DisallowedNicks;
+	unsigned int ForceTT;
+	unsigned int TTRevision;
 };
 
 #endif

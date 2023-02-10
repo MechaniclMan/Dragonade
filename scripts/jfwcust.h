@@ -30,8 +30,22 @@ class JFW_Custom_Objectives_Dlg : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
+/*!
+* \brief Send Custom on Death
+* \author jonwil
+* ingroup scripts_customgenerators
+*
+* Script to send a custom message when the object it is attached to is killed
+*
+* \param ID
+*   ID of the object to send the custom message to
+* \param Message
+*   The type of custom message to send
+* \param Param
+*   The parameter to send with the custom message
+*/
 class JFW_Death_Send_Custom : public ScriptImpClass {
-	void Killed(GameObject *obj,GameObject *killer);
+  void Killed(GameObject *obj,GameObject *killer);
 };
 
 class JFW_Custom_Destroy_Building : public ScriptImpClass {
@@ -462,4 +476,34 @@ class JFW_Send_Self_Custom_On_Key : public JFW_Key_Hook_Base {
 
 class JFW_Startup_Custom_Self : public ScriptImpClass {
 	void Created(GameObject *obj);
+};
+
+/*!
+* \brief Send a custom based on health values
+* \author jonwil
+* \ingroup scripts_customgenerators
+*
+* Attach this to an object with health. When the script starts up, it sets a flag to "above". 
+* When the object is damaged, it checks the value of "current health" + "current shield strength" 
+* against the "Health" parameter. If "current health" + "current shield strength" is less than the
+* "Health" parameter and the "above" flag is set, it clears the "above" flag and sends the custom
+* specified by "Message1" to the object with "ID1". If "current health" + "current shield strength"
+* is greater than the "Health" parameter and the "above" flag is not set, it sets the "above" flag
+* and sends the custom specified by "Message2" to the object with "ID2".
+*
+* \param Message1
+*   Message to send when the objects health+shield goes below the set value
+* \param ID1
+*   ID of the object to send Message1 to
+* \param Message2
+*   Message to send when the objects health+shield goes above the set value
+* \param ID2
+*   ID of the object to send Message2 to
+* \param Health
+*   Health value to check against
+*/
+class JFW_Send_Custom_On_Damage : public ScriptImpClass {
+	bool above;
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float amount);
 };

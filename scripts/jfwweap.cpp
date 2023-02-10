@@ -1430,6 +1430,7 @@ void JFW_Char_Weapon_Switcher::Created(GameObject *obj)
 {
 	LastSwitch = 0;
 	Weapon2 = true;
+	InTimer = false;
 	InstallHook(Get_Parameter("Keyhook"),obj);
 }
 
@@ -1442,15 +1443,20 @@ void JFW_Char_Weapon_Switcher::KeyHook()
 		Send_Message_Player(Owner(),153,204,25,str);
 		return;
 	}
+	if (InTimer)
+	{
+		return;
+	}
 	LastSwitch = time(NULL);
 	if (Weapon2)
 	{
-		Remove_Weapon(Owner(),Get_Powerup_Weapon(Get_Parameter("WeaponPowerup2")));
+		Remove_Weapon(Owner(),Get_Powerup_Weapon(Get_Parameter("WeaponPowerup1")));
 	}
 	else
 	{
-		Remove_Weapon(Owner(),Get_Powerup_Weapon(Get_Parameter("WeaponPowerup1")));
+		Remove_Weapon(Owner(),Get_Powerup_Weapon(Get_Parameter("WeaponPowerup2")));
 	}
+	InTimer = true;
 	Commands->Start_Timer(Owner(),this,Get_Float_Parameter("SwitchTime"),1);
 }
 
@@ -1466,6 +1472,8 @@ void JFW_Char_Weapon_Switcher::Timer_Expired(GameObject *obj,int number)
 		Commands->Give_PowerUp(obj,Get_Parameter("WeaponPowerup1"),false);
 		Commands->Select_Weapon(obj,Get_Powerup_Weapon(Get_Parameter("WeaponPowerup1")));
 	}
+	Weapon2 = !Weapon2;
+	InTimer = false;
 }
 
 ScriptRegistrant<JFW_Nod_Turret> JFW_Nod_Turret_Registrant("JFW_Nod_Turret","");

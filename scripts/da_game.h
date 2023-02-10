@@ -58,6 +58,7 @@ private:
 	virtual void Game_Over_Event();
 	virtual void Level_Loaded_Event();
 	virtual void Settings_Loaded_Event();
+	virtual void Player_Loaded_Event(cPlayer *Player);
 	static DAGameModeFactoryClass *GameMode;
 	static DynamicVectorClass<DAGameModeFactoryClass*> GameModes;
 	static bool ShowGameModeTitle;
@@ -65,6 +66,7 @@ private:
 	static bool FirstMap;
 	static bool ShutdownPending;
 	static StringClass Map;
+	static int MapIndexShift;
 };
 
 

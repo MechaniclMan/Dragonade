@@ -18,8 +18,6 @@
 #include "da_token.h"
 #include "engine_tt.h"
 
-#define DA_VERSION "1.1"
-
 class cPlayer;
 class SoldierGameObj;
 class ScriptableGameObj;
@@ -38,6 +36,7 @@ typedef ScriptableGameObj GameObject;
 
 class DA_API DA {
 public:
+	static const char *Get_Version();
 	static void Init();
 	static void Shutdown();
 

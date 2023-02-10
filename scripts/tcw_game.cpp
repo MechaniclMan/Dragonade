@@ -70,11 +70,11 @@ void tcw_Custom_Win_Game_Credits::Custom(GameObject *obj, int message, int param
 
 void tcw_Map_Intro::Created(GameObject *obj)
 {
-	Commands->Start_Timer(obj,this,15.0f,251);
-	Commands->Start_Timer(obj,this,18.0f,252);
-	Commands->Start_Timer(obj,this,21.0f,253);
-	Commands->Start_Timer(obj,this,24.0f,254);
-	Commands->Start_Timer(obj,this,27.0f,255);
+	Commands->Start_Timer(obj,this,25.0f,251);
+	Commands->Start_Timer(obj,this,28.0f,252);
+	Commands->Start_Timer(obj,this,31.0f,253);
+	Commands->Start_Timer(obj,this,34.0f,254);
+	Commands->Start_Timer(obj,this,37.0f,255);
 }
 void tcw_Map_Intro::Timer_Expired(GameObject *obj, int number)
 {

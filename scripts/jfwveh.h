@@ -26,6 +26,43 @@ class JFW_Turret_Spawn_2 : public ScriptImpClass {
 	public: void Register_Auto_Save_Variables();
 };
 
+
+/*!
+* \brief Vehicle Turret Spawner Variant (Enter/Exit Customs & Health Link)
+* \author jonwil, Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup custom_generator
+*
+* This is a variant of the basic JFW_Turret_Spawn_2 script with the added ability to send custom
+* messages to the turret object when a driver enters or exits the vehicle. Additionally it links
+* the health of the turrets with that of the vehicle body so any damage taken is applied to both.
+*
+* \param Turret_Preset
+*   Name of the preset to be spawned
+* \param Bone_Name
+*   Name of the bone on the object to attach the spawned preset to
+* \param Explosion_Preset
+*   Name of an explosion preset to create when the object is destroyed, this is used to destroy
+*   the spawned turret
+* \param Explosion_Bone
+*   Name of the bone on the object to create the explosion at
+* \param Driver_Entered_Custom
+*   ID of the custom message to be sent when a driver enters the vehicle
+* \param Driver_Exited_Custom
+*   ID of the custom message to be sent when the driver leaves the vehicle
+*
+* \note
+*   The Driver_Exited_Custom custom will be sent to the spawned turret as soon as it is created
+*/
+class JFW_Turret_Spawn_3 : public ScriptImpClass
+{
+  int turID;
+  bool m_bHasDriver;
+  void Created(GameObject *obj);
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  void Killed(GameObject *obj,GameObject *killer);
+  public: void Register_Auto_Save_Variables();
+};
+
 class JFW_Drive_To_Player : public ScriptImpClass {
 	void Created(GameObject *obj);
 };

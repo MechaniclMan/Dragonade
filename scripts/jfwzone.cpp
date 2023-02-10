@@ -2581,7 +2581,7 @@ void JFW_Sell_Zone::KeyHook()
 			const char *preset = Commands->Get_Preset_Name(Commands->Find_Object(ID));
 			float cost = ((float)Get_Cost(preset) / 2);
 			Commands->Give_Money(Get_Vehicle_Driver(Commands->Find_Object(ID)),cost,false);
-			Commands->Send_Custom_Event(Owner(),Commands->Find_Object(ID),CUSTOM_ENTERED_VTOL_LAND_ZONE,0,0);
+			Commands->Send_Custom_Event(Owner(),Commands->Find_Object(ID),CUSTOM_TRANSITION_VTOL_LAND_ZONE,1,0);  // Compatibility with dp88_Aircraft_LandingZone_Aircraft
 			Force_Occupants_Exit(Commands->Find_Object(ID));
 			Commands->Start_Timer(Owner(),this,1,ID);
 			RemoveHook();
@@ -3399,7 +3399,7 @@ void JFW_Conyard_Spy_Zone_2_New::Timer_Expired(GameObject *obj,int number)
 
 void JFW_Destroy_Vehicle_Zone::Entered(GameObject *obj,GameObject *enterer)
 {
-	if (enterer->As_VehicleGameObj())
+	if (enterer->As_VehicleGameObj() && !Is_Script_Attached(enterer,"dp88_RemoteControlVehicle"))
 	{
 		Attach_Script_Occupants(enterer,"RA_DriverDeath", "0");
 	}

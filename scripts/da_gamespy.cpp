@@ -92,7 +92,7 @@ void DAGameSpyGameFeatureClass::Think() {
 		if (!strcmp(Buffer,"\\status\\")) {
 			HashTemplateClass<StringClass,GameDefinition> Definitions;
 			Get_Game_Definitions(Definitions);
-			StringClass NextMap = Get_Map(The_Game()->Get_Map_Number()+1);
+			StringClass NextMap = Get_Map(Get_Current_Map_Index()+(The_Game()->Is_Intermission()?0:1));
 			if (NextMap.Is_Empty()) {
 				NextMap = Get_Map(0);
 			}
@@ -101,8 +101,8 @@ void DAGameSpyGameFeatureClass::Think() {
 
 			//Basic
 			Send.Format(
-				"\\gametype\\%s\\mapname\\%s\\nextmap\\%s\\%s\\%s\\Time Limit\\%s\\Starting Credits\\%d\\FDS\\Dragonade %s\\",
-				DAGameManager::Get_Game_Mode_Long_Name(),DAGameManager::Get_Map(),Definitions.Get(NextMap)->mapName,The_Game()->Get_Time_Limit_Minutes()?"Time Remaining":"Time Elapsed",The_Game()->Get_Time_Limit_Minutes()?Format_Time((unsigned long)The_Game()->Get_Time_Remaining_Seconds()):Format_Time(The_Game()->Get_Game_Duration_S()),Format_Time(The_Game()->Get_Time_Limit_Minutes()*60),The_Cnc_Game()->StartingCredits,DA_VERSION
+				"\\gametype\\%s\\mapname\\%s\\nextmap\\%s.mix\\%s\\%s\\Time Limit\\%s\\Starting Credits\\%d\\FDS\\Dragonade %s\\",
+				DAGameManager::Get_Game_Mode_Long_Name(),DAGameManager::Get_Map(),Definitions.Get(NextMap)->mapName,The_Game()->Get_Time_Limit_Minutes()?"Time Remaining":"Time Elapsed",The_Game()->Get_Time_Limit_Minutes()?Format_Time((unsigned long)The_Game()->Get_Time_Remaining_Seconds()):Format_Time(The_Game()->Get_Game_Duration_S()),Format_Time(The_Game()->Get_Time_Limit_Minutes()*60),The_Cnc_Game()->StartingCredits,DA::Get_Version()
 			);
 			
 			//Custom rules
@@ -120,7 +120,7 @@ void DAGameSpyGameFeatureClass::Think() {
 			}
 
 			//Basic
-			Send += StringFormat("hostname\\%ls\\gamename\\ccrenegade\\gamever\\838\\hostport\\%d\\password\\%d\\numplayers\\%d\\maxplayers\\%d\\queryid\\%u.1",
+			Send += StringFormat("hostname\\ %ls\\gamename\\ccrenegade\\gamever\\838\\hostport\\%d\\password\\%d\\numplayers\\%d\\maxplayers\\%d\\queryid\\%u.1",
 				Title,The_Game()->Get_Port(),The_Game()->Is_Passworded(),The_Game()->Get_Current_Players(),The_Game()->Get_Max_Players(),QueryID
 			);
 

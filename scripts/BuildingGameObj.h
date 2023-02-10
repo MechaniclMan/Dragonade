@@ -99,6 +99,7 @@ public:
 	virtual bool								Get_World_Position (Vector3 &pos) const	{ pos = Position; return true; }
 	virtual	void								Get_Description( StringClass & description );
 	virtual bool								Is_Tagged(void)									{ return false; }
+	SCRIPTS_API BuildingAggregateClass *                    Find_MCT();
 	bool	Is_GDI( void )						{ return Get_Player_Type() == PLAYERTYPE_GDI; }
 	bool	Is_Nod( void )						{ return Get_Player_Type() == PLAYERTYPE_NOD; }
 #ifndef TTLE_EXPORTS

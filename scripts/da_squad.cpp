@@ -35,7 +35,7 @@ void DASquadMemberClass::Init() {
 }
 
 void DASquadMemberClass::Name_Change() {
-	WideStringClass NameSave = Get_Name();
+	/*WideStringClass NameSave = Get_Name();
 	Get_Owner()->PlayerName = "#" + NameSave;
 	for (int i = 0;i < Squad->Size();i++) {
 		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
@@ -52,7 +52,7 @@ void DASquadMemberClass::Name_Change() {
 		}
 	}
 	Update_Network_Object(Get_Owner());
-	Get_Owner()->PlayerName = NameSave; //Restore old name on server
+	Get_Owner()->PlayerName = NameSave; //Restore old name on server*/
 }
 
 DASquadMemberClass::~DASquadMemberClass() {
@@ -60,11 +60,11 @@ DASquadMemberClass::~DASquadMemberClass() {
 		cPlayer *Member = Squad->Get_Member(i)->Get_Owner();
 
 		Reset_Radar(Member->Get_GameObj()); //Reset radar for other players
-		Get_Owner()->Set_Object_Dirty_Bits(Member->Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset name for other players
+		//Get_Owner()->Set_Object_Dirty_Bits(Member->Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset name for other players
 
 		if (Get_Owner()->Is_Active()) {
 			Squad->Get_Member(i)->Reset_Radar(Get_GameObj()); //Reset other player's radar
-			Member->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset other player's names
+			//Member->Set_Object_Dirty_Bits(Get_ID(),NetworkObjectClass::BIT_CREATION); //Reset other player's names
 		}
 	}
 	Squad->Internal_Remove(this); //Remove this observer from the squad's list of members
@@ -77,15 +77,11 @@ void DASquadMemberClass::Team_Change() {
 }
 
 void DASquadMemberClass::Created() {
-	//Start_Timer(2,0.1f); //Set radar for new gameobject
 	Start_Timer(2,0.5f);
-	//Start_Timer(2,2.0f);
 }
 
 void DASquadMemberClass::Player_Loaded() {
-	//Start_Timer(1,0.1f); //Set radar for other squad members that loaded before this one.
 	Start_Timer(1,0.5f);
-	//Start_Timer(1,2.0f);
 }
 
 void DASquadMemberClass::Timer_Expired(int Number,unsigned int Data) {
@@ -199,7 +195,7 @@ bool DASquadMemberClass::Leave_Chat_Command(const DATokenClass &Text,TextMessage
 }
 
 bool DASquadMemberClass::Msg_Chat_Command(const DATokenClass &Text,TextMessageEnum ChatType) {
-	Squad->Squad_Message("#%ls: %s",Get_Name(),Text[0]);
+	Squad->Squad_Message("%ls: %s",Get_Name(),Text[0]);
 	return false;
 }
 
@@ -494,11 +490,11 @@ void DASquadManagerClass::Remix_Event() {
 
 	if (RemixSquads) {
 		if (SquadList.Count() == 1) { //If theres only one squad just put it on a random team.
-			int RandTeam = Commands->Get_Random_Int(0,2);
+			int RandTeam = rand() % 2;
 			SquadList[0]->Set_Team(RandTeam);	
 		}
 		else if (SquadList.Count() == 2) { //If there are two squads they go on opposite teams.
-			int RandTeam = Commands->Get_Random_Int(0,2);
+			int RandTeam = rand() % 2;
 			SquadList[0]->Set_Team(RandTeam);
 			SquadList[1]->Set_Team(RandTeam?0:1);
 		}
@@ -509,7 +505,7 @@ void DASquadManagerClass::Remix_Event() {
 				int LoopTeamCount[2] = {0,0};
 				DynamicVectorClass<DASquadRemixStruct> SquadTeams;
 				for (int i = 0;i < SquadList.Count();i++) {
-					int RandTeam = Commands->Get_Random_Int(0,2);
+					int RandTeam = rand() % 2;
 					LoopTeamCount[RandTeam] += SquadList[i]->Size();
 					SquadTeams.Add(DASquadRemixStruct(SquadList[i],RandTeam));
 				}
@@ -532,9 +528,25 @@ void DASquadManagerClass::Remix_Event() {
 }
 
 void DASquadManagerClass::Rebalance_Event() {
-	int TeamCount[2];
-	TeamCount[0] = Tally_Team_Size(0);
-	TeamCount[1] = Tally_Team_Size(1);
+	int TeamCount[2] = {0,0};
+	int NoSquadTeamCount[2] = {0,0};
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { 
+		cPlayer *Player = z->Data(); 
+		if (Player->Is_Active()) { 
+			if (Player->Get_Player_Type() == 0) { 
+				TeamCount[0]++;
+				if (!Find_Squad(Player)) {
+					NoSquadTeamCount[0]++;
+				}
+			} 
+			else if (Player->Get_Player_Type() == 1) {
+				TeamCount[1]++;
+				if (!Find_Squad(Player)) {
+					NoSquadTeamCount[1]++;
+				}
+			} 
+		}
+	}
 
 	int OldTeam = -1;
 	int NewTeam = -1;
@@ -545,57 +557,37 @@ void DASquadManagerClass::Rebalance_Event() {
 	else {
 		OldTeam = 1;
 		NewTeam = 0;
-	} //Teams are uneven, try to balance them without touching the squads.
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;z = z->Next()) { 
-		cPlayer *Player = z->Data();
-		if (Player->Is_Active()) {
-			int ID = Player->Get_Id();
-			if (Player->Get_Player_Type() == OldTeam && !Find_Squad(ID)) {
-				Change_Team_4(Player,NewTeam);
-				TeamCount[OldTeam]--;
-				TeamCount[NewTeam]++;
+	}
+	//Teams are uneven, try to balance them without touching the squads.
+	while ((TeamCount[OldTeam]-TeamCount[NewTeam]) > 1 && NoSquadTeamCount[OldTeam]) { //Go until teams are balanced or we run out of players not in a squad.
+		int Rand = Get_Random_Int(0,NoSquadTeamCount[OldTeam]); //Select random player on team to change.
+		int Count = 0;
+		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+			cPlayer *Player = z->Data();
+			if (Player->Is_Active() && Player->Get_Player_Type() == OldTeam && !Find_Squad(Player)) {
+				if (Count == Rand) { //Loop until we find that player.
+					Change_Team_3(Player,NewTeam);
+					TeamCount[OldTeam]--;
+					TeamCount[NewTeam]++;
+					NoSquadTeamCount[OldTeam]--;
+					NoSquadTeamCount[NewTeam]++;
+					break;
+				}
+				Count++;
 			}
 		}
 	}
-
-	if (Diff(TeamCount[0],TeamCount[1]) > 1) { //Teams are still uneven, going to have to start removing people from squads.
+	if ((TeamCount[OldTeam]-TeamCount[NewTeam]) > 1) { //Teams are still uneven, going to have to start removing people from squads.
 		for (int i = SquadList.Count()-1;i >= 0 && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;i--) { //Go until the teams are even or we run out of squads.
 			DASquadClass *Squad = SquadList[i];
 			for (int j = Squad->Size()-1;j >= 0 && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;j--) { //Start with the last member of the last squad and work backwards.
 				if (Squad->Get_Team() == OldTeam) {
 					DASquadMemberClass *Member = Squad->Get_Member(j);
 					DA::Private_Color_Message(Member->Get_ID(),SQUADCOLOR,"You have been removed from your squad to balance the teams.");
-					Change_Team_4(Member->Get_Owner(),NewTeam);
+					Change_Team_3(Member->Get_Owner(),NewTeam);
 					TeamCount[OldTeam]--;
 					TeamCount[NewTeam]++;
 					Member->Leave_Squad();
-					//if (Diff(TeamCount[0],TeamCount[1]) < 2) {
-					//	i = -1;
-					//	break;
-					//}
-				}
-			}
-		}
-	}
-	
-	if (Diff(TeamCount[0],TeamCount[1]) > 1) { //Is this even possible? Throw out all the squads and teams and start anew.
-		TeamCount[0] = 0;
-		TeamCount[1] = 0;
-		for (int i = 0;i < SquadList.Count();i++) {
-			SquadList[i]->Disband();
-		}
-
-		for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
-			cPlayer *Player = z->Data();
-			if (Player->Is_Active()) {
-				int RandTeam = Commands->Get_Random_Int(0,2);
-				if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) {
-					Change_Team_4(Player,RandTeam);
-					TeamCount[RandTeam]++;
-				}
-				else {
-					Change_Team_4(Player,RandTeam?0:1);
-					TeamCount[RandTeam?0:1]++;
 				}
 			}
 		}
@@ -678,7 +670,7 @@ bool DASquadManagerClass::Join_Chat_Command(cPlayer *Player,const DATokenClass &
 	if (Find_Squad(Player)) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"You are already in a squad.");
 	}
-	else if (The_Game()->Get_Current_Players() < 1) {
+	else if (The_Game()->Get_Current_Players() < 7) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"There are not enough players to create a squad.");
 	}
 	else {
@@ -761,7 +753,7 @@ bool DASquadManagerClass::Invite_Chat_Command(cPlayer *Player,const DATokenClass
 			}
 		}
 	}
-	else if (The_Game()->Get_Current_Players() < 6) {
+	else if (The_Game()->Get_Current_Players() < 7) {
 		DA::Private_Color_Message(Player,SQUADCOLOR,"There are not enough players to create a squad.");
 	}
 	else {

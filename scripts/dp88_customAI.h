@@ -25,77 +25,95 @@ Base class for custom AI's
 *
 * This class contains the core logic used in custom AI scripts, such as the target prioritisation
 * mechanism. It is not an actual script in it's own right and cannot be used in LevelEdit directly.
+*
+* \note
+*   AI scripts derived from this class support being disabled and enabled on the fly by sending the
+*   following custom messages to the object the script is attached to.<br/>
+*   <table>
+*     <tr>  <th>Custom Message</th>  <th>Effect</th></tr>
+*     <tr>  <td>-637140989</td>      <td>Disable the AI</td></tr>
+*     <tr>  <td>-637140988</td>      <td>Enable the AI</td></tr>
+*   </table>
 */
 class dp88_customAI : public ScriptImpClass
 {
 public:
 
-	/* -----
-	Constructor / Destructor (cleanup debug file if applicable
-	----- */
+  /* -----
+  Constructor / Destructor (cleanup debug file if applicable
+  ----- */
 
-	dp88_customAI() { debugFile = NULL; };
-	~dp88_customAI() { if ( debugFile != NULL ) { fclose(debugFile); } };
-
-
-
-
-	/* -----
-	Variables
-	----- */
-
-	// Priority and weapon choice for each target type
-	float priority_infantry;			bool primary_infantry;
-	float priority_lightVehicle;		bool primary_lightVehicle;
-	float priority_heavyVehicle;		bool primary_heavyVehicle;
-	float priority_VTOL;				bool primary_VTOL;
-	float priority_building;			bool primary_building;
-
-	// Priority modifiers
-	float modifier_distance, modifier_target_damage, modifier_target_value;
-
-	// Attack ranges
-	int primary_minRange, primary_maxRange;
-	int secondary_minRange, secondary_maxRange;
-
-	// Current target state
-	int targetID;
-	int targetLastSeen;
-	float targetPriority;
-	bool primary_target;
-
-	// Debug state
-	bool debug;
-	FILE* debugFile;
+  dp88_customAI() { debugFile = NULL; };
+  ~dp88_customAI() { if ( debugFile != NULL ) { fclose(debugFile); } };
 
 
 
 
-	/* -----
-	Events
-	----- */
+  /* -----
+  Variables
+  ----- */
 
-	virtual void Created( GameObject *obj );
-	virtual void Action_Complete( GameObject *obj, int action_id, ActionCompleteReason complete_reason  );
-	//virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
-	//virtual void Timer_Expired( GameObject *obj, int number );
+  // Priority and weapon choice for each target type
+  float priority_infantry;        bool primary_infantry;
+  float priority_lightVehicle;    bool primary_lightVehicle;
+  float priority_heavyVehicle;    bool primary_heavyVehicle;
+  float priority_VTOL;            bool primary_VTOL;
+  float priority_building;        bool primary_building;
+
+  // Priority modifiers
+  float modifier_distance, modifier_target_damage, modifier_target_value;
+
+  // Attack ranges
+  int primary_minRange, primary_maxRange;
+  int secondary_minRange, secondary_maxRange;
+
+  // Current target state
+  int targetID;
+  int targetLastSeen;
+  float targetPriority;
+  bool primary_target;
+
+  // Other settings
+  bool m_bAiEnabled;
+  bool m_bCanDetectStealth;
+
+  // Debug state
+  bool debug;
+  FILE* debugFile;
 
 
-	/* ----
-	Functions
-	----- */
-	
-	virtual void Init( GameObject *obj );
-	virtual void loadSettings( GameObject *obj, bool loadSecondaryFireSettings = true, bool loadBuildingTargetSettings = false, bool oldSettingNames = false );
-	
-	float getDistance ( GameObject *obj1, GameObject *obj2 );
-	virtual float getPriority( GameObject *obj, GameObject *target );
-	virtual float getPriority( GameObject *obj, int target_id );
-	bool getPrimary ( GameObject *target );
 
-	/* Utility functions for both priority calculations and AI scripts to utilise */
-	virtual bool IsVehicleEmpty( VehicleGameObj* vobj );
-	virtual bool IsVehicleAIEnabled( VehicleGameObj* vobj );
+
+  /* -----
+  Events
+  ----- */
+
+  virtual void Created( GameObject *obj );
+  virtual void Custom ( GameObject* pObj, int message, int param, GameObject* pSender );
+  virtual void Action_Complete( GameObject *obj, int action_id, ActionCompleteReason complete_reason  );
+  //virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
+  //virtual void Timer_Expired( GameObject *obj, int number );
+
+
+
+
+  /* ----
+  Functions
+  ----- */
+
+  virtual void Init( GameObject *obj );
+  virtual void loadSettings( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings );
+  
+  virtual void AIStateChanged( GameObject* pObj, bool bEnabled );
+
+  float getDistance ( GameObject *obj1, GameObject *obj2 );
+  virtual float getPriority( GameObject *obj, GameObject *target );
+  virtual float getPriority( GameObject *obj, int target_id );
+  bool getPrimary ( GameObject *target );
+
+  /* Utility functions for both priority calculations and AI scripts to utilise */
+  virtual bool IsVehicleEmpty( VehicleGameObj* vobj );
+  virtual bool IsVehicleAIEnabled( VehicleGameObj* vobj );
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -119,24 +137,41 @@ class dp88_AI_heavyVehicleMarker : public ScriptImpClass{};
 * This is a somewhat experimental AI for vehicles which can track targets over a predefined distance
 * and attack them. This script is not yet suitable for use in maps or mods and is subject to change.
 */
-class dp88_tankAI_Offensive : public dp88_customAI
+class dp88_AI_Tank_Offensive : public dp88_customAI
 {
-	/* ----
-	Variables
-	----- */
+public:
+  // Game Events
+  void Created( GameObject *obj );
+  void Enemy_Seen ( GameObject *obj, GameObject *enemy );
+  void Timer_Expired ( GameObject *obj, int number );
+  void Action_Complete ( GameObject *obj, int action_id, ActionCompleteReason reason);
 
-	// Preferred attack ranges
-	int primary_prefRange, secondary_prefRange;
-	bool movingToTarget;
+  // Custom AI initialisation script overloads
+  virtual void Init( GameObject *obj );
+  virtual void loadSettings( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings );
 
-	// Other
-	int retreatDamageAmount;
-	FILE *debugFile;
-	
-	// Events
-	void Created( GameObject *obj );
-	void Enemy_Seen ( GameObject *obj, GameObject *enemy );
-	void Timer_Expired( GameObject *obj, int number );
+
+protected:
+  static const int ACTION_ID_MOVE_TO_OBJECTIVE = 7850001;
+  static const int ACTION_ID_ATTACK_ENEMY = 7850002;
+
+  void AttackTarget ( GameObject* obj, GameObject* target );
+
+  /*! When the unit has finished any combat actions it will call this function to start moving to
+  its current objective. If it has no current objective it will try to obtain a new one. */
+  void GoToObjective ( GameObject* obj );
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  int primary_prefRange, secondary_prefRange;
+  int retreatDamageAmount;
+  /*! @} */
+
+  /*! True if moving towards a target (either an enemy unit or an objective), false otherwise */
+  bool m_bMovingToTarget;
+
+  // Current objective
+  class dp88_AI_Objective* m_pCurrentObjective;
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -189,19 +224,23 @@ class dp88_tankAI_Offensive : public dp88_customAI
 *   which are closer to the turret, good for less accurate weapons
 * \param Modifier_Target_Damage
 *   Priority modification to apply based on damage a target has already sustained. Higher values
-*   will favour targets which have already been damaged in combat, picking them off first.
+*   will favour targets which have already been damaged in combat, picking them off first
 * \param Modifier_Target_Value
 *   Priority modification to apply based on the value of the target. Higher values will favour
-*   targets with a higher purchase cost, good for hard hitting weapons.
+*   targets with a higher purchase cost, good for hard hitting weapons
 * \param Requires_Power
 *   Specify whether this turret requires base power to operate: 1 to require power, 0 to ignore
 * \param Debug
 *   Specify whether to produce a debug logfile about the turrets targetting decisions, this is
-*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable.
+*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable
+* \param Detects_Stealth
+*   Determine whether this turret can detect stealthed enemies or not: 1 to enable, 0 to disable
 *
 * \note
 *   Vehicles are always classified as light vehicles unless they have the dp88_AI_heavyVehicleMarker
-*   script attached to them.
+*   script attached to them<br/>
+*   <br/>
+*   The turret can be disabled using custom messages, see the note about this in dp88_customAI
 *
 * \warning
 *   Never leave the Debug parameter enabled when releasing your mod, it will clog up everyones
@@ -210,44 +249,47 @@ class dp88_tankAI_Offensive : public dp88_customAI
 class dp88_AI_Turret : public dp88_customAI
 {
 public:
-	// Events
-	virtual void Created( GameObject *obj );
-	virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
-	virtual void Timer_Expired( GameObject *obj, int number );
+  // Events
+  virtual void Enemy_Seen ( GameObject *obj, GameObject *enemy );
+  virtual void Timer_Expired( GameObject *obj, int number );
+
+  // Custom AI initialisation script overrides
+  virtual void Init( GameObject *obj );
+  virtual void loadSettings( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings );
+
+  // Custom AI event overrides
+  virtual void AIStateChanged( GameObject* pObj, bool bEnabled );
 
 protected:
-	bool requiresPower, splashInfantry;
+  bool requiresPower, splashInfantry;
 
-	virtual void Init( GameObject *obj );
-	virtual void loadSettings( GameObject *obj, bool loadSecondaryFireSettings = true, bool loadBuildingTargetSettings = false );
-
-	// These can be overloaded from their default functionality as required, allowing the default
-	// enemy seen procedure to be reused even when the behaviour of these checks has been altered
-	virtual bool checkTeam ( GameObject* obj, GameObject* target );
-	virtual bool checkRange ( GameObject* obj, GameObject* target, bool primary );
-	virtual bool checkPowerState( GameObject* obj );
+  // These can be overloaded from their default functionality as required, allowing the default
+  // enemy seen procedure to be reused even when the behaviour of these checks has been altered
+  virtual bool checkTeam ( GameObject* obj, GameObject* target );
+  virtual bool checkRange ( GameObject* obj, GameObject* target, bool primary );
+  virtual bool checkPowerState( GameObject* obj );
 
 
 
 
-	/* These functions are used to initiate and control the AI actions and can be overloaded from
-	their defaults if required to provide custom functionality, such as delaying an attack whilst
-	waiting for a chargeup / popup animation to occur. */
+  /* These functions are used to initiate and control the AI actions and can be overloaded from
+  their defaults if required to provide custom functionality, such as delaying an attack whilst
+  waiting for a chargeup / popup animation to occur. */
 
-	// These is called when a valid target has been identified and selected as the highest priority
-	// target, the turret should begin attacking in this function. Note that this may be called
-	// while another attack is already in progress, either normal or splash.
-	virtual void attackTarget ( GameObject* obj, GameObject* target, bool primary );
+  // These is called when a valid target has been identified and selected as the highest priority
+  // target, the turret should begin attacking in this function. Note that this may be called
+  // while another attack is already in progress, either normal or splash.
+  virtual void attackTarget ( GameObject* obj, GameObject* target, bool primary );
 
-	// This is called instead of attackTarget when we are set to splash infantry instead of shooting
-	// at them directly. Whilst we are attacking an infantry unit with splash this will be called
-	// regularly on a timer to update the location of the target. Note that this may be called
-	// while another attack is already in progress, either normal or splash.
-	virtual void attackLocation ( GameObject* obj, Vector3 location, bool primary );
+  // This is called instead of attackTarget when we are set to splash infantry instead of shooting
+  // at them directly. Whilst we are attacking an infantry unit with splash this will be called
+  // regularly on a timer to update the location of the target. Note that this may be called
+  // while another attack is already in progress, either normal or splash.
+  virtual void attackLocation ( GameObject* obj, Vector3 location, bool primary );
 
-	// This is called when the target is no longer valid and the turret should stop attacking, this
-	// is called to stop both attackTarget and splashLocation attacks.
-	virtual void stopAttacking ( GameObject* obj );
+  // This is called when the target is no longer valid and the turret should stop attacking, this
+  // is called to stop both attackTarget and splashLocation attacks.
+  virtual void stopAttacking ( GameObject* obj );
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -312,19 +354,23 @@ protected:
 *   which are closer to the turret, good for less accurate weapons
 * \param Modifier_Target_Damage
 *   Priority modification to apply based on damage a target has already sustained. Higher values
-*   will favour targets which have already been damaged in combat, picking them off first.
+*   will favour targets which have already been damaged in combat, picking them off first
 * \param Modifier_Target_Value
 *   Priority modification to apply based on the value of the target. Higher values will favour
-*   targets with a higher purchase cost, good for hard hitting weapons.
+*   targets with a higher purchase cost, good for hard hitting weapons
 * \param Requires_Power
 *   Specify whether this turret requires base power to operate: 1 to require power, 0 to ignore
 * \param Debug
 *   Specify whether to produce a debug logfile about the turrets targetting decisions, this is
-*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable.
+*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable
+* \param Detects_Stealth
+*   Determine whether this turret can detect stealthed enemies or not: 1 to enable, 0 to disable
 *
 * \note
 *   Vehicles are always classified as light vehicles unless they have the dp88_AI_heavyVehicleMarker
-*   script attached to them.
+*   script attached to them<br/>
+*   <br/>
+*   The turret can be disabled using custom messages, see the note about this in dp88_customAI
 *
 * \warning
 *   Never leave the Debug parameter enabled when releasing your mod, it will clog up everyones
@@ -475,19 +521,23 @@ class dp88_AI_PopupTurret_Spotter : public ScriptImpClass
 *   which are closer to the turret, good for less accurate weapons
 * \param Modifier_Target_Damage
 *   Priority modification to apply based on damage a target has already sustained. Higher values
-*   will favour targets which have already been damaged in combat, picking them off first.
+*   will favour targets which have already been damaged in combat, picking them off first
 * \param Modifier_Target_Value
 *   Priority modification to apply based on the value of the target. Higher values will favour
-*   targets with a higher purchase cost, good for hard hitting weapons.
+*   targets with a higher purchase cost, good for hard hitting weapons
 * \param Requires_Power
 *   Specify whether this turret requires base power to operate: 1 to require power, 0 to ignore
 * \param Debug
 *   Specify whether to produce a debug logfile about the turrets targetting decisions, this is
-*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable.
+*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable
+* \param Detects_Stealth
+*   Determine whether this turret can detect stealthed enemies or not: 1 to enable, 0 to disable
 *
 * \note
 *   Vehicles are always classified as light vehicles unless they have the dp88_AI_heavyVehicleMarker
-*   script attached to them.
+*   script attached to them<br/>
+*   <br/>
+*   The turret can be disabled using custom messages, see the note about this in dp88_customAI
 *
 * \warning
 *   Never leave the Debug parameter enabled when releasing your mod, it will clog up everyones
@@ -497,11 +547,14 @@ class dp88_AI_ChargedTurret : public dp88_AI_Turret
 {
 public:
   // Game events
-  virtual void Created ( GameObject* pSelf );
   virtual void Timer_Expired ( GameObject* pSelf, int number );
   virtual void Custom ( GameObject* pSelf, int type, int param, GameObject* pSender );
   virtual void Animation_Complete ( GameObject* pSelf, const char* animation_name );
   virtual void Destroyed( GameObject* pSelf );
+
+  // Custom AI initialisation script overloads
+  virtual void Init( GameObject* pSelf );
+  virtual void loadSettings( GameObject* pSelf, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings );
 
 
 protected:
@@ -550,7 +603,8 @@ protected:
 * \brief Chargeup Animation Detector
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
 *
-* A script to allow detection of animations if the "separate object" feature is used
+* A script to allow detection of animations if the "separate object" feature is used, this script
+* should not be attached manually via LevelEdit.
 */
 class dp88_AI_ChargedTurret_Animation : public ScriptImpClass
 {
@@ -559,3 +613,75 @@ class dp88_AI_ChargedTurret_Animation : public ScriptImpClass
 };
 
 // -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief AI Objective
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_ai
+*
+* This script should be attached to any object which offensive AI scripts should treat as a mission
+* objective, for example a building. Compatible scripts include dp88_AI_Tank_Offensive. Note that
+* the objective is used as a go-to location rather than a target to shoot at, so the behaviour of
+* the unit when it arrives at an objective depends upon the script being used and its configuration.
+*
+* \param Priority
+*   The priority of this objective, AIs will attempt to accomplish the highest priority objectives
+*   first, randomly choosing between objecives with equal priority
+* \param Distance
+*   The target distance from this objective the unit will try to achieve. Be careful not to set this
+*   too low or the AI might be unable to calculate a successful route.
+* \param Team
+*   Which team this objective applies to. 0 for Nod/Soviets, 1 for GDI/Allies and 2 for both
+* \param Type
+*   What type of objective this is, valid values are 1 (Offensive) or 2 (Defensive).
+* \param Soldier_Objective
+*   Whether this objective is suitable for soldiers to attempt. 1 to enable, 0 to disable
+* \param Light_Vehicle_Objective
+*   Whether this objective is suitable for a light vehicle to attempt. 1 to enable, 0 to disable
+* \param Heavy_Vehicle_Objective
+*   Whether this objective is suitable for a heavy vehicle to attempt. 1 to enable, 0 to disable
+* \param Aircraft_Objective
+*   Whether this objective is suitable for aircraft to attempt. 1 to enable, 0 to disable
+*/
+class dp88_AI_Objective : public ScriptImpClass
+{
+public:
+  void Created ( GameObject* obj );
+  void Detach ( GameObject* obj );
+
+  GameObject* GetGameObject();
+  int GetPriority()         { return m_priority; }
+  int GetDistance()         { return m_distance; }
+  unsigned char GetType()   { return m_type; }
+
+  /*! Check if this objective is suitable for the unit type of the specified object */
+  bool IsSuitable ( GameObject* obj, unsigned char objective_type );
+
+  /*!
+  * Finds the highest priority objective suitable for the type of unit which is passed as the
+  * parameter and returns it. If multiple objectives share the highest priority one will be picked
+  * at random
+  */
+  static dp88_AI_Objective* GetObjective ( GameObject* obj, unsigned char objective_type );
+
+  /*! Checks if the specified objective is still valid */
+  static bool IsValidObjective ( dp88_AI_Objective* pObjective );
+
+  /*! \name Objective types */
+  /*! @{ */
+  const static unsigned char TYPE_OFFENSIVE = 1;
+  const static unsigned char TYPE_DEFENSIVE = 2;
+  /*! @} */
+
+protected:
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  int m_objID;
+  int m_priority;
+  int m_distance;
+  unsigned char m_type;
+  /*! @} */
+
+  static int s_nObjectives;
+  static dp88_AI_Objective** s_pObjectives;
+};

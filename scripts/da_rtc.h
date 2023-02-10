@@ -40,15 +40,13 @@ struct DARTCStruct {
 
 class DARTCPlayerDataClass : public DAPlayerDataClass {
 public:
+	virtual void Init() {
+		CanRTC = true;
+	}
 	virtual void Clear_Level() {
 		CanRTC = true;
-		RTCCount = 0;
-	}
-	virtual void Init() {
-		Clear_Level();
 	}
 	bool CanRTC;
-	int RTCCount;
 };
 
 class DARTCGameFeatureClass : private DAEventClass, private DAPlayerDataManagerClass<DARTCPlayerDataClass>, public DAGameFeatureClass {

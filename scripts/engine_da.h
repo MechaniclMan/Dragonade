@@ -206,7 +206,7 @@ DA_API unsigned int Get_Hash(const char *String);
 DA_API bool Is_Starting_Weapon(const SoldierGameObjDef *Soldier,const PowerUpGameObjDef *PowerUp);
 DA_API bool Is_Starting_Weapon(SoldierGameObj *Soldier,const PowerUpGameObjDef *PowerUp);
 
-DA_API void Fix_Stuck_Objects(const Vector3 &Position,float Range);
+DA_API void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool DestroyUnfixable = true);
 DA_API bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range);
 
 DA_API void Send_Purchase_Response(int ID,int Type);

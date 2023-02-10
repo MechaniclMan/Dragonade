@@ -41,8 +41,26 @@ class JFW_Remove_Script_Death : public ScriptImpClass {
 	void Killed(GameObject *obj,GameObject *killer);
 };
 
-class JFW_Attach_Script_Custom : public ScriptImpClass {
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+/*!
+* \brief Attach Script on Custom
+* \author jonwil
+* \ingroup scripts_customconsumers
+*
+* Upon receiving the specified custom message this script will attach another script to the object
+* it is attached to.
+*
+* \param Script
+*   The name of the script to be attached
+* \param Params
+*   The parameters for the script to be attached
+* \param Delim
+*   The delimiter between each value in the <i>Params</i> parameter
+* \param Message
+*   The custom message to listen for
+*/
+class JFW_Attach_Script_Custom : public ScriptImpClass
+{
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
 class JFW_Remove_All_Scripts_Custom : public ScriptImpClass {

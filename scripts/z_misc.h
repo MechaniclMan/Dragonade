@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 UltraAOW.COM by zunnie
+	Copyright 2012 UltraAOW.COM by zunnie
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -130,3 +130,27 @@ class z_Min_Veh_Z_Pos : public ScriptImpClass {
 	void Timer_Expired(GameObject *obj, int number);
 };
 
+class z_Vehicle_Exit_Set_Object_Team_Sender : public ScriptImpClass {
+	void Custom(GameObject *obj, int message, int param, GameObject *sender);
+};
+
+class z_Capturable_Helipad : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj, GameObject *damager, float damage);
+	void Timer_Expired(GameObject *obj, int number);
+	int owner;
+	bool playdmg;
+	bool playkilled;
+};
+
+class z_Capturable_Helipad_Terminal : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Poked(GameObject *obj, GameObject *poker);
+	void Timer_Expired(GameObject *obj, int number);
+	int HelipadID;
+	int Team;
+	int LocationID;
+	bool Allowpoke;
+	float Cost;
+	const char *Preset;
+};

@@ -13,7 +13,7 @@
 #include "general.h"
 #include "dp88_veterancy.h"
 #include "dp88_custom_timer_defines.h"
-#include "VehicleGameObjDef.h"		// For VEHICLE_TYPE_TURRET
+#include "VehicleGameObjDef.h"
 #include "ScriptableGameObj.h"
 
 /******************************
@@ -33,28 +33,28 @@ Event handler functions
 register with one of the static pointer arrays */
 void dp88_veterancyUnit::Created ( GameObject* obj )
 {
-	objectId = Commands->Get_ID ( obj );
+  objectId = Commands->Get_ID ( obj );
 
-	// Set all values to 0 (default)
-	currentLevel = 0;
-	infantryVeterancyPoints = 0;
-	vehicleVeterancyPoints = 0;
-	infantryVeteranRequirement = 0;
-	infantryEliteRequirement = 0;
-	vehicleVeteranRequirement = 0;
-	vehicleEliteRequirement = 0;
-	chevronObjId = NULL;
-	promotionChevronObjId = NULL;
+  // Set all values to 0 (default)
+  currentLevel                = 0;
+  infantryVeterancyPoints     = 0;
+  vehicleVeterancyPoints      = 0;
+  infantryVeteranRequirement  = 0;
+  infantryEliteRequirement    = 0;
+  vehicleVeteranRequirement   = 0;
+  vehicleEliteRequirement     = 0;
+  chevronObjId                = NULL;
+  promotionChevronObjId       = NULL;
 
-	rookieWeapon[0] = '\0';
-	rookieSkinType[0] = '\0';
-	rookieShieldType[0] = '\0';
+  rookieWeapon[0]             = '\0';
+  rookieSkinType[0]           = '\0';
+  rookieShieldType[0]         = '\0';
 
-	hasVeteranWeaponPowerup = (strcmp ( Get_Parameter( "veteran_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "veteran_weaponPowerup" ) )) ? true : false; 
-	hasEliteWeaponPowerup = (strcmp ( Get_Parameter( "elite_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "elite_weaponPowerup" ) )) ? true : false; 
+  hasVeteranWeaponPowerup     = (strcmp ( Get_Parameter( "veteran_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "veteran_weaponPowerup" ) )) ? true : false; 
+  hasEliteWeaponPowerup       = (strcmp ( Get_Parameter( "elite_weaponPowerup" ), "null" ) != 0 && Is_Valid_Preset ( Get_Parameter( "elite_weaponPowerup" ) )) ? true : false; 
 
-	pilotId = NULL;
-	dead = false;
+  pilotId                     = NULL;
+  dead                        = false;
 
 
 
@@ -161,8 +161,10 @@ void dp88_veterancyUnit::Damaged( GameObject *obj, GameObject *damager, float am
 	give nothing
 
 	Points given: (pointsValue / total hit points) * damage */
-	if ( amount > 0  && Get_Object_Type(damager) != Get_Object_Type(obj) )
+	if ( amount > 0  && Get_Object_Type(damager) != Get_Object_Type(obj) && abs(Get_Object_Type(obj)) < 2 )
+  {
 		grantVeterancyPoints ( damager, (pointsValue/totalHitPoints)*amount );
+  }
 
 	/* Otherwise if damage is < 0 then it is repairs, grant veterancy points if the repairer is on
 	the same team (and we are not an empty vehicle).
@@ -352,19 +354,22 @@ void dp88_veterancyUnit::KeyHook()
 	const char *str = Get_Translated_Preset_Name (obj);
 	message.Format ( "You currently have %.2f infantry veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", infantryVeterancyPoints, str, infantryVeteranRequirement, infantryEliteRequirement );
 	delete[] str;
-	Send_Message_Player( obj,50,255,50,message );
+	Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
 
 
-	// Send vehicle page
-	if ( Get_Vehicle ( obj ) != NULL )
-	{
-		const char *str2 = Get_Translated_Preset_Name (Get_Vehicle(obj));
-		message.Format ( "You currently have %.2f vehicle veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", vehicleVeterancyPoints, str2, vehicleVeteranRequirement, vehicleEliteRequirement );
-		delete[] str2;
-	}
-	else
-		message.Format ( "You currently have %.2f vehicle veterancy points.", vehicleVeterancyPoints );
-	Send_Message_Player( obj,50,255,50,message );
+  // Send vehicle page
+  if ( Get_Vehicle ( obj ) != NULL )
+  {
+    const char *str2 = Get_Translated_Preset_Name (Get_Vehicle(obj));
+    if ( vehicleVeteranRequirement > 0 )
+      message.Format ( "You currently have %.2f vehicle veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", vehicleVeterancyPoints, str2, vehicleVeteranRequirement, vehicleEliteRequirement );
+    else
+      message.Format ( "You currently have %.2f vehicle veterancy points. A %s cannot be promoted", vehicleVeterancyPoints, str2 );
+    delete[] str2;
+  }
+  else
+    message.Format ( "You currently have %.2f vehicle veterancy points.", vehicleVeterancyPoints );
+  Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
 }
 
 
@@ -403,17 +408,17 @@ void dp88_veterancyUnit::createChevrons()
 
 
 
-		// Generate name string for the unit chevron
-		char chevronPreset[17];
-		if ( currentLevel == 2 )			sprintf ( chevronPreset, "chev_inf_elite" );
-		else								sprintf ( chevronPreset, "chev_inf_veteran" );
-	
-		// Now create new chevron and record it's ID
-		GameObject* chevron = Commands->Create_Object_At_Bone( obj, chevronPreset, "Worldbox" );
-		Commands->Set_Facing( chevron, Commands->Get_Facing( obj ) );
-		Commands->Attach_To_Object_Bone( chevron, obj, "Worldbox" );
-		chevronObjId = Commands->Get_ID( chevron );
-	}
+    // Generate name string for the unit chevron
+    char chevronPreset[17];
+    if ( currentLevel == 2 )    sprintf ( chevronPreset, "chev_inf_elite" );
+    else                        sprintf ( chevronPreset, "chev_inf_veteran" );
+
+    // Now create new chevron and record it's ID
+    GameObject* chevron = Commands->Create_Object_At_Bone( obj, chevronPreset, "Worldbox" );
+    Commands->Set_Facing( chevron, Commands->Get_Facing( obj ) );
+    Commands->Attach_To_Object_Bone( chevron, obj, "Worldbox" );
+    chevronObjId = Commands->Get_ID( chevron );
+  }
 
 
 
@@ -580,36 +585,36 @@ void dp88_veterancyUnit::promoteToVeteran()
 	// Create chevrons
 	createChevrons ();
 
-	// Send page and promotion sound if unit is a player
-	if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
-	{
-		// Send page
-		char consoleInput[128];
-		const char* playerName = Get_Player_Name( obj );
-		sprintf ( consoleInput, "ppage %d Congratulations %s, you have been promoted to veteran.", Get_Player_ID( obj ), playerName );
-		delete [] playerName;
-		Console_Input( consoleInput );
+  // Send page and promotion sound if unit is a player
+  if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
+  {
+    // Send page
+    StringClass str(true);
+    const char* playerName = Get_Player_Name( obj );
+    str.Format("Congratulations %s, you have been promoted to veteran rank", playerName );
+    delete [] playerName;
+    Send_Message_Player( obj, DP88_RGB_GENERAL_MSG, str );
 
-		// Play promotion sound
-		sprintf ( consoleInput, "sndp %d promotion.wav", Get_Player_ID ( obj ) );
-		Console_Input( consoleInput );
-	}
+    // Play promotion sound
+    Create_2D_WAV_Sound_Player(obj,"promotion.wav");
+  }
 
 
-	// Send page and promotion sound if unit driver is a player
-	else if ( obj->As_VehicleGameObj() && Get_Vehicle_Driver ( obj ) != NULL && Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) >= 0 )
-	{
-		// Send page
-		char consoleInput[128];
-		const char* playerName = Get_Player_Name( Get_Vehicle_Driver ( obj ) );
-		sprintf ( consoleInput, "ppage %d Congratulations %s, your vehicle has been promoted to veteran.", Get_Player_ID( Get_Vehicle_Driver ( obj ) ), playerName );
-		delete [] playerName;
-		Console_Input( consoleInput );
+  // Send page and promotion sound if unit driver is a player
+  else if ( obj->As_VehicleGameObj() && Get_Vehicle_Driver(obj) != NULL && Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) >= 0 )
+  {
+    GameObject* driver = Get_Vehicle_Driver(obj);
 
-		// Play promotion sound
-		sprintf ( consoleInput, "sndp %d promotion.wav", Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) );
-		Console_Input( consoleInput );
-	}
+    // Send page
+    StringClass str(true);
+    const char* playerName = Get_Player_Name(driver);
+    str.Format("Congratulations %s, your vehicle has been promoted to veteran rank", playerName );
+    delete [] playerName;
+    Send_Message_Player( driver, DP88_RGB_GENERAL_MSG, str );
+
+    // Play promotion sound
+    Create_2D_WAV_Sound_Player( driver, "promotion.wav" );
+  }
 
 
 
@@ -636,7 +641,7 @@ void dp88_veterancyUnit::promoteToVeteran()
 				Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_REMOVE_OLD_WEAPON, 0, 0.1f );
 			}
 
-			// Remove immediatly
+			// Remove immediately
 			else
 				Remove_Weapon ( obj, rookieWeapon );
 		}
@@ -674,36 +679,36 @@ void dp88_veterancyUnit::promoteToElite()
 	// Create chevrons
 	createChevrons();
 
-	// Send page and promotion sound if unit is a player
-	if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
-	{
-		// Send page
-		char consoleInput[128];
-		const char* playerName = Get_Player_Name( obj );
-		sprintf ( consoleInput, "ppage %d Congratulations %s, you have been promoted to elite.", Get_Player_ID( obj ), playerName );
-		delete [] playerName;
-		Console_Input( consoleInput );
+  // Send page and promotion sound if unit is a player
+  if ( obj->As_SoldierGameObj() && Get_Player_ID ( obj ) >= 0 )
+  {
+    // Send page
+    StringClass str(true);
+    const char* playerName = Get_Player_Name( obj );
+    str.Format("Congratulations %s, you have been promoted to elite rank", playerName );
+    delete [] playerName;
+    Send_Message_Player( obj, DP88_RGB_GENERAL_MSG, str );
 
-		// Play promotion sound
-		sprintf ( consoleInput, "sndp %d promotion.wav", Get_Player_ID ( obj ) );
-		Console_Input( consoleInput );
-	}
+    // Play promotion sound
+    Create_2D_WAV_Sound_Player(obj,"promotion.wav");
+  }
 
 
-	// Send page and promotion sound if unit driver is a player
-	else if ( obj->As_VehicleGameObj() && Get_Vehicle_Driver ( obj ) != NULL && Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) >= 0 )
-	{
-		// Send page
-		char consoleInput[128];
-		const char* playerName = Get_Player_Name( Get_Vehicle_Driver ( obj ) );
-		sprintf ( consoleInput, "ppage %d Congratulations %s, your vehicle has been promoted to elite.", Get_Player_ID( Get_Vehicle_Driver ( obj ) ), playerName );
-		delete [] playerName;
-		Console_Input( consoleInput );
+  // Send page and promotion sound if unit driver is a player
+  else if ( obj->As_VehicleGameObj() && Get_Vehicle_Driver(obj) != NULL && Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) >= 0 )
+  {
+    GameObject* driver = Get_Vehicle_Driver(obj);
 
-		// Play promotion sound
-		sprintf ( consoleInput, "sndp %d promotion.wav", Get_Player_ID ( Get_Vehicle_Driver ( obj ) ) );
-		Console_Input( consoleInput );
-	}
+    // Send page
+    StringClass str(true);
+    const char* playerName = Get_Player_Name(driver);
+    str.Format("Congratulations %s, your vehicle has been promoted to elite rank", playerName );
+    delete [] playerName;
+    Send_Message_Player( driver, DP88_RGB_GENERAL_MSG, str );
+
+    // Play promotion sound
+    Create_2D_WAV_Sound_Player( driver, "promotion.wav" );
+  }
 
 
 
@@ -1090,3 +1095,248 @@ ScriptRegistrant<dp88_veterancyPromotionHealthArmourIncrease> dp88_veterancyProm
 	"veteranArmourIncrease=0:int,"
 	"eliteHealthIncrease=0:int,"
 	"eliteArmourIncrease=0:int");
+
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Veterancy - Regeneration
+// -------------------------------------------------------------------------------------------------
+
+void dp88_veterancyRegeneration::Created( GameObject *obj )
+{
+  veterancyLevel = 0;
+  Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
+
+  m_regenAmount = Get_Int_Parameter("rookie_regenAmount");
+  m_bRepairArmour = (Get_Int_Parameter("rookie_repairArmour")==1);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_veterancyRegeneration::Timer_Expired( GameObject *obj, int number )
+{
+  // Only process this if we are not dead...
+  float hitpoints = Commands->Get_Health(obj);
+  if ( hitpoints > 0.0f && m_regenAmount > 0 )
+  {
+    float regenAmount = (float)m_regenAmount;
+
+    // First try to heal some of our health, but don't go beyond the maximum
+    float max = Commands->Get_Max_Health(obj);
+    if ( hitpoints < max )
+    {
+      hitpoints += regenAmount;
+      regenAmount = 0;
+
+      if ( hitpoints > max )
+      {
+        regenAmount = max-hitpoints;
+        hitpoints = max;
+      }
+
+       Commands->Set_Health( obj, hitpoints );
+    }
+
+
+    // If we have any leftover regeneration then apply it to our armour, if enabled
+    if ( m_bRepairArmour && regenAmount > 0 )
+    {
+      hitpoints = Commands->Get_Shield_Strength(obj);
+      max = Commands->Get_Max_Shield_Strength(obj);
+
+      if ( hitpoints < max )
+      {
+        hitpoints += regenAmount;
+
+        if ( hitpoints > max )
+          hitpoints = max;
+      }
+
+      Commands->Set_Shield_Strength( obj, hitpoints );
+    }
+  }
+
+  // Restart the timer
+  Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_veterancyRegeneration::Custom( GameObject *obj, int type, int param, GameObject *sender )
+{
+  if ( type == CUSTOM_VETERANCY_PROMOTED )
+  {
+    veterancyLevel = param;
+    if ( veterancyLevel == 2 )
+    {
+      m_regenAmount = Get_Int_Parameter("elite_regenAmount");
+      m_bRepairArmour = (Get_Int_Parameter("elite_repairArmour")==1);
+    }
+    else if ( veterancyLevel == 1 )
+    {
+      m_regenAmount = Get_Int_Parameter("veteran_regenAmount");
+      m_bRepairArmour = (Get_Int_Parameter("veteran_repairArmour")==1);
+    }
+    else
+    {
+      m_regenAmount = Get_Int_Parameter("rookie_regenAmount");
+      m_bRepairArmour = (Get_Int_Parameter("rookie_repairArmour")==1);
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_veterancyRegeneration> dp88_veterancyRegeneration_Registrant(
+  "dp88_veterancyRegeneration",
+  "rookie_regenAmount=0:int,"
+  "rookie_repairArmour=1:int,"
+  "veteran_regenAmount=0:int,"
+  "veteran_repairArmour=1:int,"
+  "elite_regenAmount=1:int,"
+  "elite_repairArmour=1:int");
+
+// Legacy registrant for existing AR presets
+ScriptRegistrant<dp88_veterancyRegeneration> dp88_AR_Veterancy_HealthArmourRegen_Registrant(
+  "dp88_AR_Veterancy_HealthArmourRegen",
+  "rookie_healthRegenAmount=0:int,"
+  "rookie_armourRegenAmount=0:int,"
+  "veteran_healthRegenAmount=1:int,"
+  "veteran_armourRegenAmount=0:int,"
+  "elite_healthRegenAmount=3:int,"
+  "elite_armourRegenAmount=2:int");
+
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Veterancy - Grant Powerup
+// -------------------------------------------------------------------------------------------------
+
+void dp88_veterancyGrantPowerup::Created( GameObject *obj )
+{
+  //Console_Output ( "Created dp88_AR_grantDefaultWeapon\n" );
+  veterancyLevel = 0;
+  strcpy_s ( weaponName, sizeof(weaponName), "null" );
+  strcpy_s ( oldWeapon, sizeof(oldWeapon), "null" );
+
+  const char* powerupPreset = Get_Parameter ( "powerupPreset" );
+  if ( Is_Valid_Preset(powerupPreset) )
+  {
+    Commands->Give_PowerUp ( obj, powerupPreset, true );
+    if ( Get_Powerup_Weapon(powerupPreset) != NULL )
+      strcpy_s ( weaponName, sizeof(weaponName), Get_Powerup_Weapon (powerupPreset) );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_veterancyGrantPowerup::Custom( GameObject *obj, int type, int param, GameObject *sender )
+{
+  if ( type == CUSTOM_VETERANCY_PROMOTED )
+  {
+    // Work out if we need to grant them a new weapon
+    char powerupPreset[64] = "null";
+    switch ( param )
+    {
+      case 1:
+        if ( strcmp ( Get_Parameter( "powerupPreset_veteran" ), "null" ) != 0 )
+          strcpy_s ( powerupPreset, sizeof(powerupPreset), Get_Parameter ( "powerupPreset_veteran" ) );
+        break;
+      case 2:
+        if ( strcmp ( Get_Parameter( "powerupPreset_elite" ), "null" ) != 0 )
+          strcpy_s ( powerupPreset, sizeof(powerupPreset), Get_Parameter ( "powerupPreset_elite" ) );
+        else if ( strcmp ( Get_Parameter( "powerupPreset_veteran" ), "null" ) != 0 )
+          strcpy_s( powerupPreset, sizeof(powerupPreset), Get_Parameter ( "powerupPreset_veteran" ) );
+        break;
+    }
+
+    // If we found a powerup to give them then grant it
+    if ( strcmp ( powerupPreset, "null" ) != 0 && Is_Valid_Preset(powerupPreset) )
+    {
+      // Not a weapon powerup?
+      if ( Get_Powerup_Weapon(powerupPreset) == NULL )
+        Commands->Give_PowerUp( obj, powerupPreset, true );
+
+      else
+      {
+        // Give new weapon, and select if if they were using that weapon
+        const char* newWeapon = Get_Powerup_Weapon(powerupPreset);
+        if ( strcmp ( newWeapon, weaponName ) == 0 )    // Same weapon? Nothing to do...
+          return;
+
+        if ( strcmp( Get_Current_Weapon(obj), weaponName ) == 0 )
+        {
+          Commands->Give_PowerUp( obj, powerupPreset, true );
+          strcpy_s( oldWeapon, sizeof(oldWeapon), weaponName );
+          Commands->Send_Custom_Event( obj, obj, CUSTOM_VETERANCY_REMOVE_OLD_WEAPON, 0, 0.1f);
+          Commands->Select_Weapon( obj, newWeapon );
+        }
+        else
+        {
+          char currentWeapon[128];
+          strcpy_s ( currentWeapon, sizeof(currentWeapon), Get_Current_Weapon(obj) );
+          Commands->Give_PowerUp( obj, powerupPreset, true );
+          Remove_Weapon( obj, weaponName );
+          Commands->Select_Weapon( obj, currentWeapon );
+        }
+
+        // Set this weapon as their default for future reference
+        strcpy_s ( weaponName, sizeof(weaponName), newWeapon );
+      }
+    }
+  }
+
+
+  else if ( type == CUSTOM_VETERANCY_REMOVE_OLD_WEAPON && strcmp ( oldWeapon, "null" ) != 0 )
+  {
+    /* For whatever reason removing a non-selected weapon changes the selected weapon, so store the
+    selected weapon here so we can restore it afterwards */
+    char currentWeapon[128];
+    strcpy_s ( currentWeapon, sizeof(currentWeapon), Get_Current_Weapon(obj) );
+
+    /* Make sure they don't have oldWeapon selected, otherwise crashy-fun-time will happen. If they
+    do have it selected then swap it for their new weapon and fire the custom again */
+    if ( strcmp ( currentWeapon, oldWeapon ) == 0 )
+    {
+      if ( strcmp ( oldWeapon, weaponName ) != 0 )  // Sanity check...
+      {
+        Commands->Select_Weapon ( obj, weaponName );
+        Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_REMOVE_OLD_WEAPON, 0, 0.1f);
+      }
+    }
+    else
+    {
+      Remove_Weapon ( obj, oldWeapon );
+      strcpy_s ( oldWeapon, sizeof(oldWeapon), "null" );
+
+      /* Reselect current weapon (also triggers the back model of the old weapon to be removed so it
+      doesn't crash on the next promotion) */
+      Commands->Select_Weapon ( obj, currentWeapon );
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_veterancyGrantPowerup> dp88_veterancyGrantPowerup_Registrant(
+  "dp88_veterancyGrantPowerup",
+  "powerupPreset=presetname:string,"
+  "powerupPreset_veteran=null:string,"
+  "powerupPreset_elite=null:string");
+
+// Legacy registrant for existing AR presets
+ScriptRegistrant<dp88_veterancyGrantPowerup> dp88_AR_grantDefaultWeapon_Registrant(
+  "dp88_AR_grantDefaultWeapon",
+  "powerupPreset=presetname:string,"
+  "powerupPreset_veteran=null:string,"
+  "powerupPreset_elite=null:string");

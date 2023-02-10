@@ -33,10 +33,12 @@ public:
 private:
 	virtual void Settings_Loaded_Event();
 	virtual void Level_Loaded_Event();
+	virtual void Game_Over_Event();
 	virtual void Player_Join_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual bool Team_Change_Request_Event(cPlayer *Player);
 	virtual void Timer_Expired(int Number,unsigned int Data);
+	static int Winner;
 
 	//Settings
 	static unsigned int RebalanceTime;

@@ -24,7 +24,7 @@ public:
 	virtual void Beacon_Deploy_Event(BeaconGameObj *Beacon);
 	virtual void Beacon_Detonate_Event(BeaconGameObj *Beacon);
 	virtual void C4_Detonate_Event(C4GameObj *C4);
-	virtual void Poke_Event(PhysicalGameObj *obj,SoldierGameObj *Poker);
+	virtual void Poke_Event(cPlayer *Player,PhysicalGameObj *obj);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone);
 	int PowerUp_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const PowerUpGameObjDef *Item);
 };

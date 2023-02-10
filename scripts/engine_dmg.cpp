@@ -727,4 +727,15 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 		}
 	}
 }
+
+float SCRIPTS_API Get_Max_Hitpoints ( GameObject* obj )
+{
+  return Commands->Get_Max_Health(obj) + Commands->Get_Max_Shield_Strength(obj);
+}
+
+float SCRIPTS_API Get_Hitpoints ( GameObject* obj )
+{
+  return Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);
+}
+
 #endif

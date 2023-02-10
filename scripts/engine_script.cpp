@@ -479,6 +479,50 @@ SCRIPTS_API void Find_All_Objects_With_Script(const char *script, SList<GameObje
 	}
 }
 
+SCRIPTS_API void Find_All_Objects_With_Script_By_Distance(const char *script, SList<GameObject>& objects, Vector3 position)
+{
+  objects.Remove_All();
+
+  // Internal list of distances, in the same order as GameObjects in objects
+  SList<float> distances;
+
+  for ( SLNode<BaseGameObj>* objNode = GameObjManager::GameObjList.Head(); objNode != NULL; objNode = objNode->Next() )
+  {
+    ScriptableGameObj* obj = (objNode->Data()) ? objNode->Data()->As_ScriptableGameObj() : NULL;
+    if ( obj && Is_Script_Attached(obj,script) )
+    {
+      // SList cannot contain non-pointer types... stupid thing!
+      float* distance = new float;
+      *distance = Commands->Get_Distance(Commands->Get_Position(obj), position);
+
+      SLNode<float>* d = distances.Head();
+      for ( SLNode<GameObject>* o = objects.Head();
+        d != NULL;
+        d = d->Next(), o = o->Next() )
+      {
+        if ( *distance < *d->Data() )
+        {
+          objects.insertBefore(obj, *o);
+          distances.insertBefore(distance, *d);
+          distance = NULL;
+          break;
+        }
+      }
+
+      // OK, all existing objects are closer than this one so add it to the end of the list
+      if ( distance != NULL )
+      {
+        objects.Add_Tail(obj);
+        distances.Add_Tail(distance);
+      }
+    }
+  }
+
+  // Clean up memory since SList insists on having heap objects...
+  for ( SLNode<float>* d = distances.Head(); d != NULL; d = d->Next() )
+    delete d->Data();
+}
+
 SCRIPTS_API void Send_Custom_Event_To_Objects_With_Script( GameObject *sender, const char *script, int message, int param, float delay )
 {
 	if (!sender)
@@ -568,4 +612,38 @@ void SCRIPTS_API Attach_Script_Occupants(GameObject *obj,const char *script,cons
 			Commands->Attach_Script(o->Get_Occupant(i),script,params);
 		}
 	}
+}
+
+
+void Attach_Script_V ( GameObject* pObj, const char* script, const char* params, va_list vargs )
+{
+  if ( !pObj )
+    return;
+
+  int length = _vscprintf_p(params,vargs);
+  char* formattedParams = new char[length+1];
+  _vsnprintf_s(formattedParams, length+1, length, params, vargs);
+
+  Commands->Attach_Script(pObj, script, formattedParams);
+
+  delete[] formattedParams;
+}
+
+void SCRIPTS_API Attach_Script_V ( GameObject* pObj, const char* script, const char* params, ... )
+{
+  va_list vargs;
+  va_start ( vargs, params );
+  Attach_Script_V(pObj,script,params,vargs);
+  va_end(vargs);
+}
+
+void SCRIPTS_API Attach_Script_Once_V ( GameObject* pObj, const char* script, const char* params, ... )
+{
+  if ( !pObj || Is_Script_Attached(pObj,script))
+    return;
+
+  va_list vargs;
+  va_start ( vargs, params );
+  Attach_Script_V(pObj,script,params,vargs);
+  va_end(vargs);
 }

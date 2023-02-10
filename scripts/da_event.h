@@ -176,11 +176,11 @@ struct DAObjectEventStruct {
 		return (ObjectType & Flag) == Flag;
 	}
 	bool Check_Object_Type(GameObject *obj) {
-		if (!obj) {
-			return false;
-		}
 		if (Has_Flag(DAObjectEvent::ALL)) {
 			return true;
+		}
+		if (!obj) {
+			return false;
 		}
 		else if (obj->As_DamageableGameObj()) {
 			if (Has_Flag(DAObjectEvent::DAMAGEABLE)) {
@@ -276,7 +276,6 @@ namespace DADamageType {
 class DA_API DAEventManager {
 public:
 	static void Init();
-	static void Shutdown();
 	static void Settings_Loaded_Event();
 	static bool Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID);
 	static bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
@@ -337,7 +336,7 @@ public:
 		virtual void Exited(GameObject *obj,GameObject *Exiter);
 		virtual void Destroyed(GameObject *obj);
 		virtual const char *Get_Name() {
-			return "DAEventGameObjObserverClass";
+			return "DAEventObserverClass";
 		}
 
 		//Unused
@@ -377,39 +376,6 @@ private:
 		DADamageType::Type Type;
 		float Damage;
 		unsigned int Warhead;
-		bool ClientDamage;
-	};
-	struct DADamageTableStruct {
-		inline int Get_Normal_Chance(float Damage) {
-			int Count = 0;
-			for (int i = 0;i < Normal.Count();i++) {
-				if (Normal[i] == Damage) {
-					Count++;
-				}
-			}
-			return Count;
-		}
-		inline int Get_Neckshot_Chance(float Damage) {
-			int Count = 0;
-			for (int i = 0;i < Neckshot.Count();i++) {
-				if (Neckshot[i] == Damage) {
-					Count++;
-				}
-			}
-			return Count;
-		}
-		inline int Get_Headshot_Chance(float Damage) {
-			int Count = 0;
-			for (int i = 0;i < Headshot.Count();i++) {
-				if (Headshot[i] == Damage) {
-					Count++;
-				}
-			}
-			return Count;
-		}
-		DynamicVectorClass<float> Normal;
-		DynamicVectorClass<float> Neckshot;
-		DynamicVectorClass<float> Headshot;
 	};
 	static DynamicVectorClass<DAEventStruct*> Events[DAEvent::MAX];
 	static DynamicVectorClass<DAObjectEventStruct*> ObjectEvents[DAObjectEvent::MAX];
@@ -417,7 +383,6 @@ private:
 	static bool IsSoldierReInit;
 	static int AddOccupantSeat;
 	static DADamageEventStruct LastDamageEvent;
-	static DADamageTableStruct *DamageTable;
 };
 
 class DAEventClass abstract {

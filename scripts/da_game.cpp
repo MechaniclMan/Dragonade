@@ -31,15 +31,47 @@ DynamicVectorClass<DAGameFeatureFactoryClass*> DAGameManager::GameFeatures;
 bool DAGameManager::FirstMap = true;
 bool DAGameManager::ShutdownPending = false;
 StringClass DAGameManager::Map;
+int DAGameManager::MapIndexShift = 0;
 
 void DAGameManager::Init() {
 	static DAGameManager Instance;
 	Instance.Register_Event(DAEvent::GAMEOVER,INT_MAX);
 	Instance.Register_Event(DAEvent::LEVELLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
+	Instance.Register_Event(DAEvent::PLAYERLOADED,INT_MAX);
 
-	Console_Output("\nDragonade %s with Scripts %.1f\n",DA_VERSION,GetTTVersion());
+	Console_Output("\nDragonade %s with Scripts %.1f\n",DA::Get_Version(),GetTTVersion());
 	Console_Output("Created by Black-Cell.net\n\n");
+
+	/*RawFileClass MapIndex;
+	if (MapIndex.Open("mapindex",0)) {
+		int Index = -1;
+		MapIndex.Read(&Index,4);
+		Console_Output("map index %d\n",Index);
+		if (Index != -1) {
+			if (::Get_Map(Index+1)) { //If we're already at the end of the rotation we don't need to do anything.
+				MapIndexShift = Index+1;
+				DynamicVectorClass<StringClass> Rotation;
+				for (int i = MapIndexShift;::Get_Map(i);i++) {
+					Rotation.Add(::Get_Map(i));
+				}
+				for (int i = 0;i <= Index && ::Get_Map(i);i++) {
+					Rotation.Add(::Get_Map(i));
+				}
+				Console_Output("old rotation:\n");
+				for (int i = 0;::Get_Map(i);i++) {
+					Console_Output("%s\n",::Get_Map(i));
+				}
+				for (int i = 0;i < Rotation.Count();i++) {
+					Set_Map(Rotation[i],i);
+				}
+				Console_Output("new rotation:\n");
+				for (int i = 0;::Get_Map(i);i++) {
+					Console_Output("%s\n",::Get_Map(i));
+				}
+			}
+		}
+	}*/
 }
 
 void DAGameManager::Shutdown() {
@@ -87,16 +119,16 @@ void DAGameManager::Level_Loaded_Event() {
 				Console_InputF("%s %s",Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value);
 			}
 		}
-		DA::Host_Message("Running Dragonade %s with Scripts %.1f. Created by Black-Cell.net.",DA_VERSION,GetTTVersion());
+		DA::Host_Message("Running Dragonade %s with Scripts %.1f. Created by Black-Cell.net.",DA::Get_Version(),GetTTVersion());
 		FirstMap = false;
 	}
 	Console_Output("Level %s Loaded OK\n",The_Game()->Get_Map_Name());
 	DALogManager::Write_Log("_LEVEL","%s",The_Game()->Get_Map_Name());
 	Map = The_Game()->Get_Map_Name();
 
-	DASettingsManager::Reload();
+	DASettingsManager::Reload(); //Reload any changes made to the settings files.
 	
-	//Load Game Mode
+	//Game Mode
 	if (GameMode) {
 		GameMode->Destroy_Instance();
 		GameMode = 0;
@@ -136,16 +168,16 @@ void DAGameManager::Level_Loaded_Event() {
 	}
 	
 	GameMode = Factory;
-	DASettingsManager::Reload_GameMode();
-	GameMode->Create_Instance();
-	DASettingsManager::Post_Reload();
+	DASettingsManager::Reload_GameMode(); //Reload gamemode.ini, changing it to the new gamemode if necessary.
+	GameMode->Create_Instance(); //Create the gamemode.
+	DASettingsManager::Post_Reload(); //Trigger settings loaded events and messages.
 	
 	StringClass Config;
 	DASettingsClass("server.ini").Get_String(Config,"Server","Config","svrcfg_cnc.ini");
 	StringClass Title;
 	DASettingsClass(StringFormat("data\\%s",Config)).Get_INI()->Get_String(Title,"Settings","bGameTitle");
 
-	ShowGameModeTitle = DASettingsManager::Get_Bool("ShowGameModeTitle",true);
+	ShowGameModeTitle = DASettingsManager::Get_Bool("ShowGameModeTitle",true); //Show gamemode in title.
 	if (ShowGameModeTitle) {
 		The_Game()->Get_Game_Title().Format(L"%hs %hs",Title,Factory->Get_Short_Name());
 	}
@@ -154,10 +186,24 @@ void DAGameManager::Level_Loaded_Event() {
 	}
 	DA::Host_Message("Running in %s Mode.",GameMode->Get_Long_Name());
 	DALogManager::Write_Log("_GAMEMODE","%s",GameMode->Get_Long_Name());
+
+	/*RawFileClass MapIndex;
+	if (MapIndex.Open("mapindex",2)) {
+		int Index = Get_Current_Map_Index() + MapIndexShift;
+		MapIndex.Write(&Index,4);
+		MapIndex.Close();
+	}*/
+
+	//This is used for all powerups in DA.
+	PowerUpGameObjDef *BasePowerUpDef = (PowerUpGameObjDef*)Find_Named_Definition("Soldier PowerUps");
+	BasePowerUpDef->Persistent = true;
+	BasePowerUpDef->GrantWeapon = false;
+	BasePowerUpDef->AlwaysAllowGrant = true;
+	BasePowerUpDef->IdleAnimationName = "";
 }
 
 void DAGameManager::Settings_Loaded_Event() {
-	//Load Game Features
+	//Game Features
 	for (int i = 0;i < GameFeatures.Count();i++) {
 		if (GameFeatures[i]->Get_Instance()) {
 			if (!GameFeatures[i]->Check_Enabled()) {
@@ -206,6 +252,10 @@ void DAGameManager::Settings_Loaded_Event() {
 	The_Cnc_Game()->BeaconPlacementEndsGame = DASettingsManager::Get_Bool("BeaconPlacementEndsGame",SvrCfg.Get_Bool("Settings","BeaconPlacementEndsGame",true));
 	CombatManager::BeaconPlacementEndsGame = The_Cnc_Game()->BeaconPlacementEndsGame;
 	The_Cnc_Game()->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
+	Update_Game_Settings();
+}
+
+void DAGameManager::Player_Loaded_Event(cPlayer *Player) {
 	Update_Game_Settings();
 }
 
@@ -313,10 +363,3 @@ public:
 };
 Register_Console_Function(DATimeoutConsoleFunctionClass);
 
-class DATimeChatCommandClass : public DAChatCommandClass {
-	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		DA::Host_Message("Time Elapsed: %s",Format_Time((unsigned long)The_Game()->Get_Game_Duration_S()));
-		return true;
-	}
-};
-Register_Simple_Chat_Command(DATimeChatCommandClass,"!time|!timeleft");

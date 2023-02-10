@@ -32,7 +32,7 @@ void DAVehicleQueueGameFeatureClass::Init() {
 	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::VEHICLE);
 	Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::BUILDING);
 	Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::VEHICLE);
-	Register_Chat_Command((DAECC)&DAVehicleQueueGameFeatureClass::VQ_Chat_Command,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit");
+	Register_Chat_Command((DAECC)&DAVehicleQueueGameFeatureClass::VQ_Chat_Command,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit|!vlimit");
 	Queue[0].Resize(8);
 	Queue[1].Resize(8);
 	Building[0] = 0;
@@ -302,25 +302,24 @@ void DAVehicleQueueGameFeatureClass::Send_Positions(int Team) {
 
 void DAVehicleQueueGameFeatureClass::Send_List(cPlayer *Player) {
 	int Team = Player->Get_Team();
-	int ID = Player->Get_ID();
-	DA::Private_Color_Message(ID,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
+	DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
 	if (Building[Team]) {
 		if (Building[Team]->Purchaser) {
-			DA::Private_Color_Message(ID,GRAY,"Building: %ls - %s",Building[Team]->Purchaser->Get_Name(),DATranslationManager::Translate(Building[Team]->Vehicle));
+			DA::Private_Color_Message(Player,GRAY,"Building: %ls - %s",Building[Team]->Purchaser->Get_Name(),DATranslationManager::Translate(Building[Team]->Vehicle));
 		}
 		else {
 			RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
-			DA::Private_Color_Message(ID,GRAY,"Building: %s - %s",DATranslationManager::Translate(Ref),DATranslationManager::Translate(Building[Team]->Vehicle));
+			DA::Private_Color_Message(Player,GRAY,"Building: %s - %s",DATranslationManager::Translate(Ref),DATranslationManager::Translate(Building[Team]->Vehicle));
 		}
 	}
 	
 	for (int i = 0;i < Queue[Team].Count();++i) {
 		if (Queue[Team][i]->Purchaser) {
-			DA::Private_Color_Message(ID,GRAY,"%d/%d: %ls - %s",i+1,Queue[Team].Count(),Queue[Team][i]->Purchaser->Get_Name(),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
+			DA::Private_Color_Message(Player,GRAY,"%d/%d: %ls - %s",i+1,Queue[Team].Count(),Queue[Team][i]->Purchaser->Get_Name(),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
 		}
 		else {
 			RefineryGameObj *Ref = (RefineryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_REFINERY);
-			DA::Private_Color_Message(ID,GRAY,"%d/%d: %s - %s",i+1,Queue[Team].Count(),DATranslationManager::Translate(Ref),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
+			DA::Private_Color_Message(Player,GRAY,"%d/%d: %s - %s",i+1,Queue[Team].Count(),DATranslationManager::Translate(Ref),DATranslationManager::Translate(Queue[Team][i]->Vehicle));
 		}
 	}
 }

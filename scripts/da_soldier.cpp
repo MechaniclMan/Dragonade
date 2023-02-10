@@ -62,7 +62,7 @@ void DASoldierManager::Object_Created_Event(GameObject *obj) {
 	if (Weapons) {
 		WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
 		for (int i = 0;i < Weapons->Count();i++) {
-			Bag->Add_Weapon(Weapons->operator[](i),Weapons->operator[](i)->ClipSize + Weapons->operator[](i)->MaxInventoryRounds,true);
+			Bag->Add_Weapon(Weapons->operator[](i),999,true);
 		}
 	}
 }
@@ -108,7 +108,12 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				}
 			}
 			else { //Killed by bot
-				Message.Format("%d %s killed %ls (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),Get_Wide_Player_Name(Victim),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				if (Type == DADamageType::HEADSHOT || Type == DADamageType::NECKSHOT) {
+					Message.Format("%d %s killed %ls HEADSHOT! (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),Get_Wide_Player_Name(Victim),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				}
+				else {
+					Message.Format("%d %s killed %ls (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),Get_Wide_Player_Name(Victim),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				}
 			}
 		}
 		else if (Killer->As_VehicleGameObj()) { //Killed by vehicle. Could be harvester, defense, or AI vehicle.
@@ -160,7 +165,12 @@ void DASoldierManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 				Message.Format("%d %s killed itself (%s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Victim));
 			}
 			else { //Killed by bot
-				Message.Format("%d %s killed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				if (Type == DADamageType::HEADSHOT || Type == DADamageType::NECKSHOT) {
+					Message.Format("%d %s killed %s HEADSHOT! (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				}
+				else {
+					Message.Format("%d %s killed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),a_or_an_Prepend(DATranslationManager::Translate(Victim)),DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate_Soldier(Victim));
+				}
 			}
 		}
 		else if (Killer->As_VehicleGameObj()) { //Killed by vehicle. Could be harvester, defense, or AI vehicle.

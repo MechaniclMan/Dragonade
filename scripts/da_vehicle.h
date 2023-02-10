@@ -47,7 +47,10 @@ class DAAirDroppedVehicleObserverClass : public DAGameObjObserverClass {
 	virtual void Init();
 	virtual bool Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone);
 	virtual void Timer_Expired(GameObject *obj,int Number);
+	virtual void Vehicle_Enter(cPlayer *Player,int Seat);
 	virtual const char *Get_Name() { return "DAAirDroppedVehicleObserverClass"; }
+	int CollisionGroup;
+	float LastZ;
 };
 
 class DAVehicleManager : public DAEventClass {

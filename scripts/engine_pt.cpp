@@ -201,3 +201,21 @@ const char SCRIPTS_API *Get_Icon(const char *preset)
 	}
 	return icon;
 }
+
+void SCRIPTS_API Disable_All_Presets_By_Factory_Tech(BuildingType type,unsigned int team,bool disable)
+{
+	for (unsigned int i = 0;i < 5;i++)
+	{
+		PurchaseSettingsDefClass *p = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)i,(PurchaseSettingsDefClass::TEAM)PTTEAM(team));
+		if (p)
+		{
+			for (unsigned int j = 0;j < 10;j++)
+			{
+				if ((p->Get_Factory_Building(j) == type) || (p->Get_Tech_Building(j) == type))
+				{
+					p->Set_Disabled(j,disable);
+				}
+			}
+		}
+	}
+}

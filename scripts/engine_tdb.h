@@ -137,4 +137,5 @@ SCRIPTS_API unsigned long Get_String_ID_By_Desc(const char *desc); //Get the ID 
 *   found with the specified translation ID or the translation has no associated sound
 */
 SCRIPTS_API unsigned long Get_String_Sound_ID(unsigned long ID);
+
 #endif

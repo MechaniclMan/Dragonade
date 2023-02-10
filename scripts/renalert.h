@@ -103,9 +103,23 @@ class RA_GameStart_Detector : public ScriptImpClass {
 	void Timer_Expired (GameObject *obj,int number);
 };
 
-class RA_DriverDeath : public ScriptImpClass {
-	void Created(GameObject *obj);
-	void Timer_Expired(GameObject *obj,int number);
+
+/*!
+* \brief Driver Death Script
+*
+* This script kills the object it is attached to after 0.5 seconds and is generally attached by
+* another script to kill a vehicle driver once the parent vehicle has died (since doing so on the
+* same engine frame would cause a crash). It could also be attached on a custom message by using
+* a script such as JFW_Attach_Script_Custom
+*
+* \pre
+*   A warhead of type "Death" must exist in armor.ini which is capable of damaging the object this
+*   script is attached to.
+*/
+class RA_DriverDeath : public ScriptImpClass
+{
+  void Created(GameObject *obj);
+  void Timer_Expired(GameObject *obj,int number);
 };
 
 class RA_Conyard_Repair : public ScriptImpClass {

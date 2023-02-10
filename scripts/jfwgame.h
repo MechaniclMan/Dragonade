@@ -435,3 +435,20 @@ class JFW_Hijacker_Vehicle : public ScriptImpClass {
 	void Killed(GameObject *obj,GameObject *killer);
 	int HijackerID;
 };
+
+class JFW_Hijacker_Vehicle_2 : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj,GameObject *damager,float amount);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Timer_Expired(GameObject *obj,int number);
+	void Killed(GameObject *obj,GameObject *killer);
+	int HijackerID;
+	bool jacking;
+};
+
+class JFW_Building_Preset_Disable : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Killed(GameObject *obj,GameObject *killer);
+	unsigned int count;
+};

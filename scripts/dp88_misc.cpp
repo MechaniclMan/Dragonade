@@ -16,6 +16,11 @@
 #include "VehicleGameObj.h"
 #include "SoldierGameObj.h"
 #include "SoldierGameObjDef.h"
+#include "GameObjManager.h"
+#include "ScriptZoneGameObj.h"
+#include "RenderObjClass.h"
+#include "cPlayer.h"
+#include "cTeam.h"
 
 
 /*------------------------
@@ -193,180 +198,6 @@ ScriptRegistrant<dp88_randomWeather> dp88_randomWeather_Registrant(
 	"wind_speed_max=8.0:float,"
 	"wind_variability_min=0.0:float,"
 	"wind_variability_max=1.0:float"
-);
-
-
-
-
-
-
-
-
-
-
-/*------------------------
-Indirect Targetting Scripts
---------------------------*/
-
-void dp88_indirectTargetting::Created ( GameObject* obj )
-{
-	objectID = Commands->Get_ID ( obj );
-	pilotID = NULL;
-	targettingLevel = new int(0);
-
-	Console_Output ( "TL1: %p\n", targettingLevel );
-
-	Commands->Send_Custom_Event (obj,obj,CUSTOM_INSTALL_IT_DECREMENT,0,0.0f);
-}
-
-
-void dp88_indirectTargetting::Destroyed ( GameObject* obj )
-{
-	delete targettingLevel;
-}
-
-
-void dp88_indirectTargetting::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
-	// Look for vehicle entry
-	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED )
-	{
-		if ( pilotID == NULL )
-		{
-			pilotID = Commands->Get_ID(sender);
-
-			InstallHook( "TargettingLevelInc", sender );
-		}
-	}
-
-
-
-
-	// Look for vehicle exit
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED )
-	{
-		if ( Commands->Get_ID(sender) == pilotID )
-		{
-			pilotID = NULL;
-
-				RemoveHook();
-		}
-	}
-
-
-	// Look for install decrement script
-	else if ( type == CUSTOM_INSTALL_IT_DECREMENT )
-	{
-		char* script_parameters = new char[strlen(Get_Parameter ( "targettingAnimation" ))+193];
-		sprintf ( script_parameters, "%s,%d,%d,%d,%p", Get_Parameter ( "targettingAnimation" ), Get_Int_Parameter ( "targettingLevels"), Get_Int_Parameter ( "maxFrame" ), Get_Int_Parameter ( "maxFrame" ), &targettingLevel );
-		Console_Output ( "script params: %s\n", script_parameters );
-		Commands->Attach_Script ( obj, "dp88_indirectTargetting_Dec", script_parameters );
-		delete [] script_parameters;
-	}
-}
-
-
-void dp88_indirectTargetting::KeyHook()
-{
-	// Find object
-	GameObject* obj = Commands->Find_Object ( objectID );
-	if ( !obj )
-		return;
-
-
-	if ( (*targettingLevel)++ <= Get_Int_Parameter ( "targettingLevels" ) )
-	{
-		float framesPerLevel = ((float)Get_Int_Parameter ( "maxFrame" ) - (float)Get_Int_Parameter ( "minFrame" )) / (float)Get_Int_Parameter ( "targettingLevels" );
-		float targetFrame = framesPerLevel * (float)(*targettingLevel);
-
-		Console_Output ( "framesPerLevel: %.4f\n", framesPerLevel );
-		Console_Output ( "targetFrame: %.4f\n", targetFrame );
-
-		Commands->Set_Animation ( obj, Get_Parameter ( "targettingAnimation" ), false, NULL, Get_Animation_Frame ( obj ), targetFrame, false );
-	}
-	else
-		(*targettingLevel) = Get_Int_Parameter ( "targettingLevels" );
-}
-
-
-
-
-
-void dp88_indirectTargetting_Dec::Created ( GameObject* obj )
-{
-	objectID = Commands->Get_ID ( obj );
-	pilotID = NULL;
-	targettingLevel = (int*)Get_Int_Parameter ( "TL_ADDR" );
-
-	Console_Output ( "TL2: %p\n", targettingLevel );
-
-	// Catch errors
-	if ( targettingLevel == NULL )
-	{
-		Console_Output ( "ERROR: dp88_indirectTargetting_Dec should never be used on it's own, use dp88_indirectTargetting instead.\n" );
-		Destroy_Script();
-	}
-}
-
-
-void dp88_indirectTargetting_Dec::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
-	// Look for vehicle entry
-	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED )
-	{
-		if ( pilotID == NULL )
-		{
-			pilotID = Commands->Get_ID(sender);
-
-			InstallHook( "TargettingLevelDec", sender );
-		}
-	}
-
-
-
-
-	// Look for vehicle exit
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED )
-	{
-		if ( Commands->Get_ID(sender) == pilotID )
-		{
-			pilotID = NULL;
-
-				RemoveHook();
-		}
-	}
-}
-
-
-void dp88_indirectTargetting_Dec::KeyHook()
-{
-	// Find object
-	GameObject* obj = Commands->Find_Object ( objectID );
-	if ( !obj )
-		return;
-
-
-	(*targettingLevel)--;
-	float targetFrame = (float)((*targettingLevel)/2);
-	Commands->Set_Animation ( obj, Get_Parameter ( "targettingAnimation" ), false, NULL, 1.0f, targetFrame, false );
-}
-
-
-ScriptRegistrant<dp88_indirectTargetting> dp88_indirectTargetting_Registrant(
-	"dp88_indirectTargetting",
-	"targettingAnimation=obj.obj:string,"
-	"targettingLevels=100:int,"
-	"minFrame=1:int,"
-	"maxFrame=100:int"
-);
-
-ScriptRegistrant<dp88_indirectTargetting_Dec> dp88_indirectTargetting_Dec_Registrant(
-	"dp88_indirectTargetting_Dec",
-	"targettingAnimation=obj.obj:string,"
-	"targettingLevels=100:int,"
-	"minFrame=1:int,"
-	"maxFrame=100:int,"
-	"TL_ADDR=0:int"
 );
 
 
@@ -661,7 +492,7 @@ void dp88_damageAnimation::Damaged( GameObject *obj, GameObject *damager, float 
 	if ( amount >= 0 )
 	{
 		while ( currentDamageLevel < 5 && damageLevelBoundaries[currentDamageLevel+1] >= 0
-			&& ((Commands->Get_Health(obj)/Commands->Get_Max_Health(obj))*100.0f) < damageLevelBoundaries[currentDamageLevel+1] )
+			&& ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) < damageLevelBoundaries[currentDamageLevel+1] )
 		{
 			currentDamageLevel++;
 			basePowerState = Is_Base_Powered(Get_Object_Type(obj));
@@ -673,7 +504,7 @@ void dp88_damageAnimation::Damaged( GameObject *obj, GameObject *damager, float 
 	if ( amount <= 0 )
 	{
 		while ( currentDamageLevel > 0
-			&& ((Commands->Get_Health(obj)/Commands->Get_Max_Health(obj))*100.0f) > damageLevelBoundaries[currentDamageLevel] )
+			&& ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) > damageLevelBoundaries[currentDamageLevel] )
 		{
 			currentDamageLevel--;
 			basePowerState = Is_Base_Powered(Get_Object_Type(obj));
@@ -799,6 +630,11 @@ void dp88_objectAnnouncements::Damaged( GameObject *obj, GameObject *damager, fl
 	announcement was made then trigger the under attack announcement */
 	if ( amount > 0 && time(NULL) - lastAnnouncementTime > minimumAnnounceInterval )
 	{
+    // Don't trigger above 95% health to avoid lots of annoying announcements when it takes a tiny
+    // bit of damage from an explosion
+    if ( 0.95f < (Commands->Get_Health(obj)+Commands->Get_Shield_Strength(obj))/(Commands->Get_Max_Health(obj)+Commands->Get_Max_Shield_Strength(obj)) )
+      return;
+
 		lastAnnouncementTime = time(NULL);
 
 		/* Send messages to teams */
@@ -1090,8 +926,8 @@ void dp88_chronoTank::Shift_Out_Cleanup(GameObject* obj)
 		// Get shifted vehicle
 		GameObject* shifted_vehicle = Commands->Find_Object(shifted_vehicle_object_id);
 
-		// Make the shifted vehicle invisible to base defences
-		Commands->Set_Is_Visible(shifted_vehicle,false);
+    // Make the shifted vehicle invisible to base defences
+    Set_Vehicle_Is_Visible(shifted_vehicle,false);
 
 		// Move the shifted vehicle to this location
 		Set_Transform(shifted_vehicle, Get_Transform(obj) );
@@ -1280,10 +1116,8 @@ void dp88_spawnVehiclePart::Timer_Expired( GameObject *obj, int number )
 		GameObject* part = Commands->Find_Object(partObjectId);
 		if ( part )
 		{
-			char hostIdString[12];
-			sprintf ( hostIdString, "%d", Commands->Get_ID(obj) );
-			Attach_Script_Once ( part, "dp88_linkHealth", hostIdString );
-			Attach_Script_Once ( part, "dp88_linkVetPoints", hostIdString );
+			Attach_Script_Once_V ( part, "dp88_linkHealth", "%d", Commands->Get_ID(obj) );
+			Attach_Script_Once_V ( part, "dp88_linkVetPoints", "%d", Commands->Get_ID(obj) );
 		}
 	}
 }
@@ -1319,84 +1153,793 @@ ScriptRegistrant<dp88_spawnVehiclePart> dp88_spawnVehiclePart_Registrant(
 
 
 
-
-
 /*------------------------
 Custom Points script
 --------------------------*/
 
 void dp88_customPoints::Created ( GameObject* obj )
 {
-	// Preload values since converting strings to floats every time we take
-	// damage is very inefficient
-	killPoints		= Get_Float_Parameter("killPoints");
-	damagePoints	= Get_Float_Parameter("damagePoints");
-	repairPoints	= Get_Float_Parameter("repairPoints");
-	killMoney		= Get_Float_Parameter("killMoney");
-	damageMoney		= Get_Float_Parameter("damageMoney");
-	repairMoney		= Get_Float_Parameter("repairMoney");
+  // Preload values since converting strings to floats every time we take
+  // damage is very inefficient
+  m_killPoints		= Get_Float_Parameter("killPoints");
+  m_damagePoints	= Get_Float_Parameter("damagePoints");
+  m_repairPoints	= Get_Float_Parameter("repairPoints");
+  m_killMoney		= Get_Float_Parameter("killMoney");
+  m_damageMoney		= Get_Float_Parameter("damageMoney");
+  m_repairMoney		= Get_Float_Parameter("repairMoney");
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_customPoints::Damaged ( GameObject *obj, GameObject *damager, float amount )
 {
-	// Abort if there is no damager, or the unit damaged itself, or the damager is not
-	// a star
-	if ( !damager || damager == obj || !Commands->Is_A_Star(damager) )
-		return;
+  // Abort if there is no damager, or the unit damaged itself, or the damager is not
+  // a star
+  if ( !damager || damager == obj || !Commands->Is_A_Star(damager) )
+    return;
 
-	/* Damaged or repaired? Then convert amount into it's absolute value for
-	calculating points granted */
-	bool bRepair = (amount < 0);
-	amount = abs(amount);
-	float points = ((bRepair) ? repairPoints : damagePoints) * amount;
-	float money = ((bRepair) ? repairMoney : damageMoney) * amount;
+  /* Damaged or repaired? Then convert amount into it's absolute value for
+  calculating points granted */
+  bool bRepair = (amount < 0);
+  amount = abs(amount);
+  float points = ((bRepair) ? m_repairPoints : m_damagePoints) * amount;
+  float money = ((bRepair) ? m_repairMoney : m_damageMoney) * amount;
 
-	// Is this player an APB spy?
-	bool bSpy = Is_Spy(damager);
+  // Is this player an APB spy?
+  bool bSpy = Is_Spy(damager);
 
-	// Repaired other team or damaged own team? That would be negative points and no
-	// money for you then... unless your spy, then the logic is inverted...
-	if ( bSpy ^ ((Get_Object_Type(obj) == Get_Object_Type(damager)) != bRepair) )
-	{
-		points *= -1.0f;
-		money = 0.0f;
-	}
+  // Repaired other team or damaged own team? That would be negative points and no
+  // money for you then... unless your spy, then the logic is inverted...
+  if ( bSpy ^ ((Get_Object_Type(obj) == Get_Object_Type(damager)) != bRepair) )
+  {
+    points *= -1.0f;
+    money = 0.0f;
+  }
 
-	// Give the damager their points and money
-	Commands->Give_Points(damager, points, false);
-	Commands->Give_Money(damager, money, false);
+  // Give the damager their points and money
+  GivePointsAndMoney ( damager, points, money );
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_customPoints::Killed ( GameObject* obj, GameObject *killer )
 {
-	// Abort if there is no killer, or the unit killed itself, or the killer is not
-	// a star
-	if ( !killer || killer == obj || !Commands->Is_A_Star(killer) )
-		return;
+  // Abort if there is no killer, or the unit killed itself, or the killer is not
+  // a star
+  if ( !killer || killer == obj || !Commands->Is_A_Star(killer) )
+    return;
 
-	// Killed own teammate? That would be negative points and no cash for you then...
-	if ( Get_Object_Type(obj) == Get_Object_Type(killer) )
-	{
-		Commands->Give_Points(killer, killPoints*-1.0f, false);
-	}
+  // Killed own teammate? That would be negative points and no cash for you then...
+  if ( Get_Object_Type(obj) == Get_Object_Type(killer) )
+  {
+    GivePointsAndMoney ( killer, m_killPoints*-1.0f, 0.0f );
+  }
 
-	else
-	{
-		// Give the killer their points and money
-		Commands->Give_Points(killer, killPoints, false);
-		Commands->Give_Money(killer, killMoney, false);
-	}
+  else
+  {
+    // Give the killer their points and money
+    GivePointsAndMoney ( killer, m_killPoints, m_killMoney );
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customPoints::GivePointsAndMoney ( GameObject* obj, float points, float money )
+{
+  int playerId = Get_Player_ID(obj);
+  if ( playerId >= 0 )
+  {
+    if ( cPlayer* player = Find_Player(playerId) )
+    {
+      player->Set_Score(player->Get_Score()+points);
+      player->Increment_Money(money);
+    }
+  }
+
+  int team = Get_Object_Type(obj);
+  Set_Team_Score(team, Get_Team_Score(team) + points);
+}
+
+// -------------------------------------------------------------------------------------------------
 
 ScriptRegistrant<dp88_customPoints> dp88_customPoints_Registrant(
-	"dp88_customPoints",
-	"killPoints:float,"
-	"damagePoints:float,"
-	"repairPoints:float,"
-	"killMoney:float,"
-	"damageMoney:float,"
-	"repairMoney:float"
+  "dp88_customPoints",
+  "killPoints:float,"
+  "damagePoints:float,"
+  "repairPoints:float,"
+  "killMoney:float,"
+  "damageMoney:float,"
+  "repairMoney:float"
+);
+
+
+
+
+
+
+
+
+/*------------------------
+Conquest Controller
+--------------------------*/
+
+void dp88_conquestController::Created ( GameObject* pSelf )
+{
+  m_scoringMode = (unsigned char)Get_Int_Parameter("ScoringMode");
+
+  m_targets[0] = Get_Int_Parameter("TargetScoreTeam0");
+  m_targets[1] = Get_Int_Parameter("TargetScoreTeam1");
+
+  m_points[0] = ( m_scoringMode == MODE_DEFAULT ) ? 0 : m_targets[0];
+  m_points[1] = ( m_scoringMode == MODE_DEFAULT ) ? 0 : m_targets[1];
+
+  // Do game intro after 30 seconds, giving people time to load up
+  Commands->Start_Timer( pSelf, this, 30.0f, TIMER_CONQUEST_DOINTRO );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestController::Timer_Expired ( GameObject* pSelf, int number )
+{
+  if ( number == TIMER_CONQUEST_DOINTRO )
+  {
+    // Show intro
+    // \todo Send intro message
+
+    // Start scores timer if interval > 0
+    int scoreInterval = Get_Int_Parameter("ScoreInterval");
+    if ( scoreInterval > 0 )
+      Commands->Start_Timer( pSelf, this, (float)scoreInterval, TIMER_CONQUEST_DOSCORES );
+  }
+
+
+  else if ( number == TIMER_CONQUEST_DOSCORES )
+  {
+    // Show scores
+    // \todo Send scores message
+    char scoresMsg[1000];
+    sprintf_s ( scoresMsg, sizeof(scoresMsg), "Scores are currently: Team 0 (%d/%d), Team 1 (%5d/%d)", m_points[0], m_targets[0], m_points[1], m_targets[1]);
+    Send_Message(50,200,50,scoresMsg);
+
+    Commands->Start_Timer( pSelf, this, (float)Get_Int_Parameter("ScoreInterval"), TIMER_CONQUEST_DOSCORES );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestController::Custom ( GameObject* pSelf, int type, int param, GameObject* pSender )
+{
+  if ( type == CUSTOM_CONQUEST_GIVEPOINTS_T0 || type == CUSTOM_CONQUEST_GIVEPOINTS_T1 )
+  {
+    int team = (type==CUSTOM_CONQUEST_GIVEPOINTS_T0) ? 0 : 1;
+    int otherteam = (team==0) ? 1 : 0;
+
+    // In normal scoring mode grant <param> points to the earning team
+    if ( m_scoringMode == MODE_DEFAULT )
+    {
+      m_points[team] += param;
+
+      // Have we won?
+      if ( m_points[team] >= m_targets[team] )
+      {
+        BaseControllerClass::Find_Base(otherteam)->Set_Base_Destroyed(true);
+      }
+    }
+
+    // In deduction scoring mode deduct <param> points from the opposing team
+    else if ( m_scoringMode == MODE_DEDUCTION )
+    {
+      m_points[otherteam] -= param;
+
+      // Have they lost?
+      if ( m_points[otherteam] < 0 )
+      {
+        BaseControllerClass::Find_Base(otherteam)->Set_Base_Destroyed(true);
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_conquestController> dp88_conquestController_Registrant(
+  "dp88_conquestController",
+  "ScoringMode=0:int,"
+  "TargetScoreTeam0=100:int,"
+  "TargetScoreTeam1=100:int,"
+  "IntroString:string,"
+  "ScoreInterval=60:int,"
+  "ScoreString:string,"
+  "ScoreStringTeam0:string,"
+  "ScoreStringTeam1:string"
+);
+
+
+
+
+
+
+
+
+
+
+/*------------------------
+Conquest Control Zone
+--------------------------*/
+
+void dp88_conquestControlZone::Created ( GameObject* pObj )
+{
+  // Find the controller
+  GameObject* pController = Find_Object_With_Script("dp88_conquestController");
+  if ( !pController )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: Conquest controller object not found. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+    return;
+  }
+  m_controllerID = Commands->Get_ID(pController);
+
+  // Validate zone preset
+  if ( !Is_Valid_Preset(Get_Parameter("ZonePreset")) )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: A script zone preset with the name '%s' was not found. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name(), Get_Parameter("ZonePreset") );
+    Destroy_Script();
+    return;
+  }
+
+  // Determine the size and rotation for the control zone
+  Vector3 position;
+  Vector3::Add ( Commands->Get_Position(pObj), Get_Vector3_Parameter("ZoneOffset"), &position );
+  Vector3 size = Get_Vector3_Parameter("ZoneSize");
+  Matrix3 rotation(true);
+  rotation.Rotate_Z(Commands->Get_Facing(pObj));
+
+  // Define the bounding box and create the zone
+  OBBoxClass zoneBoundingBox ( position, size, rotation );
+  GameObject* pZone = Create_Zone(Get_Parameter("ZonePreset"), zoneBoundingBox );
+  m_zoneID = Commands->Get_ID(pZone);
+
+  // Load settings
+  m_captureTime             = Get_Int_Parameter("CaptureTime");
+  m_bAllowMajorityCapture   = (Get_Int_Parameter("AllowMajorityCapture") > 0);
+  m_multiCaptureCap         = Get_Int_Parameter("MultiCaptureCap");
+  m_multiCaptureMultiplier  = Get_Float_Parameter("MultiCaptureMultiplier");
+  m_nAnimTransitionFrames   = Get_Int_Parameter("CaptureAnimTransitionFrames");
+
+  if ( m_captureTime <= 0 || m_multiCaptureCap <= 0 || m_multiCaptureMultiplier <= 0.0f || m_nAnimTransitionFrames < 0 )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: Invaild script parameters. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+    return;
+  }
+
+  // Determine starting team and, if not neutral, start the tick timer to grant points per tick
+  int team = (unsigned char)Get_Object_Type(pObj);
+  if ( team < 2 )
+  {
+    m_captureState = (float)((team==0) ? (m_captureTime*-1) : m_captureTime);
+    Commands->Start_Timer( pObj, this, (float)Get_Int_Parameter("TickInterval"), TIMER_CONQUEST_TICK );
+    m_bTickRunning = true;
+  }
+  else
+  {
+    m_captureState = 0.0f;
+    m_bTickRunning = false;
+
+    // Force correct neutral team
+    Set_Object_Type(pObj, 2);
+  }
+
+  // Set initial animation state
+  UpdateAnimationFrame(pObj);
+
+  // Start the think timer to track players in the zone and update ownership accordingly
+  Commands->Start_Timer( pObj, this, 1.0f, TIMER_CONQUEST_THINK );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestControlZone::Timer_Expired ( GameObject* pObj, int number )
+{
+  ScriptZoneGameObj* pZone = (ScriptZoneGameObj*)Commands->Find_Object(m_zoneID);
+  if ( !pZone || !((GameObject*)pZone)->As_ScriptZoneGameObj() )   // Sanity checking
+    return;
+
+  if ( number == TIMER_CONQUEST_THINK )
+  {
+    // Count the objects inside the zone - not we don't simply use Get_Object_Count_In_Zone because
+    // we don't want to count vehicles *and* their drivers... but we do want to allow AI units to
+    // contribute. Also ignore dead units...
+    int nPlayers[2] = {0};
+    for (SLNode<SmartGameObj> *z = GameObjManager::SmartGameObjList.Head();z;z = z->Next())
+    {
+      SmartGameObj* o = z->Data();
+      int team = Get_Object_Type(o);
+      if ( Commands->Get_Health(o) == 0 || team < 0 || team > 2 || !pZone->Inside_Me(o) )
+        continue;
+
+      // Only AI-enabled vehicles count
+      if ( o->As_VehicleGameObj() && !((VehicleGameObj*)o)->Get_Action()->Is_Acting() )
+        continue;
+
+      nPlayers[team]++;
+    }
+
+    // Check which team currently controls the area inside the zone (and can therefore capture it)
+    int capturingTeam = -1;
+    if ( nPlayers[0] != nPlayers[1] )
+    {
+      if ( nPlayers[0] > nPlayers[1] && (nPlayers[1] == 0 || m_bAllowMajorityCapture) )
+        capturingTeam = 0;
+      else if ( nPlayers[1] > nPlayers[0] && (nPlayers[0] == 0 || m_bAllowMajorityCapture) )
+        capturingTeam = 1;
+    }
+
+    Console_Output("ccz: think (%d, %d, %d)\n", nPlayers[0], nPlayers[1], capturingTeam );
+    // Increment the capture progress for the team in control of the area inside the zone
+    if ( capturingTeam != -1 )
+      IncrementCaptureProgress ( pObj, capturingTeam, nPlayers[capturingTeam]-nPlayers[(capturingTeam==0)?1:0] );
+
+
+    // Otherwise revert to previous state if partially captured and nobody is in the zone (don't
+    // trigger this if there are players in the zone but they don't currently qualify to capture it,
+    // avoids losing capture progress whilst fending off enemy attackers)
+    else if ( (nPlayers[0] == 0 && nPlayers[1] == 0) && m_captureState != 0.0f && abs(m_captureState) != m_captureTime )
+    {
+      int team = Get_Object_Type(pObj);
+      int targetState = (team==2) ? 0 : ((team==0) ? (m_captureTime*-1) : m_captureTime);
+
+      if ( targetState > m_captureState )
+      {
+        m_captureState += 1.0f;
+        if ( m_captureState > targetState )
+          m_captureState = (float)targetState;
+      }
+      else
+      {
+        m_captureState -= 1.0f;
+        if ( m_captureState < targetState )
+          m_captureState = (float)targetState;
+      }
+
+      UpdateAnimationFrame(pObj);
+    }
+
+
+    // Restart timer
+    Commands->Start_Timer( pObj, this, 1.0f, TIMER_CONQUEST_THINK );
+  }
+
+
+
+
+  else if ( number == TIMER_CONQUEST_TICK )
+  {
+    int team = Get_Object_Type(pObj);
+    if ( team != 2 )
+    {
+      GameObject* pController = Commands->Find_Object(m_controllerID);
+      if ( !pController )
+        return;
+
+      // Grant points to owning team
+      int custom = (team==0) ? CUSTOM_CONQUEST_GIVEPOINTS_T0 : CUSTOM_CONQUEST_GIVEPOINTS_T1;
+      Commands->Send_Custom_Event ( pObj, pController, custom, Get_Int_Parameter("TickPoints"), 0.0f);
+
+      Commands->Start_Timer( pObj, this, (float)Get_Int_Parameter("TickInterval"), TIMER_CONQUEST_TICK );
+    }
+    else
+      m_bTickRunning = false;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int team, int nPlayers )
+{
+  // If the team already fully controls the zone then don't do anything
+  int targetState = (team==0) ? (m_captureTime*-1) : m_captureTime;
+  if ( m_captureState == targetState || nPlayers == 0 )
+    return;
+
+  // Apply multi capture cap and work out the additional progress to be applied
+  nPlayers = min(nPlayers,m_multiCaptureCap);
+  float progress = 1.0f + ((nPlayers-1)*m_multiCaptureMultiplier);
+
+  // Apply progress
+  if ( team == 0 )
+  {
+    m_captureState -= progress;
+    if ( m_captureState < targetState )
+      m_captureState = (float)targetState;
+  }
+  else
+  {
+    m_captureState += progress;
+    if ( m_captureState > targetState )
+      m_captureState = (float)targetState;
+  }
+
+
+  // Have we taken control of the zone?
+  if ( m_captureState == targetState && Get_Object_Type(pObj) != team )
+  {
+    // \todo Send control taken message
+    Send_Message_Team(team, 50, 200, 50, "zone now controlled by your team" );
+    Send_Message_Team((team==0)?1:0, 50, 200, 50, "zone now controlled by enemy team" );
+
+    // \todo Give capture points
+
+    Set_Object_Type(pObj,team);
+
+    // Set AI objectives
+    int aiPriority = Get_Int_Parameter("AIObjectivePriority");
+    if ( aiPriority > 0 )
+    {
+      Remove_Script(pObj,"dp88_AI_Objective");
+
+      Vector3 size = Get_Vector3_Parameter("ZoneSize");
+      int distance = (int)(min(size.X, size.Y)*0.75f);
+      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,%d,1,1,1,1,0", aiPriority, distance, (team==0)?1:0 ); // Offensive
+      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,%d,2,1,1,1,0", aiPriority, distance, team );          // Defensive
+    }
+
+    if ( !m_bTickRunning )
+      Commands->Start_Timer( pObj, this, (float)Get_Int_Parameter("TickInterval"), TIMER_CONQUEST_TICK );
+  }
+
+
+  // Has the zone become neutral?
+  else if ( (m_captureState == 0.0f || (team == 0 && m_captureState < 0.0f) || (team == 1 && m_captureState < 1.0f))
+    && Get_Object_Type(pObj) != 2 )
+  {
+    // \todo Send neutral message
+    Send_Message_Team(0, 50, 200, 50, "zone now neutral" );
+    Send_Message_Team(1, 50, 200, 50, "zone now neutral" );
+
+    Set_Object_Type(pObj,2);
+
+    // Set AI objectives
+    int aiPriority = Get_Int_Parameter("AIObjectivePriority");
+    if ( aiPriority > 0 )
+    {
+      Remove_Script(pObj,"dp88_AI_Objective");
+
+      Vector3 size = Get_Vector3_Parameter("ZoneSize");
+      int distance = (int)(min(size.X, size.Y)*0.75f);
+      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,2,1,1,1,1,0", aiPriority, distance );
+    }
+  }
+
+
+  // Set animation state
+  UpdateAnimationFrame(pObj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestControlZone::UpdateAnimationFrame( GameObject* pObj )
+{
+  int animFrame = 1+m_nAnimTransitionFrames;  // Neutral frame
+  int teamFrames = (int)floor((1+m_nAnimTransitionFrames) * (abs(m_captureState)/m_captureTime));
+  animFrame += (m_captureState<0) ? (teamFrames*-1) : teamFrames;
+  Commands->Set_Animation_Frame(pObj, Get_Parameter("CaptureAnim"), animFrame);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_conquestControlZone> dp88_conquestControlZone_Registrant(
+  "dp88_conquestControlZone",
+  "ZoneSize:vector3,"
+  "ZoneOffset:vector3,"
+  "ZonePreset=Script_Zone_All:string,"
+  "CapturePoints=5:int,"
+  "CapturePointsFirstTeamOnly=1:int,"
+  "TickPoints=1:int,"
+  "TickInterval=3:int,"
+  "CaptureTime=20:int,"
+  "MultiCaptureCap=3:int,"
+  "MultiCaptureMultiplier=0.5:float,"
+  "AllowMajorityCapture=1:int,"
+  "CaptureAnim:string,"
+  "CaptureAnimTransitionFrames=0:int"
+  "CapturingString:string,"
+  "NeutralString:string,"
+  "CapturedString:string,"
+  "AIObjectivePriority=0:int"
+);
+
+
+
+
+
+
+
+
+
+
+/*------------------------
+Radar Invisibility
+--------------------------*/
+
+void dp88_radarInvisibility::Created ( GameObject* pObj )
+{
+  PhysicalGameObj* phys = pObj->As_PhysicalGameObj();
+  if ( !phys )
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: This script is only compatible with physical game objects. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+    return;
+  }
+
+  // Disable the radar blip for this object
+  m_originalRadarMode = phys->Get_Radar_Blip_Shape_Type();
+  phys->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_NONE);
+
+  // If this is a vehicle then setup the passenger data structures
+  m_nSeats = 0;
+  if ( VehicleGameObj* pVehicle = pObj->As_VehicleGameObj() )
+  {
+    m_nSeats = pVehicle->Get_Definition().Get_Seat_Count();
+    m_pPassengerIds = new int[m_nSeats];
+    m_pPassengerRadarModes = new int[m_nSeats];
+    for ( int i = 0; i < m_nSeats; ++i )
+      m_pPassengerIds[i] = NULL;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_radarInvisibility::Custom ( GameObject* pObj, int type, int param, GameObject* pSender )
+{
+  if ( type == CUSTOM_EVENT_VEHICLE_ENTERED )
+  {
+    HidePassengerBlip(pObj->As_VehicleGameObj(), pSender->As_SoldierGameObj());
+  }
+
+  else if ( type == CUSTOM_EVENT_VEHICLE_EXITED )
+  {
+    RestorePassengerBlip(pSender->As_SoldierGameObj());
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_radarInvisibility::HidePassengerBlip ( VehicleGameObj* pVehicle, SoldierGameObj* pSoldier )
+{
+  if ( !pVehicle || !pSoldier || !m_pPassengerIds || !pSoldier->As_PhysicalGameObj() )
+    return;
+
+  for ( int i = 0; i < m_nSeats; ++i )
+  {
+    if ( pVehicle->Get_Occupant(i) == pSoldier )
+    {
+      m_pPassengerIds[i] = Commands->Get_ID(pSoldier);
+      m_pPassengerRadarModes[i] = pSoldier->As_PhysicalGameObj()->Get_Radar_Blip_Shape_Type();
+      pSoldier->As_PhysicalGameObj()->Set_Radar_Blip_Shape_Type(RADAR_BLIP_SHAPE_NONE);
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_radarInvisibility::RestorePassengerBlip ( SoldierGameObj* pSoldier )
+{
+  if ( !pSoldier || !m_pPassengerIds || !pSoldier->As_PhysicalGameObj() )
+    return;
+
+  int soldierId = Commands->Get_ID(pSoldier);
+
+  for ( int i = 0; i < m_nSeats; ++i )
+  {
+    if ( m_pPassengerIds[i] == soldierId )
+    {
+      pSoldier->As_PhysicalGameObj()->Set_Radar_Blip_Shape_Type(m_pPassengerRadarModes[i]);
+      m_pPassengerIds[i] = NULL;
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_radarInvisibility::Detach ( GameObject* pObj )
+{
+  if ( Exe != 4 )   // Don't trigger this code in LevelEdit
+  {
+    if ( PhysicalGameObj* phys = pObj->As_PhysicalGameObj() )
+      phys->Set_Radar_Blip_Shape_Type(m_originalRadarMode);
+
+    for ( int i = 0; i < m_nSeats; ++i )
+    {
+      if ( m_pPassengerIds[i] != NULL )
+      {
+        if ( GameObject* pSoldier = Commands->Find_Object(m_pPassengerIds[i]) )
+          RestorePassengerBlip( pSoldier->As_SoldierGameObj() );
+      }
+    }
+  }
+
+  delete [] m_pPassengerIds;
+  delete [] m_pPassengerRadarModes;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_radarInvisibility> dp88_radarInvisibility_Registrant(
+  "dp88_radarInvisibility",
+  ""
+);
+
+
+
+
+
+
+
+
+void dp88_turretSound::Created ( GameObject* pObj )
+{
+  if ( VehicleGameObj* vObj = pObj->As_VehicleGameObj() )
+  {
+    m_nMinDifferential = Get_Float_Parameter("Min_Differential_Rad");
+    m_lastFacing = Get_Turret_Facing(vObj->Peek_Model());
+    m_nSoundId = -1;
+    Commands->Start_Timer(pObj, this, 0.5f, TIMER_TURRETSOUND );
+  }
+  else
+  {
+    Console_Output ( "[%d:%s:%s] Critical Error: This script is only compatible with vehicle game objects. Destroying script...\n", Commands->Get_ID(pObj), Commands->Get_Preset_Name(pObj), this->Get_Name() );
+    Destroy_Script();
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_turretSound::Timer_Expired ( GameObject* pObj, int number )
+{
+  if ( number == TIMER_TURRETSOUND )
+  {
+    if ( VehicleGameObj* vObj = pObj->As_VehicleGameObj() )
+    {
+      float newFacing = Get_Turret_Facing(vObj->Peek_Model());
+
+      // Check if we are rotating - ignore tiny rotation amounts
+      bool bRotating = ( abs(newFacing-m_lastFacing) > m_nMinDifferential );
+
+      if ( m_nSoundId == -1 && bRotating)
+        Play_Sound(pObj);
+
+      else if ( m_nSoundId != -1 && !bRotating )
+        Stop_Sound(pObj);
+
+      m_lastFacing = newFacing;
+    }
+
+    // Restart timer to check for rotation
+    Commands->Start_Timer(pObj, this, 0.5f, TIMER_TURRETSOUND );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_turretSound::Custom ( GameObject* pObj, int type, int param, GameObject* pSender )
+{
+  if (type == CUSTOM_EVENT_SOUND_ENDED && param == m_nSoundId)
+  {
+    // We will allow the timer to stop the sound if necessary, since this might trigger
+    // on the same engine tick, thus checking our facing against the previous timer
+    // facing could produce a false-positive for "stopped rotating"
+    Play_Sound(pObj);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+float dp88_turretSound::Get_Turret_Facing ( RenderObjClass* pRenderObj )
+{
+  if ( pRenderObj )
+  {
+    Matrix3D vehicleTransform = pRenderObj->Get_Transform();
+    Matrix3D transform = pRenderObj->Get_Bone_Transform("turret");
+    return abs(vehicleTransform.getRotationZ()-transform.getRotationZ());
+  }
+
+  return 0.0f;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_turretSound::Play_Sound ( GameObject* pObj )
+{
+  m_nSoundId = Commands->Create_3D_Sound_At_Bone(Get_Parameter("Sound_Preset"), pObj, "turret");
+  Commands->Monitor_Sound(pObj, m_nSoundId);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_turretSound::Stop_Sound ( GameObject* pObj )
+{
+  Commands->Stop_Sound(m_nSoundId,true);
+  m_nSoundId = -1;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_turretSound> dp88_turretSound_Registrant(
+  "dp88_turretSound",
+  "Sound_Preset:string,"
+  "Min_Differential_Rad=0.25:float"
+);
+
+
+
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Teleportation script
+// -------------------------------------------------------------------------------------------------
+
+void dp88_teleport::Created ( GameObject* pObj )
+{
+  m_nObjectID = Get_Int_Parameter("ObjectID");    // Don't check object ID right now, it might be created later
+  m_bUseBone = strlen(Get_Parameter("Bone")) > 0;
+  m_offset = Get_Vector3_Parameter("Offset");
+
+  m_bTeleportInfantry = (Get_Int_Parameter("Teleport_Infantry") == 1);
+  m_bTeleportVehicles = (Get_Int_Parameter("Teleport_Vehicles") == 1);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_teleport::Entered ( GameObject* pObj, GameObject* pEnterer )
+{
+  if ( (m_bTeleportInfantry && pEnterer->As_SoldierGameObj()) || (m_bTeleportVehicles && pEnterer->As_VehicleGameObj()) )
+  {
+    Vector3 location = m_offset;
+
+    if ( m_nObjectID != 0 )
+    {
+      GameObject* pTarget = Commands->Find_Object(m_nObjectID);
+      if ( !pTarget )
+        return;
+
+      location = ( m_bUseBone ) ? Commands->Get_Bone_Position(pTarget,Get_Parameter("bone")) : Commands->Get_Position(pTarget);
+      location.X += m_offset.X;
+      location.Y += m_offset.Y;
+      location.Z += m_offset.Z;
+    }
+
+    Commands->Set_Position(pEnterer, location);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_teleport::Custom ( GameObject* pObj, int type, int param, GameObject* pSender )
+{
+  if ( type == CUSTOM_EVENT_POWERUP_GRANTED )
+    Entered ( pObj, pSender );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_teleport::Poked ( GameObject* pObj, GameObject* pPoker )
+{
+  Entered ( pObj, pPoker );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_teleport> dp88_teleport_Registrant(
+  "dp88_teleport",
+  "ObjectID=0:int,"
+  "Bone:string,"
+  "Offset:vector3,"
+  "Teleport_Infantry=1:int,"
+  "Teleport_Vehicles=1:int"
 );

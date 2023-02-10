@@ -34,7 +34,8 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 			if (StartPos.Z - Pos.Z >= 10) { //Deploy parachute after 10 meters.
 				Parachute = Create_Object("Soldier Powerups",((PhysicalGameObj*)Get_Owner())->Get_Transform()); //Powerups fall slower than infantry.
 				Commands->Set_Model(Parachute,"X5D_Parachute");
-				Commands->Attach_To_Object_Bone(obj,Parachute,"Origin");
+				Commands->Attach_To_Object_Bone(Get_Owner(),Parachute,"Origin");
+				Commands->Create_3D_WAV_Sound_At_Bone("parachute_open.wav",Get_Owner(),"Origin");
 				Start_Timer(2,0.1f);
 			}
 			else {
@@ -51,6 +52,7 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 		if (Pos.Z >= LastPos.Z) {
 			if (Parachute) {
 				Parachute->Set_Delete_Pending();
+				Commands->Create_3D_WAV_Sound_At_Bone("parachute_away.wav",Get_Owner(),"Origin");
 			}
 			Set_Delete_Pending();
 		}
@@ -96,7 +98,7 @@ void DAParachutesGameFeatureClass::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cP
 }
 
 bool DAParachutesGameFeatureClass::Parachute_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	DA::Page_Player(Player,"Your parachute will automatically deploy when you exit the appropriate vehicle. No command is needed");
+	DA::Page_Player(Player,"Your parachute will automatically deploy when you exit the appropriate vehicle. No command is needed.");
 	return false;
 }
 

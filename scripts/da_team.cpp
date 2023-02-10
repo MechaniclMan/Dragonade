@@ -19,6 +19,7 @@
 #include "da_team.h"
 #include "da_settings.h"
 
+int DATeamManager::Winner = -1;
 unsigned int DATeamManager::RebalanceTime = 10;
 int DATeamManager::RemixFrequency = 1;
 int DATeamManager::SwapChance = 50;
@@ -27,10 +28,13 @@ bool DATeamManager::EnableRebalance = true;
 bool DATeamManager::EnableFreeTeamChanging = false;
 int DATeamManager::ForceTeam = -1;
 
+#define Count_Team() for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { cPlayer *Player = z->Data(); if (Player->Is_Active()) { if (Player->Get_Player_Type() == 0) { TeamCount[0]++; } else if (Player->Get_Player_Type() == 1) { TeamCount[1]++; } } }
+
 void DATeamManager::Init() {
 	static DATeamManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::LEVELLOADED,INT_MAX);
+	Instance.Register_Event(DAEvent::GAMEOVER,INT_MAX);
 	Instance.Register_Event(DAEvent::PLAYERJOIN,INT_MAX);
 	Instance.Register_Event(DAEvent::TEAMCHANGEREQUEST);
 }
@@ -60,39 +64,41 @@ void DATeamManager::Level_Loaded_Event() {
 			Remix();
 			RemixCount = 0;
 		}
-		else if (Commands->Get_Random_Int(1,101) <= SwapChance) {
+		else if (Commands->Get_Random_Int(1,101) > SwapChance) {
 			Swap();
 		}
 		if (EnableRebalance) {
 			Rebalance();
 		}
 	}
+	Winner = -1;
+}
+
+void DATeamManager::Game_Over_Event() {
+	Winner = The_Game()->Get_Winner_ID();
 }
 
 void DATeamManager::Player_Join_Event(cPlayer *Player) {
 	if (ForceTeam != -1) {
 		Player->Set_Player_Type(ForceTeam);
 	}
-	else if (Player->SessionTime < 10.0f) {
-		if (!EnableFreeTeamChanging) {
-			if (Tally_Team_Size(0)-Tally_Team_Size(1) > 1) { //Don't let a new player joining imbalance the teams.
-				Player->Set_Player_Type(1);
+	else if (!EnableFreeTeamChanging && !(int)Player->Get_Score()) { //Check if this player imbalanced the teams by joining. Can be caused by a player using the team select screen on XWIS or rejoining after other players have joined and changed the team sizes.
+		int TeamCount[2] = {0,0};
+		Count_Team();
+		if ((TeamCount[0]-TeamCount[1]) > 1) {
+			if (Player->Get_Player_Type() == 0) {
+				Change_Team_3(Player,1);
 			}
-			else if (Tally_Team_Size(1)-Tally_Team_Size(0) > 1) {
-				Player->Set_Player_Type(0);
+		}
+		else if ((TeamCount[1]-TeamCount[0]) > 1) {
+			if (Player->Get_Player_Type() == 1) {
+				Change_Team_3(Player,0);
 			}
 		}
 	}
 	if (The_Game()->IsTeamChangingAllowed) { //Disable team changing when a new player joins so it uses the "fighting for team x" join message.
 		The_Game()->IsTeamChangingAllowed = false;
-		if (The_Game()->Is_Laddered()) {
-			The_Game()->IsLaddered = false; //Having team changing and laddered both enabled causes stock clients to crash.
-			Update_Game_Settings();
-			The_Game()->IsLaddered = true;
-		}
-		else {
-			Update_Game_Settings();
-		}
+		Update_Game_Settings();
 		if (!Is_Timer(2)) {
 			Start_Timer(2,0.1f);
 		}
@@ -104,9 +110,11 @@ void DATeamManager::Player_Leave_Event(cPlayer *Player) {
 		int Team = Player->Get_Team();
 		if (Team == 0 || Team == 1) {
 			int OtherTeam = Team?0:1;
-			if (Tally_Team_Size(OtherTeam)-(Tally_Team_Size(Team)-1) > 1) {
+			int TeamCount[2] = {0,0};
+			Count_Team();
+			if (TeamCount[OtherTeam]-(TeamCount[Team]-1) > 1) { //Check if this player imbalanced the teams by leaving.
 				if (!Is_Timer(1)) {
-					Start_Timer(1,10.0f);
+					Start_Timer(1,10.0f); //Give it 10 seconds to see if another player joins or leaves and fixes the imbalance.
 				}
 			}
 		}
@@ -114,7 +122,11 @@ void DATeamManager::Player_Leave_Event(cPlayer *Player) {
 }
 
 bool DATeamManager::Team_Change_Request_Event(cPlayer *Player) {
-	if (Is_Free_Team_Changing_Enabled()) {
+	if (Get_Force_Team() != -1) {
+		DA::Page_Player(Player,"You can not request a team change while force teaming is in effect.");
+		return false;
+	}
+	else if (Is_Free_Team_Changing_Enabled()) {
 		Change_Team_3(Player,Player->Get_Team()?0:1);
 		DA::Host_Message("%ls changed teams.",Player->Get_Name());
 		return false;
@@ -151,66 +163,65 @@ void DATeamManager::Remix() {
 	}
 
 	DA::Host_Message("Teams have been remixed.");
+	
+	DynamicVectorClass<cPlayer*> Winners;
+	DynamicVectorClass<cPlayer*> Losers;
 
-	bool Winner[128];
-
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //First pass
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active()) {
-			if (Player->Get_Player_Type() == The_Game()->Get_Winner_ID()) {
-				Winner[Player->Get_Id()] = true;
+		if (Player->Is_Active() && rand() % 2) {
+			if (Player->Get_Player_Type() == Winner) {
+				Winners.Add(Player);
 			}
 			else {
-				Winner[Player->Get_Id()] = false;
+				Losers.Add(Player);
 			}
 			Player->Set_Player_Type(2); //Change team to 2 to mark for remixing.
 		}
 	}
-	int TeamCount[2] = {0,0};
-
-	DAEventManager::Remix_Event();
-
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //Second pass
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active()) {
-			if (Player->Get_Player_Type() == 0) {
-				TeamCount[0]++;
+		if (Player->Is_Active() && Player->Get_Player_Type() != 2) {
+			if (Player->Get_Player_Type() == Winner) {
+				Winners.Add(Player);
 			}
-			else if (Player->Get_Player_Type() == 1) {
-				TeamCount[1]++;
+			else {
+				Losers.Add(Player);
 			}
+			Player->Set_Player_Type(2); //Change team to 2 to mark for remixing.
 		}
 	}
 
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //Team winners first so that each team will have half the winners...
-		cPlayer *Player = z->Data();
-		if (Player->Is_Active()) {
-			if (Player->Get_Player_Type() == 2 && Winner[Player->Get_Id()]) { //Only remix player if another event hasn't already handled them.
-				int RandTeam = Get_Random_Int(1,101) > 50?1:0;
-				if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) {
-					Change_Team_4(Player,RandTeam);
-					TeamCount[RandTeam]++;
-				}
-				else {
-					Change_Team_4(Player,RandTeam?0:1);
-					TeamCount[RandTeam?0:1]++;
-				}
+	DAEventManager::Remix_Event(); //Trigger events.
+
+	int TeamCount[2] = {0,0}; //Count team sizes.
+	Count_Team();
+
+	for (int i = 0;i < Winners.Count();i++) { //Team winners first so that each team will have half the winners...
+		cPlayer *Player = Winners[i];
+		if (Player->Is_Active() && Player->Get_Player_Type() == 2) {
+			int RandTeam = rand() % 2;
+			if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) { //If the randomly chosen team has the same or less players we use it.
+				Change_Team_4(Player,RandTeam);
+				TeamCount[RandTeam]++;
+			}
+			else { //Otherwise we use the other team to maintain balance.
+				Change_Team_4(Player,RandTeam?0:1);
+				TeamCount[RandTeam?0:1]++;
 			}
 		}
 	}
-	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //And half the losers.
-		cPlayer *Player = z->Data();
-		if (Player->Is_Active()) {
-			if (Player->Get_Player_Type() == 2 && !Winner[Player->Get_Id()]) {
-				int RandTeam = Get_Random_Int(1,101) > 50?1:0;
-				if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) {
-					Change_Team_4(Player,RandTeam);
-					TeamCount[RandTeam]++;
-				}
-				else {
-					Change_Team_4(Player,RandTeam?0:1);
-					TeamCount[RandTeam?0:1]++;
-				}
+	for (int i = 0;i < Losers.Count();i++) { //And half the losers.
+		cPlayer *Player = Losers[i];
+		if (Player->Is_Active() && Player->Get_Player_Type() == 2) { //Only remix player if another event hasn't already handled them.
+			int RandTeam = rand() % 2;
+			if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) {
+				Change_Team_4(Player,RandTeam);
+				TeamCount[RandTeam]++;
+			}
+			else {
+				Change_Team_4(Player,RandTeam?0:1);
+				TeamCount[RandTeam?0:1]++;
 			}
 		}
 	}
@@ -221,19 +232,19 @@ void DATeamManager::Rebalance() {
 		return;
 	}
 
-	int TeamCount[2];
-	TeamCount[0] = Tally_Team_Size(0);
-	TeamCount[1] = Tally_Team_Size(1);
+	int TeamCount[2] = {0,0};
+	Count_Team(); //Count team sizes.
 
-	if (Diff(TeamCount[0],TeamCount[1]) > 1) {
+	if (Diff(TeamCount[0],TeamCount[1]) > 1) { //Only trigger if the teams are actually imbalanced.
 		DA::Host_Message("Teams have been rebalanced.");
 
-		DAEventManager::Rebalance_Event();
+		DAEventManager::Rebalance_Event(); //Trigger events.
 
-		TeamCount[0] = Tally_Team_Size(0);
-		TeamCount[1] = Tally_Team_Size(1);
+		TeamCount[0] = 0;
+		TeamCount[1] = 0;
+		Count_Team(); //Re-count incase another event rebalanced already.
 
-		if (Diff(TeamCount[0],TeamCount[1]) > 1) {
+		if (Diff(TeamCount[0],TeamCount[1]) > 1) { //Still imbalanced.
 
 			int OldTeam = -1;
 			int NewTeam = -1;
@@ -245,13 +256,19 @@ void DATeamManager::Rebalance() {
 				OldTeam = 1;
 				NewTeam = 0;
 			}
-			for (SLNode<cPlayer> *z = Get_Player_List()->Head();z && TeamCount[OldTeam]-TeamCount[NewTeam] > 1;z = z->Next()) {
-				cPlayer *Player = z->Data();
-				if (Player->Is_Active()) {
-					if (Player->Get_Player_Type() == OldTeam) {
-						Change_Team_4(Player,NewTeam);
-						TeamCount[OldTeam]--;
-						TeamCount[NewTeam]++;
+			while (TeamCount[OldTeam]-TeamCount[NewTeam] > 1) { //Go until teams are balanced.
+				int Rand = Get_Random_Int(0,TeamCount[OldTeam]); //Select random player on team to change.
+				int Count = 0;
+				for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
+					cPlayer *Player = z->Data();
+					if (Player->Is_Active() && Player->Get_Player_Type() == OldTeam) {
+						if (Count == Rand) { //Loop until we find that player.
+							Change_Team_3(Player,NewTeam);
+							TeamCount[OldTeam]--;
+							TeamCount[NewTeam]++;
+							break;
+						}
+						Count++;
 					}
 				}
 			}
@@ -271,17 +288,17 @@ void DATeamManager::Swap() {
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
 		if (Player->Is_Active()) {
-			TeamSave[Player->Get_Id()] = Player->Get_Player_Type(); //Save old team then change everyone to 2 to mark them for swapping.
+			TeamSave[Player->Get_ID()] = Player->Get_Player_Type(); //Save old team then change everyone to 2 to mark them for swapping.
 			Player->Set_Player_Type(2);
 		}
 	}
 
-	DAEventManager::Swap_Event();
+	DAEventManager::Swap_Event(); //Trigger events.
 
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		cPlayer *Player = z->Data();
 		if (Player->Is_Active() && Player->Get_Player_Type() == 2) { //Only swap if some other event hasn't handled this player already.
-			Change_Team_4(Player,TeamSave[Player->Get_Id()]?0:1);
+			Change_Team_4(Player,TeamSave[Player->Get_ID()]?0:1);
 		}
 	}
 }
@@ -325,7 +342,7 @@ Register_Console_Function(DAForceTeamConsoleFunctionClass);
 
 class DATeam3ConsoleFunctionClass : public ConsoleFunctionClass {
 	const char *Get_Name() { return "team3"; }
-	const char *Get_Help() { return "TEAM3 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and starting credits. Any credits over the starting amount are distributed to their team."; }
+	const char *Get_Help() { return "TEAM3 <playerid> - Swap a player's team, allowing them to keep their score, kills, deaths, and starting credits. Any credits over the starting amount are distributed amongst their former team."; }
 	void Activate(const char *ArgumentsString) {
 		cPlayer *Player = Find_Player(atoi(ArgumentsString));
 		if (Player) {

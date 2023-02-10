@@ -11,6 +11,7 @@
 */
 //Changes made in DA:
 //Moved various DefenseObjectClass and PhysicalGameObj functions to their respective header files
+//Added dirty bit to Set_Collision_Group.
 #include "general.h"
 #include "PowerUpGameObjDef.h"
 #include "PowerUpGameObj.h"
@@ -1101,5 +1102,6 @@ void SCRIPTS_API Set_Powerup_Always_Allow_Grant(GameObject *obj,bool Grant)
 void SCRIPTS_API PhysicalGameObj::Set_Collision_Group(int group)
 {
 	PhysObj->Set_Collision_Group((Collision_Group_Type)group);
+	Set_Object_Dirty_Bit(BIT_RARE,true);
 }
 #endif

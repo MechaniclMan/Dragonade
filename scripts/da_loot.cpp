@@ -52,6 +52,15 @@ bool DALootPlayerDataClass::Has_Weapon(const WeaponDefinitionClass *Weapon) {
 	return (Locker.ID(Weapon) != -1);
 }
 
+void DALootPowerUpClass::Set_Expire_Time(float Time) {
+	Stop_Timer(1);
+	Stop_Timer(2);
+	if (Time > 1.0f) {
+		Start_Timer(1,Time-1.0f);
+		Start_Timer(2,Time);
+	}
+}
+
 //Create list of all players that damaged the dropper.
 void DALootPowerUpClass::Init_Damagers(float Range,float ExpireTime) {
 	if (!Get_Dropper()) {
@@ -297,10 +306,7 @@ DALootPowerUpClass *DALootGameFeatureClass::Create_PowerUp(SoldierGameObj *Soldi
 	}
 	DALootPowerUpClass *PowerUp = new DALootPowerUpClass(Soldier);
 	Create_Object(PowerUpDef,Soldier->Get_Transform())->Add_Observer(PowerUp);
-	if (ExpireTime > 1.0f) {
-		PowerUp->Start_Timer(1,ExpireTime-1.0f);
-		PowerUp->Start_Timer(2,ExpireTime);
-	}
+	PowerUp->Set_Expire_Time(ExpireTime);
 	return PowerUp;
 }
 
@@ -311,10 +317,7 @@ DALootPowerUpClass *DALootGameFeatureClass::Create_PowerUp(const Vector3 &Positi
 	}
 	DALootPowerUpClass *PowerUp = new DALootPowerUpClass;
 	Create_Object(PowerUpDef,Position)->Add_Observer(PowerUp);
-	if (ExpireTime > 1.0f) {
-		PowerUp->Start_Timer(1,ExpireTime-1.0f);
-		PowerUp->Start_Timer(2,ExpireTime);
-	}
+	PowerUp->Set_Expire_Time(ExpireTime);
 	return PowerUp;
 }
 
@@ -344,10 +347,7 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(SoldierGameObj *Sol
 	Commands->Set_Model(BackpackObj,WeaponModel);
 	Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
-	if (ExpireTime > 1.0f) {
-		Backpack->Start_Timer(1,ExpireTime-1.0f);
-		Backpack->Start_Timer(2,ExpireTime);
-	}
+	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
 }
 
@@ -358,10 +358,7 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(const Vector3 &Posi
 	Commands->Set_Model(BackpackObj,WeaponModel);
 	Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
-	if (ExpireTime > 1.0f) {
-		Backpack->Start_Timer(1,ExpireTime-1.0f);
-		Backpack->Start_Timer(2,ExpireTime);
-	}
+	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
 }
 
@@ -372,10 +369,7 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(SoldierGameObj *Soldier) {
 	Commands->Set_Model(DNAObj,DNAModel);
 	Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
-	if (ExpireTime > 1.0f) {
-		DNA->Start_Timer(1,ExpireTime-1.0f);
-		DNA->Start_Timer(2,ExpireTime);
-	}
+	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;
 }
 
@@ -386,10 +380,7 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(const Vector3 &Position,const
 	Commands->Set_Model(DNAObj,DNAModel);
 	Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
-	if (ExpireTime > 1.0f) {
-		DNA->Start_Timer(1,ExpireTime-1.0f);
-		DNA->Start_Timer(2,ExpireTime);
-	}
+	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;
 }
 
@@ -414,6 +405,7 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 
 	//Expiration time and damager settings.
 	ExpireTime = DASettingsManager::Get_Float("Loot","ExpireTime",20.0f);
+	DropCommandExpireTime = DASettingsManager::Get_Float("Loot","DropCommandExpireTime",60.0f);
 	DamagersOnlyTime = DASettingsManager::Get_Float("Loot","DamagersOnlyTime",5.0f);
 	DamagersOnlyDistance = DASettingsManager::Get_Float("Loot","DamagersOnlyDistance",10.0f);
 
@@ -537,12 +529,7 @@ void DALootGameFeatureClass::Settings_Loaded_Event() {
 		}
 	}
 
-	//Setup powerup to use for everything.
 	BasePowerUpDef = (PowerUpGameObjDef*)Find_Named_Definition("Soldier PowerUps");
-	BasePowerUpDef->Persistent = true;
-	BasePowerUpDef->GrantWeapon = false;
-	BasePowerUpDef->AlwaysAllowGrant = true;
-	BasePowerUpDef->IdleAnimationName = "";
 }
 
 void DALootGameFeatureClass::Object_Created_Event(GameObject *obj) {
@@ -551,7 +538,7 @@ void DALootGameFeatureClass::Object_Created_Event(GameObject *obj) {
 	for (int i = 0;i < Player->Locker.Count();i++) { //Keep weapons when switching characters.
 		Bag->Add_Weapon(Player->Locker[i],999);
 	}
-	Get_Player_Data(((SoldierGameObj*)obj)->Get_Player())->CreationTime = The_Game()->FrameCount;
+	Player->CreationTime = The_Game()->FrameCount;
 }
 
 void DALootGameFeatureClass::Change_Character_Event(cPlayer *Player,const SoldierGameObjDef *Soldier) {
@@ -678,6 +665,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 			}
 			else {
 				DA::Private_Color_Message(Player,WHITE,"You have dropped all your weapons.");
+				Backpack->Set_Expire_Time(DropCommandExpireTime);
 			}
 		}
 		else {
@@ -690,6 +678,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 					DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",Translation);
 					DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+					Backpack->Set_Expire_Time(DropCommandExpireTime);
 					Bag->Remove_Weapon(i);
 					return true;
 				}
@@ -705,6 +694,7 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 			DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",DATranslationManager::Translate(Weapon));
 			DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
 			Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+			Backpack->Set_Expire_Time(DropCommandExpireTime);
 			Bag->Remove_Weapon(Bag->Get_Index());
 			return true;
 		}

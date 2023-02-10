@@ -155,21 +155,21 @@ void z_Tiberium_Truck::Register_Auto_Save_Variables()
 
 void z_Tiberium_Field::Entered(GameObject *obj, GameObject *enter)
 {
-	if (strstr(Commands->Get_Preset_Name(enter),"CnC_Nod_Truck_Player_Secret"))
+	if (Is_Script_Attached(enter,"z_Tiberium_Truck"))
 	{
 		Commands->Send_Custom_Event(obj,enter,1000,1,0);//harveting started
 	}
 }
 void z_Tiberium_Field::Exited(GameObject *obj, GameObject *exit)
 {
-	if (strstr(Commands->Get_Preset_Name(exit),"CnC_Nod_Truck_Player_Secret"))
+	if (Is_Script_Attached(exit,"z_Tiberium_Truck"))
 	{
 		Commands->Send_Custom_Event(obj,exit,1001,1,0);//not harvesting anymore
 	}
 }
 void z_Tiberium_Deposit::Entered(GameObject *obj, GameObject *enter)
 {
-	if (strstr(Commands->Get_Preset_Name(enter),"CnC_Nod_Truck_Player_Secret"))
+	if (Is_Script_Attached(enter,"z_Tiberium_Truck"))
 	{
 		Commands->Send_Custom_Event(obj,enter,1002,1,0);//dump
 	}	

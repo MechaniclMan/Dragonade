@@ -668,3 +668,15 @@ Vector3 SCRIPTS_API Get_Base_Center(int Team)
 		}
 		return ReturnPos;
 }
+
+BuildingAggregateClass *BuildingGameObj::Find_MCT()
+{
+	/*for (auto it = Aggregates.Iterator(); it; ++it)
+	{
+		if (it->Is_MCT())
+		{
+			return it.Get_Obj();
+		}
+	}*/
+	return 0;
+}

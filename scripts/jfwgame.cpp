@@ -16,6 +16,8 @@
 #include "jfwgame.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "VehicleGameObj.h"
+#include "BuildingGameObj.h"
+#include "BuildingGameObjDef.h"
 #include "WeaponClass.h"
 
 void JFW_Team_DM_Zone::Exited(GameObject *obj,GameObject *exiter)
@@ -3138,7 +3140,7 @@ void JFW_Hijacker_Vehicle::Created(GameObject *obj)
 
 void JFW_Hijacker_Vehicle::Damaged(GameObject *obj,GameObject *damager,float amount)
 {
-	if (damager)
+	if (damager && !HijackerID)
 	{
 		if (!_stricmp(Get_Current_Weapon(damager),Get_Parameter("Weapon")) && (!Get_Vehicle(damager)))
 		{
@@ -3161,6 +3163,95 @@ void JFW_Hijacker_Vehicle::Killed(GameObject *obj,GameObject *killer)
 	{
 		Commands->Apply_Damage(Commands->Find_Object(HijackerID),Get_Float_Parameter("Damage"),Get_Parameter("Warhead"),0);
 	}
+}
+
+void JFW_Hijacker_Vehicle_2::Created(GameObject *obj)
+{
+	HijackerID = 0;
+	jacking = false;
+}
+
+void JFW_Hijacker_Vehicle_2::Damaged(GameObject *obj,GameObject *damager,float amount)
+{
+	if (damager && !HijackerID && !jacking)
+	{
+		if (!_stricmp(Get_Current_Weapon(damager),Get_Parameter("Weapon")) && (!Get_Vehicle(damager)))
+		{
+			Commands->Create_Sound(Get_Parameter("Sound"),Commands->Get_Position(damager),damager);
+			Force_Occupants_Exit(obj);
+			Commands->Start_Timer(obj,this,0.5,1);
+			HijackerID = Commands->Get_ID(damager);
+			jacking = true;
+		}
+	}
+}
+
+void JFW_Hijacker_Vehicle_2::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if ((type == CUSTOM_EVENT_VEHICLE_ENTERED) && (sender == Commands->Find_Object(HijackerID)))
+	{
+		if (Get_Int_Parameter("Disable_Transitions"))
+		{
+			Commands->Enable_Vehicle_Transitions(obj,false);
+		}
+		if (Get_Int_Parameter("Single_Hijack"))
+		{
+			Remove_Weapon(sender,Get_Parameter("Weapon"));
+		}
+	}
+	if ((type == CUSTOM_EVENT_VEHICLE_EXITED) && (sender == Commands->Find_Object(HijackerID)))
+	{
+		HijackerID = 0;
+	}
+}
+
+void JFW_Hijacker_Vehicle_2::Timer_Expired(GameObject *obj,int number)
+{
+	jacking = false;
+	Soldier_Transition_Vehicle(Commands->Find_Object(HijackerID));
+}
+
+void JFW_Hijacker_Vehicle_2::Killed(GameObject *obj,GameObject *killer)
+{
+}
+
+void JFW_Building_Preset_Disable::Created(GameObject *obj)
+{
+	count = 0;
+}
+void JFW_Building_Preset_Disable::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Disable_Custom"))
+	{
+		if (count == 0)
+		{
+			if (obj->As_BuildingGameObj())
+			{
+				BuildingType type = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
+				int team = obj->As_BuildingGameObj()->Get_Player_Type();
+				Disable_All_Presets_By_Factory_Tech(type,team,true);
+			}
+		}
+		count++;
+	}
+	if (type == Get_Int_Parameter("Enable_Custom"))
+	{
+		count--;
+		if (count == 0)
+		{
+			if (obj->As_BuildingGameObj())
+			{
+				BuildingType type = obj->As_BuildingGameObj()->Get_Definition().Get_Type();
+				int team = obj->As_BuildingGameObj()->Get_Player_Type();
+				Disable_All_Presets_By_Factory_Tech(type,team,false);
+			}
+		}
+	}
+}
+
+void JFW_Building_Preset_Disable::Killed(GameObject *obj,GameObject *killer)
+{
+	Destroy_Script();
 }
 
 ScriptRegistrant<JFW_Domination_Controler_End_Game> JFW_Domination_Controler_End_Game_Registrant("JFW_Domination_Controler_End_Game","NeutralMessage:int,OwnedMessage:int,Time:float,TimerNum:int,PointsToGive:float,PointsToTake:float,GDIObjectID:int,NodObjectID:int,ZoneCount:int");
@@ -3223,3 +3314,5 @@ ScriptRegistrant<JFW_Water_Level> JFW_Water_Level_Registrant("JFW_Water_Level","
 ScriptRegistrant<JFW_Submarine> JFW_Submarine_Registrant("JFW_Submarine","Message:int,Submerge_Armor:string,Surface_Armor:string,Block_Weapon:int,Ping_Sound:string,Surface_Sound:string,Ping_Time:float,Surface_Z_Offset:float,Dive_Z_Offset:float,Powerup:string,Weapon:string");
 ScriptRegistrant<JFW_Reaper_Web> JFW_Reaper_Web_Registrant("JFW_Reaper_Web","Weapon:string,Time:float,WebModel:string,HumanAnimation:string");
 ScriptRegistrant<JFW_Hijacker_Vehicle> JFW_Hijacker_Vehicle_Registrant("JFW_Hijacker_Vehicle","Weapon:string,Warhead:string,Damage:float,Sound:string");
+ScriptRegistrant<JFW_Hijacker_Vehicle_2> JFW_Hijacker_Vehicle_2_Registrant("JFW_Hijacker_Vehicle_2","Weapon:string,Sound:string,Disable_Transitions:int,Single_Hijack:int");
+ScriptRegistrant<JFW_Building_Preset_Disable> JFW_Building_Preset_Disable_Registrant("JFW_Building_Preset_Disable","Disable_Custom:int,Enable_Custom:int");

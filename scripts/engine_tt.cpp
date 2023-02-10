@@ -23,6 +23,7 @@
 #include "engine_player.h"
 #include "engine_obj2.h"
 #include "engine_script.h"
+#include "engine_tdb.h"
 #include "SmartGameObjDef.h"
 #include "VehicleGameObj.h"
 #include "SoldierGameObj.h"
@@ -128,7 +129,6 @@ SCRIPTS_API seo SetExplosionObj;
 SCRIPTS_API uno Update_Network_Object;
 SCRIPTS_API sct Send_Client_Text;
 SCRIPTS_API sca Send_Client_Announcement;
-SCRIPTS_API gttv GetTTVersion;
 SCRIPTS_API dod Do_Objectives_Dlg;
 SCRIPTS_API sl Set_Player_Limit;
 SCRIPTS_API gl Get_Player_Limit;
@@ -177,6 +177,7 @@ SCRIPTS_API cee Create_Explosion_Extended;
 SCRIPTS_API rwpa Retrieve_Waypaths;
 SCRIPTS_API rwpo Retrieve_Waypoints;
 SCRIPTS_API gwp Get_Waypoint_Position;
+SCRIPTS_API gttv GetTTVersion;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {
@@ -222,6 +223,27 @@ SCRIPTS_API void Send_Message_Team(int team,unsigned int red,unsigned int green,
 		x = x->Next();
 	}
 }
+
+// -------------------------------------------------------------------------------------------------
+
+SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, int red, int green, int blue, bool bPlaySound )
+{
+  if ( Is_Valid_String_ID(ID) )
+  {
+    const char *str = Get_Translated_String(ID);
+    Send_Message_Team(team,red,green,blue,str);
+    delete[] str;
+
+    if ( bPlaySound )
+    {
+      int soundId = Get_String_Sound_ID(ID);
+      if (soundId && Is_Valid_Preset_ID(soundId) && Find_Definition(soundId)->Get_Class_ID() == 0x5000)
+        Create_2D_Sound_Team(Get_Definition_Name(soundId),team);
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
 
 SCRIPTS_API void Set_Obj_Radar_Blip_Shape_Team(int Team,GameObject *obj,int shape)
 {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2013 UltraAOW.COM by zunnie
+	Copyright 2012 UltraAOW.COM by zunnie
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -431,6 +431,8 @@ void z_Credit_Trickle::Timer_Expired(GameObject *obj, int number)
 void z_Capturable_TibSilo::Created(GameObject *obj)
 {
 	owner = Get_Int_Parameter("Owner");
+	if (owner > -2) Set_Damage_Points(obj,0.300f);
+	else Set_Damage_Points(obj,0.0f);
 	Commands->Set_Player_Type(obj,owner);
 	Attach_Script_Once(obj,"z_Credit_Trickle","");
 	playdmg = true;
@@ -793,6 +795,212 @@ void z_Min_Veh_Z_Pos::Timer_Expired(GameObject *obj, int number)
 	}
 }
 
+void z_Vehicle_Exit_Set_Object_Team_Sender::Custom(GameObject *obj, int message, int param, GameObject *sender)//using on the map TheCanyon to set the team on the Silo's when players exit it
+{
+	int team = Get_Object_Type(sender);
+	if (message == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		Commands->Set_Player_Type(obj,team);
+	}
+}
+
+void z_Capturable_Helipad::Created(GameObject *obj)
+{
+	owner = Get_Int_Parameter("Owner");
+	if (owner > -2) 
+	{
+		Set_Damage_Points(obj,0.300f);
+		playdmg = true;
+		playkilled = true;
+	}
+	else 
+	{
+		Set_Damage_Points(obj,0.0f);
+		Commands->Set_Health(obj,2.0f);
+		playdmg = false;
+		playkilled = false;
+	}
+	Commands->Set_Player_Type(obj,owner);
+}
+void z_Capturable_Helipad::Damaged(GameObject *obj, GameObject *damager, float damage)
+{
+	if (damage >= Commands->Get_Health(obj))
+	{
+		Commands->Set_Health(obj,1.0f);//prevent destruction
+		Commands->Set_Player_Type(obj,-2);//unteamed
+		if (playkilled)
+		{
+			if (owner == 0)//nod helipad killed
+			{
+				Create_2D_WAV_Sound_Team("m00bnhp_kill0001i1evan_snd.wav",0);
+				Create_2D_WAV_Sound_Team("m00bnhp_kill0002i1evag_snd.wav",1);
+				Send_Message(255,255,255,"Nod Helicopter Pad destroyed");
+			}
+			else if (owner == 1)//gdi helipad killed
+			{
+				Create_2D_WAV_Sound_Team("m00bghp_kill0002i1evan_snd.wav",0);
+				Create_2D_WAV_Sound_Team("m00bghp_kill0001i1evag_snd.wav",1);
+				Send_Message(255,255,255,"GDI Helicopter Pad destroyed");
+			}
+			Set_Damage_Points(obj,0.0f);
+			Commands->Give_Points(damager,150.0f,false);
+		}
+		owner = -2;
+		playdmg = false;
+		playkilled = false;
+	}
+
+	if (owner == -2)//neutral silo
+	{
+		if (damage < 0.0) //its repaired
+		{
+			if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj))//fully repaired
+			{
+				owner = Commands->Get_Player_Type(damager);//whoever repaired it owns it now
+				Commands->Set_Player_Type(obj,owner);
+				if (owner == 0)
+				{
+					Create_2D_WAV_Sound_Team("m00bnhp_dsgn0002i1evan_snd.wav",0);
+					Send_Message_Team(0,255,0,0,"Nod Helicopter Pad repaired");
+				}
+				else if (owner == 1)
+				{
+					Create_2D_WAV_Sound_Team("m00bghp_dsgn0001i1evag_snd.wav",1);
+					Send_Message_Team(1,255,204,0,"GDI Helicopter Pad repaired");
+				}
+				playdmg = true;
+				playkilled = true;
+				Set_Damage_Points(obj,0.300f);
+			}
+		}
+	}
+	else if (owner == 0)//nod helipad
+	{
+		if (damage > 0.5f)
+		{
+			if (playdmg)
+			{
+				Create_2D_WAV_Sound_Team("m00bnhp_tdfe0001i1evan_snd.wav",0);
+				Send_Message_Team(0,255,255,255,"Warning Nod Helicopter Pad under attack");
+				Create_2D_WAV_Sound_Team("m00bnhp_tdfe0002i1evag_snd.wav",1);
+				Send_Message_Team(1,255,255,255,"Nod Helicopter Pad under attack");
+				playdmg = false; Commands->Start_Timer(obj,this,25.0f,155);
+			}
+		}
+	}
+	else if (owner == 1)//gdi helipad
+	{
+		if (damage > 0.5f)
+		{
+			if (playdmg)
+			{
+				Create_2D_WAV_Sound_Team("m00bghp_tdfe0002i1evan_snd.wav",0);
+				Send_Message_Team(0,255,255,255,"GDI Helicopter Pad under attack");
+				Create_2D_WAV_Sound_Team("m00bghp_tdfe0001i1evag_snd.wav",1);
+				Send_Message_Team(1,255,255,255,"Warning GDI Helicopter Pad under attack");
+				playdmg = false; Commands->Start_Timer(obj,this,25.0f,155);
+			}
+		}
+	}
+}
+void z_Capturable_Helipad::Timer_Expired(GameObject *obj, int number)
+{
+	if (number == 155)
+	{
+		playdmg = true;
+	}
+}
+
+void z_Capturable_Helipad_Terminal::Created(GameObject *obj)
+{
+	Commands->Enable_HUD_Pokable_Indicator(obj,true);
+	HelipadID = Get_Int_Parameter("HelipadID");
+	Cost = Get_Float_Parameter("Cost");
+	Preset = Get_Parameter("Preset");
+	LocationID = Get_Int_Parameter("LocationID");
+	Team = Commands->Get_Player_Type(Commands->Find_Object(HelipadID));
+	Allowpoke = true;
+	Commands->Set_Player_Type(obj,Team);
+	Commands->Start_Timer(obj,this,10.0f,102031);//set the team of the console to that of the associated helipad
+}
+void z_Capturable_Helipad_Terminal::Poked(GameObject *obj, GameObject *poker)
+{
+	if (Allowpoke)
+	{
+		Commands->Enable_HUD_Pokable_Indicator(obj,false);
+		Team = Commands->Get_Player_Type(Commands->Find_Object(HelipadID));//request the helipad team again and check it against poker
+		Allowpoke = false; Commands->Start_Timer(obj,this,15.0f,102030);//No poking for 15s to prevent them getting stuck in each other
+		if (Get_Player_Type(poker) == Team)
+		{
+			if (!Is_Base_Powered(Team)) Cost = Cost+Cost;
+			if (Commands->Get_Money(poker) >= Cost)
+			{
+				Vector3 Loc = Commands->Get_Position(Commands->Find_Object(LocationID));
+				GameObject *heli = Commands->Create_Object(Preset,Loc);
+				Commands->Set_Facing(heli,Commands->Get_Facing(Commands->Find_Object(LocationID)));
+				Commands->Set_Player_Type(heli,Team);
+				if (Is_Base_Powered(Team))
+				{
+					Commands->Give_Money(poker,-Cost,false);
+				}
+				else if (!Is_Base_Powered(Team))
+				{
+					Commands->Give_Money(poker,-Cost,false);
+					Commands->Give_Money(poker,-Cost,false);
+				}
+
+				if (Team == 0)
+				{
+					char buymsg[512];
+					sprintf(buymsg,"%s purchased a %s",Get_Player_Name(poker),Get_Translated_Preset_Name(heli));
+					Send_Message_Team(0,0,192,192,buymsg);
+
+				}
+				else if (Team == 1)
+				{
+					char buymsg[512];
+					sprintf(buymsg,"%s purchased a %s",Get_Player_Name(poker),Get_Translated_Preset_Name(heli));
+					Send_Message_Team(1,0,192,192,buymsg);
+				}
+			}
+			else
+			{
+				if (Team == 0)
+				{
+					Create_2D_WAV_Sound_Player(poker,"m00evan_dsgn0024i1evan_snd.wav");
+				}
+				else if (Team == 1)
+				{
+					Create_2D_WAV_Sound_Player(poker,"m00evag_dsgn0028i1evag_snd.wav");
+				}
+				if (Is_Base_Powered(Team)) Send_Message_Player(poker,255,255,255,"Insufficient Funds");
+				else if (!Is_Base_Powered(Team)) Send_Message_Player(poker,255,255,255,"Insufficient Funds: Power is Down = Double Cost");
+			}
+		}
+		else
+		{
+			Send_Message_Player(poker,255,255,255,"Go awai n00b!");
+		}
+	}
+}
+void z_Capturable_Helipad_Terminal::Timer_Expired(GameObject *obj, int number)
+{
+	if (number == 102030)
+	{
+		Allowpoke = true;
+		Commands->Enable_HUD_Pokable_Indicator(obj,true);
+	}
+	else if (number == 102031)
+	{
+		Team = Commands->Get_Player_Type(Commands->Find_Object(HelipadID));
+		Commands->Set_Player_Type(obj,Team);
+		Commands->Start_Timer(obj,this,10.0f,102031);//re-set the team of the console to that of the associated helipad
+	}
+}
+
+ScriptRegistrant<z_Capturable_Helipad_Terminal> z_Capturable_Helipad_Terminal_Registrant("z_Capturable_Helipad_Terminal","HelipadID=0:int,Preset=bla:string,Cost=10000:float,LocationID=0:int");
+ScriptRegistrant<z_Capturable_Helipad> z_Capturable_Helipad_Registrant("z_Capturable_Helipad","Owner=0:int");
+ScriptRegistrant<z_Vehicle_Exit_Set_Object_Team_Sender> z_Vehicle_Exit_Set_Object_Team_Sender_Registrant("z_Vehicle_Exit_Set_Object_Team_Sender","");
 ScriptRegistrant<z_Min_Veh_Z_Pos> z_Min_Veh_Z_Pos_Registrant("z_Min_Veh_Z_Pos","Min=0:float");
 ScriptRegistrant<z_Set_Mine_Limit_Created> z_Set_Mine_Limit_Created_Registrant("z_Set_Mine_Limit_Created","Limit=36:int");
 ScriptRegistrant<z_Set_Time_Limit_Created> z_Set_Time_Limit_Created_Registrant("z_Set_Time_Limit_Created","Time_Seconds=3600:int");

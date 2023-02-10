@@ -21,6 +21,7 @@
 #include "da_log.h"
 #include "da_settings.h"
 #include "da_damagelog.h"
+#include "da_chatcommand.h"
 #include "VehicleFactoryGameObj.h"
 #include "AirFactoryGameObj.h"
 #include "NavalFactoryGameObj.h"
@@ -88,8 +89,11 @@ const char *DAVehicleObserverClass::Get_Name() {
 }
 
 void DAAirDroppedVehicleObserverClass::Init() {
-	Start_Timer(1,15.0f);
+	Start_Timer(1,14.0f);
+	Start_Timer(3,20.0f);
 	((VehicleGameObj*)Get_Owner())->Set_Is_Scripts_Visible(false);
+	CollisionGroup = ((VehicleGameObj*)Get_Owner())->Get_Collision_Group();
+	((VehicleGameObj*)Get_Owner())->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
 }
 
 bool DAAirDroppedVehicleObserverClass::Damage_Received_Request(OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
@@ -97,10 +101,30 @@ bool DAAirDroppedVehicleObserverClass::Damage_Received_Request(OffenseObjectClas
 }
 
 void DAAirDroppedVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
-	((VehicleGameObj*)Get_Owner())->Set_Is_Scripts_Visible(true);
-	Fix_Stuck_Objects(((PhysicalGameObj*)Get_Owner())->Get_Position(),5.0f);
-	Fix_Stuck_Objects(((PhysicalGameObj*)Get_Owner())->Get_Position(),10.0f);
-	Set_Delete_Pending();
+	if (Number == 1) {
+		LastZ = ((VehicleGameObj*)Get_Owner())->Get_Position().Z;
+		Start_Timer(2,0.5f);
+	}
+	else if (Number == 2) {
+		float CurrZ = ((VehicleGameObj*)Get_Owner())->Get_Position().Z;
+		if (CurrZ >= LastZ) {
+			Timer_Expired(Get_Owner(),3);
+		}
+		else {
+			LastZ = CurrZ;
+			Start_Timer(2,0.5f);
+		}
+	}
+	else if (Number == 3) {
+		((VehicleGameObj*)Get_Owner())->Set_Is_Scripts_Visible(true);
+		((VehicleGameObj*)Get_Owner())->Set_Collision_Group(CollisionGroup);
+		Fix_Stuck_Objects(((PhysicalGameObj*)Get_Owner())->Get_Position(),10.0f,15.0f);
+		Set_Delete_Pending();
+	}
+}
+
+void DAAirDroppedVehicleObserverClass::Vehicle_Enter(cPlayer *Player,int Seat) {
+	Timer_Expired(Get_Owner(),3);
 }
 
 void DAVehicleManager::Init() {
@@ -452,8 +476,27 @@ class DAAirDroppedVehicleScript : public ScriptImpClass {
 	virtual void Created(GameObject *obj) {
 		Commands->Enable_Vehicle_Transitions(obj,false);
 		((VehicleGameObj*)obj)->Set_Is_Scripts_Visible(false);
+		((VehicleGameObj*)obj)->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
 		Commands->Set_Shield_Type(obj,"Blamo");
 		Set_Skin(obj,"Blamo");
 	}
 };
 ScriptRegistrant<DAAirDroppedVehicleScript> DAAirDroppedVehicleScriptRegistrant("DAAirDroppedVehicleScript","");
+
+
+
+class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get overloaded by the Vehicle Queue if it is enabled.
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		int Team = Player->Get_Team();
+		if (Team != 0 && Team != 1) {
+			return true;
+		}
+		DA::Private_Color_Message(Player,GRAY,"Limit: %d/%d",Get_Ground_Vehicle_Count(Team),Get_Vehicle_Limit());
+		VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
+		if (VF && VF->Is_Busy() && VF->Get_Generating_Vehicle_ID() && VF->Get_Purchaser()) {
+			DA::Private_Color_Message(Player,GRAY,"Building: %ls - %s",VF->Get_Purchaser()->Get_Player()->Get_Name(),DATranslationManager::Translate(VF->Get_Generating_Vehicle_ID()));
+		}
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DAVehicleChatCommandClass,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit|!vlimit");

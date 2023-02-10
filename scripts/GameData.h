@@ -57,6 +57,9 @@ public:
 	}
 	virtual ~Signaler()
 	{
+		if (Forward)
+			Forward->SignalDropped(*this);
+		Forward = 0;
 	}
 	void SignalMe(Signaler &sig)
 	{

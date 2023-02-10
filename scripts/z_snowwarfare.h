@@ -1,7 +1,6 @@
 /*	Renegade Scripts.dll
-	Copyright 2012-2013 zunnie
-	Websites: http://www.MultiPlayerForums.com / http://www.UltraAOW.com
-	ModDB Profile: http://www.moddb.com/mods/renegade-domination
+	Copyright 2012-2013 http://www.UltraAOW.COM by zunnie
+	For the map C&C_SnowWarfare by Mauler
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -12,17 +11,18 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 
-/*
-	This file contains dummy scripts which are required for the MPF Domination Plugin.
-	They can be used in the Level Editor to setup new maps while using the MPF Domination Plugin as a base on the server.
-*/
-
 #pragma once
 
-class DOM_Control_Point : public ScriptImpClass {
-	void Created(GameObject *obj);
-}; 
 
-class DOM_Random_Spawn_Character : public ScriptImpClass {
+class z_sw_randomchar : public ScriptImpClass
+{
 	void Created(GameObject *obj);
-}; 
+};
+
+class z_sw_dom_node : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj, GameObject *damager, float damage);
+	int owner;
+	bool trigger_neutral_damage;
+	const char *nodename;
+};

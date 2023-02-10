@@ -58,7 +58,6 @@
 #include "cScTextObj.h"
 #include "SCAnnouncement.h"
 #include "SpawnerClass.h"
-#include "cGameOptionsEvent.h"
 #include "cPurchaseResponseEvent.h"
 #include "CombatManager.h"
 
@@ -113,11 +112,15 @@ AT2(0x006A5270,0x006A5270);
 
 RENEGADE_FUNCTION
 void BuildingGameObj::Find_Closest_Poly(const Vector3&,float*) 
-AT2(0x00684ED0,0x00684ED0)
+AT2(0x00684ED0,0x00684ED0);
 
 REF_DEF2(CombatManager::FriendlyFirePermitted,bool,0x008550E4,0x008550E4);
 REF_DEF2(CombatManager::BeaconPlacementEndsGame,bool,0x008550E5,0x008550E5);
 REF_DEF2(BuildingGameObj::CanRepairBuildings,bool,0x00810474,0x00810474);
+
+RENEGADE_FUNCTION
+bool cGameData::Set_Max_Players(int)
+AT2(0x00472080,0x00472080);
 
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
@@ -357,8 +360,8 @@ ScriptImpClass *Get_Script_By_Name(GameObject *obj,const char *Script) {
 void Change_Team_3(cPlayer *Player,int Team) {
 	if (Player->Get_Money() > (float)The_Cnc_Game()->StartingCredits) { //Allow players to keep their starting credits when switching teams.
 		Give_Credits_Team(Player->Get_Player_Type(),(Player->Get_Money()-(float)The_Cnc_Game()->StartingCredits)/(Get_Team_Player_Count(Player->Get_Team())-1)); //Distribute anything above the starting credits to their teammates.
-		Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
 	}
+	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
 	Disarm_All_C4_Beacons(Player->Get_ID());
 	int OldTeam = Player->Get_Player_Type();
 	Player->Set_Player_Type(Team);
@@ -410,10 +413,13 @@ cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOnly,bool
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
 		if (z->Data()->Is_Active() && (AllowSelf || Player != z->Data())) {
 			if (!TeamOnly || Team == z->Data()->Get_Player_Type()) {
+				if (!_stricmp(StringClass(z->Data()->Get_Name().Peek_Buffer()),Nick)) {
+					return z->Data();
+				}
 				if (stristr(StringClass(z->Data()->Get_Name().Peek_Buffer()),Nick)) {
 					if (Return) {
 						if (Player) {
-							DA::Page_Player(Player,"Multiple players were found matching \"%s.\" Please supply a more unique wildcard.",Nick);
+							DA::Page_Player(Player,"Multiple players were found matching \"%s\". Please supply a more unique wildcard.",Nick);
 						}
 						return 0;
 					}
@@ -426,7 +432,7 @@ cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOnly,bool
 	}
 	if (!Return) {
 		if (Player) {
-			DA::Page_Player(Player,"No players were found matching \"%s.\"",Nick);
+			DA::Page_Player(Player,"No players were found matching \"%s\".",Nick);
 		}
 		return 0;
 	}
@@ -595,21 +601,9 @@ void Console_InputF(const char *Format,...) {
 	va_end(arg_list);
 }
 
-PUSH_MEMORY_MACROS
-#undef new
 void Update_Game_Settings(int ID) {
-	if (ID) {
-		cGameOptionsEvent *Event = (cGameOptionsEvent*)operator new(sizeof(cGameOptionsEvent));
-		Event->Constructor();
-		Event->Init(ID);
-	}
-	else {
-		cGameOptionsEvent *Event = (cGameOptionsEvent*)operator new(sizeof(cGameOptionsEvent));
-		Event->Constructor();
-		Event->Init();
-	}
+	The_Game()->Set_Max_Players(The_Game()->Get_Max_Players());
 }
-POP_MEMORY_MACROS
 
 bool Is_Stealth_Unit(GameObject *obj) {
 	if (!obj || !obj->As_SmartGameObj()) {
@@ -1140,11 +1134,11 @@ bool ScriptableGameObj::Is_Custom_Timer(ScriptableGameObj *Sender,int Message) {
 	return false;
 }
 
-void Fix_Stuck_Objects(const Vector3 &Position,float Range) {
+void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool DestroyUnfixable) {
 	for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) {
 		PhysicalGameObj *obj = x->Data();
-		if (obj->Peek_Physical_Object()->As_MoveablePhysClass() && Commands->Get_Distance(Position,obj->Get_Position()) <= Range && !((MoveablePhysClass*)obj->Peek_Physical_Object())->Can_Teleport(obj->Get_Transform(),true)) {
-			if (!Fix_Stuck_Object(obj,Range)) {
+		if (obj->Peek_Physical_Object()->As_MoveablePhysClass() && Commands->Get_Distance(Position,obj->Get_Position()) <= CheckRange && !((MoveablePhysClass*)obj->Peek_Physical_Object())->Can_Teleport(obj->Get_Transform())) {
+			if (!Fix_Stuck_Object(obj,Range) && DestroyUnfixable) {
 				Commands->Apply_Damage(obj,99999.0f,"None",0);
 			}
 		}
@@ -1153,39 +1147,63 @@ void Fix_Stuck_Objects(const Vector3 &Position,float Range) {
 
 bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 	MoveablePhysClass *Phys = (MoveablePhysClass*)obj->Peek_Physical_Object();
-	Matrix3D Transform = Phys->Get_Transform();
-	Vector3 Position;
-	Transform.Get_Translation(&Position);
+	int CollisionSave = obj->Get_Collision_Group();
+	float MinDistance = FLT_MAX;
+	Matrix3D MinTransform;
 	for (int i = 0;i < 50;i++) { //First try to find a new position without changing the Z axis.
-		Transform = Phys->Get_Transform();
-		Transform.Set_X_Translation(Transform.Get_X_Translation()+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Transform.Get_Y_Translation()+WWMath::Random_Float(Range*-1.0f,Range));
+		Matrix3D Transform = Phys->Get_Transform();
+		Vector3 Position;
+		Transform.Get_Translation(&Position);
+		Transform.Set_X_Translation(Position.X+WWMath::Random_Float(Range*-1.0f,Range));
+		Transform.Set_Y_Translation(Position.Y+WWMath::Random_Float(Range*-1.0f,Range));
+		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
 		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
-			CastResultStruct CastResult;
-			PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,BULLET_COLLISION_GROUP);
-			PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
-			if (CollisionTest.CollidedPhysObj == Phys) { //Only use this position if it can see the original position. Prevents teleporting through walls.
-				obj->Set_Transform(Transform);
-				return true;
+			if (Distance < MinDistance) { //Use closest positon.
+				CastResultStruct CastResult;
+				PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
+				obj->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
+				PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
+				obj->Set_Collision_Group(CollisionSave); //Restore old collision group.
+				if (CollisionTest.CollidedPhysObj == Phys) { //Only use this position if it can see the original position. Prevents teleporting through walls.
+					MinDistance = Distance;
+					MinTransform = Transform;
+				}
 			}
 		}
+	}
+	if (MinDistance != FLT_MAX) {
+		obj->Set_Transform(MinTransform);
+		return true;
 	}
 	for (int i = 0;i < 50;i++) { //Shit's getting serious. Start changing the Z axis too.
-		Transform = Phys->Get_Transform();
-		Transform.Set_X_Translation(Transform.Get_X_Translation()+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Transform.Get_Y_Translation()+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Z_Translation(Transform.Get_Z_Translation()+WWMath::Random_Float(0.0f,Range));
-		if (Phys->Can_Teleport(Transform)) {
-			CastResultStruct CastResult;
-			PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,BULLET_COLLISION_GROUP);
-			PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
-			if (CollisionTest.CollidedPhysObj == Phys) {
-				obj->Set_Transform(Transform);
-				return true;
+		Matrix3D Transform = Phys->Get_Transform();
+		Vector3 Position;
+		Transform.Get_Translation(&Position);
+		Transform.Set_X_Translation(Position.X+WWMath::Random_Float(Range*-1.0f,Range));
+		Transform.Set_Y_Translation(Position.Y+WWMath::Random_Float(Range*-1.0f,Range));
+		Transform.Set_Z_Translation(Position.Z+WWMath::Random_Float(0.0f,Range));
+		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
+		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
+			if (Distance < MinDistance) { //Use closest positon.
+				CastResultStruct CastResult;
+				PhysRayCollisionTestClass CollisionTest(LineSegClass(Transform.Get_Translation(),Position),&CastResult,TERRAIN_ONLY_COLLISION_GROUP); //We only want to collide with the object and terrain, not other objects.
+				obj->Set_Collision_Group(TERRAIN_COLLISION_GROUP); //Need to change the collision group so the ray can collide with the object.
+				PhysicsSceneClass::Get_Instance()->Cast_Ray(CollisionTest,false);
+				obj->Set_Collision_Group(CollisionSave); //Restore old collision group.
+				if (CollisionTest.CollidedPhysObj == Phys) { //Only use this position if it can see the original position. Prevents teleporting through walls.
+					MinDistance = Distance;
+					MinTransform = Transform;
+				}
 			}
 		}
 	}
-	return false;
+	if (MinDistance == FLT_MAX) { //Couldn't find viable new position.
+		return false;
+	}
+	else {
+		obj->Set_Transform(MinTransform);
+		return true;
+	}
 }
 
 PUSH_MEMORY_MACROS

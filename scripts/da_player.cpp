@@ -26,12 +26,11 @@
 #include "WeaponBagClass.h"
 #include "WeaponClass.h"
 #include "weaponmgr.h"
+#include "MoveablePhysClass.h"
 
 DynamicVectorClass<DAPlayerDataFactoryClass*> DAPlayerManager::DataFactories;
 DynamicVectorClass<DAPlayerClass*> DAPlayerManager::Players;
-WideStringClass DAPlayerManager::DisallowedNickFirstCharacters;
-WideStringClass DAPlayerManager::DisallowedNickCharacters;
-DynamicVectorClass<WideStringClass> DAPlayerManager::DisallowedNicks;
+
 
 
 DAPlayerClass::DAPlayerClass(cPlayer *Player) {
@@ -51,6 +50,7 @@ DAPlayerClass::DAPlayerClass(cPlayer *Player) {
 	PowerUpDiscount = 1.0f;
 	Loaded = false;
 	LastTibDamageTime = 0;
+	ServerDamage = false;
 }
 
 DAPlayerClass::~DAPlayerClass() {
@@ -111,16 +111,15 @@ void DAPlayerObserverClass::Register_Chat_Command(DAPOCC Func,const char *Trigge
 	DATokenParserClass Parser(Triggers,'|');
 	while (char *Token = Parser.Get_String()) {
 		_strlwr(Token);
-		Struct->Triggers.Add(Get_Hash(Token));
+		Struct->Triggers.Add(Token);
 	}
 	Struct->Func = Func;
 	ChatCommands.Add(Struct);
 }
 
 void DAPlayerObserverClass::Unregister_Chat_Command(const char *Trigger) {
-	unsigned int Hash = StringClass(Trigger).GetHash();
 	for (int i = ChatCommands.Count()-1;i >= 0;i--) {
-		if (ChatCommands[i]->Triggers.ID(Hash) != -1) {
+		if (ChatCommands[i]->Triggers.ID(Trigger) != -1) {
 			delete ChatCommands[i];
 			ChatCommands.Delete(i);
 		}
@@ -139,16 +138,15 @@ void DAPlayerObserverClass::Register_Key_Hook(DAPOKH Func,const char *Triggers) 
 	DATokenParserClass Parser(Triggers,'|');
 	while (char *Token = Parser.Get_String()) {
 		_strlwr(Token);
-		Struct->Triggers.Add(Get_Hash(Token));
+		Struct->Triggers.Add(Token);
 	}
 	Struct->Func = Func;
 	KeyHooks.Add(Struct);
 }
 
 void DAPlayerObserverClass::Unregister_Key_Hook(const char *Trigger) {
-	unsigned int Hash = StringClass(Trigger).GetHash();
 	for (int i = KeyHooks.Count()-1;i >= 0;i--) {
-		if (KeyHooks[i]->Triggers.ID(Hash) != -1) {
+		if (KeyHooks[i]->Triggers.ID(Trigger) != -1) {
 			delete KeyHooks[i];
 			KeyHooks.Delete(i);
 		}
@@ -447,6 +445,14 @@ bool DAPlayerClass::Is_Flooding() {
 	return false;
 }
 
+void DAPlayerClass::Set_Server_Damage(bool Damage) {
+	ServerDamage = Damage;
+}
+
+bool DAPlayerClass::Use_Server_Damage() {
+	return ServerDamage;
+}
+
 void DAPlayerClass::Join() {
 	Get_Owner()->Set_DA_Player(this);
 	Serial = Get_Client_Serial_Hash(Get_ID());
@@ -458,6 +464,7 @@ void DAPlayerClass::Join() {
 		}
 	}
 	Loaded = false;
+	ServerDamage = false;
 }
 
 void DAPlayerClass::Leave() {
@@ -938,7 +945,7 @@ void DAPlayerManager::Level_Loaded_Event() {
 		if (Check_Player(DAPlayer)) { //Trigger loaded event if they're still ingame.
 			DAPlayer->Level_Loaded();
 		}
-		else { //Delete player class if they left.
+		else { //Delete player class if they're not.
 			delete DAPlayer;
 			Players.Delete(i);
 			i--;
@@ -975,6 +982,9 @@ void DAPlayerManager::Settings_Loaded_Event() {
 		}
 		DisallowedNicks.Add(MessagePrefix);
 	}
+
+	ForceTT = (unsigned int)DASettingsManager::Get_Int("ForceTT",0);
+	TTRevision = (unsigned int)DASettingsManager::Get_Int("TTRevision",0);
 }
 
 ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(ConnectionRequest &Request,WideStringClass &RefusalMessage) {
@@ -998,8 +1008,12 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 		RefusalMessage = L"Invalid serial.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
-	else if (Request.clientVersion == 4.0f && Request.clientRevisionNumber < 5276) {
-		RefusalMessage = L"Your version of Scripts 4.0 is outdated. Please launch your game through the TT launcher to automatically download the latest version.";
+	else if (Request.clientVersion < 4.0f && ForceTT >= 2) {
+		RefusalMessage = L"The Tiberian Technologies community patch is required to play on this server. You can download it at http://www.tiberiantechnologies.org/.";
+		return ConnectionAcceptanceFilter::STATUS_REFUSING;
+	}
+	else if (Request.clientVersion >= 4.0f && Request.clientRevisionNumber < TTRevision) {
+		RefusalMessage = L"Your version of Tiberian Technologies is outdated. Please launch your game through UAC Launcher.exe to automatically download the latest version.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
 	else {
@@ -1049,18 +1063,29 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 }
 
 void DAPlayerManager::Player_Join_Event(cPlayer *Player) {
+	DAPlayerClass *DAPlayer = 0;
 	for (int i = 0;i < Players.Count();i++) {
-		DAPlayerClass *DAPlayer = Players[i];
-		if (DAPlayer->Get_Owner() == Player) {
-			DAPlayer->Join(); //Trigger join event if they already exist.
-			return;
+		if (Players[i]->Get_Owner() == Player) {
+			Players[i]->Join(); //Trigger join event if they already exist.
+			DAPlayer = Players[i];
+			break;
 		}
 	}
-	DAPlayerClass *DAPlayer = new DAPlayerClass(Player); //Create new player class if they don't.
-	for (int i = 0;i < DataFactories.Count();i++) {
-		DAPlayer->Add_Data(DataFactories[i]->Create_Data());
+	if (!DAPlayer) {
+		DAPlayer = new DAPlayerClass(Player); //Create new player class if they don't.
+		for (int i = 0;i < DataFactories.Count();i++) {
+			DAPlayer->Add_Data(DataFactories[i]->Create_Data());
+		}
+		Players.Add(DAPlayer);
 	}
-	Players.Add(DAPlayer);
+	if (DAPlayer->Get_Version() < 4.0f) {
+		if (ForceTT == 1) {
+			DAPlayer->Set_Server_Damage(true);
+		}
+		StringClass Message("Download the Tiberian Technologies community patch at http://www.tiberiantechnologies.org/. It includes anti-cheat, automatic map downloading, and many more bug fixes and additions.");
+		DA::Private_Admin_Message(Player,"%s",Message);
+		DA::Page_Player(Player,"%s",Message);
+	}
 }
 
 void DAPlayerManager::Player_Leave_Event(cPlayer *Player) {
@@ -1436,6 +1461,41 @@ class DAC4LockToggleConsoleFunctionClass : public ConsoleFunctionClass {
 };
 Register_Console_Function(DAC4LockToggleConsoleFunctionClass);
 
+class SDEConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "sde"; }
+	const char *Get_Help() { return "SDE <playerid> - Enable server damage extrapolation for the given player."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Set_Server_Damage(true);
+		}
+	}
+};
+Register_Console_Function(SDEConsoleFunctionClass);
+
+class UnSDEConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "unsde"; }
+	const char *Get_Help() { return "UNSDE <playerid> - Disable server damage extrapolation for the given player."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Set_Server_Damage(false);
+		}
+	}
+};
+Register_Console_Function(UnSDEConsoleFunctionClass);
+
+class SDEToggleConsoleFunctionClass : public ConsoleFunctionClass {
+	const char *Get_Name() { return "sdetoggle"; }
+	const char *Get_Help() { return "SDETOGGLE <playerid> - Enable or disable server damage extrapolation for the given player."; }
+	void Activate(const char *ArgumentsString) {
+		cPlayer *Player = Find_Player(atoi(ArgumentsString));
+		if (Player) {
+			Player->Get_DA_Player()->Set_Server_Damage(!Player->Get_DA_Player()->Use_Server_Damage());
+		}
+	}
+};
+Register_Console_Function(SDEToggleConsoleFunctionClass);
 
 
 class DAVoteYesKeyHookClass : public DAKeyHookClass {
@@ -1459,3 +1519,25 @@ class DAVoteNoKeyHookClass : public DAKeyHookClass {
 	}
 };
 Register_Simple_Key_Hook(DAVoteNoKeyHookClass,"VoteNo");
+
+
+
+class DAUnStuckChatCommandClass: public DAChatCommandClass {
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		PhysicalGameObj *Phys = Player->Get_GameObj()->Get_Vehicle();
+		if (!Phys) {
+			Phys = Player->Get_GameObj();
+		}
+		if (((MoveablePhysClass*)Phys->Peek_Physical_Object())->Can_Teleport(Phys->Get_Transform())) {
+			DA::Page_Player(Player,"You are not stuck.");
+		}
+		else if (Fix_Stuck_Object(Phys,10.0f)) {
+			DA::Page_Player(Player,"You have been unstuck.");
+		}
+		else {
+			DA::Page_Player(Player,"Unstuck failed. Try again.");
+		}
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DAUnStuckChatCommandClass,"!unstuck|!unstick|!stuck|!stick");

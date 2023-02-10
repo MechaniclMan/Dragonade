@@ -310,6 +310,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="PersistFactoryClass.cpp" />
     <ClCompile Include="da_player.cpp" />
     <ClCompile Include="PointerRemapClass.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="ra2.cpp" />
     <ClCompile Include="RandomClass.cpp" />
     <ClCompile Include="ra_legacy.cpp" />
@@ -422,7 +423,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="AudibleSoundClass.h" />
     <ClInclude Include="AudibleSoundDefinitionClass.h" />
     <ClInclude Include="AudioCallbackListClass.h" />
-    <ClInclude Include="cGameOptionsEvent.h" />
     <ClInclude Include="cNetEvent.h" />
     <ClInclude Include="cPurchaseResponseEvent.h" />
     <ClInclude Include="cScTextObj.h" />

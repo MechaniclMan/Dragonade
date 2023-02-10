@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Added GetTTVersion.
 #pragma once
 
 #include "scripts.h"
@@ -250,7 +248,6 @@ SCRIPTS_API extern seo SetExplosionObj;
 SCRIPTS_API extern uno Update_Network_Object;
 SCRIPTS_API extern sct Send_Client_Text;
 SCRIPTS_API extern sca Send_Client_Announcement;
-SCRIPTS_API extern gttv GetTTVersion;
 SCRIPTS_API extern dod Do_Objectives_Dlg;
 SCRIPTS_API extern sl Set_Player_Limit;
 SCRIPTS_API extern gl Get_Player_Limit;
@@ -285,6 +282,7 @@ SCRIPTS_API extern cee Create_Explosion_Extended;
 SCRIPTS_API extern rwpa Retrieve_Waypaths;
 SCRIPTS_API extern rwpo Retrieve_Waypoints;
 SCRIPTS_API extern gwp Get_Waypoint_Position;
+SCRIPTS_API extern gttv GetTTVersion;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:
@@ -293,9 +291,16 @@ public:
 	JFW_Key_Hook_Base() : hookid(0)
 	{
 	}
-	void Detach(GameObject *obj);
-	void Destroyed(GameObject *obj);
-	void InstallHook(const char *keyname,GameObject *obj);
+
+  /*! Overloaded from ScriptImpClass to call Detach, if a derived class also overrides this that
+  class must ensure it calls this base class function in it's own implementation */
+  void Detach(GameObject *obj);
+
+  /*! Overloaded from ScriptImpClass to call Detach, if a derived class also overrides this that
+  class must ensure it calls this base class function in it's own implementation */
+  void Destroyed(GameObject *obj);
+
+  void InstallHook(const char *keyname,GameObject *obj);
 	void RemoveHook();
 	virtual void KeyHook() = 0;
 	~JFW_Key_Hook_Base();
@@ -383,3 +388,25 @@ SCRIPTS_API extern REF_DECL2(ConsoleFunctionList,DynamicVectorClass<ConsoleFunct
 SCRIPTS_API void Delete_Console_Function(const char *name);
 SCRIPTS_API void Sort_Function_List();
 SCRIPTS_API void Verbose_Help_File();
+
+/*!
+* \brief Send Translated Message To Team(s)
+* \ingroup api_translations
+*
+* Sends the string associated with the specified translation as a message to the specified team and
+* optionally also plays the sound associated with the translation (if any) to the team
+*
+* \param[in] ID
+*   The ID of the translation containing the message to be sent
+* \param[in] team
+*   The team to send the message to, or 2 to send to both teams
+* \param[in] red
+*   The red component of the colour to use for the message
+* \param[in] green
+*   The green component of the colour to use for the message
+* \param[in] blue
+*   The blue component of the colour to use for the message
+* \param[in] bPlaySound
+*   Whether to also play the sound associated with the translation to the specified team
+*/
+SCRIPTS_API void Send_Translated_Message_Team ( unsigned long ID, int team, int red, int green, int blue, bool bPlaySound = true );

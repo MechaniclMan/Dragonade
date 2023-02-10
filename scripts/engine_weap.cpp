@@ -50,32 +50,254 @@ void C4GameObj::Defuse()
 AT2(0x0070D610,0x0070CBD0);
 #endif
 
-SCRIPTS_API int Get_Current_Bullets(GameObject *obj)
+// -------------------------------------------------------------------------------------------------
+
+/*! Internal utility function to get the current weapon for an object, reducing code duplication */
+WeaponClass* _Get_Current_Weapon ( GameObject* obj )
 {
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		return wc->Get_Clip_Rounds();
-	}
-	return 0;
+  if (!obj)
+    return NULL;
+
+  PhysicalGameObj* pPhysObjo2 = obj->As_PhysicalGameObj();
+  if (!pPhysObjo2)
+    return NULL;
+
+  if ( ArmedGameObj* pArmedObj = pPhysObjo2->As_ArmedGameObj() )
+  {
+    WeaponBagClass* w = pArmedObj->Get_Weapon_Bag();
+    if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
+      return w->Peek_Weapon(w->Get_Index());
+  }
+
+  return NULL;
 }
 
+SCRIPTS_API int Get_Current_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+    return wc->Get_Clip_Rounds();
+  return 0;
+}
 
+SCRIPTS_API int Get_Current_Max_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+    return wc->Get_Definition()->ClipSize;
+  return 0;
+}
+
+SCRIPTS_API int Get_Current_Clip_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+    return wc->Get_Inventory_Rounds();
+  return 0;
+}
+
+SCRIPTS_API int Get_Current_Clip_Max_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+    return wc->Get_Definition()->MaxInventoryRounds;
+  return 0;
+}
+
+SCRIPTS_API int Get_Current_Total_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+  {
+    int bullets = wc->Get_Clip_Rounds();
+    int clipbullets = wc->Get_Inventory_Rounds();
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+SCRIPTS_API int Get_Current_Total_Max_Bullets(GameObject *obj)
+{
+  if ( WeaponClass* wc = _Get_Current_Weapon(obj) )
+  {
+    int bullets = wc->Get_Definition()->ClipSize;
+    int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/*! Internal utility function to get the weapon in a specific position for an object, reducing code duplication */
+WeaponClass* _Get_Position_Weapon ( GameObject* obj, int position )
+{
+  if (!obj)
+    return NULL;
+
+  PhysicalGameObj* pPhysObjo2 = obj->As_PhysicalGameObj();
+  if (!pPhysObjo2)
+    return NULL;
+
+  if ( ArmedGameObj* pArmedObj = pPhysObjo2->As_ArmedGameObj() )
+  {
+    WeaponBagClass* w = pArmedObj->Get_Weapon_Bag();
+    if ((position) && (position < w->Get_Count()))
+      return w->Peek_Weapon(position);
+  }
+
+  return NULL;
+}
+
+SCRIPTS_API int Get_Position_Bullets(GameObject *obj,int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+    return wc->Get_Clip_Rounds();
+  return 0;
+}
+
+SCRIPTS_API int Get_Position_Max_Bullets(GameObject *obj, int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+    return wc->Get_Definition()->ClipSize;
+  return 0;
+}
+
+SCRIPTS_API int Get_Position_Clip_Bullets(GameObject *obj,int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+    return wc->Get_Inventory_Rounds();
+  return 0;
+}
+
+SCRIPTS_API int Get_Position_Clip_Max_Bullets(GameObject *obj, int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+    return wc->Get_Definition()->MaxInventoryRounds;
+  return 0;
+}
+
+SCRIPTS_API int Get_Position_Total_Bullets(GameObject *obj, int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+  {
+    int bullets = wc->Get_Clip_Rounds();
+    int clipbullets = wc->Get_Inventory_Rounds();
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+SCRIPTS_API int Get_Position_Total_Max_Bullets(GameObject *obj,int position)
+{
+  if ( WeaponClass* wc = _Get_Position_Weapon(obj,position) )
+  {
+    int bullets = wc->Get_Definition()->ClipSize;
+    int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+/*! Internal utility function to get the named weapon preset for an object, reducing code duplication */
+WeaponClass* _Get_Weapon ( GameObject* obj, const char* weapon )
+{
+  if (!obj)
+    return NULL;
+
+  PhysicalGameObj* pPhysObjo2 = obj->As_PhysicalGameObj();
+  if (!pPhysObjo2)
+    return NULL;
+
+  if ( ArmedGameObj* pArmedObj = pPhysObjo2->As_ArmedGameObj() )
+  {
+    WeaponBagClass* w = pArmedObj->Get_Weapon_Bag();
+    int x = w->Get_Count();
+    for (int i = 0;i < x;i++)
+    {
+      if (w->Peek_Weapon(i))
+      {
+        if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
+          return w->Peek_Weapon(i);
+      }
+    }
+  }
+
+  return NULL;
+}
+
+SCRIPTS_API int Get_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+    return wc->Get_Clip_Rounds();
+  return 0;
+}
+
+SCRIPTS_API int Get_Max_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+    return wc->Get_Definition()->ClipSize;
+  return 0;
+}
+
+SCRIPTS_API int Get_Clip_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+    return wc->Get_Inventory_Rounds();
+  return 0;
+}
+
+SCRIPTS_API int Get_Max_Clip_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+    return wc->Get_Definition()->MaxInventoryRounds;
+  return 0;
+}
+
+SCRIPTS_API int Get_Total_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+  {
+    int bullets = wc->Get_Clip_Rounds();
+    int clipbullets = wc->Get_Inventory_Rounds();
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+SCRIPTS_API int Get_Max_Total_Bullets(GameObject *obj,const char *weapon)
+{
+  if ( WeaponClass* wc = _Get_Weapon(obj,weapon) )
+  {
+    int bullets = wc->Get_Definition()->ClipSize;
+    int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
+
+    if (clipbullets < 0)
+      return -1;
+
+    return bullets+clipbullets;
+  }
+  return 0;
+}
+
+// -------------------------------------------------------------------------------------------------
 
 void C4GameObj::Restore_Owner()
 {
@@ -101,525 +323,16 @@ void C4GameObj::Restore_Owner()
 	}
 }
 
-
-
-SCRIPTS_API int Get_Current_Clip_Bullets(GameObject *obj)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		return wc->Get_Inventory_Rounds();
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Current_Total_Bullets(GameObject *obj)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		int bullets = wc->Get_Clip_Rounds();
-		int clipbullets = wc->Get_Inventory_Rounds();
-		if (clipbullets < 0)
-		{
-			return -1;
-		}
-		return bullets+clipbullets;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Bullets(GameObject *obj,int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		return wc->Get_Clip_Rounds();
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Clip_Bullets(GameObject *obj,int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		return wc->Get_Inventory_Rounds();
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Total_Bullets(GameObject *obj, int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		int bullets = wc->Get_Clip_Rounds();
-		int clipbullets = wc->Get_Inventory_Rounds();
-		if (clipbullets < 0)
-		{
-			return -1;
-		}
-		return bullets+clipbullets;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				return wc->Get_Clip_Rounds();
-			}
-		}
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Clip_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				return wc->Get_Inventory_Rounds();
-			}
-		}
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Total_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				int bullets = wc->Get_Clip_Rounds();
-				int clipbullets = wc->Get_Inventory_Rounds();
-				if (clipbullets < 0)
-				{
-					return -1;
-				}
-				return bullets+clipbullets;
-			}
-		}
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Current_Max_Bullets(GameObject *obj)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		return wc->Get_Definition()->ClipSize;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Current_Clip_Max_Bullets(GameObject *obj)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		return wc->Get_Definition()->MaxInventoryRounds;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Current_Total_Max_Bullets(GameObject *obj)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((w->Get_Index()) && (w->Get_Index() < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(w->Get_Index());
-		int bullets = wc->Get_Definition()->ClipSize;
-		int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
-		if (clipbullets < 0)
-		{
-			return -1;
-		}
-		return bullets+clipbullets;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Max_Bullets(GameObject *obj, int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		return wc->Get_Definition()->ClipSize;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Clip_Max_Bullets(GameObject *obj, int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		return wc->Get_Definition()->MaxInventoryRounds;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Position_Total_Max_Bullets(GameObject *obj,int position)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	if ((position) && (position < w->Get_Count()))
-	{
-		WeaponClass *wc = w->Peek_Weapon(position);
-		int bullets = wc->Get_Definition()->ClipSize;
-		int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
-		if (clipbullets < 0)
-		{
-			return -1;
-		}
-		return bullets+clipbullets;
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Max_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				return wc->Get_Definition()->ClipSize;
-			}
-		}
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Max_Clip_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				return wc->Get_Definition()->MaxInventoryRounds;
-			}
-		}
-	}
-	return 0;
-}
-
-SCRIPTS_API int Get_Max_Total_Bullets(GameObject *obj,const char *weapon)
-{
-	if (!obj)
-	{
-		return 0;
-	}
-	PhysicalGameObj *o2 = obj->As_PhysicalGameObj();
-	if (!o2)
-	{
-		return 0;
-	}
-	ArmedGameObj *o3 = o2->As_ArmedGameObj();
-	if (!o3)
-	{
-		return 0;
-	}
-	WeaponBagClass *w = o3->Get_Weapon_Bag();
-	int x = w->Get_Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (w->Peek_Weapon(i))
-		{
-			if (!_stricmp(w->Peek_Weapon(i)->Get_Name(),weapon))
-			{
-				WeaponClass *wc = w->Peek_Weapon(i);
-				int bullets = wc->Get_Definition()->ClipSize;
-				int clipbullets = wc->Get_Definition()->MaxInventoryRounds;
-				if (clipbullets < 0)
-				{
-					return -1;
-				}
-				return bullets+clipbullets;
-			}
-		}
-	}
-	return 0;
-}
-
 SCRIPTS_API const char *Get_Powerup_Weapon(const char *Powerup)
 {
-	DefinitionClass *powerupdef = Find_Named_Definition(Powerup);
-	PowerUpGameObjDef *c = (PowerUpGameObjDef *)powerupdef;
-	if (!c)
-	{
-		return "None";
-	}
-	if (c->Get_Grant_Weapon_ID())
-	{
-		DefinitionClass *weapondef = Find_Definition(c->Get_Grant_Weapon_ID());
-		return weapondef->Get_Name();
-	}
-	return "None";
+  DefinitionClass *powerupdef = Find_Named_Definition(Powerup);
+  PowerUpGameObjDef *c = (PowerUpGameObjDef *)powerupdef;
+  if (c && c->Get_Grant_Weapon_ID())
+  {
+    if ( DefinitionClass *weapondef = Find_Definition(c->Get_Grant_Weapon_ID()) )
+      return weapondef->Get_Name();
+  }
+  return "None";
 }
 
 SCRIPTS_API const AmmoDefinitionClass *Get_Weapon_Ammo_Definition(const char *weapon,bool PrimaryFire)

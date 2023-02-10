@@ -23,208 +23,265 @@ Base class for custom AI's
 --------------------------*/
 void dp88_customAI::Created( GameObject *obj )
 {
-	Init(obj);
-	loadSettings(obj);
+  // Note: Init is done in a seperate function because derived classes might want to pass different
+  // parameters to loadSettings, thus we cannot assume they will call this function
+  loadSettings(obj, true, false);
+  Init(obj);
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customAI::Custom ( GameObject* pObj, int message, int param, GameObject* pSender )
+{
+  if ( message == CUSTOM_AI_DISABLEAI && m_bAiEnabled )
+  {
+    m_bAiEnabled = false;
+    AIStateChanged(pObj, false);
+  }
+
+  else if ( message == CUSTOM_AI_ENABLEAI && !m_bAiEnabled )
+  {
+    m_bAiEnabled = true;
+    AIStateChanged(pObj, true);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customAI::AIStateChanged( GameObject* pObj, bool bEnabled )
+{
+  if ( bEnabled )
+    Commands->Innate_Enable( pObj );
+  else
+    Commands->Innate_Disable( pObj );
+  Commands->Enable_Enemy_Seen( pObj, bEnabled );
+}
+
+// -------------------------------------------------------------------------------------------------
 
 void dp88_customAI::Action_Complete( GameObject *obj, int action_id, ActionCompleteReason complete_reason )
 {
-	if ( action_id == 2 )
-	{
-		targetID = 0;
-		targetPriority = 0.0f;
-		Commands->Action_Reset( obj, 100 );
-	}
+  if ( action_id == 2 )
+  {
+    targetID = 0;
+    targetPriority = 0.0f;
+    Commands->Action_Reset( obj, 100 );
+  }
 }
 
+// -------------------------------------------------------------------------------------------------
 
 void dp88_customAI::Init( GameObject *obj )
 {
-	// Set default values
-	targetID = 0;
-	targetLastSeen = 0;
-	targetPriority = 0.0f;
-	primary_target = true;
+  // Set default values
+  m_bAiEnabled    = true;
+  targetID        = 0;
+  targetLastSeen  = 0;
+  targetPriority  = 0.0f;
+  primary_target  = true;
 
-	// Set state
-	Commands->Enable_Hibernation( obj, false );
-	Commands->Innate_Enable( obj );
-	Commands->Enable_Enemy_Seen( obj, true );
-	Commands->Enable_Vehicle_Transitions( obj, false );
+  // Set state
+  Commands->Enable_Hibernation( obj, false );
+  Commands->Innate_Enable( obj );
+  Commands->Enable_Enemy_Seen( obj, true );
+  Commands->Enable_Vehicle_Transitions( obj, false );
 }
 
-void dp88_customAI::loadSettings ( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings, bool oldSettingNames )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_customAI::loadSettings ( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings )
 {
-	// Load base target type priorities
-	priority_infantry		= ( oldSettingNames ) ? Get_Int_Parameter ( "Priority_Infantry" )		: Get_Float_Parameter ( "Priority_Infantry" );
-	priority_lightVehicle	= ( oldSettingNames ) ? Get_Int_Parameter ( "priority_lightVehicle" )	: Get_Float_Parameter ( "Priority_Light_Vehicle" );
-	priority_heavyVehicle	= ( oldSettingNames ) ? Get_Int_Parameter ( "priority_heavyVehicle" )	: Get_Float_Parameter ( "Priority_Heavy_Vehicle" );
-	priority_VTOL			= ( oldSettingNames ) ? Get_Int_Parameter ( "Priority_VTOL" )			: Get_Float_Parameter ( "Priority_VTOL" );
-	priority_building		= ( loadBuildingTargetSettings ) ? (( oldSettingNames ) ? Get_Int_Parameter ( "Priority_Building" ) : Get_Float_Parameter ( "Priority_Building" )) : 0;
-	
-
-	// Load priority modifiers
-	modifier_distance		= ( oldSettingNames ) ? 0.25f	: Get_Float_Parameter("Modifier_Distance");
-	modifier_target_damage	= ( oldSettingNames ) ? 0.1f	: Get_Float_Parameter("Modifier_Target_Damage");
-	modifier_target_value	= ( oldSettingNames ) ? 0.05f	: Get_Float_Parameter("Modifier_Target_Value");
+  // Load base target type priorities
+  priority_infantry       = Get_Float_Parameter("Priority_Infantry");
+  priority_lightVehicle   = Get_Float_Parameter("Priority_Light_Vehicle");
+  priority_heavyVehicle   = Get_Float_Parameter("Priority_Heavy_Vehicle");
+  priority_VTOL           = Get_Float_Parameter("Priority_VTOL");
+  priority_building       = ( loadBuildingTargetSettings ) ? Get_Float_Parameter("Priority_Building") : 0;
 
 
-	// Load primary / secondary fire states for target types
-	primary_infantry		= ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter ( "Weapon_Infantry" ) == 2 )	? false : true ) : true;
-	primary_lightVehicle	= ( loadSecondaryFireSettings ) ? (( (oldSettingNames && Get_Int_Parameter ( "Weapon_Vehicle" ) == 2) || (!oldSettingNames && Get_Int_Parameter("Weapon_Light_Vehicle") == 2) )	? false : true ) : true;
-	primary_heavyVehicle	= ( loadSecondaryFireSettings ) ? (( (oldSettingNames && Get_Int_Parameter ( "Weapon_Vehicle" ) == 2) || (!oldSettingNames && Get_Int_Parameter("Weapon_Heavy_Vehicle") == 2) )	? false : true ) : true;
-	primary_VTOL			= ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter ( "Weapon_VTOL" ) == 2 )		? false : true ) : true;
-	primary_building		= ( loadSecondaryFireSettings ) ? (( loadBuildingTargetSettings ) ? (( Get_Int_Parameter ( "Weapon_Building" ) == 2 )	? false : true) : true ) : true;
+  // Load priority modifiers
+  modifier_distance       = Get_Float_Parameter("Modifier_Distance");
+  modifier_target_damage  = Get_Float_Parameter("Modifier_Target_Damage");
+  modifier_target_value   = Get_Float_Parameter("Modifier_Target_Value");
 
 
-	// Get min and max ranges
-	primary_minRange	= Get_Int_Parameter ( "Min_Attack_Range" );
-	primary_maxRange	= Get_Int_Parameter ( "Max_Attack_Range" );
-	secondary_minRange	= ( loadSecondaryFireSettings ) ? Get_Int_Parameter ( "Min_Attack_Range_Secondary" ) : 0;
-	secondary_maxRange	= ( loadSecondaryFireSettings ) ? Get_Int_Parameter ( "Max_Attack_Range_Secondary" ) : 0;
+  // Load primary / secondary fire states for target types
+  primary_infantry        = ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter ( "Weapon_Infantry" ) == 2 )     ? false : true ) : true;
+  primary_lightVehicle    = ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter("Weapon_Light_Vehicle") == 2)    ? false : true ) : true;
+  primary_heavyVehicle    = ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter("Weapon_Heavy_Vehicle") == 2)    ? false : true ) : true;
+  primary_VTOL            = ( loadSecondaryFireSettings ) ? (( Get_Int_Parameter ( "Weapon_VTOL" ) == 2 )         ? false : true ) : true;
+  primary_building        = ( loadSecondaryFireSettings && loadBuildingTargetSettings ) ? (( Get_Int_Parameter ( "Weapon_Building" ) == 2 ) ? false : true) : true;
 
 
-	// If debugging is enabled open the debug file
-	debug = ( Get_Int_Parameter("Debug") == 1 );
-	if ( debug )
-	{
-		StringClass filename(true);
-		filename.Format ( "%s_%d_%d.log", Commands->Get_Preset_Name(obj), Commands->Get_ID(obj), (int)time(NULL) );
-		debugFile = fopen(filename.Peek_Buffer(),"w");
-	}
+  // Get min and max ranges
+  primary_minRange        = Get_Int_Parameter ( "Min_Attack_Range" );
+  primary_maxRange        = Get_Int_Parameter ( "Max_Attack_Range" );
+  secondary_minRange      = ( loadSecondaryFireSettings ) ? Get_Int_Parameter ( "Min_Attack_Range_Secondary" ) : 0;
+  secondary_maxRange      = ( loadSecondaryFireSettings ) ? Get_Int_Parameter ( "Max_Attack_Range_Secondary" ) : 0;
+
+  // Load other settings
+  m_bCanDetectStealth     = (Get_Int_Parameter("Detects_Stealth")>0);
+
+  // If debugging is enabled open the debug file
+  debug = ( Get_Int_Parameter("Debug") == 1 );
+  if ( debug )
+  {
+    StringClass filename(true);
+    filename.Format ( "%s_%d_%d.log", Commands->Get_Preset_Name(obj), Commands->Get_ID(obj), (int)time(NULL) );
+    debugFile = fopen(filename.Peek_Buffer(),"w");
+  }
 }
+
+// -------------------------------------------------------------------------------------------------
 
 float dp88_customAI::getDistance ( GameObject *obj1, GameObject *obj2 )
 {
-	// Gets distance between two objects
-	return Commands->Get_Distance ( Commands->Get_Position ( obj1 ), Commands->Get_Position ( obj2 ) );
+  // Gets distance between two objects
+  return Commands->Get_Distance ( Commands->Get_Position ( obj1 ), Commands->Get_Position ( obj2 ) );
 }
+
+// -------------------------------------------------------------------------------------------------
 
 float dp88_customAI::getPriority( GameObject *obj, GameObject *target )
 {
-	if ( !obj || !target )
-		return 0.0f;
+  if ( !obj || !target )
+    return 0.0f;
 
-	if ( debug ) fprintf ( debugFile, "Calculating priority of %d (%s)\n", Commands->Get_ID(target), Commands->Get_Preset_Name(target) );
+  if ( debug ) fprintf ( debugFile, "Calculating priority of %d (%s)\n", Commands->Get_ID(target), Commands->Get_Preset_Name(target) );
 
-	// Priority is 0 if the unit is dead or not on teams 0 or 1
-	if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) ) == 0
-		|| ( Commands->Get_Player_Type ( target ) != 0 && Commands->Get_Player_Type ( target ) != 1 ) )
-	{
-		if ( debug ) fprintf ( debugFile, "Target %d is dead or unteamed, ignoring\n", Commands->Get_ID(target));
-		return 0.0;
-	}
+  // Priority is 0 if the unit is dead or not on teams 0 or 1
+  if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) ) == 0
+    || ( Commands->Get_Player_Type ( target ) != 0 && Commands->Get_Player_Type ( target ) != 1 ) )
+  {
+    if ( debug ) fprintf ( debugFile, "Target %d is dead or unteamed, ignoring\n", Commands->Get_ID(target));
+    return 0.0;
+  }
 
-	if ( target->As_VehicleGameObj() && !IsVehicleAIEnabled(target->As_VehicleGameObj()) && IsVehicleEmpty(target->As_VehicleGameObj()) )
-	{
-		if ( debug ) fprintf ( debugFile, "Target %d is an empty, non-AI vehicle, ignoring\n", Commands->Get_ID(target));
-		return 0.0;
-	}
+  if ( target->As_VehicleGameObj() && !IsVehicleAIEnabled(target->As_VehicleGameObj()) && IsVehicleEmpty(target->As_VehicleGameObj()) )
+  {
+    if ( debug ) fprintf ( debugFile, "Target %d is an empty, non-AI vehicle, ignoring\n", Commands->Get_ID(target));
+    return 0.0;
+  }
 
-	float priority = 0.0;
+  if ( !m_bCanDetectStealth && target->As_SmartGameObj() && target->As_SmartGameObj()->Is_Stealthed() )
+  {
+    if ( debug ) fprintf ( debugFile, "Target %d is currently stealthed and stealth detection is disabled\n", Commands->Get_ID(target));
+    return 0.0;
+  }
 
-
-	// Assign base priority
-	if ( target->As_SoldierGameObj() && !Get_Fly_Mode(target) )
-		priority = (float)priority_infantry;
-	else if ( Get_Vehicle_Mode ( target ) == VEHICLE_TYPE_FLYING || (target->As_SoldierGameObj() && Get_Fly_Mode(target)) )
-		priority = (float)priority_VTOL;
-	else if ( target->As_VehicleGameObj() && Is_Script_Attached ( target, "dp88_AI_heavyVehicleMarker" ) )
-		priority = (float)priority_heavyVehicle;
-	else if ( target->As_VehicleGameObj() )
-		priority = (float)priority_lightVehicle;
-	else if ( target->As_BuildingGameObj() )
-		priority = (float)priority_building;
-
-	// Return if our base priority for this target type is 0
-	if ( priority == 0.0f )
-	{
-		if ( debug ) fprintf ( debugFile, "\tInvalid target type, priority is 0.0\n" );
-		return 0.0f;
-	}
-
-	if ( debug ) fprintf ( debugFile, "\tBase priority for this unit type is %.2f\n", priority );
+  float priority = 0.0;
 
 
-	// Apply target value modifier (add X priority for every 10 credits the target
-	// cost to purchase - not applicable to buildings)
-	if ( !target->As_BuildingGameObj() )
-	{
-		int cost = Get_Team_Cost( Commands->Get_Preset_Name ( target ), Commands->Get_Player_Type ( target ) );
-		priority += ((float)cost/10.0f) * modifier_target_value;
+  // Assign base priority
+  if ( Get_Vehicle_Mode(target) == VEHICLE_TYPE_FLYING || (target->As_SoldierGameObj() && (Get_Fly_Mode(target)||Find_Script_On_Object(target,"dp88_AR_Paradrop")) ) )
+    priority = (float)priority_VTOL;
+  else if ( target->As_SoldierGameObj() )
+    priority = (float)priority_infantry;
+  else if ( target->As_VehicleGameObj() && Is_Script_Attached ( target, "dp88_AI_heavyVehicleMarker" ) )
+    priority = (float)priority_heavyVehicle;
+  else if ( target->As_VehicleGameObj() )
+    priority = (float)priority_lightVehicle;
+  else if ( target->As_BuildingGameObj() )
+    priority = (float)priority_building;
 
-		if ( debug ) fprintf ( debugFile, "\tTarget Value Modifier: Adding %.4f priority ((Value %d /10) * modifier %.2f)\n", ((float)cost/10.0f)*modifier_target_value, cost, modifier_target_value );
-	}
+  // Return if our base priority for this target type is 0
+  if ( priority == 0.0f )
+  {
+    if ( debug ) fprintf ( debugFile, "\tInvalid target type, priority is 0.0\n" );
+    return 0.0f;
+  }
 
-
-	// Apply target damage modifier (add X priority for 10 points of damage the
-	// target has already taken from their maximum health/armour)
-	float totalHitPts = Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target );
-	float maxHitPts = Commands->Get_Max_Health ( target ) + Commands->Get_Max_Shield_Strength ( target );
-	priority += ((maxHitPts-totalHitPts)/10) * modifier_target_damage;
-
-	if ( debug ) fprintf ( debugFile, "\tTarget Damage Modifier: Adding %.4f priority ((Target Damage Taken %.2f) /10) * modifier %.2f)\n", ((maxHitPts-totalHitPts)/10)*modifier_target_damage, maxHitPts-totalHitPts, modifier_target_damage );
-
-
-	// Apply target distance modifier (subtract X distance for every 10 units of
-	//  distancebetween this object and the target)
-	float distance = Commands->Get_Distance ( Commands->Get_Position ( obj ), Commands->Get_Position ( target ) );
-	priority -= (distance/10) * modifier_distance;
-
-	if ( debug ) fprintf ( debugFile, "\tDistance Modifier: Subtracting %.4f priority ((Distance to target %.2f) /10) * modifier %.2f)\n", (distance/10)*modifier_distance, distance, modifier_distance );
+  if ( debug ) fprintf ( debugFile, "\tBase priority for this unit type is %.2f\n", priority );
 
 
-	// Ensure priority is above 0
-	if ( debug ) fprintf ( debugFile, "\tFinal Priority: %.4f\n", priority );
-	if ( priority <= 0.0 )
-	{
-		priority = 0.0001f;
-		if ( debug ) fprintf ( debugFile, "\tAdjusting final priority to 0.0001 (must be >0)\n" );
-	}
+  // Apply target value modifier (add X priority for every 10 credits the target
+  // cost to purchase - not applicable to buildings)
+  if ( !target->As_BuildingGameObj() )
+  {
+    int cost = Get_Team_Cost( Commands->Get_Preset_Name ( target ), Commands->Get_Player_Type ( target ) );
+    priority += ((float)cost/10.0f) * modifier_target_value;
+
+    if ( debug ) fprintf ( debugFile, "\tTarget Value Modifier: Adding %.4f priority ((Value %d /10) * modifier %.2f)\n", ((float)cost/10.0f)*modifier_target_value, cost, modifier_target_value );
+  }
 
 
-	// Return result
-	return priority;
+  // Apply target damage modifier (add X priority for 10 points of damage the
+  // target has already taken from their maximum health/armour)
+  float totalHitPts = Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target );
+  float maxHitPts = Commands->Get_Max_Health ( target ) + Commands->Get_Max_Shield_Strength ( target );
+  priority += ((maxHitPts-totalHitPts)/10) * modifier_target_damage;
+
+  if ( debug ) fprintf ( debugFile, "\tTarget Damage Modifier: Adding %.4f priority ((Target Damage Taken %.2f) /10) * modifier %.2f)\n", ((maxHitPts-totalHitPts)/10)*modifier_target_damage, maxHitPts-totalHitPts, modifier_target_damage );
+
+
+  // Apply target distance modifier (subtract X distance for every 10 units of
+  //  distancebetween this object and the target)
+  float distance = Commands->Get_Distance ( Commands->Get_Position ( obj ), Commands->Get_Position ( target ) );
+  priority -= (distance/10) * modifier_distance;
+
+  if ( debug ) fprintf ( debugFile, "\tDistance Modifier: Subtracting %.4f priority ((Distance to target %.2f) /10) * modifier %.2f)\n", (distance/10)*modifier_distance, distance, modifier_distance );
+
+
+  // Ensure priority is above 0
+  if ( debug ) fprintf ( debugFile, "\tFinal Priority: %.4f\n", priority );
+  if ( priority <= 0.0 )
+  {
+    priority = 0.0001f;
+    if ( debug ) fprintf ( debugFile, "\tAdjusting final priority to 0.0001 (must be >0)\n" );
+  }
+
+
+  // Return result
+  return priority;
 }
 
+// -------------------------------------------------------------------------------------------------
 
 float dp88_customAI::getPriority ( GameObject *obj, int target_id )
 {
-	// Overloaded function to accept object ID's
-	return getPriority ( obj, Commands->Find_Object ( target_id ) );
+  // Overloaded function to accept object ID's
+  return getPriority ( obj, Commands->Find_Object ( target_id ) );
 }
 
+// -------------------------------------------------------------------------------------------------
 
 bool dp88_customAI::getPrimary ( GameObject *target )
 {
-	if ( target->As_SoldierGameObj() )
-		return primary_infantry;
-	else if ( Get_Vehicle_Mode ( target ) == VEHICLE_TYPE_FLYING )
-		return primary_VTOL;
-	else if ( target->As_VehicleGameObj() )
-		return (Is_Script_Attached(target,"dp88_AI_heavyVehicleMarker")) ? primary_heavyVehicle : primary_lightVehicle;
-	else if ( target->As_BuildingGameObj() )
-		return primary_building;
-	return true;
+  if ( target->As_SoldierGameObj() )
+    return primary_infantry;
+  else if ( Get_Vehicle_Mode ( target ) == VEHICLE_TYPE_FLYING )
+    return primary_VTOL;
+  else if ( target->As_VehicleGameObj() )
+    return (Is_Script_Attached(target,"dp88_AI_heavyVehicleMarker")) ? primary_heavyVehicle : primary_lightVehicle;
+  else if ( target->As_BuildingGameObj() )
+    return primary_building;
+  return true;
 }
 
+// -------------------------------------------------------------------------------------------------
 
 bool dp88_customAI::IsVehicleEmpty( VehicleGameObj* vobj )
 {
-	if ( vobj == NULL )
-		return false;
-	if ( vobj->Get_Definition().Get_Seat_Count() == 0)
-		return false;
-	return (vobj->Get_Occupant_Count() == 0);
+  if ( vobj == NULL )
+    return false;
+  if ( vobj->Get_Definition().Get_Seat_Count() == 0)
+    return false;
+  return (vobj->Get_Occupant_Count() == 0);
 }
 
+// -------------------------------------------------------------------------------------------------
 
 bool dp88_customAI::IsVehicleAIEnabled( VehicleGameObj* vobj )
 {
-	if ( vobj == NULL )
-		return false;
-	return (vobj->Get_Action()->Is_Acting());
+  if ( vobj == NULL )
+    return false;
+  return (vobj->Get_Action()->Is_Acting());
 }
+
+
+
+
+
 
 
 
@@ -232,179 +289,237 @@ bool dp88_customAI::IsVehicleAIEnabled( VehicleGameObj* vobj )
 Offensive Tank AI
 --------------------------*/
 
-void dp88_tankAI_Offensive::Created( GameObject *obj )
+void dp88_AI_Tank_Offensive::Created( GameObject *obj )
 {
-	Init(obj);
-
-	// Load settings - using old setting names
-	loadSettings( obj, true, true, true );
-
-
-	// Set unit specific settings
-	movingToTarget = false;
-
-	primary_prefRange = Get_Int_Parameter ( "Preferred_Attack_Range" );
-	secondary_prefRange = Get_Int_Parameter ( "Preferred_Attack_Range_Secondary" );
-
-	// Start timer which runs for the lifetime of this object
-	Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
+  // Load settings and init
+  loadSettings( obj, true, true );
+  Init(obj);
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_tankAI_Offensive::Enemy_Seen ( GameObject *obj, GameObject *enemy )
+void dp88_AI_Tank_Offensive::Init( GameObject *obj )
 {
-	// If we saw a soldier in a vehicle, switch the GameObject to that of the vehicle
-	GameObject *o = Get_Vehicle(enemy);
-	if ( o )
-		enemy = o;
+  dp88_customAI::Init(obj);
 
-	//fprintf( debugFile, "Seen enemy %s\n", Commands->Get_Preset_Name(enemy) );
+  m_bMovingToTarget = false;
+  m_pCurrentObjective = NULL;
 
-	// If this is our current target update it's last seen time and priority
-	if ( Commands->Get_ID ( enemy ) == targetID )
-	{
-		targetLastSeen = (int)time(NULL);
-		targetPriority = getPriority(obj, targetID);
-		return;
-	}
-
-	// Get priority for seen object and return if 0
-	float seenPriority = getPriority( obj, enemy );
-	if ( seenPriority == 0.0 )
-		return;
-
-	// Decide if we want to use primary or secondary fire
-	bool attackPrimary = getPrimary ( enemy );
-	
-	// Get distance to target, and return if they are too close
-	float targetDistance = getDistance ( obj, enemy );
-	if ( (attackPrimary && targetDistance < primary_minRange) || (!attackPrimary && targetDistance < secondary_minRange) )
-		return;
-
-	//fprintf( debugFile, "Range to enemy: %d\n", (int)targetDistance );
-	// Work out its targeting priority, to see if we should shoot it
-	if ( targetID == 0 || seenPriority > targetPriority )
-	{
-		//fprintf( debugFile, "Higher priority than existing target... attacking!\n" );
-
-		ActionParamsStruct params;
-		params.Set_Basic( this, 100, 2 );
-		
-		if ( attackPrimary && targetDistance < primary_maxRange )
-		{
-			targetID = Commands->Get_ID ( enemy );
-			primary_target = attackPrimary;
-			targetLastSeen = (int)time(NULL);
-
-			if ( targetDistance > primary_prefRange )
-			{
-				movingToTarget = true;
-				params.Set_Movement(enemy, 1.0f, (float)primary_prefRange );
-			}
-			params.Set_Attack( enemy, (float)primary_maxRange, 0.0, true);
-			params.AttackCheckBlocked = false;
-			Commands->Action_Attack( obj, params );
-		}
-		else if ( !attackPrimary && targetDistance < secondary_maxRange )
-		{
-			targetID = Commands->Get_ID ( enemy );
-			primary_target = attackPrimary;
-			targetLastSeen = (int)time(NULL);
-		
-			if ( targetDistance > secondary_prefRange )
-			{
-				movingToTarget = true;
-				params.Set_Movement( enemy, 1.0f, (float)secondary_prefRange );
-			}
-			params.Set_Attack( enemy, (float)secondary_maxRange, 0.0, false);
-			params.AttackCheckBlocked = false;
-			Commands->Action_Attack( obj, params );
-		}
-	}
+  // Start timer which runs for the lifetime of this object - this belongs in Init
+  Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
 }
 
-void dp88_tankAI_Offensive::Timer_Expired( GameObject *obj, int number )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::loadSettings( GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings )
 {
-	// Check target is still alive, still an enemy (eg: stolen vehicles) and in range
-	if ( number == TIMER_CUSTOMAI_THINK )
-	{
-		if ( targetID != 0 )
-		{
-			//fprintf( debugFile, "Checking target validity...\n" );
-			GameObject *target = Commands->Find_Object ( targetID );
+  dp88_customAI::loadSettings(obj, loadSecondaryFireSettings, loadBuildingTargetSettings);
 
-			if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) <= 0 )
-				|| Commands->Get_Player_Type ( target ) == 2
-				|| Commands->Get_Player_Type ( target ) == Commands->Get_Player_Type ( obj )
-				|| ( primary_target && getDistance ( obj, target ) > primary_maxRange )
-				|| ( primary_target && getDistance ( obj, target ) < primary_minRange )
-				|| ( !primary_target && getDistance ( obj, target ) > secondary_maxRange )
-				|| ( !primary_target && getDistance ( obj, target ) < secondary_minRange )
-				|| (int)time(NULL) - targetLastSeen > 3 )	// Not seen target for 3 seconds
-			{
-				//fprintf( debugFile, "Target invalid, aborting.. \n" );
-				targetID = 0;
-				Commands->Action_Reset ( obj, 100 );
-			}
-
-			// Stop chasing if we have reached preferred range
-			else if ( movingToTarget && primary_target && getDistance ( obj, target ) <= primary_prefRange )
-			{
-				Commands->Action_Reset ( obj, 100 );
-				movingToTarget = false;
-
-				ActionParamsStruct params;
-				params.Set_Basic( this, 100, 2 );
-				params.Set_Attack( target, (float)primary_maxRange, 0.0, true);
-				params.AttackCheckBlocked = false;
-				Commands->Action_Attack ( obj, params );
-			}
-
-			else if ( movingToTarget && !primary_target && getDistance ( obj, target ) <= secondary_prefRange )
-			{
-				Commands->Action_Reset ( obj, 100 );
-				movingToTarget = false;
-
-				ActionParamsStruct params;
-				params.Set_Basic( this, 100, 2 );
-				params.Set_Attack( target, (float)secondary_maxRange, 0.0, false);
-				params.AttackCheckBlocked = false;
-				Commands->Action_Attack ( obj, params );
-			}
-
-			// Chase them if they are moving away from us...
-			else if ( !movingToTarget && primary_target && getDistance ( obj, target ) > primary_prefRange )
-			{
-				Commands->Action_Reset ( obj, 100 );
-				movingToTarget = true;
-
-				ActionParamsStruct params;
-				params.Set_Basic( this, 100, 2 );
-				params.Set_Movement( target, 1.0f, (float)primary_prefRange );
-				params.Set_Attack( target, (float)primary_maxRange, 0.0, true);
-				params.AttackCheckBlocked = false;
-				Commands->Action_Attack ( obj, params );
-			}
-
-			// Chase them if they are moving away from us...
-			else if ( !movingToTarget && !primary_target && getDistance ( obj, target ) > secondary_prefRange )
-			{
-				Commands->Action_Reset ( obj, 100 );
-				movingToTarget = true;
-
-				ActionParamsStruct params;
-				params.Set_Basic( this, 100, 2 );
-				params.Set_Movement( target, 1.0f, (float)secondary_prefRange );
-				params.Set_Attack( target, (float)secondary_maxRange, 0.0, false);
-				params.AttackCheckBlocked = false;
-				Commands->Action_Attack ( obj, params );
-			}
-		}
-
-		// Timer always runs
-		Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
-	}
+  primary_prefRange = Get_Int_Parameter ( "Preferred_Attack_Range" );
+  secondary_prefRange = Get_Int_Parameter ( "Preferred_Attack_Range_Secondary" );
 }
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::Enemy_Seen ( GameObject *obj, GameObject *enemy )
+{
+  // If we saw a soldier in a vehicle, switch the GameObject to that of the vehicle
+  GameObject *o = Get_Vehicle(enemy);
+  if ( o )
+    enemy = o;
+
+  //fprintf( debugFile, "Seen enemy %s\n", Commands->Get_Preset_Name(enemy) );
+
+  // If this is our current target update it's last seen time and priority
+  if ( Commands->Get_ID ( enemy ) == targetID )
+  {
+    targetLastSeen = (int)time(NULL);
+    targetPriority = getPriority(obj, targetID);
+    return;
+  }
+
+  // Get priority for seen object and return if 0 or lower than current target
+  float seenPriority = getPriority( obj, enemy );
+  if ( seenPriority == 0.0 || (targetID!=0 && seenPriority <= targetPriority) )
+    return;
+
+  //fprintf( debugFile, "Higher priority than existing target... attacking!\n" );
+
+  // Decide if we want to use primary or secondary fire
+  bool attackPrimary = getPrimary ( enemy );
+
+  // Get distance to target, and return if they are too close
+  float targetDistance = getDistance ( obj, enemy );
+  if ( (attackPrimary && targetDistance < primary_minRange) || (!attackPrimary && targetDistance < secondary_minRange) )
+    return;
+
+  //fprintf( debugFile, "Range to enemy: %d\n", (int)targetDistance );
+
+  // All good, attack the enemy
+  AttackTarget ( obj, enemy );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::Timer_Expired( GameObject *obj, int number )
+{
+  // Check target is still alive, still an enemy (eg: stolen vehicles) and in range
+  if ( number == TIMER_CUSTOMAI_THINK )
+  {
+    if ( targetID != 0 )
+    {
+      //fprintf( debugFile, "Checking target validity...\n" );
+      GameObject *target = Commands->Find_Object ( targetID );
+
+      if ( ( Commands->Get_Health ( target ) + Commands->Get_Shield_Strength ( target ) <= 0 )
+        || Commands->Get_Player_Type ( target ) == 2
+        || Commands->Get_Player_Type ( target ) == Commands->Get_Player_Type ( obj )
+        || ( primary_target && getDistance ( obj, target ) > primary_maxRange )
+        || ( primary_target && getDistance ( obj, target ) < primary_minRange )
+        || ( !primary_target && getDistance ( obj, target ) > secondary_maxRange )
+        || ( !primary_target && getDistance ( obj, target ) < secondary_minRange )
+        || (int)time(NULL) - targetLastSeen > 3 )	// Not seen target for 3 seconds
+      {
+        //fprintf( debugFile, "Target invalid, aborting.. \n" );
+        targetID = 0;
+        m_bMovingToTarget = false;
+        Commands->Action_Reset ( obj, 100 );
+      }
+
+      // Chase after them if they are running away...
+      if ( !m_bMovingToTarget )
+      {
+        float targetDistance = getDistance ( obj, target );
+        int prefDistance = ((primary_target)?primary_prefRange:secondary_prefRange);
+        if ( targetDistance > prefDistance )
+        {
+          ActionParamsStruct params;
+          Commands->Get_Action_Params(obj, params);
+          params.Set_Movement( target, 1.0f, (float)prefDistance );;
+          Commands->Modify_Action(obj,ACTION_ID_ATTACK_ENEMY,params,true,true);
+        }
+      }
+    }
+
+
+    // Verify current objective (if any) is still valid
+    if ( m_pCurrentObjective && !dp88_AI_Objective::IsValidObjective(m_pCurrentObjective) )
+    {
+      m_pCurrentObjective = NULL;
+      m_bMovingToTarget = false;
+    }
+
+
+    if ( targetID == 0 && !m_bMovingToTarget )
+    {
+      GoToObjective(obj);
+    }
+
+    // Timer always runs
+    Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::AttackTarget ( GameObject* obj, GameObject* target )
+{
+  // Clear any existing action
+  if (targetID == 0 )
+    Commands->Action_Reset(obj,100);
+
+  m_bMovingToTarget = false;
+  targetID = Commands->Get_ID(target);
+  primary_target = getPrimary(target);
+  targetLastSeen = (int)time(NULL);
+
+  // Build a new action struct
+  ActionParamsStruct params;
+  params.Set_Basic( this, 90, ACTION_ID_ATTACK_ENEMY );
+  params.Set_Attack( target, (float)((primary_target)?primary_maxRange:secondary_maxRange), 0.0, true);
+  params.AttackCheckBlocked = false;
+
+  float targetDistance = getDistance ( obj, target );
+  int prefDistance = ((primary_target)?primary_prefRange:secondary_prefRange);
+  if ( targetDistance > prefDistance )
+    params.Set_Movement( target, 1.0f, (float)prefDistance );
+
+  Commands->Action_Attack( obj, params );
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::GoToObjective ( GameObject* obj )
+{
+  // Verify current objective (if any) is still valid
+  if ( m_pCurrentObjective && !dp88_AI_Objective::IsValidObjective(m_pCurrentObjective) )
+    m_pCurrentObjective = NULL;
+
+  // Obtain a new objective if we don't have one
+  if ( m_pCurrentObjective == NULL )
+  {
+    m_pCurrentObjective = dp88_AI_Objective::GetObjective(obj,dp88_AI_Objective::TYPE_OFFENSIVE);
+    if ( !m_pCurrentObjective )
+      m_pCurrentObjective = dp88_AI_Objective::GetObjective(obj,dp88_AI_Objective::TYPE_DEFENSIVE);
+  }
+
+  if ( m_pCurrentObjective != NULL )
+  {
+    m_bMovingToTarget = true;
+
+    ActionParamsStruct params;
+    params.Set_Basic( this, 80, ACTION_ID_MOVE_TO_OBJECTIVE );
+    params.Set_Movement( m_pCurrentObjective->GetGameObject(), 1.0f, (float)m_pCurrentObjective->GetDistance() );
+    Commands->Action_Goto ( obj, params );
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Tank_Offensive::Action_Complete ( GameObject *obj, int action_id, ActionCompleteReason reason)
+{
+  if ( action_id == ACTION_ID_ATTACK_ENEMY )
+  {
+    if ( reason == MOVEMENT_COMPLETE_ARRIVED )
+    {
+      AttackTarget(obj, Commands->Find_Object(targetID));
+    }
+  }
+
+  else if ( action_id == ACTION_ID_MOVE_TO_OBJECTIVE )
+  {
+    m_bMovingToTarget = false;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AI_Tank_Offensive> dp88_AI_Tank_Offensive_Registrant(
+  "dp88_AI_Tank_Offensive",
+  "Priority_Infantry=1.0:float,"
+  "Weapon_Infantry=1:int,"
+  "Splash_Infantry=0:int,"
+  "Priority_Light_Vehicle=5.0:float,"
+  "Weapon_Light_Vehicle=1:int,"
+  "Priority_Heavy_Vehicle=7.0:float,"
+  "Weapon_Heavy_Vehicle=1:int,"
+  "Priority_VTOL=5.0:float,"
+  "Weapon_VTOL=1:int,"
+  "Priority_Building=12.0:float,"
+  "Weapon_Building=1:int,"
+  "Max_Attack_Range=150:int,"
+  "Min_Attack_Range=0:int,"
+  "Preferred_Attack_Range=60:int,"
+  "Max_Attack_Range_Secondary=150:int,"
+  "Min_Attack_Range_Secondary=0:int,"
+  "Preferred_Attack_Range_Secondary=60:int,"
+  "Modifier_Distance=0.25:float,"
+  "Modifier_Target_Damage=0.1:float,"
+  "Modifier_Target_Value=0.05:float,"
+  "Debug=0:int,"
+  "Detects_Stealth=1:int"
+);
+
 
 
 
@@ -416,32 +531,31 @@ void dp88_tankAI_Offensive::Timer_Expired( GameObject *obj, int number )
 Turret AI
 --------------------------*/
 
-void dp88_AI_Turret::Created( GameObject *obj )
-{
-	Init(obj);
-	loadSettings(obj);
-}
-
 void dp88_AI_Turret::Init( GameObject *obj )
 {
-	dp88_customAI::Init( obj );
+  dp88_customAI::Init( obj );
 
-	// Start timer which runs for the lifetime of this object
-	Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
+  // Start timer which runs for the lifetime of this object
+  Commands->Start_Timer ( obj, this, 1.0, TIMER_CUSTOMAI_THINK );
 }
+
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AI_Turret::loadSettings(  GameObject *obj, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings )
 {
-	dp88_customAI::loadSettings(obj, loadSecondaryFireSettings, loadBuildingTargetSettings);
-	requiresPower = (Get_Int_Parameter("Requires_Power") > 0 ) ? true: false;
-	splashInfantry = (Get_Int_Parameter("Splash_Infantry") > 0 ) ? true: false;
+  dp88_customAI::loadSettings(obj, loadSecondaryFireSettings, loadBuildingTargetSettings);
+
+  requiresPower = (Get_Int_Parameter("Requires_Power") > 0 ) ? true: false;
+  splashInfantry = (Get_Int_Parameter("Splash_Infantry") > 0 ) ? true: false;
 }
+
+// -------------------------------------------------------------------------------------------------
 
 void dp88_AI_Turret::Enemy_Seen ( GameObject *obj, GameObject *enemy )
 {
-	// If we saw a soldier in a vehicle, switch the GameObject to that of the vehicle
-	enemy = ( Get_Vehicle(enemy) ) ? Get_Vehicle(enemy) : enemy;
-	if ( debug ) fprintf( debugFile, "Seen an enemy: %d (%s)\n", Commands->Get_ID(enemy), Commands->Get_Preset_Name(enemy) );
+  // If we saw a soldier in a vehicle, switch the GameObject to that of the vehicle
+  enemy = ( Get_Vehicle(enemy) ) ? Get_Vehicle(enemy) : enemy;
+  if ( debug ) fprintf( debugFile, "Seen an enemy: %d (%s)\n", Commands->Get_ID(enemy), Commands->Get_Preset_Name(enemy) );
 
 	// If this is our current target update last seen time and priority
 	if ( Commands->Get_ID ( enemy ) == targetID )
@@ -501,6 +615,8 @@ void dp88_AI_Turret::Enemy_Seen ( GameObject *obj, GameObject *enemy )
 	else if ( debug ) fprintf ( debugFile, "Current target has a higher priority than new enemy, continuing to attack current target\n" );
 }
 
+// -------------------------------------------------------------------------------------------------
+
 void dp88_AI_Turret::Timer_Expired( GameObject *obj, int number )
 {
 	// Check target is still alive, still an enemy (eg: stolen vehicles) and in range
@@ -534,8 +650,17 @@ void dp88_AI_Turret::Timer_Expired( GameObject *obj, int number )
 	}
 }
 
+// -------------------------------------------------------------------------------------------------
 
+void dp88_AI_Turret::AIStateChanged( GameObject* pObj, bool bEnabled )
+{
+  dp88_customAI::AIStateChanged(pObj, bEnabled);
 
+  if ( !bEnabled )
+    stopAttacking(pObj);
+}
+
+// -------------------------------------------------------------------------------------------------
 
 // Returns true if the target is on the enemy team, false otherwise
 bool dp88_AI_Turret::checkTeam ( GameObject* obj, GameObject* target )
@@ -543,8 +668,7 @@ bool dp88_AI_Turret::checkTeam ( GameObject* obj, GameObject* target )
 	return !( Commands->Get_Player_Type ( target ) == 2 || Commands->Get_Player_Type ( target ) == Commands->Get_Player_Type ( obj ) );
 }
 
-
-
+// -------------------------------------------------------------------------------------------------
 
 // Returns true if the target is between our minimum and maximum range for either primary
 // or secondary weapons
@@ -566,6 +690,7 @@ bool dp88_AI_Turret::checkRange ( GameObject* obj, GameObject* target, bool prim
 	return true;
 }
 
+// -------------------------------------------------------------------------------------------------
 
 // Returns true if the base is powered or the defence does not require power
 bool dp88_AI_Turret::checkPowerState ( GameObject* obj )
@@ -573,8 +698,7 @@ bool dp88_AI_Turret::checkPowerState ( GameObject* obj )
 	return ( !requiresPower || Is_Base_Powered(Get_Object_Type(obj)) );
 }
 
-
-
+// -------------------------------------------------------------------------------------------------
 
 // These is called when a valid target has been identified and selected as the highest priority
 // target, the turret should begin attacking in this function. Note that this may be called
@@ -592,6 +716,8 @@ void dp88_AI_Turret::attackTarget ( GameObject* obj, GameObject* target, bool pr
 	params.AttackCheckBlocked = false;
 	Commands->Action_Attack( obj, params );
 }
+
+// -------------------------------------------------------------------------------------------------
 
 // This is called instead of attackTarget when we are set to splash infantry instead of shooting
 // at them directly. Whilst we are attacking an infantry unit with splash this will be called
@@ -626,12 +752,15 @@ void dp88_AI_Turret::attackLocation ( GameObject* obj, Vector3 location, bool pr
 	}
 }
 
+// -------------------------------------------------------------------------------------------------
+
 // This is called when the target is no longer valid and the turret should stop attacking, this
 // is called to stop both attackTarget and splashLocation attacks.
 void dp88_AI_Turret::stopAttacking ( GameObject* obj )
 {
-	Commands->Action_Reset(obj,101.0f);
+  Commands->Action_Reset(obj,101.0f);
 }
+
 
 
 
@@ -657,7 +786,7 @@ void dp88_AI_PopupTurret::Created ( GameObject* pSelf )
     // Set the spotter turret to match our configuration, but invisible
     Commands->Set_Model ( pSpotter, Get_Model(pSelf) );
     Commands->Set_Is_Rendered ( pSpotter, false );
-	Commands->Enable_Enemy_Seen ( pSpotter, true );
+    Commands->Enable_Enemy_Seen ( pSpotter, true );
     Commands->Disable_All_Collisions ( pSpotter );
     Commands->Innate_Enable ( pSpotter );
     Set_Skin ( pSpotter, "Blamo" );
@@ -816,8 +945,10 @@ void dp88_AI_PopupTurret_Spotter::Enemy_Seen ( GameObject* pSelf, GameObject* pE
 //  Charged Turret AI
 // -------------------------------------------------------------------------------------------------
 
-void dp88_AI_ChargedTurret::Created ( GameObject* pSelf )
+void dp88_AI_ChargedTurret::Init( GameObject* pSelf )
 {
+  dp88_AI_Turret::Init(pSelf);
+
   m_bIsCharging = false;
   m_bIsDischarging = false;
   m_chargeAnimObjId = NULL;
@@ -853,8 +984,15 @@ void dp88_AI_ChargedTurret::Created ( GameObject* pSelf )
 
   m_bPowerState = checkPowerState(pSelf);
   ApplyIdleAnimation(pSelf);
+}
 
-  dp88_AI_Turret::Created(pSelf);
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_ChargedTurret::loadSettings( GameObject* pSelf, bool loadSecondaryFireSettings, bool loadBuildingTargetSettings )
+{
+  dp88_AI_Turret::loadSettings(pSelf, loadSecondaryFireSettings, loadBuildingTargetSettings);
+
+  // Not currently loading any settings... probably should add this sometime...
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1069,6 +1207,137 @@ void dp88_AI_ChargedTurret_Animation::Animation_Complete ( GameObject* pSelf, co
 
 
 
+
+// ------------------
+// Custom AI Objective
+// ------------------
+
+int dp88_AI_Objective::s_nObjectives = 0;
+dp88_AI_Objective** dp88_AI_Objective::s_pObjectives = NULL;
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Objective::Created ( GameObject* obj )
+{
+  // Register objective
+  dp88_AI_Objective** pOldObjectives = s_pObjectives;
+  s_pObjectives = new dp88_AI_Objective*[++s_nObjectives];
+  for ( int i = 0; i < s_nObjectives-1; ++i )
+    s_pObjectives[i] = pOldObjectives[i];
+  s_pObjectives[s_nObjectives-1] = this;
+
+  // Store data
+  m_objID = Commands->Get_ID(obj);
+  m_priority = Get_Int_Parameter("Priority");
+  m_distance = Get_Int_Parameter("Distance");
+  m_type = (unsigned char)Get_Int_Parameter("Type");
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AI_Objective::Detach ( GameObject* obj )
+{
+  // De-register objective
+  dp88_AI_Objective** pOldObjectives = s_pObjectives;
+  if ( s_pObjectives != NULL && --s_nObjectives != 0 )
+  {
+    s_pObjectives = new dp88_AI_Objective*[s_nObjectives];
+    for ( int i = 0, j = 0; i < s_nObjectives; ++i, ++j )
+    {
+      if ( pOldObjectives[j] == this )
+        ++j;
+      s_pObjectives[i] = pOldObjectives[j];
+    }
+  }
+  delete [] pOldObjectives;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+GameObject* dp88_AI_Objective::GetGameObject()
+{
+  return Commands->Find_Object(m_objID);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+bool dp88_AI_Objective::IsSuitable ( GameObject* obj, unsigned char objective_type )
+{
+  int team = Get_Int_Parameter("Team");
+  if ( objective_type != m_type || (team != 2 && Get_Object_Type(obj) != team) )
+    return false;
+
+  if ( obj->As_SoldierGameObj() && !Get_Fly_Mode(obj) )
+    return ( Get_Int_Parameter("Soldier_Objective") == 1 );
+
+  if (  Get_Vehicle_Mode(obj) == VEHICLE_TYPE_FLYING || (obj->As_SoldierGameObj() && Get_Fly_Mode(obj)) )
+    return ( Get_Int_Parameter("Aircraft_Objective") == 1 );
+
+  if ( obj->As_VehicleGameObj() )
+    return (Is_Script_Attached ( obj, "dp88_AI_heavyVehicleMarker" ))
+      ? ( Get_Int_Parameter("Heavy_Vehicle_Objective") == 1 )
+      : ( Get_Int_Parameter("Light_Vehicle_Objective") == 1 );
+
+  return false;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+dp88_AI_Objective* dp88_AI_Objective::GetObjective ( GameObject* obj, unsigned char objective_type )
+{
+  dp88_AI_Objective* result = NULL;
+  int top_priority = 0;
+
+  for ( int i = 0; i < s_nObjectives; ++i )
+  {
+    if ( s_pObjectives[i]->IsSuitable(obj,objective_type)
+      && s_pObjectives[i]->GetPriority() >= top_priority
+      && s_pObjectives[i]->GetGameObject() != NULL )
+    {
+      // Always switch to a higher priority objective and allow a random chance to switch to
+      // another equal priority objective
+      if ( s_pObjectives[i]->m_priority > top_priority || Commands->Get_Random_Int(1,3) == 1 )
+      {
+        top_priority = s_pObjectives[i]->GetPriority();
+        result = s_pObjectives[i];
+      }
+    }
+  }
+
+  return result;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+bool dp88_AI_Objective::IsValidObjective(dp88_AI_Objective* pObjective)
+{
+  for ( int i = 0; i < s_nObjectives; ++i )
+  {
+    if ( s_pObjectives[i] == pObjective )
+      return ( s_pObjectives[i]->GetGameObject() != NULL );
+  }
+
+  return false;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AI_Objective> dp88_AI_Objective_Registrant(
+  "dp88_AI_Objective",
+  "Priority=1:int,"
+  "Distance=50:int,"
+  "Team:int,"
+  "Type=1:int,"
+  "Soldier_Objective=1:int,"
+  "Light_Vehicle_Objective=1:int,"
+  "Heavy_Vehicle_Objective=1:int,"
+  "Aircraft_Objective=1:int");
+
+
+
+
+
+
 // -------------------------------------------------------------------------------------------------
 //  Script Registrants
 // -------------------------------------------------------------------------------------------------
@@ -1076,9 +1345,8 @@ void dp88_AI_ChargedTurret_Animation::Animation_Complete ( GameObject* pSelf, co
 // Heavy vehicle marker (dummy script)
 ScriptRegistrant<dp88_AI_heavyVehicleMarker> dp88_AI_heavyVehicleMarker_Registrant("dp88_AI_heavyVehicleMarker","");
 
-ScriptRegistrant<dp88_tankAI_Offensive> dp88_tankAI_Offensive_Registrant("dp88_tankAI_Offensive","Priority_Infantry=1:int,Weapon_Infantry=1:int,priority_lightVehicle=5:int,priority_heavyVehicle=7:int,Weapon_Vehicle=1:int,Priority_VTOL=5:int,Weapon_VTOL=1:int,Priority_Building=12:int,Weapon_Building=1:int,Max_Attack_Range=150:int,Min_Attack_Range=0:int,Preferred_Attack_Range=60:int,Max_Attack_Range_Secondary=150:int,Min_Attack_Range_Secondary=0:int,Preferred_Attack_Range_Secondary=60:int");
-ScriptRegistrant<dp88_AI_Turret> dp88_AI_Turret_Registrant("dp88_AI_Turret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=5:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int");
-ScriptRegistrant<dp88_AI_PopupTurret> dp88_AI_PopupTurret_Registrant("dp88_AI_PopupTurret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=5:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Deploy_Animation:string,Deploy_Animation_Frames:int,Deploy_Sound:string,Deploy_Timeout:int,Spotter_Preset:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int");
+ScriptRegistrant<dp88_AI_Turret> dp88_AI_Turret_Registrant("dp88_AI_Turret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=1:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int,Detects_Stealth=1:int");
+ScriptRegistrant<dp88_AI_PopupTurret> dp88_AI_PopupTurret_Registrant("dp88_AI_PopupTurret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=1:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Deploy_Animation:string,Deploy_Animation_Frames:int,Deploy_Sound:string,Deploy_Timeout:int,Spotter_Preset:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int,Detects_Stealth=1:int");
 ScriptRegistrant<dp88_AI_PopupTurret_Spotter> dp88_AI_PopupTurret_Spotter_Registrant("dp88_AI_PopupTurret_Spotter","tId:int");
-ScriptRegistrant<dp88_AI_ChargedTurret> dp88_AI_ChargedTurret_Registrant("dp88_AI_ChargedTurret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=5:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Animation_Model:string,Animation_Model_Bone:string,Animation:string,Animation_Idle_Start_Frame:int,Animation_Idle_End_Frame:int,Animation_Unpowered_Start_Frame:int,Animation_Unpowered_End_Frame:int,Animation_Charge_Start_Frame:int,Animation_Charge_End_Frame:int,Charge_Sound:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int");
+ScriptRegistrant<dp88_AI_ChargedTurret> dp88_AI_ChargedTurret_Registrant("dp88_AI_ChargedTurret","Priority_Infantry=1.0:float,Weapon_Infantry=1:int,Splash_Infantry=0:int,Priority_Light_Vehicle=5.0:float,Weapon_Light_Vehicle=1:int,Priority_Heavy_Vehicle=7.0:float,Weapon_Heavy_Vehicle=1:int,Priority_VTOL=5.0:float,Weapon_VTOL=1:int,Min_Attack_Range=0:int,Max_Attack_Range=150:int,Min_Attack_Range_Secondary=0:int,Max_Attack_Range_Secondary=150:int,Animation_Model:string,Animation_Model_Bone:string,Animation:string,Animation_Idle_Start_Frame:int,Animation_Idle_End_Frame:int,Animation_Unpowered_Start_Frame:int,Animation_Unpowered_End_Frame:int,Animation_Charge_Start_Frame:int,Animation_Charge_End_Frame:int,Charge_Sound:string,Modifier_Distance=0.25:float,Modifier_Target_Damage=0.1:float,Modifier_Target_Value=0.05:float,Requires_Power=0:int,Debug=0:int,Detects_Stealth=1:int");
 ScriptRegistrant<dp88_AI_ChargedTurret_Animation> dp88_AI_ChargedTurret_Animation_Registrant("dp88_AI_ChargedTurret_Animation","tId:int");

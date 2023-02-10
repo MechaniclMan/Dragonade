@@ -104,8 +104,7 @@ void DAVehicleShellObserverClass::Damage_Received(ArmedGameObj *Damager,float Da
 			VehicleDefense->Set_Shield_Strength(0.0f);
 			Vehicle->Set_Player_Type(-2);
 			((PhysicalGameObj*)Get_Owner())->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
-			Fix_Stuck_Objects(Transform.Get_Translation(),5.0f); //Move any objects that got stuck by the revived vehicle spawning on them.
-			Fix_Stuck_Objects(Transform.Get_Translation(),10.0f); //Will also move the revived vehicle if it is stuck in terrain.
+			Fix_Stuck_Objects(Transform.Get_Translation(),10.0f,15.0f); //Move any objects that got stuck by the revived vehicle spawning on them.
 			if (DAVehicleOwnershipGameFeature) {
 				cPlayer *HighestRepairer = DADamageLog::Get_Highest_Repairer_Team(Get_Owner(),2);
 				if (HighestRepairer) {

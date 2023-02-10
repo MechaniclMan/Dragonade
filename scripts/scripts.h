@@ -727,6 +727,11 @@ struct ScriptCommands {
 	void	(* Unlock_Soldier_Facing)( GameObject * object );
 	void	(* Apply_Damage)( GameObject * object, float amount, const char * warhead_name, GameObject * damager);
 	void	(* Set_Loiters_Allowed)( GameObject * object, bool allowed );
+
+  /*!
+  * Set whether a SoldierGameObj is visible to AIs utilising the Enemy_Seen logic. For vehicles use
+  * the Set_Vehicle_Is_Visible function instead.
+  */
 	void	(* Set_Is_Visible)( GameObject * object, bool visible );
 	void	(* Set_Is_Rendered)( GameObject * object, bool rendered );
 	float	(* Get_Points)( GameObject * object );

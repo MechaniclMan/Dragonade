@@ -40,4 +40,33 @@ float SCRIPTS_API Get_Death_Points(GameObject *obj); //get the death points for 
 void SCRIPTS_API Kill_Occupants(GameObject *obj); //kill all the occupants of a vehicle
 void SCRIPTS_API Damage_Occupants(GameObject *obj,float Damage,const char *Warhead); //Damage all the occupants of a vehicle
 void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, float FriendPecentage, bool ForceFriendly, const char *Warhead,Vector3 Location,float DamageRadius,GameObject *Damager); //damage vehicles based on a percentage factor
+
+/*!
+* \brief Get maximum hitpoints
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Returns the maximum hitpoints for the specified object, rather than having to manually add up the
+* maximum health and shield values
+*
+* \param[in] obj
+*   Object to get the maximum hitpoints of
+* \returns
+*   The combined maximum health and shield strength of the object
+*/
+float SCRIPTS_API Get_Max_Hitpoints ( GameObject* obj );
+
+/*!
+* \brief Get current hitpoints
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Returns the current hitpoints for the specified object, rather than having to manually add up the
+* current health and shield values
+*
+* \param[in] obj
+*   Object to get the maximum hitpoints of
+* \returns
+*   The combined current health and shield strength of the object
+*/
+float SCRIPTS_API Get_Hitpoints ( GameObject* obj );
+
 #endif

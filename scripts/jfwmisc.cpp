@@ -1376,7 +1376,7 @@ void JFW_EMP::Created(GameObject *obj)
 
 void JFW_EMP::Damaged(GameObject *obj,GameObject *damager,float amount)
 {
-	//if (Warhead == Get_Damage_Warhead())
+	if (Warhead == Get_Damage_Warhead())
 	{
 		VehicleGameObj *o = obj->As_VehicleGameObj();
 		if (o && o->Get_Is_Scripts_Visible() && !o->Is_Immovable())
@@ -1490,15 +1490,27 @@ void JFW_Cyborg_Reaper::Custom(GameObject *obj,int type,int param,GameObject *se
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_OWNER)
 	{
-		Commands->Set_Position(obj,Commands->Get_Position(sender));
-		Soldier_Transition_Vehicle(sender);
-		driverid = Commands->Get_ID(sender);
+		Commands->Start_Timer(obj,this,5,Commands->Get_ID(sender));
 	}
 }
 
 void JFW_Cyborg_Reaper::Killed(GameObject *obj,GameObject *killer)
 {
 	Commands->Attach_Script(Commands->Find_Object(driverid),"RA_DriverDeath", "0");
+}
+
+void JFW_Cyborg_Reaper::Timer_Expired(GameObject *obj,int number)
+{
+	if (Commands->Find_Object(number))
+	{
+		Commands->Set_Position(Commands->Find_Object(number),Commands->Get_Position(obj));
+		Soldier_Transition_Vehicle(Commands->Find_Object(number));
+		driverid = Commands->Get_ID(Commands->Find_Object(number));
+	}
+	else
+	{
+		Commands->Destroy_Object(obj);
+	}
 }
 
 void JFW_Limpet_Drone::Created(GameObject *obj)
@@ -1608,7 +1620,7 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 		}
 		float timer = Commands->Get_Random(min,max);
 		Commands->Start_Timer(obj,this,timer,2);
-		Commands->Set_Lightning(Get_Float_Parameter("Lightning_Intensity"),Get_Float_Parameter("Lightning_Start_Distance"),Get_Float_Parameter("Lightning_End_Distance"),Get_Float_Parameter("Lightning_Heading"),Get_Float_Parameter("Lightning_Distribution"),0);
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("On_Weather_Custom"),0,0);
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
 		{
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Disable_Custom"),0,0);
@@ -1637,7 +1649,7 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 	else if (number == 2) //storm ended
 	{
 		storm = false;
-		Commands->Set_Lightning(Get_Float_Parameter("Lightning_Off_Intensity"),Get_Float_Parameter("Lightning_Off_Start_Distance"),Get_Float_Parameter("Lightning_Off_End_Distance"),Get_Float_Parameter("Lightning_Off_Heading"),Get_Float_Parameter("Lightning_Off_Distribution"),0);
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Off_Weather_Custom"),0,0);
 		if (Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER))
 		{
 			Commands->Send_Custom_Event(obj,Find_Building_By_Type(0,BuildingConstants::TYPE_COM_CENTER),Get_Int_Parameter("Enable_Custom"),0,0);
@@ -1685,6 +1697,17 @@ void JFW_Ion_Storm::Timer_Expired(GameObject *obj,int number)
 			Commands->Create_2D_Sound(Get_Parameter("Ion_Effect_Sound"));
 			Commands->Start_Timer(obj,this,Get_Float_Parameter("Ion_Effect_Time"),3);
 		}
+	}
+}
+
+void JFW_Ion_Storm_Weather::Custom(GameObject *obj,int type,int param,GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Message"))
+	{
+		Commands->Set_Lightning(Get_Float_Parameter("Lightning_Intensity"),Get_Float_Parameter("Lightning_Start_Distance"),Get_Float_Parameter("Lightning_End_Distance"),Get_Float_Parameter("Lightning_Heading"),Get_Float_Parameter("Lightning_Distribution"),0);
+		Commands->Set_Clouds(Get_Float_Parameter("Cloud_Cover"),Get_Float_Parameter("Cloud_Gloominess"),0);
+		Commands->Set_Screen_Fade_Color(Get_Float_Parameter("Screen_Red"),Get_Float_Parameter("Screen_Green"),Get_Float_Parameter("Screen_Blue"),0);
+		Commands->Set_Screen_Fade_Opacity(Get_Float_Parameter("Screen_Opacity"),0);
 	}
 }
 
@@ -1937,7 +1960,8 @@ ScriptRegistrant<JFW_Limpet_Drone> JFW_Limpet_Drone_Registrant("JFW_Limpet_Drone
 ScriptRegistrant<JFW_Forward_Custom_Object> JFW_Forward_Custom_Object_Registrant("JFW_Forward_Custom_Object","Object_ID:int");
 ScriptRegistrant<JFW_Death_Send_Custom_Self> JFW_Death_Send_Custom_Self_Registrant("JFW_Death_Send_Custom_Self","Message:int");
 ScriptRegistrant<JFW_Hunter_Seeker> JFW_Hunter_Seeker_Registrant("JFW_Hunter_Seeker","Key:string,Explosion:string");
-ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Lightning_Off_Intensity:float,Lightning_Off_Start_Distance:float,Lightning_Off_End_Distance:float,Lightning_Off_Heading:float,Lightning_Off_Distribution:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string");
+ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int");
+ScriptRegistrant<JFW_Ion_Storm_Weather> JFW_Ion_Storm_Weather_Registrant("JFW_Ion_Storm_Weather","Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Message:int");
 ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created","Character:string");
 ScriptRegistrant<JFW_Change_Model_Created> JFW_Change_Model_Created_Registrant("JFW_Change_Model_Created","Model1:string,Model2:string,Model3:string,Model4:string,Model5:string");
 ScriptRegistrant<JFW_Spawn_Object_Created> JFW_Spawn_Object_Created_Registrant("JFW_Spawn_Object_Created","Object:string");

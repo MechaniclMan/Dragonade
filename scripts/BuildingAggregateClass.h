@@ -24,7 +24,7 @@ public:
 	const BuildingAggregateDefClass * Get_BuildingAggregateDef( void ) const {return (BuildingAggregateDefClass *)Definition; }
 	int				Get_Current_State(void);
 	void				Set_Current_State(int new_state,bool force_update = false);
-	bool				Is_MCT(void);
+	SHADERS_API bool				Is_MCT(void);
 	virtual	bool	Save( ChunkSaveClass & csave );
 	virtual	bool	Load( ChunkLoadClass & cload );
 	virtual	void	Save_State( ChunkSaveClass & csave );

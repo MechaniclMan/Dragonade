@@ -14,89 +14,115 @@
 #include "dp88_customAI.h"
 #include "dp88_custom_timer_defines.h"
 
+// -------------------------------------------------------------------------------------------------
 
-/*------------------------
-Game Controller
-  Game controller for AR maps, set's up map variables and manages several events
---------------------------*/
+/*!
+* \brief Apocalypse Rising Game Controller
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* The game controller script for Apocalypse Rising, this should be attached to an editor only object
+* on every map. It is currently responsible for the following functionality;
+*
+* - Map specific Mirage Tank disguises, up to 3 variants per map
+* - Random country selection for each team from available countries on the current map
+*
+* In future the country selection code will have additional logic to spawn country-specific objects
+* such as the French Grand Cannon at predetermined markers on the map or enable country specific
+* units for purchase. Currently the country selection has no actual effect on the game.
+*
+* \note
+*   If no country choices are available for one or both teams the controller will choose from all
+*   available countries at random as a failsafe mechanism.
+*
+* \param enableCountry_Russia
+*   Determines if the controller can select Russia as the Soviet country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_Cuba
+*   Determines if the controller can select Cuba as the Soviet country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_Iraq
+*   Determines if the controller can select Iraq as the Soviet country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_Libya
+*   Determines if the controller can select Libya as the Soviet country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_America
+*   Determines if the controller can select America as the Allied country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_France
+*   Determines if the controller can select France as the Allied country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_Germany
+*   Determines if the controller can select Germany as the Allied country on this map. 1 to enable,
+*   0 to disable.
+* \param enableCountry_GreatBritain
+*   Determines if the controller can select Great Britain as the Allied country on this map. 1 to
+*   enable, 0 to disable.
+* \param enableCountry_Korea
+*   Determines if the controller can select Korea as the Allied country on this map. 1 to enable,
+*   0 to disable.
+* \param MirageTank_disguisePreset_1
+*   The name of the first disguise preset for the Mirage Tank on this map.
+* \param MirageTank_disguisePreset_2
+*   Optional. The name of the second disguise preset for the Mirage Tank on this map.
+* \param MirageTank_disguisePreset_3
+*   Optional. The name of the third disguise preset for the Mirage Tank on this map.
+* \param warminer_refToOre
+*   Deprecated, pending removal
+* \param warminer_oreToRef
+*   Deprecated, pending removal
+* \param warminer_unloadOre
+*   Deprecated, pending removal
+* \param chronominer_refToOre
+*   Deprecated, pending removal
+* \param chronominer_unloadOre
+*   Deprecated, pending removal
+*/
 
 class dp88_AR_GameController : public ScriptImpClass
 {
-	// Events
-	void Created( GameObject *obj );
-	void Custom( GameObject *obj, int type, int param, GameObject *sender );
-	void Timer_Expired( GameObject *obj, int number );
-	void Destroyed( GameObject *obj );
+  // Events
+  void Created( GameObject *obj );
+  void Custom( GameObject *obj, int type, int param, GameObject *sender );
+  void Timer_Expired( GameObject *obj, int number );
+  void Destroyed( GameObject *obj );
 
-public:
-	dp88_AR_GameController();
-	~dp88_AR_GameController();
+  public:
+  dp88_AR_GameController();
+  ~dp88_AR_GameController();
 
-	bool created;
+  bool created;
 
-	short team0_countryID;		// Country ID for Soviets
-	short team1_countryID;		// Country ID for Allies
-	
-	// Terror Drone console waiting for response
-	int TD_Waiting_Console;
+  short team0_countryID;    // Country ID for Soviets
+  short team1_countryID;    // Country ID for Allies
 
-	// Mirage Tank
-	char* mirageTank_disguisePresets[3];
+  // Terror Drone console waiting for response
+  int TD_Waiting_Console;
+
+  // Mirage Tank
+  char* mirageTank_disguisePresets[3];
 };
 
+// -------------------------------------------------------------------------------------------------
 
-
-
-// Class for vehicles (redundant, keeping it temporaraily for terror drone code)
+/*!
+* \deprecated - Early AR development script, keeping it temporarily for terror drone code
+*/
 class dp88_AR_Vehicle : public ScriptImpClass
 {
-	// Variables
-	int pilotID;						// Pilots GameObject ID
-	int attackingTerrorDroneID;			// ID of any Terror Drones attacking this vehicle
-	bool dead;							// Set to true when we die
+  // Variables
+  int pilotID;						// Pilots GameObject ID
+  int attackingTerrorDroneID;			// ID of any Terror Drones attacking this vehicle
+  bool dead;							// Set to true when we die
 
-	// Events
-	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	void Created(GameObject *obj);
-	void Timer_Expired( GameObject *obj,int number );
-	void Killed(GameObject *obj, GameObject *killer);
-	void Damaged(GameObject *obj, GameObject *damager, float amount);
-	void Animation_Complete ( GameObject *obj, const char *animation_name );
-};
-
-
-
-
-/*!
-* A companion script for dp88_veterancyUnit which grants units health and/or armour
-* regeneration dependant upon their promotion level (rookie, veteran, elite)
-*/
-class dp88_AR_Veterancy_HealthArmourRegen : public ScriptImpClass
-{
-	void Created( GameObject *obj );
-	void Timer_Expired( GameObject *obj, int number );
-	void Custom( GameObject *obj, int type, int param, GameObject *sender );
-
-	private:
-		int veterancyLevel;
-};
-
-
-
-
-/*!
-* A companion script for dp88_veterancyUnit which grants units a weapon upon creation
-* which can subsequently be upgraded to a more powerful weapon when the player gets
-* promoted
-*/
-class dp88_AR_grantDefaultWeapon : public ScriptImpClass {
-
-	char weaponName[64];
-	char oldWeapon[64];
-
-	void Created( GameObject *obj );
-	void Custom( GameObject *obj, int type, int param, GameObject *sender );
-	void Timer_Expired( GameObject *obj, int number );
+  // Events
+  void Custom(GameObject *obj,int type,int param,GameObject *sender);
+  void Created(GameObject *obj);
+  void Timer_Expired( GameObject *obj,int number );
+  void Killed(GameObject *obj, GameObject *killer);
+  void Damaged(GameObject *obj, GameObject *damager, float amount);
+  void Animation_Complete ( GameObject *obj, const char *animation_name );
 };
 
 
@@ -147,6 +173,9 @@ class dp88_AR_Deployable_Infantry : public JFW_Key_Hook_Base
 
 	/* Original values for Skin & Armour types */
 	char undeployedSkinType[128], undeployedArmourType[128];
+
+  /*! Cached value of SoldierGameObj::Can_Drive_Vehicles() prior to deploying */
+  bool m_bCanDrive;
 };
 
 
@@ -186,8 +215,11 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 // -------------------------------------------------------------------------------------------------
 
 /*!
-* \brief AR Miner Script
+* \brief Ore Miner
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* \todo Update this documentation to remove references to AR specific logic - now a general purpose
+*       script for use with dp88_Ore_Field and dp88_Ore_Dump_Zone
 *
 * This class contains the basic logic for the ore miners used in Apocalypse Rising and supports both
 * AI and player controlled miners. A miner can collect ore from any ore fields defined by a script
@@ -200,7 +232,7 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 *
 * Miners can deposit ore at any time as long as they have at least one unit mined, with the total
 * value of the deposit being based on the number of units collected and the value of each unit. Ore
-* deposits are achieved by entering a script zone with the dp88_AR_Ore_Deposit_Zone attached to it
+* deposits are achieved by entering a script zone with the dp88_Ore_Dump_Zone attached to it
 * with the team parameter matching that of the miner.
 *
 * When the AI is enabled the miner will use the pathfind grid to locate the nearest ore field and
@@ -210,29 +242,26 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 * you should place pathfind blockers around the problematic areas and re-generate pathfind data to
 * make it route around those locations.
 *
-* \param enableAI
+* \param Use_AI
 *   Specifies that this miner should use its AI to mine autonomously. 1 to enable AI, 0 otherwise
-* \param loadLevels
-*   Specifies the total number of ore units this miner can hold at any time
-* \param orePerLoadLevel
-*   Amount of ore mined in each unit, this is multiplied by the oreValue parameter in the script
-*   attached to the ore field to calculate the credit value of each ore unit
-* \param timePerLoadLevel
+* \param Ore_Capacity
+*   Maximum number of ore units this miner can store
+* \param Ore_Mining_Time
 *   The amount of time, in seconds, it takes to mine one ore unit from an ore field
-* \param unloadtime
+* \param Ore_Dump_Time
 *   The amount of time, in seconds, it takes to unload all ore units at an ore deposit zone
-* \param aiStartDelay
+* \param AI_Init_Delay
 *   If the miner AI is enabled this specifies the initial delay before starting the first AI action,
 *   which is required to avoid the original Renegade Harvester AI overriding this one.
-* \param dockAnimation
+* \param Dump_Animation
 *   An optional animation to be played when depositing ore at a refinery
-* \param dockSound
+* \param Dump_Sound
 *   An optional sound effect to be played when depositing ore at a refinery
-* \param miningAnimation
+* \param Mining_Animation
 *   An optional animation to be played in a loop whilst mining in an ore field
-* \param miningSound
+* \param Mining_Sound
 *   An optional sound effect to be played each time the ore load level increases
-* \param idleAnimation
+* \param Idle_Animation
 *   An optional animation to be played in a loop when the miner is not mining or docked
 *
 * \note
@@ -243,127 +272,402 @@ class dp88_AR_CLEG_target : public ScriptImpClass {
 *   an instance of this base class script.
 */
 
-class dp88_AR_Miner : public JFW_Key_Hook_Base	// Inherit from keyhook base for chrono miner
+class dp88_Ore_Miner : public JFW_Key_Hook_Base   // Inherit from keyhook base for chrono miner
 {
 protected:
-	int oreFieldRand;		// Used to prevent glitching by entering/exiting an ore field rapidly. 0 = not in ore field
-	int oreFieldValue;
-	int oreLoadLevel;
-	int oreValue;
+  int m_aiState;          //!< Current AI state
 
-	bool useAI;				// Is AI enabled?
-	bool animating;         // Used to identify if the harvest animation is running so it doesn't start it a second time
-	int aiState;			// Current AI state
+  int m_oreMined;         //!< Current number of mined ore loads onboard
+  int m_oreValue;         //!< Cumulative value of all ore loads onboard
+
+  int m_oreFieldId;       //!< ID of the ore field we are currently mining ore from
+  int m_oreFieldRand;     //!< Used to prevent glitching by entering/exiting an ore field rapidly. 0 = not in ore field
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  bool m_bUseAI;          //!< Is AI enabled?
+  int m_oreCapacity;      //!< Maximum number of mined ore units onboard
+  float m_oreMiningTime;  //!< Time required to mine one ore unit
+  float m_oreDumpTime;    //!< Time required to dump ore at a refinery
+
+  const char* m_animations[3];
+  const char* m_animSounds[3];
+  /*! @} */
 
 public:
-	// Default event handlers for the AI miners
-	virtual void Created ( GameObject *obj );
-	virtual void Custom ( GameObject *obj, int type, int param, GameObject *sender );
-	virtual void Action_Complete( GameObject *obj, int action_id, ActionCompleteReason complete_reason );
-	virtual	void KeyHook() {};
+  // Default event handlers for the AI miners
+  virtual void Created ( GameObject *obj );
+  virtual void Custom ( GameObject *obj, int type, int param, GameObject *sender );
+  virtual void Action_Complete( GameObject *obj, int action_id, ActionCompleteReason complete_reason );
+  virtual	void KeyHook() {};
 
 protected:
-	// These functions implement standard drive to ore field, harvest some ore,
-	// return to refinery, dock and unload ore functionlity for an AI miner. They
-	// can be overloaded to provide custom functionality in derived classes.
-	virtual void DriveToOreField ( GameObject *obj );
-	virtual void EnteredOreField ( GameObject *obj, GameObject* oreField );
-	virtual void ExitedOreField ( GameObject *obj, GameObject* oreField );
-	virtual void ReturnToRefinery ( GameObject *obj );
-	virtual void DockAtRefinery ( GameObject *obj );
-	virtual void DockedAtRefinery ( GameObject *obj );
-	virtual void UndockedFromRefinery ( GameObject *obj );
+  // These functions implement standard drive to ore field, harvest some ore, return to refinery,
+  // dock and unload ore functionlity for an AI miner. They can be overloaded to provide custom
+  // functionality in derived classes.
+  virtual void DriveToOreField ( GameObject *obj );
+  virtual void EnteredOreField ( GameObject *obj, GameObject* oreField );
+  virtual void ExitedOreField ( GameObject *obj, GameObject* oreField );
+  virtual void ReturnToRefinery ( GameObject *obj );
+  virtual void DockAtRefinery ( GameObject *obj );
+  virtual void DockedAtRefinery ( GameObject *obj );
+  virtual void UndockedFromRefinery ( GameObject *obj );
 
-	// AI states for the miner
-	enum MINER_AISTATES
-	{
-		MINER_AISTATE_IDLE,
-		MINER_AISTATE_DRIVE_TO_ORE,
-		MINER_AISTATE_COLLECTING_ORE,
-		MINER_AISTATE_RETURN_TO_REFINERY,
-		MINER_AISTATE_DOCK_AT_REFINERY,
-		MINER_AISTATE_UNLOADING_ORE
-	};
+  // AI states for the miner
+  enum MINER_AISTATES
+  {
+    MINER_AISTATE_IDLE,
+    MINER_AISTATE_SEARCH_FOR_ORE,
+    MINER_AISTATE_DRIVE_TO_ORE,
+    MINER_AISTATE_COLLECTING_ORE,
+    MINER_AISTATE_RETURN_TO_REFINERY,
+    MINER_AISTATE_DOCK_AT_REFINERY,
+    MINER_AISTATE_UNLOADING_ORE
+  };
 
-	enum MINER_ACTIONIDS
-	{
-		MINER_ACTIONID_DRIVE_TO_ORE,
-		MINER_ACTIONID_RETURN_TO_REFINERY,
-		MINER_ACTIONID_DOCK_AT_REFINERY
-	};
+  enum MINER_ACTIONIDS
+  {
+    MINER_ACTIONID_DRIVE_TO_ORE,
+    MINER_ACTIONID_RETURN_TO_REFINERY,
+    MINER_ACTIONID_DOCK_AT_REFINERY
+  };
+
+  enum MINER_ANIMID
+  {
+    MINER_ANIM_IDLE,
+    MINER_ANIM_MINING,
+    MINER_ANIM_DUMPING
+  };
+
+  void UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId );
+  MINER_ANIMID m_currentAnimId;
 };
 
+// -------------------------------------------------------------------------------------------------
 
-/*------------------------
-Chrono Miner
---------------------------*/
-
-class dp88_AR_Chrono_Miner : public dp88_AR_Miner
+/*!
+* \brief AR Chrono Miner
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* \todo Write Documentation
+*/
+class dp88_AR_Chrono_Miner : public dp88_Ore_Miner
 {
-	int objectId;			// ID of the object we are running on, since Keyhook() does not include the GameObject...
-	int driverId;			// ID of our current driver, or NULL
+protected:
+  int objectId;     //!< ID of the object we are running on, since Keyhook() does not include the GameObject...
+  int driverId;     //!< ID of our current driver, or NULL
 
-	void Created ( GameObject *obj );
-	void Damaged ( GameObject *obj, GameObject *damager, float amount );
-	void Custom ( GameObject *obj, int type, int param, GameObject *sender );
-	void KeyHook();
+public:
+  void Created ( GameObject *obj );
+  void Damaged ( GameObject *obj, GameObject *damager, float amount );
+  void Custom ( GameObject *obj, int type, int param, GameObject *sender );
+  void KeyHook();
 
 private:
-	void ReturnToRefinery ( GameObject *obj );
-	bool Start_Chronoshift( GameObject *obj );
-	void Do_Chronoshift( GameObject *obj, int target_zone_id );
-	void Complete_Chronoshift( GameObject *obj );
+  void ReturnToRefinery ( GameObject *obj );
+  bool Start_Chronoshift( GameObject *obj );
+  void Do_Chronoshift( GameObject *obj, int target_zone_id );
+  void Complete_Chronoshift( GameObject *obj );
 
-	enum CMINER_AISTATES
-	{
-		CMINER_AISTATE_CHRONOSHIFTING = MINER_AISTATE_UNLOADING_ORE+1
-	};
+  bool CanChronoshiftToLocation ( GameObject* obj, Vector3& location );
+
+  enum CMINER_AISTATES
+  {
+    CMINER_AISTATE_CHRONOSHIFTING = MINER_AISTATE_UNLOADING_ORE+1
+  };
 };
 
+// -------------------------------------------------------------------------------------------------
 
+/*!
+* \brief AR Chrono Miner Chronoshift Zone
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* \todo Write Documentation
+*/
 class dp88_AR_Chrono_Miner_Chronozone : public ScriptImpClass
 {
-	void Created( GameObject *obj );
+  void Created( GameObject *obj );
 
 public:
-	// Set by dp88_AR_Chrono_Miner when it is shifting to this zone, used
-	// to prevent multiple miners trying to shift to the same place
-	int chronominer_id;
+  // Set by dp88_AR_Chrono_Miner when it is shifting to this zone, used
+  // to prevent multiple miners trying to shift to the same place
+  int chronominer_id;
 };
 
+// -------------------------------------------------------------------------------------------------
 
-class dp88_AR_Ore_Field_Zone : public ScriptImpClass {
-	void Entered( GameObject *obj, GameObject *enterer );
-	void Exited ( GameObject *obj, GameObject *exiter );
+/*!
+* \brief Ore Field
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Attach this script to an object which represents an ore (or gem) field on the map, or to a Daves
+* arrow if you do not want animation support for growing / shrinking the field. A script zone will
+* be created at the center of this object (it's local 0,0,0 position) which defines the area miners
+* must enter to be considered 'inside' the ore field. This zone can grow and shrink with the ore
+* field animation if desired.
+*
+* Used on it's own this script can either create an ore field with infinite capacity or one which is
+* gradually depleted until it is empty. If you want the ore field to re-grow you must add one or
+* more objects with the dp88_Ore_Extractor script attached.
+*
+* To visually show the current size of an ore field you can use an animation on the object this
+* script is attached to which will animate from the full frame to an empty frame as the field is
+* depleted. If an ore extractor is present it will also animate in reverse as the field is refilled.
+*
+* \pre
+*   A preset with the name "Script_Zone_All" must exist to allow the miner zone to be created. This
+*   preset should have CheckStarsOnly disabled to allow AI miners to use this ore field
+*
+* \param Ore_Value
+*   The value of each unit of 'ore' mined from this field. Multiply this by the capacity of a miner
+*   to get the total credits per dump from a fully loaded miner.
+* \param Ore_Capacity
+*   The maximum capacity of this ore field, in units. Set this to 0 to create an infinite ore field
+*   which never shrinks or grows.
+* \param Ore_Units
+*   If Ore_Capacity is not 0 this defines the number of units in the ore field when it is created
+* \param Animation_Name
+*   The name of an animation containing the frames to show ore capacity
+* \param Animation_Full_Frame
+*   The frame number for the ore field when it is at maximum capacity
+* \param Animation_Empty_Frame
+*   The frame number for the ore field when it is empty
+* \param Zone_Size
+*   The size of the zone which miners must enter to mine ore from this field. This size is used when
+*   the field is at maximum capacity. When the zone is empty the zone will despawn.
+* \param Zone_Anim_Step_X
+*   How much to shrink the miner zone in the X axis by for each frame in the animation
+* \param Zone_Anim_Step_Y
+*   How much to shrink the miner zone in the Y axis by for each frame in the animation
+*/
+class dp88_Ore_Field : public ScriptImpClass
+{
+public:
+  void Created ( GameObject* pObj );
+  void Detach ( GameObject* pObj );
+  void Entered ( GameObject* pZoneObj, GameObject* pEnterer );
+  void Exited ( GameObject* pZoneObj, GameObject* pExiter );
+
+  /*!
+  * Add one or more units of ore to this field, if there is additional capacity available
+  *
+  * \param[in] nUnits
+  *   Number of ore units to be added
+  */
+  void AddOre ( unsigned int nUnits );
+
+  /*!
+  * Attempt to remove one or more units of ore from this field, if they are available
+  *
+  * \param[in] nUnits
+  *   Number of ore units to try and remove
+  *
+  * \return Number of units actually removed, which will be <= nUnits
+  */
+  unsigned int RemoveOre ( unsigned int nUnits = 1 );
+
+  /*!
+  * Check the number of ore units currently available in this field
+  *
+  * \return Number of ore units available in this field, or 0 if this field has infinite capacity
+  */
+  unsigned int NumOreUnits() { return m_nOreUnits; }
+
+  /*! Get the value of the ore in this field */
+  unsigned int GetOreValue() { return m_oreValue; }
+
+  /*! Check if this ore field is infinite */
+  bool IsInfinite() { return m_oreCapacity == 0; }
+
+
+protected:
+  void UpdateAnimationFrame();
+  void UpdateAnimationFrame( GameObject* pObj );
+
+
+  unsigned int m_myObjId;     //!< My own GameObject ID, used by the zone observer callbacks
+  unsigned int m_nOreUnits;
+  int m_minerZoneId;
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  unsigned int m_oreValue;
+  unsigned int m_oreCapacity;
+
+  const char* m_strAnimation;
+  unsigned int m_nAnimationFullFrame;
+  unsigned int m_nAnimationEmptyFrame;
+
+  Vector3 m_zoneSizeFull;
+  float m_zoneStepX;
+  float m_zoneStepY;
+  /*! @} */
+
+
+  /*! Class to observe the script zone - don't need an extra script for this */
+  class dp88_Ore_Field_Observer : public GameObjObserverClass
+  {
+  public:
+    dp88_Ore_Field_Observer(dp88_Ore_Field* pParent)
+      { m_pParent = pParent; }
+
+  protected:
+    dp88_Ore_Field* m_pParent;
+
+    // These are observer events we actually use
+    void Entered( GameObject* pObj, GameObject* pEnterer )  { m_pParent->Entered(pObj, pEnterer); }
+    void Exited( GameObject* pObj, GameObject* pExiter )    { m_pParent->Exited(pObj, pExiter); }
+
+  private:
+    // These are observer events we don't use but have to provide an implementation for to compile
+    void Attach ( GameObject* pObj ) {};
+    void Detach ( GameObject* pObj ) {};
+    void Animation_Complete ( GameObject *pObj, const char *animation_name ) {};
+    void Created(GameObject* pObj) {};
+    void Destroyed(GameObject* pObj) {};
+    void Killed(GameObject* pObj,GameObject* pKiller) {};
+    void Damaged(GameObject* pObj,GameObject* pDamager,float amount) {};
+    void Custom(GameObject* pObj,int type,int param,GameObject* pSender) {};
+    void Sound_Heard(GameObject* pObj,const CombatSound & sound) {};
+    void Enemy_Seen(GameObject* pObj,GameObject* pEnemy) {};
+    void Action_Complete(GameObject* pObj,int action_id,ActionCompleteReason complete_reason) {};
+    void Timer_Expired(GameObject* pObj,int number) {};
+    void Poked(GameObject* pObj,GameObject* pPoker) {};
+
+
+    // We also need to provide an implementation for Get_Name to compile
+    const char* Get_Name() { return "dp88_Ore_Field_Observer"; }
+  };
+
+  dp88_Ore_Field_Observer* m_pZoneObserver;
 };
 
+// -------------------------------------------------------------------------------------------------
 
-class dp88_AR_Ore_Deposit_Zone : public ScriptImpClass {
-	void Entered( GameObject *obj, GameObject *enterer );
+/*!
+* \brief Ore Extractor
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+
+* Attach this script to an object which is inside an ore field created with dp88_Ore_Field to allow
+* the object to refill the ore field.
+*
+* \note
+*   If you do not make the object this is attached to indestructable players can strategically
+*   destroy ore extractors close to the enemy base to force their miners to venture further out into
+*   the map to find ore. You should have at least one indestructable extractor or infinite ore field
+*   on a map if you want to guarantee credit income for the entire match...
+*
+* \param Ore_Units
+*   The number of ore units produced per extraction
+* \param Extraction_Interval
+*   The number of seconds between each ore extraction, not including the time required to play the
+*   extraction animation if one is used
+* \param Extraction_Animation
+*   An animation to be played when ore extraction is taking place - the ore will be created once the
+*   animation is completed
+*/
+class dp88_Ore_Extractor : public ScriptImpClass
+{
+public:
+  void Created ( GameObject* pObj );
+  void Timer_Expired ( GameObject* pObj, int number );
+  void Animation_Complete ( GameObject* pObj, const char* animationName );
+
+protected:
+  int m_oreFieldId;
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  unsigned int m_nOreUnits;
+  unsigned int m_interval;
+  const char* m_strAnimation;
+  /*! @} */
 };
 
+// -------------------------------------------------------------------------------------------------
 
+/*!
+* \brief Ore Dump Zone
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* \todo Write Documentation
+*/
+class dp88_Ore_Dump_Zone : public ScriptImpClass
+{
+public:
+  void Entered( GameObject *obj, GameObject *enterer );
+};
 
+// -------------------------------------------------------------------------------------------------
 
-/*------------------------
-VTOL Landing Zone Animation
---------------------------*/
-
+/*!
+* \brief Aircraft Landing Zone
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Attach this script to a zone to designate the zone as an aircraft landing area. When a game object
+* enters or exits the zone it will be sent a custom message, which can be used by other scripts to
+* determine if the aircraft is currently in a landing area.
+*
+* \see dp88_Aircraft_LandingZone_Aircraft
+*/
 class dp88_Aircraft_LandingZone : public ScriptImpClass
 {
-	void Entered( GameObject *obj, GameObject *enterer );
-	void Exited ( GameObject *obj, GameObject *exiter );
+  void Entered( GameObject *obj, GameObject *enterer );
+  void Exited ( GameObject *obj, GameObject *exiter );
 };
 
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Aircraft Landing Zone Animation
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Plays an animation on the attached object whenever it enters or leaves an aircraft landing zone,
+* designated by the presence of the dp88_Aircraft_LandingZone script. Upon entering a landing zone
+* the landing animation will be played and upon exiting a landing zone the same animation will be
+* played in reverse. This can be used to create a landing gear animation for aircraft.
+*
+* Optionally the script can also enforce the pilot only exiting the aircraft whilst inside a landing
+* zone if the require_landing_zone parameter is set to 1. This will cause the vehicle and pilot to
+* both be killed if the pilot attempts to leave the vehicle outside of a landing zone.
+*
+* \note
+*   This script supports overlapping landing zones and will only play the reverse animation once the
+*   aircraft has exited all landing zones.
+*
+* \param landing_anim_name
+*   Name of the animation to play upon entering a landing zone (and reverse upon leaving)
+* \param landing_anim_first_frame
+*   First frame number of the landing animation to play
+* \param landing_anim_last_frame
+*   Last frame number of the landing animation to play
+* \param require_landing_zone
+*   Whether to enforce the pilot only exiting inside a landing zone. 1 to enable, 0 to disable
+*
+* \note
+*   If <i>require_landing_zone</i> is enabled the pilot will be killed if the aircraft is destroyed
+*   outside of a landing zone
+*
+* \pre
+*   To enforce the pilot exiting the aircraft only inside a landing zone this script requires a
+*   warhead named "Death" to be defined in the armor.ini file and for that warhead to be capable of
+*   inflicting damage upon both the vehicle and pilot.
+*/
 class dp88_Aircraft_LandingZone_Aircraft : public ScriptImpClass
 {
-	void Created ( GameObject *obj );
-	void Custom ( GameObject *obj, int type, int param, GameObject *sender );
+  void Created ( GameObject *obj );
+  void Killed ( GameObject *obj, GameObject* killed );
+  void Custom ( GameObject *obj, int type, int param, GameObject *sender );
 
 private:
-	int driverID;
-	unsigned int landingZoneCount;  // Since we may be in more than one at a time
+  int driverID;
+  unsigned int landingZoneCount;  // Since we may be in more than one at a time
 };
+
+// -------------------------------------------------------------------------------------------------
 
 
 
@@ -382,8 +686,7 @@ Terror Drone Script
 	char defaultModel[32];
 };*/
 
-
-
+// -------------------------------------------------------------------------------------------------
 
 /*!
 * \brief Remote Control Vehicle Console
@@ -393,6 +696,11 @@ Terror Drone Script
 * which is spawned by the console on demand. The vehicle preset which is spawned must have the
 * dp88_RemoteControlVehicle script attached with a matching remoteControlID parameter to work
 * correctly
+*
+* \pre
+*   A preset with the name "Invisible_Object_2" must exist to allow the dummy character to be
+*   created. You can create this by making a copy of the stock Invisible_Object preset and unticking
+*    the "IsHiddenObject" parameter to enable it to be damagable.
 *
 * \param remoteControlID
 *   Shared ID used by the console and drones to enable them to be linked correctly - each vehicle
@@ -465,7 +773,7 @@ public:
   dp88_RemoteControlConsole() : m_pLoopedAnimCtrl(0) {}
 };
 
-
+// -------------------------------------------------------------------------------------------------
 
 /*------------------------
 Remote Control Vehicle script
@@ -503,12 +811,15 @@ class dp88_AR_DemoTruck : public ScriptImpClass {
 	bool canDetonate;
 };
 
+// -------------------------------------------------------------------------------------------------
 
-
-/*------------------------
-Paradrop Console Script
---------------------------*/
-
+/*!
+* \brief AR Paradrop Console
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* A paradrop console script for AR, this is currently in active development and subject to change.
+*/
 class dp88_AR_paradrop_Console : public ScriptImpClass {
 	void Created( GameObject *obj );
 	void Poked ( GameObject *obj, GameObject *poker );
@@ -516,19 +827,61 @@ class dp88_AR_paradrop_Console : public ScriptImpClass {
 	int last_triggered;
 };
 
+// -------------------------------------------------------------------------------------------------
 
+/*!
+* \brief AR Paradrop
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* This script can be attached to an infantry unit which can be paradropped, allowing it to survive
+* the impact with the ground and optionally, upon hitting the ground, switch to a new character
+* preset.
+*
+* \pre
+*   A preset with the name "Invisible_Object" must exist to allow the parachute model to be created
+*
+* \note
+*   This script determines an infantry unit has hit the ground when it takes damage from an "Earth"
+*   warhead OR it's Z velocity decreases, which is checked at an interval of 1 second.
+*
+* \param Infantry_Preset
+*   Optional. The name of an infantry preset to switch to when the unit hits the ground
+* \param Parachute_Model
+*   Optional. The name of a W3D model to spawn on the infantry unit whilst it is falling. This will
+*   be removed when the unit hits the ground
+* \param Parachute_Bone
+*   Optional. The name of a bone on the infantry unit to attach the parachute model to, if any
+* \param Animation
+*   Optional. The name of an animation to play on the infantry unit whilst it is falling
+* \param Animation_First_Frame
+*   The first frame of the falling animation to play
+* \param Animation_Last_Frame
+*   The last frame of the falling animation to play
+* \param Animation_Looped
+*   Whether to loop the falling animation
+*/
+class dp88_AR_Paradrop : public ScriptImpClass
+{
+public:
+  dp88_AR_Paradrop() : m_pAnimController(0) {};
+protected:
+  void Created( GameObject* pObj );
+  void Damaged( GameObject* pObj, GameObject* pDamager, float amount );
+  void Killed( GameObject* pObj, GameObject* pKilled );
+  void Timer_Expired ( GameObject* pObj, int number );
+  void Detach();
 
-/*------------------------
-Paradrop Script
---------------------------*/
+  void Landed ( GameObject* pObj );
 
-class dp88_AR_paradrop : public ScriptImpClass {
-	void Created( GameObject *obj );
-	void Damaged( GameObject *obj, GameObject* damager, float amount );
-	void Custom( GameObject *obj, int type, int param, GameObject *sender );
+  unsigned int earth_warhead;       //!< ID of the "Earth" warhead
+  int m_nParachuteModel;            //!< ID of the spawned parachute model, if any
+  float m_fallRate;                 //!< Falling speed at last check
 
-	bool hit_ground;
+  LoopedAnimationController* m_pAnimController;
 };
+
+// -------------------------------------------------------------------------------------------------
 
 
 
@@ -537,8 +890,10 @@ class dp88_AR_paradrop : public ScriptImpClass {
 // -------------------------------------------------------------------------------------------------
 
 /*!
-* \brief AR Prism Tower script
+* \brief Apocalypse Rising Prism Tower
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_basedefences
+* \arscript
 *
 * This script implements the prism tower logic for Apocalypse Rising on top of the generic charged
 * turret implementation provided by dp88_AI_ChargedTurret.
@@ -591,15 +946,17 @@ class dp88_AR_paradrop : public ScriptImpClass {
 *   which are closer to the turret, good for less accurate weapons
 * \param Modifier_Target_Damage
 *   Priority modification to apply based on damage a target has already sustained. Higher values
-*   will favour targets which have already been damaged in combat, picking them off first.
+*   will favour targets which have already been damaged in combat, picking them off first
 * \param Modifier_Target_Value
 *   Priority modification to apply based on the value of the target. Higher values will favour
-*   targets with a higher purchase cost, good for hard hitting weapons.
+*   targets with a higher purchase cost, good for hard hitting weapons
 * \param Requires_Power
 *   Specify whether this turret requires base power to operate: 1 to require power, 0 to ignore
 * \param Debug
 *   Specify whether to produce a debug logfile about the turrets targetting decisions, this is
-*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable.
+*   useful for fine tuning your base priorities and modifiers: 1 to enable, 0 to disable
+* \param Detects_Stealth
+*   Determine whether this turret can detect stealthed enemies or not: 1 to enable, 0 to disable
 *
 * \todo
 *   Decide on a mechanism to ensure each firing sequence fires one bullet per assisting tower,
