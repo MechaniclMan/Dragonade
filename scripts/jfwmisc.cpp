@@ -1,5 +1,5 @@
 /*  Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -33,6 +33,7 @@
 #include "physcoltest.h"
 #include "Random2Class.h"
 #include "WeaponManager.h"
+#include "MoveablePhysClass.h"
 void JFW_User_Settable_Parameters::Created(GameObject *obj)
 {
 	const char *filename;
@@ -1516,12 +1517,83 @@ void JFW_EMP_Mine_Manager::Custom(GameObject *obj, int type, int param, GameObje
 	}
 }
 
+void JFW_EMP_Mine_Manager_2::Created(GameObject *obj)
+{
+	DisableEmp = false;
+	mines = 0;
+}
+
+void JFW_EMP_Mine_Manager_2::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == 111111)
+	{
+		mines--;
+	}
+	else if (type == 222222)
+	{
+		int limit = Get_Int_Parameter("Mine_Limit");
+		if (mines < limit)
+		{
+			mines++;
+			SoldierGameObj *s = sender->As_SoldierGameObj();
+			if (s)
+			{
+				Vector3 v = Commands->Get_Position(sender);
+				GameObject *mine = Commands->Create_Object(Get_Parameter("Mine_Preset"),v);
+				Commands->Set_Player_Type(mine,Commands->Get_Player_Type(sender));
+				PhysicalGameObj *p = mine->As_PhysicalGameObj();
+				p->Peek_Physical_Object()->Set_Collision_Group(TERRAIN_AND_BULLET_COLLISION_GROUP);
+				ArmedGameObj *a = p->As_ArmedGameObj();
+				Matrix3D muzzle = a->Get_Muzzle();
+				Matrix3D transform(true);
+				transform.Rotate_Z(muzzle.Get_Z_Rotation());
+				transform.Set_Translation(muzzle.Get_Translation());
+				p->Peek_Physical_Object()->Set_Transform(transform);
+				MoveablePhysClass *m = p->Peek_Physical_Object()->As_MoveablePhysClass();
+				Vector3 velocity = muzzle.Get_X_Vector() * Get_Float_Parameter("Throw_Velocity");
+				m->Set_Velocity(velocity);
+				p->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+			}
+		}
+		else
+		{
+			Commands->Give_PowerUp(sender, Get_Parameter("Mine_Reload"), false);
+		}
+	}
+}
+
 void JFW_EMP_Mine_Layer::Damaged(GameObject *obj, GameObject *damager, float amount)
 {
 	unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
 	if (warhead == Get_Damage_Warhead() && damager == obj)
 	{
 		Commands->Send_Custom_Event(obj,Commands->Find_Object(Get_Int_Parameter("Mine_Manager_ID")), 222222,0,0);
+	}
+}
+
+void JFW_Warhead_Custom::Damaged(GameObject *obj, GameObject *damager, float amount)
+{
+	unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+	if (warhead == Get_Damage_Warhead())
+	{
+		Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("Message"),0,0);
+	}
+}
+
+void JFW_Spy_Disguise_Target::Damaged(GameObject *obj, GameObject *damager, float amount)
+{
+	unsigned int warhead = ArmorWarheadManager::Get_Warhead_Type(Get_Parameter("Warhead"));
+	if (warhead == Get_Damage_Warhead())
+	{
+		const char *model = Get_Parameter("Model");
+		if (!*model)
+		{
+			model = Get_Model(obj);
+		}
+		if (*model)
+		{
+			Commands->Set_Model(damager, model);
+		}
 	}
 }
 
@@ -1840,6 +1912,26 @@ void JFW_Ion_Storm_Weather::Custom(GameObject *obj,int type,int param,GameObject
 		Commands->Set_Clouds(Get_Float_Parameter("Cloud_Cover"),Get_Float_Parameter("Cloud_Gloominess"),0);
 		Commands->Set_Screen_Fade_Color(Get_Float_Parameter("Screen_Red"),Get_Float_Parameter("Screen_Green"),Get_Float_Parameter("Screen_Blue"),0);
 		Commands->Set_Screen_Fade_Opacity(Get_Float_Parameter("Screen_Opacity"),0);
+	}
+}
+
+void JFW_Ion_Storm_Weather_2::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Enable_Message"))
+	{
+		Get_Lightning(Lightning_Intensity, Lightning_Start_Distance, Lightning_End_Distance, Lightning_Heading, Lightning_Distribution);
+		Get_Clouds(Cloud_Cover, Cloud_Gloominess);
+		Commands->Set_Lightning(Get_Float_Parameter("Lightning_Intensity"), Get_Float_Parameter("Lightning_Start_Distance"), Get_Float_Parameter("Lightning_End_Distance"), Get_Float_Parameter("Lightning_Heading"), Get_Float_Parameter("Lightning_Distribution"), 0);
+		Commands->Set_Clouds(Get_Float_Parameter("Cloud_Cover"), Get_Float_Parameter("Cloud_Gloominess"), 0);
+		Commands->Set_Screen_Fade_Color(Get_Float_Parameter("Screen_Red"), Get_Float_Parameter("Screen_Green"), Get_Float_Parameter("Screen_Blue"), 0);
+		Commands->Set_Screen_Fade_Opacity(Get_Float_Parameter("Screen_Opacity"), 0);
+	}
+	else if (type == Get_Int_Parameter("Disable_Message"))
+	{
+		Commands->Set_Lightning(Lightning_Intensity, Lightning_Start_Distance, Lightning_End_Distance, Lightning_Heading, Lightning_Distribution, 0);
+		Commands->Set_Clouds(Cloud_Cover, Cloud_Gloominess, 0);
+		Commands->Set_Screen_Fade_Color(0, 0, 0, 0);
+		Commands->Set_Screen_Fade_Opacity(0, 0);
 	}
 }
 
@@ -2233,7 +2325,7 @@ void JFW_Vehicle_Zone::Created(GameObject *obj)
 	Vector3 position = Commands->Get_Bone_Position(obj,Get_Parameter("BoneName"));
 	Vector3 size = Get_Vector3_Parameter("ZoneSize");
 	Matrix3 rotation(true);
-	rotation.Rotate_Z(Commands->Get_Facing(obj));
+	rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(obj)));
 	OBBoxClass box(position,size,rotation);
 	GameObject *zone = Create_Zone(Get_Parameter("ZonePreset"),box);
 	if (zone)
@@ -2262,7 +2354,7 @@ void JFW_Building_Zone_Controller::Custom(GameObject *obj,int type,int param,Gam
 		Vector3 position = Commands->Get_Position(sender);
 		Vector3 size = Get_Vector3_Parameter("ZoneSize");
 		Matrix3 rotation(true);
-		rotation.Rotate_Z(Commands->Get_Facing(obj));
+		rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(obj)));
 		OBBoxClass box(position,size,rotation);
 		GameObject *zone = Create_Zone(Get_Parameter("ZonePreset"),box);
 		if (zone)
@@ -2312,6 +2404,33 @@ void JMG_Send_Custom_To_Self_On_Timer::Timer_Expired(GameObject *obj,int number)
 	}
 }
 
+void JFW_Airstrike_Cinematic::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == Get_Int_Parameter("Message"))
+	{
+		Vector3 position = Commands->Get_Position(obj);
+		float facing = Commands->Get_Facing(obj);
+		const char *scriptname = Get_Parameter("Script_Name");
+		GameObject *object = Commands->Create_Object("Invisible_Object", position);
+		Commands->Set_Facing(object, facing);
+		Commands->Attach_Script(object, "JFW_Cinematic", scriptname);
+	}
+}
+
+void JFW_Spawner_Delay::Created(GameObject *obj)
+{
+	Commands->Enable_Spawner(Get_Int_Parameter("ID"),false);
+	Commands->Start_Timer(obj,this,Get_Float_Parameter("time"),1);
+}
+
+void JFW_Spawner_Delay::Timer_Expired(GameObject *obj,int number)
+{
+	if (number == 1)
+	{
+		Commands->Enable_Spawner(Get_Int_Parameter("ID"),true);
+	}
+}
+
 ScriptRegistrant<JFW_Tech_Level_Timer> JFW_Tech_Level_Timer_Registrant("JFW_Tech_Level_Timer","Display_Message:string,Red:int,Blue:int,Green:int,Sound:string,Time:float,Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Startup> JFW_Tech_Level_Startup_Registrant("JFW_Tech_Level_Startup","Tech_Level:int");
 ScriptRegistrant<JFW_Tech_Level_Custom> JFW_Tech_Level_Custom_Registrant("JFW_Tech_Level_Custom","Message:int,Tech_Level:int");
@@ -2341,7 +2460,7 @@ ScriptRegistrant<JFW_Scope> JFW_Scope_Registrant("JFW_Scope","Scope:int");
 ScriptRegistrant<JFW_Screen_Fade_On_Enter> JFW_Screen_Fade_On_Enter_Registrant("JFW_Screen_Fade_On_Enter","Red:float,Green:float,Blue:float,Opacity:float");
 ScriptRegistrant<JFW_Screen_Fade_On_Exit> JFW_Screen_Fade_On_Exit_Registrant("JFW_Screen_Fade_On_Exit","Red:float,Green:float,Blue:float,Opacity:float");
 ScriptRegistrant<JFW_Screen_Fade_On_Custom> JFW_Screen_Fade_On_Custom_Registrant("JFW_Screen_Fade_On_Custom","Message:int,Red:float,Green:float,Blue:float,Opacity:float");
-ScriptRegistrant<JFW_Screen_Fade_Custom_Timer> JFW_Screen_Fade_Custom_Timer("JFW_Screen_Fade_Custom_Timer","Message:int,Red:float,Blue:float,Green:float,Opacity:float,Time:float,TimerNum:int");
+ScriptRegistrant<JFW_Screen_Fade_Custom_Timer> JFW_Screen_Fade_Custom_Timer_Registrant("JFW_Screen_Fade_Custom_Timer","Message:int,Red:float,Blue:float,Green:float,Opacity:float,Time:float,TimerNum:int");
 ScriptRegistrant<JFW_BHS_DLL> JFW_BHS_DLL_Registrant("JFW_BHS_DLL","");
 ScriptRegistrant<JFW_Show_Info_Texture> JFW_Show_Info_Texture_Registrant("JFW_Show_Info_Texture","Time:float,TimerNum:int,Texture:string");
 ScriptRegistrant<JFW_Wireframe_Mode> JFW_Wireframe_Mode_Registrant("JFW_Wireframe_Mode","Mode:int");
@@ -2384,8 +2503,10 @@ ScriptRegistrant<JFW_NavalFactory_Disable> JFW_NavalFactory_Disable_Registrant("
 ScriptRegistrant<JFW_EMP> JFW_EMP_Registrant("JFW_EMP","Warhead:string,Time:fload,Animation:string");
 ScriptRegistrant<JFW_EMP_Mine> JFW_EMP_Mine_Registrant("JFW_EMP_Mine","Mine_Manager_ID:int,Explosion:string,Time:float");
 ScriptRegistrant<JFW_EMP_Mine_Manager> JFW_EMP_Mine_Manager_Registrant("JFW_EMP_Mine_Manager","Mine_Preset:string,Mine_Limit:int,Mine_Reload:string,Mine_Z_Offset:float,Mine_Distance:float");
+ScriptRegistrant<JFW_EMP_Mine_Manager_2> JFW_EMP_Mine_Manager_2_Registrant("JFW_EMP_Mine_Manager_2","Mine_Preset:string,Mine_Limit:int,Mine_Reload:string,Throw_Velocity:float");
 ScriptRegistrant<JFW_EMP_Mine_Layer> JFW_EMP_Mine_Layer_Registrant("JFW_EMP_Mine_Layer","Mine_Manager_ID:int,Warhead:string");
-ScriptRegistrant<JFW_Radar_Disable_Death> JFW_Radar_Disable_Death_Registrant("JFW_Radar_Disable_Death","");
+ScriptRegistrant<JFW_Warhead_Custom> JFW_Warhead_Custom_Registrant("JFW_Warhead_Custom", "Message:int,Warhead:string");
+ScriptRegistrant<JFW_Radar_Disable_Death> JFW_Radar_Disable_Death_Registrant("JFW_Radar_Disable_Death", "");
 ScriptRegistrant<JFW_Cyborg_Reaper> JFW_Cyborg_Reaper_Registrant("JFW_Cyborg_Reaper","");
 ScriptRegistrant<JFW_Limpet_Drone> JFW_Limpet_Drone_Registrant("JFW_Limpet_Drone","");
 ScriptRegistrant<JFW_Forward_Custom_Object> JFW_Forward_Custom_Object_Registrant("JFW_Forward_Custom_Object","Object_ID:int");
@@ -2393,7 +2514,8 @@ ScriptRegistrant<JFW_Death_Send_Custom_Self> JFW_Death_Send_Custom_Self_Registra
 ScriptRegistrant<JFW_Hunter_Seeker> JFW_Hunter_Seeker_Registrant("JFW_Hunter_Seeker","Key:string,Explosion:string");
 ScriptRegistrant<JFW_Ion_Storm> JFW_Ion_Storm_Registrant("JFW_Ion_Storm","Min_Delay:float,Max_Delay:float,Min_Time:float,Max_Time:float,Disable_Custom:int,Enable_Custom:int,Announcement_Sound_Nod:string,Announcement_Sound_GDI:string,Announcement_String:string,Red:int,Green:int,Blue:int,Ion_Effect_Sound:string,Ion_Effect_Time:float,End_Announcement_Sound_Nod:string,End_Announcement_Sound_GDI:string,End_Announcement_String:string,On_Weather_Custom:int,Off_Weather_Custom:int,DestroyMines:int,DisableEmp:int,IonChance:int");
 ScriptRegistrant<JFW_Ion_Storm_Weather> JFW_Ion_Storm_Weather_Registrant("JFW_Ion_Storm_Weather","Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Message:int");
-ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created","Character:string");
+ScriptRegistrant<JFW_Ion_Storm_Weather_2> JFW_Ion_Storm_Weather_2_Registrant("JFW_Ion_Storm_Weather_2", "Lightning_Intensity:float,Lightning_Start_Distance:float,Lightning_End_Distance:float,Lightning_Heading:float,Lightning_Distribution:float,Cloud_Cover:float,Cloud_Gloominess:float,Screen_Red:float,Screen_Green:float,Screen_Blue:float,Screen_Opacity:float,Enable_Message:int,Disable_Message:int");
+ScriptRegistrant<JFW_Change_Character_Created> JFW_Change_Character_Created_Registrant("JFW_Change_Character_Created", "Character:string");
 ScriptRegistrant<JFW_Change_Model_Created> JFW_Change_Model_Created_Registrant("JFW_Change_Model_Created","Model1:string,Model2:string,Model3:string,Model4:string,Model5:string");
 ScriptRegistrant<JFW_Spawn_Object_Created> JFW_Spawn_Object_Created_Registrant("JFW_Spawn_Object_Created","Object:string");
 ScriptRegistrant<JFW_Killed_String_Sound> JFW_Killed_String_Sound_Registrant("JFW_Killed_String_Sound","GDI_String_GDI:int,Nod_String_GDI:int,Neutral_String_GDI:int,GDI_String_Nod:int,Nod_String_Nod:int,Neutral_String_Nod:int");
@@ -2404,4 +2526,7 @@ ScriptRegistrant<JFW_Vehicle_Zone> JFW_Vehicle_Zone_Registrant("JFW_Vehicle_Zone
 ScriptRegistrant<JFW_Building_Zone> JFW_Building_Zone_Registrant("JFW_Building_Zone","ParentPreset:string");
 ScriptRegistrant<JFW_Building_Zone_Controller> JFW_Building_Zone_Controller_Registrant("JFW_Building_Zone_Controler","ZoneSize:vector3,ZonePreset:string");
 ScriptRegistrant<JFW_Send_Message_Preset_Death> JFW_Send_Message_Preset_Death_Registrant("JFW_Send_Message_Preset_Death","Preset:string,Message:int");
-ScriptRegistrant<JMG_Send_Custom_To_Self_On_Timer> JMG_Send_Custom_To_Self_On_Timer("JMG_Send_Custom_To_Self_On_Timer","Message:int,Param:int,Time:float,Timer_Number:int,Repeat:int");
+ScriptRegistrant<JMG_Send_Custom_To_Self_On_Timer> JMG_Send_Custom_To_Self_On_Timer_Registrant("JMG_Send_Custom_To_Self_On_Timer","Message:int,Param:int,Time:float,Timer_Number:int,Repeat:int");
+ScriptRegistrant<JFW_Airstrike_Cinematic> JFW_Airstrike_Cinematic_Registrant("JFW_Airstrike_Cinematic", "Script_Name:string,Message:int");
+ScriptRegistrant<JFW_Spy_Disguise_Target> JFW_Spy_Disguise_Target_Registrant("JFW_Spy_Disguise_Target", "Model:string,Warhead:string");
+ScriptRegistrant<JFW_Spawner_Delay> JFW_Spawner_Delay_Registrant("JFW_Spawner_Delay", "ID:int,time:float");

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2015 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -258,6 +258,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	GetExplosionObj = (geo)Address(tt,"GetExplosionObj");
 	SetExplosionObj = (seo)Address(tt,"SetExplosionObj");
 	Update_Network_Object = (uno)Address(tt,"Update_Network_Object");
+	Update_Network_Object_Player = (unop)Address(tt,"Update_Network_Object_Player");
 	Send_Client_Text = (sct)Address(tt,"Send_Client_Text");
 	Send_Client_Announcement = (sca)Address(tt,"Send_Client_Announcement");
 	GetTTVersion = (gttv)Address(tt,"GetTTVersion");
@@ -319,6 +320,7 @@ bool SCRIPTSAPI Set_Script_Commands(ScriptCommandsClass* commands)
 	Get_Waypoint_Position = (gwp)Address(tt,"Get_Waypoint_Position");
 	Create_Lightning = (cl)Address(tt,"Create_Lightning");
 	Set_Global_Stealth_Disable = (smie)Address(tt,"Set_Global_Stealth_Disable");
+	Update_Game_Options = (ugo) Address(tt, "Update_Game_Options");
 	
 	DA::Init();
 

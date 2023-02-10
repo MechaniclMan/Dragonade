@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -105,6 +105,7 @@ public:
 	bool Begin_Chunk(unsigned long id);
 	bool End_Chunk();
 	int Cur_Chunk_Depth();
+    unsigned int Cur_Chunk_Length();
 	bool Begin_Micro_Chunk(unsigned long id);
 	bool End_Micro_Chunk();
 	unsigned long Write(void* buf,unsigned long nbytes);
@@ -123,73 +124,4 @@ public:
 	}
 };
 
-class SCRIPTS_API ChunkLoadClass2 {
-private:
-	FileClass* File;
-	int StackIndex;
-	unsigned long PositionStack[256];
-	ChunkHeader HeaderStack[256];
-	bool InMicroChunk;
-	int MicroChunkPosition;
-	MicroChunkHeader2 MCHeader;
-public:
-	ChunkLoadClass2(FileClass *file);
-	bool Open_Chunk();
-	bool Peek_Next_Chunk(unsigned int *id, unsigned int *length);
-	bool Close_Chunk();
-	unsigned long Cur_Chunk_ID();
-	unsigned long Cur_Chunk_Length();
-	int Cur_Chunk_Depth();
-	int Contains_Chunks();
-	bool Open_Micro_Chunk();
-	bool Close_Micro_Chunk();
-	unsigned long Cur_Micro_Chunk_ID();
-	unsigned long Cur_Micro_Chunk_Length();
-	long Seek(unsigned long nbytes);
-	long Read(void *buf, unsigned long nbytes);
-	long Read(IOVector2Struct *v);
-	long Read(IOVector3Struct *v);
-	long Read(IOVector4Struct *v);
-	long Read(IOQuaternionStruct *q);
-	long Read(StringClass& string);
-
-
-	template<typename T> TT_INLINE long SimpleRead(T& buf)
-	{
-		int length = Read(&buf, sizeof(T));
-		TT_ASSERT(length == sizeof(T))
-		return length;
-	}
-};
-
-class SCRIPTS_API ChunkSaveClass2 {
-	FileClass* File;
-	int StackIndex;
-	int PositionStack[256];
-	ChunkHeader HeaderStack[256];
-	bool InMicroChunk;
-	int MicroChunkPosition;
-	MicroChunkHeader2 MCHeader;
-public:
-	ChunkSaveClass2(FileClass *file);
-	bool Begin_Chunk(unsigned long id);
-	bool End_Chunk();
-	int Cur_Chunk_Depth();
-	bool Begin_Micro_Chunk(unsigned long id);
-	bool End_Micro_Chunk();
-	unsigned long Write(void* buf,unsigned long nbytes);
-	unsigned long Write(IOVector2Struct& v);
-	unsigned long Write(IOVector3Struct& v);
-	unsigned long Write(IOVector4Struct& v);
-	unsigned long Write(IOQuaternionStruct& q);
-	unsigned long Write(const StringClass& sting);
-
-
-	template<typename T> TT_INLINE long SimpleWrite(const T& buf)
-	{
-		int length = Write((void*)&buf, sizeof(T));
-		TT_ASSERT(length == sizeof(T))
-		return length;
-	}
-};
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -10,7 +10,7 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 //Changes made in DA:
-//Added Get_State and Get_WeaponDef.
+//Added Get_State, Get_WeaponDef, Get_Arm_Time, Get_Detonate_Time, and Get_State.
 #ifndef TT_INCLUDE_BEACONGAMEOBJ_H
 #define TT_INCLUDE_BEACONGAMEOBJ_H
 #include "SimpleGameObj.h"
@@ -81,7 +81,7 @@ public:
 	float Get_Arm_Time() { return ArmTime; }
 	float Get_Detonate_Time() { return DetonateTime; }
 	const WeaponDefinitionClass *Get_WeaponDef() {
-		return WeaponDef;
+	return WeaponDef;
 	}
 }; // 07F8
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -258,6 +258,9 @@ class dp88_uniqueInfantry_controller : public JFW_Object_Created_Hook_Base
 *   same value as damageBoundary5_endFrame
 * \param wakeObjects
 *   Whether to wake up objects that might be on top of this object
+* \param useDestroyedMode
+*   Set this to 1 to cause the last damage state to be a "destroyed" state, which means that the
+*   animation will not change again until it is repaired to 100% health
 */
 
 class dp88_damageAnimation : public ScriptImpClass
@@ -270,13 +273,19 @@ class dp88_damageAnimation : public ScriptImpClass
   void SetDamageAnimation ( GameObject* obj );
 
   int currentDamageLevel;
+  bool basePowerState;
+  bool m_bIsDestroyed;
+
+  /*! \name Cached Script Parameters */
+  /*! @{ */
   int damageLevelBoundaries[6];
   int damageLevelStartFrames[6];
   int damageLevelEndFrames[6];
   int damageLevelLowPowerStartFrames[6];
   int damageLevelLowPowerEndFrames[6];
   bool loopAnimation;
-  bool basePowerState;
+  bool m_bUseDestroyedMode;
+  /*! @} */
 protected:
   LoopedAnimationController* m_pLoopedAnimCtrl;
 public:
@@ -489,6 +498,7 @@ protected:
 class dp88_conquestController : public ScriptImpClass
 {
   void Created ( GameObject* pSelf );
+  void Destroyed ( GameObject* pSelf );
   void Timer_Expired ( GameObject* pSelf, int number );
   void Custom ( GameObject* pSelf, int type, int param, GameObject* pSender );
 
@@ -511,6 +521,8 @@ protected:
   int m_points[2];              /*!< Current points total for each team */
   int m_targets[2];             /*!< Target for each team, or starting points in deduction mode */
 
+private:
+  int m_objectCreateHookId;
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -608,12 +620,21 @@ protected:
 *   Optional. The name of a strings database entry containing a message to be displayed to all
 *   players when a team takes control of a capture zone. See the note below for a list of macros you
 *   can use in this string
-* \param AIObjectivePriority
-*   Optional. When used in conjunction with danpaul88's custom AI scripts this allows this zone to
-*   be marked as an AI objective for both teams, either an offensive objective (for teams that do
-*   not currently control it) or a defensive objective (for the team that does control the zone).
-*   The objective distance will be set to three quarters of the zones smallest dimension and will
-*   be suitable for infantry, light and heavy vehicles. See \ref dp88_AI_Objective for more info.
+* \param AIObjective_Priority_Soldier
+*   Optional. AI objective priority for soldiers. See notes below for more details.
+* \param AIObjective_Priority_Light_Vehicle
+*   Optional. AI objective priority for light vehicles. See notes below for more details.
+* \param AIObjective_Priority_Heavy_Vehicle
+*   Optional. AI objective priority for heavy vehicles. See notes below for more details.
+* \param AIObjective_Priority_Aircraft
+*   Optional. AI objective priority for aircraft. See notes below for more details.
+*
+* \note
+*   This script can be used in conjunction with danpaul88's custom AI scripts by setting this zone
+*   as an AI objective for both teams, as an offensive objective for teams that do not own the zone
+*   and as a defensive objective for teams that do own the zone. The objective priorities can be
+*   configured using the <i>AIObjectivePriority_*</i> parameters. See \ref dp88_AI_Objective for
+*   more info.
 *
 * \note
 *   The following macros can be used in strings database entries;\n
@@ -637,6 +658,11 @@ protected:
   void IncrementCaptureProgress( GameObject* pObj, int team, int nPlayers );
   void UpdateAnimationFrame( GameObject* pObj );
 
+  /*!
+  * This function is called when the zone has been captured or made neutral
+  */
+  void ChangeOwner(GameObject* pObj, int team);
+
   void DisplayMessage(GameObject* pObj, StringClass message, int sendtoteam = 2);
 
   int m_controllerID;       /*!< ID of the GameObject with the controller script attached */
@@ -652,6 +678,11 @@ protected:
   float m_multiCaptureMultiplier;
   bool m_bAllowMajorityCapture;
   int m_nAnimTransitionFrames;
+  
+  int m_aiPriority_soldier;
+  int m_aiPriority_lvehicle;
+  int m_aiPriority_hvehicle;
+  int m_aiPriority_aircraft;
   /*! @} */
 };
 
@@ -982,3 +1013,235 @@ class dp88_Set_Team_On_Custom : public ScriptImpClass
 public:
   void Custom ( GameObject* pObj, int type, int param, GameObject* pSender );
 };
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Health Regeneration
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* Attach this script to a unit to enable it to regenerate health and armour hitpoints, up to a
+* configurable % of its maximum hitpoints. Additionally it can also be configured to only repair
+* hitpoints when not in combat, forcing the player to escape from battle or defeat their opponent
+* before they begin regenerating their hitpoints.
+*
+* This script is compatible with the \ref dp88_veterancyUnit script and includes settings for
+* alternative regeneration rates at higher veterancy levels, although it also works as a standalone
+* script.
+*
+* \param Hitpoints
+*   The amount of hitpoints to repair each interval
+* \param Interval
+*   The number of seconds between each repair interval
+* \param Warhead
+*   The warhead to use when applying repair damage. If this is not set it will apply raw repairs
+*   without any warhead scaling. Note that the warhead must have a negative rating vs the unit skin
+*   and armour types otherwise the unit will actually take damage every interval
+* \param Max_Percent
+*   The maximum percentage of the units total hitpoints that can be repaired, set this to 100 to
+*   allow the unit to be repaired completely
+* \param Damage_Timeout
+*   The number of seconds to wait after the last damage event before regeneration is allowed. Set
+*   this to 0 to allow regeneration whilst in combat
+* \param Hitpoints_Veteran
+*   The amount of hitpoints to repair when the unit is promoted to veteran. Only applicable when
+*   used alongside the \ref dp88_veterancyUnit script 
+* \param Hitpoints_Elite
+*   The amount of hitpoints to repair when the unit is promoted to veteran. Only applicable when
+*   used alongside the \ref dp88_veterancyUnit script
+* \param Mode
+*   Added in 4.2, this is a bitflag which controls which hitpoints the script should heal. See the
+*   table below for the available modes.
+*
+* \note
+*   The following mode flags are available. To combine modes add the flag values together, for
+*   example: Mode 3 would regenerate hitpoints for health (1) and armour (2);\n
+*   \n
+*   <table>
+*    <tr><th>Mode</th>      <th>Target</th></tr>
+*    <tr><td>1</td>         <td>Health of this object</td></tr>
+*    <tr><td>2</td>         <td>Armour of this object</td></tr>
+*    <tr><td>4</td>         <td>Health of the vehicle this object is driving (only if attached to a soldier)</td></tr>
+*    <tr><td>8</td>         <td>Armour of the vehicle this object is driving (only if attached to a soldier)</td></tr>
+*    <tr><td>16</td>        <td>Health of the vehicle this object is a passenger in (only if attached to a soldier)</td></tr>
+*    <tr><td>32</td>        <td>Armour of the vehicle this object is a passenger in (only if attached to a soldier)</td></tr>
+*    <tr><td>64</td>        <td>Health of the driver of this object (only if attached to a vehicle)</td></tr>
+*    <tr><td>128</td>       <td>Armour of the driver of this object (only if attached to a vehicle)</td></tr>
+*    <tr><td>256</td>       <td>Health of the passengers of this object (only if attached to a vehicle)</td></tr>
+*    <tr><td>512</td>       <td>Armour of the passengers of this object (only if attached to a vehicle)</td></tr>
+*   </table>
+*
+* \note
+*   The maximum percentage cap is based upon the current mode. If configured to heal both the
+*   health and armour of a target the cap is the percentage of the combined health and armour
+*   hitpoints, otherwise it is the percentage of whichever hitpoints it is configured to repair.
+*   \n
+*   For example, given an object with 100 health and 100 armour and a cap of 75% the following caps
+*   would apply;
+*   \n
+*   <table>
+*    <tr><th>Mode</th>      <th>Cap</th></tr>
+*    <tr><td>1</td>         <td>Capped at 75 health, ignores armour</td></tr>
+*    <tr><td>2</td>         <td>Capped at 75 armour, ignores health</td></tr>
+*    <tr><td>3 (1+2)</td>   <td>Capped at 150 hitpoints (health+armour)</td></tr>
+*   </table>
+*
+* \warning
+*   When using a warhead with this script it is possible that healing may occur outside the target
+*   parameters due to armor.ini settings. If you want to heal only health or armour for a target it
+*   is recommended that you either use no warhead or use a warhead which only affects the hitpoints
+*   you want to heal.
+*/
+class dp88_RegenerateHitpoints : public ScriptImpClass
+{
+protected:
+  const static int MODE_HEALTH                = 1;
+  const static int MODE_ARMOUR                = 2;
+  const static int MODE_PILOTED_HEALTH        = 4;
+  const static int MODE_PILOTED_ARMOUR        = 8;
+  const static int MODE_OCCUPIED_HEALTH       = 16;
+  const static int MODE_OCCUPIED_ARMOUR       = 32;
+  const static int MODE_DRIVER_HEALTH         = 64;
+  const static int MODE_DRIVER_ARMOUR         = 128;
+  const static int MODE_PASSENGERS_HEALTH     = 256;
+  const static int MODE_PASSENGERS_ARMOUR     = 512;
+
+public:
+  void Created( GameObject *obj );
+  void Timer_Expired( GameObject *obj, int number );
+  void Damaged ( GameObject *obj, GameObject *damager, float amount );
+  void Custom( GameObject *obj, int type, int param, GameObject *sender );
+
+protected:
+  bool IsModeEnabled(int mode);
+  void RegenObject(GameObject* obj, bool bHealth, bool bArmour);
+  void ApplyNonWarheadRepairs(GameObject* obj, float amount, bool bHealth, bool bArmour);
+
+private:
+  /*! Time of the last non-repair damage event */
+  time_t m_lastDamage;
+  
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  int m_mode;
+  float m_amount;
+  float m_interval;
+  float m_maxPercent;
+  int m_warheadId;
+  int m_lastDamageTimeout;
+  /*! @} */
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Dynamic Spawner - Controller
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_dynamicSpawner
+*
+* The controller script for danpaul88's dynamic spawner system, this allows players for one or all
+* teams to use dynamic spawn points which can be created, moved and destroyed during the course of a
+* match. Read the documentation carefully!
+*
+* This script must be combined with instances of any of the other scripts in the \ref scripts_dynamicSpawn
+* "Dynamic Spawners" set of scripts or it will have no effect.
+*
+* This script provides the ability to stack the teams and even split players between more than two
+* teams, however implementors should be aware that it does not fundamentally alter the engine and
+* the following caveats apply to teams beyond the original two;
+*
+*   - They cannot have building controllers
+*   - They cannot win the game
+*   - They will not have a team points score
+*   - They may be able to kill each other with friendly fire
+*
+* You may also find that other scripts behave erratically when using additional teams and could even
+* result in crashing the game. This aspect of the controller is highly experimental and not generally
+* recommended for use outside well controlled environments.
+*
+* The controller can attempt to stack the teams by moving newly joined players onto a different team
+* to the default one chosen by the engine. By default it will not do this, however if you wish to set
+* up assault / defence type scenarios you may want to bias the players to one side or the other.
+*
+* When a player respawns the controller will search all of the available dynamic spawner instances for
+* their team and picks one based on a weighted randomiser. The spawner script itself then takes over
+* and moves them to the location of the spawner, optionally applying special effects such as spawning
+* them inside a newly created vehicle.
+*
+* \param Number_Of_Teams
+*   The number of teams that should play in the match
+* \param Team_Stacking
+*   An optional parameter, if this is not blank the script expects to find a space seperated list of
+*   team weightings, with 1 number per team specified in <i>Number_Of_Teams</i>. If no value is provided
+*   and <i>Number_Of_Teams</i> is > 2 it will distribute players evenly between all teams
+*/
+class dp88_DynamicSpawner_Controller : ScriptImpClass
+{};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Dynamic Spawner - Simple Spawner
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_dynamicSpawner
+*
+* A basic spawner for use in the \ref scripts_dynamicSpawn "Dynamic Spawners" set of scripts, this
+* simply indicates a location at which a player can spawn and, optionally, specifies a preset or a
+* twiddler to change what soldier the player spawns as.
+*
+* \param Weighting
+*   The weighting for this spawner in the controller, higher numbers will favour this spawner over
+*   other available spawners. This should be a value between 1 and 10
+* \param Team
+*   The 0 based index of the team which can use this spawner
+* \param Infantry_Preset
+*   Optional, specifies an infantry preset to spawn the player. You can use a twiddler here to
+*   randomise the infantry unit the player spawns with.
+* \param Exclusive
+*   Optional, if you set this to 1 the spawner will be disabled until the player who last spawned
+*   at it dies. This is useful for creating single-instance special units or restricting the number
+*   of players in an area
+*/
+class dp88_DynamicSpawner_Spawner : ScriptImpClass
+{};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Dynamic Spawner - Vehicle Spawner
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_dynamicSpawner
+*
+* A spawner for use in the \ref scripts_dynamicSpawn "Dynamic Spawners" set of scripts, this spawner
+* allows the player to spawn inside a vehicle which will be created for them at the location of this
+* spawner.
+*
+* You can optionally have the vehicle attached to a cinematic upon creation, allowing for a delivery
+* animation or other special features. The vehicle will be immune to damage until the cinematic sends
+* a custom to enable damage events. The vehicle will be attached to the cinematic in slot 0.
+*
+* \param Weighting
+*   The weighting for this spawner in the controller, higher numbers will favour this spawner over
+*   other available spawners. This should be a value between 1 and 10
+* \param Team
+*   The 0 based index of the team which can use this spawner
+* \param Vehicle_Preset
+*   Specifies the vehicle preset to spawn for the player. You can use a twiddler here to randomise
+*   the vehicle the player spawns with.
+* \param Infantry_Preset
+*   Optional, specifies an infantry preset to spawn the player. You can use a twiddler here to
+*   randomise the infantry unit the player spawns with.
+* \param Exclusive
+*   Optional, if you set this to 1 the spawner will be disabled until the player who last spawned
+*   at it dies. This is useful for creating single-instance special units or restricting the number
+*   of players in an area
+* \param Cinematic
+*   Optional, specifies the name of a Cinematic which will be used to deliver the vehicle
+*
+* \warning
+*   When using a cinematic you must ensure it sends the custom message 43000 to the vehicle at an
+*   appropriate time to allow it to start taking damage. If you do not send this custom the vehicle
+*   will permanently be immune to all damage. 
+*/
+class dp88_DynamicSpawner_VehicleSpawner : dp88_DynamicSpawner_Spawner
+{};

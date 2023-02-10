@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,6 +20,9 @@
 #include "SysTimeClass.h"
 #include "RandomClass.h"
 #include "DefinitionMgrClass.h"
+void forcelinktwiddler()
+{
+}
 SimplePersistFactoryClass<TwiddlerClass, 258> _TwiddlerPersistFactory;
 DECLARE_DEFINITION_FACTORY(TwiddlerClass,57344,"Twiddler") _TwiddlerFactory;
 TwiddlerClass::TwiddlerClass() : m_IndirectClassID(0)

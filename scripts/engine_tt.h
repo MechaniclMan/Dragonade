@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -60,7 +60,6 @@ typedef void (*arch) (RadioHook h);
 typedef void (*asdh) (StockDamageHook h);
 typedef void (*atdh) (TtDamageHook h);
 typedef const char *(*gcmt) ();
-typedef double (*gttv) ();
 typedef void (*sit) (GameObject *obj,const char *texture);
 typedef void (*cit) (GameObject *obj);
 typedef void (*svl) (unsigned int limit);
@@ -98,6 +97,7 @@ typedef void (*sspp) (GameObject* player,const char* parameter,const char* value
 typedef void (*sspo) (const char* parameter,const char* value,GameObject* obj);
 typedef void (*sspop) (GameObject* player,const char* parameter,const char* value,GameObject* obj);
 typedef void (*ssn) (const char *name);
+typedef const char *(*gsnx) ();
 typedef void (*addConnectionAcceptanceFilterType)(ConnectionAcceptanceFilter* connectionAcceptanceFilters);
 typedef bool (*removeConnectionAcceptanceFilterType)(ConnectionAcceptanceFilter* connectionAcceptanceFilters);
 typedef const char *(*Get_IP_Addressx) (int PlayerID);
@@ -133,6 +133,7 @@ typedef bool (*smx) (const char *map,int index);
 typedef void (*ggd) (HashTemplateClass<StringClass, GameDefinition> &definitions);
 typedef SList<cPlayer> *(*gpl) ();
 typedef void (*uno) (NetworkObjectClass *obj);
+typedef void (*unop) (NetworkObjectClass *Object,int ID);
 typedef cScTextObj *(*sct) (const WideStringClass& message, TextMessageEnum type, bool popup, int senderId, int receiverId, bool dodirtybit, bool doact);
 typedef SCAnnouncement *(*sca) (int _receiptientId, int _senderId, int _translationId, AnnouncementEnum _type, int _emoticonId, bool dodirtybit, bool doact);
 typedef bool (*iwu) (wchar_t *WideName);
@@ -141,6 +142,17 @@ typedef void (*rwpa) (DynamicVectorClass<int> &WaypathIDs);
 typedef void (*rwpo) (int WaypathID, DynamicVectorClass<int> &WaypointIDs);
 typedef void (*gwp) (int WaypathID, int WaypointID, Vector3 &Pos);
 typedef void (*cl) (const AmmoDefinitionClass *ammodef,Vector3 &start,Vector3 &end);
+typedef void (*gc) (float &cloudcover, float &gloominess);
+typedef void (*gli) (float &intensity, float &startdistance, float &enddistance, float &heading, float &distribution);
+typedef void (*gw) (float &heading, float &speed, float &variability);
+typedef void (*gp) (float &density);
+typedef void (*ugo) (int ID);
+typedef double (*gttv) ();
+typedef uint (*gttr) ();
+typedef void (*htp) (GameObject *obj, int string, Vector3 color);
+typedef void (*csp) (GameObject *obj,int id,const char *string);
+typedef void (*fpu) (GameObject *obj);
+typedef bool (*grps) (const Vector3 &center, float range, Vector3 *returnPosition);
 SCRIPTS_API extern gpl Get_Player_List;
 SCRIPTS_API extern gcmi Get_Current_Map_Index;
 SCRIPTS_API extern gm Get_Map;
@@ -242,6 +254,7 @@ SCRIPTS_API extern shn Send_HUD_Number;
 SCRIPTS_API extern geo GetExplosionObj;
 SCRIPTS_API extern seo SetExplosionObj;
 SCRIPTS_API extern uno Update_Network_Object;
+SCRIPTS_API extern unop Update_Network_Object_Player;
 SCRIPTS_API extern sct Send_Client_Text;
 SCRIPTS_API extern sca Send_Client_Announcement;
 SCRIPTS_API extern dod Do_Objectives_Dlg;
@@ -254,6 +267,8 @@ SCRIPTS_API extern sspop Send_Shader_Param_Obj_Player; //dont use, use the other
 SCRIPTS_API extern sspo Send_Shader_Param_Obj; //dont use, use the other calls below instead
 SCRIPTS_API extern ssn Set_GDI_Soldier_Name;
 SCRIPTS_API extern ssn Set_Nod_Soldier_Name;
+SCRIPTS_API extern gsnx Get_GDI_Soldier_Name;
+SCRIPTS_API extern gsnx Get_Nod_Soldier_Name;
 SCRIPTS_API extern Get_IP_Addressx Get_IP_Address;
 SCRIPTS_API extern Get_IP_Portx Get_IP_Port;
 SCRIPTS_API extern Get_IPx Get_IP;
@@ -280,7 +295,19 @@ SCRIPTS_API extern rwpa Retrieve_Waypaths;
 SCRIPTS_API extern rwpo Retrieve_Waypoints;
 SCRIPTS_API extern gwp Get_Waypoint_Position;
 SCRIPTS_API extern cl Create_Lightning;
+SCRIPTS_API extern gc Get_Clouds;
+SCRIPTS_API extern gli Get_Lightning;
+SCRIPTS_API extern gw Get_Wind;
+SCRIPTS_API extern gp Get_Rain;
+SCRIPTS_API extern gp Get_Snow;
+SCRIPTS_API extern gp Get_Ash;
+SCRIPTS_API extern ugo Update_Game_Options;
 SCRIPTS_API extern gttv GetTTVersion;
+SCRIPTS_API extern gttr GetTTRevision;
+SCRIPTS_API extern htp Set_HUD_Help_Text_Player;
+SCRIPTS_API extern csp Change_String_Player;
+SCRIPTS_API extern fpu Force_Position_Update;
+SCRIPTS_API extern grps Get_Random_Pathfind_Spot;
 
 class SCRIPTS_API JFW_Key_Hook_Base : public ScriptImpClass {
 public:
@@ -302,6 +329,50 @@ public:
 	void RemoveHook();
 	virtual void KeyHook() = 0;
 	~JFW_Key_Hook_Base();
+};
+
+/*!
+* \brief Script base class with support for multiple key hooks
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+*
+* This class is a modified variant of JFW_Key_Hook_Base with support for multiple keyhooks being
+* installed simultaneously in a single script. Keyhooks are added and removed by name and the
+* callback function will now contain the name of the hook that triggered
+*/
+class SCRIPTS_API MultiKeyHookScriptImpClass : public ScriptImpClass
+{
+public:
+  /*! Overloaded from ScriptImpClass to call Detach, if a derived class also overrides this that
+  class must ensure it calls this base class function in it's own implementation */
+  void Detach(GameObject *obj);
+
+  /*! Overloaded from ScriptImpClass to call Detach, if a derived class also overrides this that
+  class must ensure it calls this base class function in it's own implementation */
+  void Destroyed(GameObject *obj);
+
+  /*! Installs a hook on the named logical key for the player who is controlling the specified
+  infantry object. It is safe to call this multiple times with the same key name, duplicates will
+  not be created */
+  void InstallHook(const char* logicalKey, GameObject *obj);
+
+  /*! Removes any hook on the named logical key for the player who is controlling the specified
+  infantry object */
+  void RemoveHook(const char* logicalKey, GameObject *obj);
+
+  /*! Called when any of the keyhooks bound to the object are triggered */
+  virtual void KeyHook(const char* logicalKey) = 0;
+
+  struct KeyHookWrapperStruct
+  {
+    MultiKeyHookScriptImpClass* owner;
+    KeyHookStruct hook;
+    int hookId;
+  };
+
+protected:
+  SList<KeyHookWrapperStruct> ms_keyhooks;
+
+  KeyHookWrapperStruct* FindHook(const char* logicalKey);
 };
 
 class SCRIPTS_API JFW_Object_Created_Hook_Base : public ScriptImpClass {
@@ -330,10 +401,10 @@ struct Gap_ListNode
 
 class ConsoleFunctionClass {
 public:
-	virtual const char *Get_Name(void) { return NULL; }
+	virtual const char *Get_Name(void) = 0;
 	virtual const char *Get_Alias(void) { return NULL; }
-	virtual const char *Get_Help(void) { return NULL; }
-	virtual void Activate(const char *pArgs) { return; }
+	virtual const char *Get_Help(void) { return Get_Name(); }
+	virtual void Activate(const char *pArgs) = 0;
 	virtual ~ConsoleFunctionClass() { return; }
 };
 

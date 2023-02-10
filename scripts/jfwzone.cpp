@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -380,7 +380,7 @@ void JFW_Repair_Zone::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj())
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair())
 	{
 		Commands->Start_Timer(obj,this,1.0,Commands->Get_ID(enterer));
 	}
@@ -428,7 +428,7 @@ void JFW_Repair_Zone_Aircraft_Only::Entered(GameObject *obj,GameObject *enterer)
 	}
 	if ((!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset1"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset2"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset3"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset4"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset5"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset6"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset7"))) || (!_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset8"))))
 	{
-		if (enterer->As_VehicleGameObj())
+		if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair())
 		{
 			Commands->Start_Timer(obj,this,1.0,Commands->Get_ID(enterer));
 		}
@@ -477,7 +477,7 @@ void JFW_Repair_Zone_No_Aircraft::Entered(GameObject *obj,GameObject *enterer)
 	}
 	if ((_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset1"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset2"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset3"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset4"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset5"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset6"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset7"))) && (_stricmp(Commands->Get_Preset_Name(enterer),Get_Parameter("Preset8"))))
 	{
-		if (enterer->As_VehicleGameObj())
+		if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair())
 		{
 			Commands->Start_Timer(obj,this,1.0,Commands->Get_ID(enterer));
 		}
@@ -921,7 +921,7 @@ void JFW_Repair_Zone_VTOL_Only::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj())
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair())
 	{
 		if (Get_Vehicle_Mode(enterer) == VEHICLE_TYPE_FLYING)
 		{
@@ -970,7 +970,7 @@ void JFW_Repair_Zone_No_VTOL::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj())
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair())
 	{
 		if (Get_Vehicle_Mode(enterer) != VEHICLE_TYPE_FLYING)
 		{
@@ -2188,7 +2188,7 @@ void JFW_2D_Sound_Zone_Team::Timer_Expired(GameObject *obj,int number)
 void JFW_Repair_Zone_2::Created(GameObject *obj)
 {
 	ID = 0;
-  WaitForKeyhook = (Get_Parameter_Count()>=8) ? Get_Int_Parameter("WaitForKeyhook")==1 : true;
+	WaitForKeyhook = (Get_Parameter_Count()>=8) ? Get_Int_Parameter("WaitForKeyhook")==1 : true;
 }
 
 void JFW_Repair_Zone_2::Entered(GameObject *obj,GameObject *enterer)
@@ -2200,28 +2200,28 @@ void JFW_Repair_Zone_2::Entered(GameObject *obj,GameObject *enterer)
 	}
 	if (!Commands->Find_Object(ID))
 	{
-    if ( WaitForKeyhook )
-		  RemoveHook();
+		if ( WaitForKeyhook )
+			RemoveHook();
 		ID = 0;
 	}
 	if ((ID) && (ID != Commands->Get_ID(enterer)))
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj() && Get_Vehicle_Driver(enterer))
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair() && Get_Vehicle_Driver(enterer))
 	{
-    ID = Commands->Get_ID(enterer);
+		ID = Commands->Get_ID(enterer);
 
-    if ( WaitForKeyhook )
-    {
-      Create_2D_Sound_Player(Get_Vehicle_Driver(enterer),Get_Parameter("Sound"));
-      InstallHook("Repair",Get_Vehicle_Driver(enterer));
-    }
-    else
-    {
-      Commands->Start_Timer(Owner(),this,1.0,ID);
-      Create_2D_Sound_Player(Get_Vehicle_Driver(Commands->Find_Object(ID)),Get_Parameter("RepairSound"));
-    }
+		if ( WaitForKeyhook )
+		{
+			Create_2D_Sound_Player(Get_Vehicle_Driver(enterer),Get_Parameter("Sound"));
+			InstallHook("Repair",Get_Vehicle_Driver(enterer));
+		}
+		else
+		{
+			Commands->Start_Timer(Owner(),this,1.0,ID);
+			Create_2D_Sound_Player(Get_Vehicle_Driver(Commands->Find_Object(ID)),Get_Parameter("RepairSound"));
+		}
 	}
 }
 
@@ -2242,7 +2242,7 @@ void JFW_Repair_Zone_2::Timer_Expired(GameObject *obj,int number)
 	{
 		if (Get_Vehicle_Driver(Commands->Find_Object(number)))
 		{
-      float costDivisor = Get_Float_Parameter("Credits");
+			float costDivisor = Get_Float_Parameter("Credits");
 			float cost = (costDivisor==0) ? 0 : (Get_Cost(Commands->Get_Preset_Name(Commands->Find_Object(number))) / 2) / costDivisor;
 			if (Commands->Get_Money(Get_Vehicle_Driver(Commands->Find_Object(number))) >= cost)
 			{
@@ -2282,8 +2282,8 @@ void JFW_Repair_Zone_2::Exited(GameObject *obj,GameObject *exiter)
 {
 	if (!Commands->Find_Object(ID) || ID == Commands->Get_ID(exiter))
 	{
-    if ( WaitForKeyhook )
-		  RemoveHook();
+		if ( WaitForKeyhook )
+			RemoveHook();
 		ID = 0;
 	}
 }
@@ -2327,7 +2327,7 @@ void JFW_Repair_Zone_No_Boats::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj() && Get_Vehicle_Driver(enterer) && Get_Vehicle_Mode(enterer) != VEHICLE_TYPE_BOAT && Get_Vehicle_Mode(enterer) != VEHICLE_TYPE_SUB)
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair() && Get_Vehicle_Driver(enterer) && Get_Vehicle_Mode(enterer) != VEHICLE_TYPE_BOAT && Get_Vehicle_Mode(enterer) != VEHICLE_TYPE_SUB)
 	{
 		Create_2D_Sound_Player(Get_Vehicle_Driver(enterer),Get_Parameter("Sound"));
 		InstallHook("Repair",Get_Vehicle_Driver(enterer));
@@ -2442,7 +2442,7 @@ void JFW_Repair_Zone_Boats::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj() && Get_Vehicle_Driver(enterer) && (Get_Vehicle_Mode(enterer) == VEHICLE_TYPE_BOAT || Get_Vehicle_Mode(enterer) == VEHICLE_TYPE_SUB))
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair() && Get_Vehicle_Driver(enterer) && (Get_Vehicle_Mode(enterer) == VEHICLE_TYPE_BOAT || Get_Vehicle_Mode(enterer) == VEHICLE_TYPE_SUB))
 	{
 		Create_2D_Sound_Player(Get_Vehicle_Driver(enterer),Get_Parameter("Sound"));
 		InstallHook("Repair",Get_Vehicle_Driver(enterer));
@@ -2557,7 +2557,7 @@ void JFW_Sell_Zone::Entered(GameObject *obj,GameObject *enterer)
 	{
 		return;
 	}
-	if (enterer->As_VehicleGameObj() && Get_Vehicle_Driver(enterer))
+	if (enterer->As_VehicleGameObj() && enterer->As_VehicleGameObj()->Get_Definition().Can_Repair() && Get_Vehicle_Driver(enterer))
 	{
 		Create_2D_Sound_Player(Get_Vehicle_Driver(enterer),Get_Parameter("Sound"));
 		InstallHook("Sell",Get_Vehicle_Driver(enterer));
@@ -2595,7 +2595,7 @@ void JFW_Sell_Zone::KeyHook()
 			const char *preset = Commands->Get_Preset_Name(Commands->Find_Object(ID));
 			float cost = ((float)Get_Cost(preset) / 2);
 			Commands->Give_Money(Get_Vehicle_Driver(Commands->Find_Object(ID)),cost,false);
-			Commands->Send_Custom_Event(Owner(),Commands->Find_Object(ID),CUSTOM_TRANSITION_VTOL_LAND_ZONE,1,0);  // Compatibility with dp88_Aircraft_LandingZone_Aircraft
+			Commands->Send_Custom_Event(Owner(),Commands->Find_Object(ID),CUSTOM_TRANSITION_VTOL_LAND_ZONE,1,0);	// Compatibility with dp88_Aircraft_LandingZone_Aircraft
 			Force_Occupants_Exit(Commands->Find_Object(ID));
 			Commands->Start_Timer(Owner(),this,1,ID);
 			RemoveHook();
@@ -3111,7 +3111,7 @@ void JFW_Custom_Spawn_Zone::Custom(GameObject *obj,int type,int param,GameObject
 			Vector3 size = Get_Vector3_Parameter("Size");
 			Matrix3 rot;
 			rot.Make_Identity();
-			rot.Rotate_Z(Get_Float_Parameter("ZRotate"));
+			rot.Rotate_Z(DEG2RAD(Get_Float_Parameter("ZRotate")));
 			OBBoxClass BoundingBox(position,size,rot);
 			zoneid = Commands->Get_ID(Create_Zone(Get_Parameter("Preset"),BoundingBox));
 		}
@@ -3135,7 +3135,7 @@ void JFW_Spawn_Zone_Created::Created(GameObject *obj)
 	Vector3 size = Get_Vector3_Parameter("Size");
 	Matrix3 rot;
 	rot.Make_Identity();
-	rot.Rotate_Z(Get_Float_Parameter("ZRotate"));
+	rot.Rotate_Z(DEG2RAD(Get_Float_Parameter("ZRotate")));
 	OBBoxClass BoundingBox(position,size,rot);
 	zoneid = Commands->Get_ID(Create_Zone(Get_Parameter("Preset"),BoundingBox));
 }
@@ -3435,8 +3435,8 @@ void JFW_Destroy_Vehicle_Zone::Entered(GameObject *obj,GameObject *enterer)
 	Remove_Script(enterer,"JFW_Destroy_Vehicle_Zone_Marker");
 }
 
-ScriptRegistrant<JFW_Look_At_Location_Entry> JFW_Look_At_Location_Entry("JFW_Look_At_Location_Entry","Player_Type:int,Location:vector3");
-ScriptRegistrant<JFW_Look_At_Object_Entry> JFW_Look_At_Object_Entry("JFW_Look_At_Object_Entry","Player_Type:int,ObjectID:int");
+ScriptRegistrant<JFW_Look_At_Location_Entry> JFW_Look_At_Location_Entry_Registrant("JFW_Look_At_Location_Entry","Player_Type:int,Location:vector3");
+ScriptRegistrant<JFW_Look_At_Object_Entry> JFW_Look_At_Object_Entry_Registrant("JFW_Look_At_Object_Entry","Player_Type:int,ObjectID:int");
 ScriptRegistrant<JFW_Zone_PCT> JFW_Zone_PCT_Registrant("JFW_Zone_PCT","Player_Type:int");
 ScriptRegistrant<JFW_3D_Sound_Team_Zone> JFW_3D_Sound_Team_Zone_Registrant("JFW_3D_Sound_Team_Zone","Player_Type:int,Sound:string");
 ScriptRegistrant<JFW_3D_Sound_Player_Zone> JFW_3D_Sound_Player_Zone_Registrant("JFW_3D_Sound_Player_Zone","Player_Type:int,Sound:string");
@@ -3460,7 +3460,7 @@ ScriptRegistrant<JFW_Zone_Character_Swap> JFW_Zone_Character_Swap_Registrant("JF
 ScriptRegistrant<JFW_Heavy_Vehicle_Damage_Zone> JFW_Heavy_Vehicle_Damage_Zone_Registrant("JFW_Heavy_Vehicle_Damage_Zone","Warhead:string,Damage:float,Time:float,Distance:float,Player_Type:int,Mass:float");
 ScriptRegistrant<JFW_Light_Vehicle_Damage_Zone> JFW_Light_Vehicle_Damage_Zone_Registrant("JFW_Light_Vehicle_Damage_Zone","Warhead:string,Damage:float,Time:float,Distance:float,Player_Type:int,Mass:float");
 ScriptRegistrant<JFW_2D_Sound_Zone> JFW_2D_Sound_Zone_Registrant("JFW_2D_Sound_Zone","Player_Type:int,Sound:string");
-ScriptRegistrant<JFW_Stealth_Zone> JFW_Stealth_Zone("JFW_Stealth_Zone","Player_Type:int,Stealth1:string,Stealth2:string,Stealth3:string,Stealth4:string");
+ScriptRegistrant<JFW_Stealth_Zone> JFW_Stealth_Zone_Registrant("JFW_Stealth_Zone","Player_Type:int,Stealth1:string,Stealth2:string,Stealth3:string,Stealth4:string");
 ScriptRegistrant<JFW_Teleport_Zone_Team> JFW_Teleport_Zone_Team_Registrant("JFW_Teleport_Zone_Team","Location:vector3,Object_ID=0:int,Player_Type:int");
 ScriptRegistrant<JFW_Character_Buy> JFW_Character_Buy_Registrant("JFW_Character_Buy","Preset_Name:string,Cost:int,Player_Type:int");
 ScriptRegistrant<JFW_Preset_Buy> JFW_Preset_Buy_Registrant("JFW_Preset_Buy","Preset_Name:string,Cost:int,location:vector3,Player_Type:int");
@@ -3478,7 +3478,7 @@ ScriptRegistrant<JFW_Repair_Zone> JFW_Repair_Zone_Registrant("JFW_Repair_Zone","
 ScriptRegistrant<JFW_Repair_Zone_Aircraft_Only> JFW_Repair_Zone_Aircraft_Only_Registrant("JFW_Repair_Zone_Aircraft_Only","Player_Type:int,Repair_Distance:float,Repair_Health:float,Preset1:string,Preset2:string,Preset3:string,Preset4:string,Preset5:string,Preset6:string,Preset7:string,Preset8:string");
 ScriptRegistrant<JFW_Repair_Zone_No_Aircraft> JFW_Repair_Zone_No_Aircraft_Registrant("JFW_Repair_Zone_No_Aircraft","Player_Type:int,Repair_Distance:float,Repair_Health:float,Preset1:string,Preset2:string,Preset3:string,Preset4:string,Preset5:string,Preset6:string,Preset7:string,Preset8:string ");
 ScriptRegistrant<JFW_Zone_Send_Custom_Not_Preset> JFW_Zone_Send_Custom_Not_Preset_Registrant("JFW_Zone_Send_Custom_Not_Preset","ID:int,EnterMessage:int,EnterParam:int,ExitMessage:int,ExitParam:int,Player_Type:int,Preset_Name:string");
-ScriptRegistrant<JFW_Zone_Send_Custom_Keycard> JFW_Zone_Send_Custom_Keycard("JFW_Zone_Send_Custom_Keycard","ID:int,EnterMessage:int,EnterParam:int,ExitMessage:int,ExitParam:int,Player_Type:int,Keycard_Number:int");
+ScriptRegistrant<JFW_Zone_Send_Custom_Keycard> JFW_Zone_Send_Custom_Keycard_Registrant("JFW_Zone_Send_Custom_Keycard","ID:int,EnterMessage:int,EnterParam:int,ExitMessage:int,ExitParam:int,Player_Type:int,Keycard_Number:int");
 ScriptRegistrant<JFW_Heal_Zone> JFW_Heal_Zone_Registrant("JFW_Heal_Zone","Player_Type:int,Heal_Distance:float,Heal_Health:float");
 ScriptRegistrant<JFW_Heal_Zone_2> JFW_Heal_Zone_2_Registrant("JFW_Heal_Zone_2","Player_Type:int,Heal_Distance:float,Heal_Health:float,Preset_Name:string");
 ScriptRegistrant<JFW_Disable_Transitions_Zone> JFW_Disable_Transitions_Zone_Registrant("JFW_Disable_Transitions_Zone","");
@@ -3501,7 +3501,7 @@ ScriptRegistrant<JFW_Gate_Zone_2> JFW_Gate_Zone_2_Registrant("JFW_Gate_Zone_2","
 ScriptRegistrant<JFW_PPAGE_Zone> JFW_PPAGE_Zone_Registrant("JFW_PPAGE_Zone","Player_Type:int,Message:string");
 ScriptRegistrant<JFW_MSG_Zone> JFW_MSG_Zone_Registrant("JFW_MSG_Zone","Player_Type:int,Message:string");
 ScriptRegistrant<JFW_TMSG_Zone> JFW_TMSG_Zone_Registrant("JFW_TMSG_Zone","Player_Type:int,Message:string");
-ScriptRegistrant<JFW_Send_Driver_Custom_On_Enter> JFW_Send_Driver_Custom_On_Enter("JFW_Send_Driver_Custom_On_Enter","EnterMessage:int,ExitMessage:int");
+ScriptRegistrant<JFW_Send_Driver_Custom_On_Enter> JFW_Send_Driver_Custom_On_Enter_Registrant("JFW_Send_Driver_Custom_On_Enter","EnterMessage:int,ExitMessage:int");
 ScriptRegistrant<JFW_Teleport_Zone_Enable> JFW_Teleport_Zone_Enable_Registrant("JFW_Teleport_Zone_Enable","Location:vector3,Object_ID=0:int,Player_Type:int,EnableCustom:int,DisableCustom:int");
 ScriptRegistrant<JFW_Radar_Spy_Zone> JFW_Radar_Spy_Zone_Registrant("JFW_Radar_Spy_Zone","Spy_Script:string,Sound:string");
 ScriptRegistrant<JFW_Radar_Spy_Zone_New> JFW_Radar_Spy_Zone_New_Registrant("JFW_Radar_Spy_Zone_New","Sound:string");

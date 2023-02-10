@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,12 +21,11 @@
 #include "PhysClass.h"
 #include "ArmorWarheadManager.h"
 #include "TransitionGameObjDef.h"
+#include "SoldierGameObjDef.h"
 #include "cPlayer.h"
 class TransitionInstanceClass;
 class RenderObjClass;
 class SimpleAnimControlClass;
-class cPlayer;
-class DAPlayerClass;
 class TransitionCompletionDataStruct
 {
 public:
@@ -65,6 +64,7 @@ public:
 	virtual	void	Apply_Damage( const OffenseObjectClass & damager, float scale = 1.0f, int alternate_skin = -1 );
   virtual	void	Apply_Damage_Extended( const OffenseObjectClass & offense, float scale = 1.0f,
 			const	Vector3 & direction = Vector3( 0,0,0 ), const char * collision_box_name = NULL );
+  virtual void	Set_Delete_Pending (void);
 
   /*! A clone of Apply_Damage() which ignores whether the soldier is currently in a vehicle - this
   * is necessary for dp88_remoteControlConsole to kill the driver of a remote control vehicle when
@@ -111,7 +111,7 @@ public:
 	bool				Is_Airborne( void )		{ return Get_State() == HumanStateClass::AIRBORNE; }
 	bool				Is_Crouched( void )		{ return HumanState.Get_State_Flag( HumanStateClass::CROUCHED_FLAG ); }
 	bool				Is_Sniping( void )		{ return HumanState.Get_State_Flag( HumanStateClass::SNIPING_FLAG ); }
-	void				Set_Is_Sniping()        { HumanState.Toggle_State_Flag(HumanStateClass::SNIPING_FLAG); }
+	void				Set_Is_Sniping()        { HumanState.Toggle_State_Flag(HumanStateClass::SNIPING_FLAG); Set_Object_Dirty_Bit(BIT_OCCASIONAL, true); }
 	bool				Is_Slow( void )			{ return (Get_Sub_State() & HumanStateClass::SUB_STATE_SLOW) != 0; }
 	bool				Is_On_Ladder( void )		{ return Get_State() == HumanStateClass::LADDER; }
 	bool				Is_In_Vehicle( void )	{ return Get_State() == HumanStateClass::IN_VEHICLE; }
@@ -172,7 +172,7 @@ public:
 	bool					Has_Key( int key_number )		{ return ((1 << key_number) & KeyRing) != 0; }
 	virtual bool		Wants_Powerups( void )
 	{
-		if (Get_Player_Type() == -4)
+		if (Get_Player_Type() == -4 || Is_Dead() || Is_Destroyed())
 		{
 			return false;
 		}
@@ -203,6 +203,7 @@ public:
 	DAPlayerClass *Get_DA_Player() {
 		return Get_Player()->Get_DA_Player();
 	}
+
 protected:
 	RenderObjClass		*	WeaponRenderModel; //2416
 	RenderObjClass		*	BackWeaponRenderModel; //2420
@@ -218,7 +219,7 @@ protected:
 	bool						LastLegMode; //2581
 	int						KeyRing; //2584
 	bool						IsUsingGhostCollision; //2588
-	DialogueClass			DialogList[20]; //2592
+	DialogueClass			DialogList[DIALOG_MAX]; //2592
 	AudibleSoundClass *	CurrentSpeech; //3232
 	float						HeadLookDuration; //3236
 	Vector3					HeadRotation; //3240
@@ -264,6 +265,8 @@ protected:
 	RenderObjClass *		Find_RenderObj( const char * name );
 	void						Reset_RenderObjs( void );
 	void						Update_Healing_Effect( void );
+	int head_bone;
+	int neck_bone;
 	TT_DEPRECATED("Do not use") int						Check(void);
 }; // size: 3404
 

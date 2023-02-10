@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Removed case sensitivity from Get_Section
 #include "general.h"
 #pragma warning(disable: 4073) //warning C4073: initializers put in library initialization area - That's EXACTLY why I put that pragma in...
 #pragma init_seg(lib) // Move this files static initializers up a level
@@ -300,26 +302,35 @@ int INIClass::Load(Straw& straw)
 						strcpy(sectionName, line);
 						while (!isLastLine)
 						{
-								Read_Line(cacheStraw, line, 512, isLastLine);
+								int count = Read_Line(cacheStraw, line, 512, isLastLine);
 								if (line[0] == '[' && strchr(line, ']'))
 										break;
 								Strip_Comments(line);
-								char* delimiter = strchr(line, '=');
-								if (delimiter)
+								if (count)
 								{
-										*delimiter = '\0';
-										char* key = line;
-										char* value = delimiter + 1;
-										strtrim(key);
-										if (key[0] != '\0')
+										if (line[0] != ';')
 										{
-												strtrim(value);
-												if (value[0] == '\0')
+												if (line[0] != '=')
 												{
-														continue;
+														char* delimiter = strchr(line, '=');
+														if (delimiter)
+														{
+																*delimiter = '\0';
+																char* key = line;
+																char* value = delimiter + 1;
+																strtrim(key);
+																if (key[0] != '\0')
+																{
+																		strtrim(value);
+																		if (value[0] == '\0')
+																		{
+																				continue;
+																		}
+																		if (!Put_String(sectionName, key, value))
+																				return false;
+																}
+														}
 												}
-												if (!Put_String(sectionName, key, value))
-														return false;
 										}
 								}
 						}
@@ -341,36 +352,45 @@ int INIClass::Load(Straw& straw)
 						}
 						while (!isLastLine)
 						{
-								Read_Line(cacheStraw, line, 512, isLastLine);
+								int count = Read_Line(cacheStraw, line, 512, isLastLine);
 								if (line[0] == '[' && strchr(line, ']'))
 										break;
 								Strip_Comments(line);
 								char* delimiter = strchr(line, '=');
-								if (delimiter)
+								if (count)
 								{
-										*delimiter = '\0';
-										char* key = line;
-										char* value = delimiter + 1;
-										strtrim(key);
-										if (key[0] != '\0')
+										if (line[0] != ';')
 										{
-												strtrim(value);
-												if (value[0] == '\0')
+												if (line[0] != '=')
 												{
-														continue;
+														if (delimiter)
+														{
+																*delimiter = '\0';
+																char* key = line;
+																char* value = delimiter + 1;
+																strtrim(key);
+																if (key[0] != '\0')
+																{
+																		strtrim(value);
+																		if (value[0] == '\0')
+																		{
+																				continue;
+																		}
+																		INIEntry* entry = new INIEntry(newstr(key), newstr(value));
+																		if (!entry)
+																		{
+																				delete section;
+																				Clear(0, 0);
+																				return false;
+																		}
+																		uint32 crc = CRC_String(entry->Entry, 0);
+																		if (section->EntryIndex.Is_Present(crc))
+																				DuplicateCRCError(__FUNCTION__, section->Section, line);
+																		section->EntryIndex.Add_Index(crc, entry);
+																		section->EntryList.Add_Tail(entry);
+																}
+														}
 												}
-												INIEntry* entry = new INIEntry(newstr(key), newstr(value));
-												if (!entry)
-												{
-														delete section;
-														Clear(0, 0);
-														return false;
-												}
-												uint32 crc = CRC_String(entry->Entry, 0);
-												if (section->EntryIndex.Is_Present(crc))
-														DuplicateCRCError(__FUNCTION__, section->Section, line);
-												section->EntryIndex.Add_Index(crc, entry);
-												section->EntryList.Add_Tail(entry);
 										}
 								}
 						}

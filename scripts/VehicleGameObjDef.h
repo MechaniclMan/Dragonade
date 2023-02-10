@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -43,9 +43,7 @@ public:
 	virtual PersistClass *					Create( void ) const ;
 	virtual bool								Save( ChunkSaveClass &csave );
 	virtual bool								Load( ChunkLoadClass &cload );
-#ifdef TT_EXPORTS
 	virtual	void	On_Post_Load( void );
-#endif
 	virtual const PersistFactoryClass &	Get_Factory( void ) const;
 #ifdef DDBEDIT
 	virtual void                        Dump (FileClass &file);
@@ -55,29 +53,17 @@ public:
 	DynamicVectorClass<TransitionDataClass*> *					Get_Transition_List( void ) { return &Transitions; }
 	const DynamicVectorClass<TransitionDataClass*> &			Get_Transition_List( void ) const { return Transitions; }
 	void											Free_Transition_List( void );
-	int Get_Damage_Report(int Team) const {
-		if (Team == 0) {
-			return NodDamageReportID;
-		}
-		else if (Team == 1) {
-			return GDIDamageReportID;
-		}
-		return 0;
-	}
-	int Get_Destroy_Report(int Team) const {
-		if (Team == 0) {
-			return NodDestroyReportID;
-		}
-		else if (Team == 1) {
-			return GDIDestroyReportID;
-		}
-		return 0;
-	}
+	int Get_Damage_Report(int team) const;
+	int Get_Destroy_Report(int team) const;
 	int Get_Seat_Count() const {return NumSeats;}
 	VehicleType Get_Type() const {return Type;}
 	const StringClass &Get_Fire0_Anim() const {return Fire0Anim;}
 	const StringClass &Get_Fire1_Anim() const {return Fire1Anim;}
 	bool Get_Build_At_Ground() const {return BuildAtGround;}
+	float Get_Factory_Ride_Height() const {return FactoryRideHeight;}
+	int Get_Purchase_Report(int team) const;
+	bool Can_Repair() const { return CanRepair; }
+	int Get_Engine_Sound(int type) const { return EngineSound[type]; }
 	VehicleType									Type;
 	StringClass									TypeName;
 	StringClass									Fire0Anim;
@@ -103,6 +89,13 @@ public:
 	bool DualAim;
 	float FactoryRideHeight;
 	bool FakeTurret;
+	int GDIPurchaseReportID;
+	int NodPurchaseReportID;
+	bool CanRepair;
+	int EntryHelpMessage;
+	Vector3 EntryHelpMessageColor;
+	bool ApplySurfaceEffectDamage;
+	bool DisableSurfaceSounds;
 	friend	class								VehicleGameObj;
 	friend class PresetDump;
 }; // size: 324

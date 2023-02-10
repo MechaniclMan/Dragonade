@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -511,6 +511,12 @@ class JFW_EMP_Mine_Manager : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 };
 
+class JFW_EMP_Mine_Manager_2 : public ScriptImpClass {
+	int mines;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+};
+
 class JFW_EMP_Mine_Layer : public ScriptImpClass {
 	void Damaged(GameObject *obj,GameObject *damager,float amount);
 };
@@ -557,6 +563,17 @@ class JFW_Ion_Storm : public ScriptImpClass {
 
 class JFW_Ion_Storm_Weather : public ScriptImpClass {
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+};
+
+class JFW_Ion_Storm_Weather_2 : public ScriptImpClass {
+	float Lightning_Intensity;
+	float Lightning_Start_Distance;
+	float Lightning_End_Distance;
+	float Lightning_Heading;
+	float Lightning_Distribution;
+	float Cloud_Cover;
+	float Cloud_Gloominess;
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
 };
 
 class JFW_Ion_Lightning : public ScriptImpClass {
@@ -634,6 +651,23 @@ class JFW_Send_Message_Preset_Death : public ScriptImpClass {
 };
 
 class JMG_Send_Custom_To_Self_On_Timer : public ScriptImpClass {
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj,int number);
+};
+
+class JFW_Warhead_Custom : public ScriptImpClass {
+	void Damaged(GameObject *obj, GameObject *damager, float amount);
+};
+
+class JFW_Airstrike_Cinematic : public ScriptImpClass {
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
+};
+
+class JFW_Spy_Disguise_Target : public ScriptImpClass {
+	void Damaged(GameObject *obj, GameObject *damager, float amount);
+};
+
+class JFW_Spawner_Delay : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
 };

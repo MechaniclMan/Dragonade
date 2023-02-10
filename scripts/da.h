@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -87,16 +87,13 @@ public:
 	static const StringClass &Get_Message_Prefix() {
 		return MessagePrefix;
 	}
-	static const StringClass &Get_Message_Nick() {
-		return MessageNick;
-	}
+
 	static inline DynamicVectorClass<ConsoleFunctionClass*> &Get_Console_Function_List() {
 		return ConsoleFunctions;
 	}
 
 private:
 	static StringClass MessagePrefix;
-	static StringClass MessageNick;
 	static DynamicVectorClass<ConsoleFunctionClass*> ConsoleFunctions;
 };
 

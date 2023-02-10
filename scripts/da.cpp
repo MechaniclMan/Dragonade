@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -39,7 +39,6 @@
 #pragma init_seg(lib)
 
 StringClass DA::MessagePrefix;
-StringClass DA::MessageNick;
 DynamicVectorClass<ConsoleFunctionClass*> DA::ConsoleFunctions;
 
 std::mt19937 RNG;
@@ -66,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.6.2";
+	return "1.7";
 }
 
 void DA::Init() {
@@ -104,7 +103,6 @@ void DA::Init() {
 	Sort_Function_List();
 	Verbose_Help_File();
 
-	DASettingsManager::Get_String(MessageNick,"MessageNick",0);
 	DASettingsManager::Get_String(MessagePrefix,"MessagePrefix",0);
 	if (!MessagePrefix.Is_Empty()) {
 		MessagePrefix += " ";
@@ -139,17 +137,7 @@ void DA::Host_Message(const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
 	if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,Message)) {
-		if (MessageNick.Is_Empty()) {
-			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
-		}
-		else {
-			cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-			Set_Object_Dirty_Bit_For_Version_Less_Than(Text,2.6f,NetworkObjectClass::BIT_CREATION,true);
-			StringClass Buffer;
-			Buffer.Format("%s: %s",MessageNick,Message);
-			Send_Message(WHITE,Buffer);
-			Console_Output("%s\n",Buffer);
-		}
+		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
 		Commands->Create_2D_WAV_Sound("public_message.wav");
 	}
 }
@@ -159,19 +147,19 @@ void DA::Team_Host_Message(int Team,const char *Format,...) {
 	Format_String_Prefix(Message);
 	cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
 	Set_Object_Dirty_Bit_For_Team_Version_Less_Than(Text,Team,2.6f,NetworkObjectClass::BIT_CREATION,true);
-	Send_Message_Team_With_Team_Color(Team,StringFormat("%s: %s",MessageNick.Is_Empty()?"Host":MessageNick,Message));
+	Send_Message_Team_With_Team_Color(Team,StringFormat("Host: %s",Message));
 	Create_2D_WAV_Sound_Team("public_message.wav",Team);
 }
 
 void DA::Private_Host_Message(cPlayer *Player,const char *Format,...) {
 	char Message[256];
 	Format_String_Prefix(Message);
-	if (MessageNick.Is_Empty() || !Player->Get_DA_Player()->Is_Scripts_Client()) {
+	if (!Player->Get_DA_Player()->Is_Scripts_Client()) {
 		cScTextObj *Text = Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
 		Text->Set_Object_Dirty_Bits(Player->Get_ID(),NetworkObjectClass::BIT_CREATION);
 	}
 	else {
-		Send_Message_Player_By_ID(Player->Get_ID(),LIGHTBLUE,StringFormat("%s: %s",MessageNick,Message));
+		Send_Message_Player_By_ID(Player->Get_ID(),LIGHTBLUE,StringFormat("Host: %s",Message));
 	}
 	Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"public_message.wav");
 }
@@ -198,13 +186,7 @@ void DA::Admin_Message(const char *Format,...) {
 	char Message[256];
 	Format_String(Message);
 	if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,Message)) {
-		if (MessageNick.Is_Empty()) {
-			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
-		}
-		else {
-			Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,false);
-			Console_Output("%s: %s\n",MessageNick,Message);
-		}
+		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
 	}
 }
 
@@ -314,7 +296,7 @@ void DA::Page_Player(cPlayer *Player,const char *Format,...) {
 		Send_Client_Text(WideStringClass(Message),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 	}
 	else {
-		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("%s: %s",MessageNick.Is_Empty()?"Host":MessageNick,Message));
+		Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Message));
 		Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 	}
 }
@@ -587,17 +569,7 @@ public:
 	void Activate(const char *ArgumentsString) {
 		if (ArgumentsString && strlen(ArgumentsString)) {
 			if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,ArgumentsString)) {
-				if (DA::Get_Message_Nick().Is_Empty()) {
-					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
-				}
-				else {
-					cScTextObj *Text = Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
-					Set_Object_Dirty_Bit_For_Version_Less_Than(Text,2.6f,NetworkObjectClass::BIT_CREATION,true);
-					StringClass Buffer;
-					Buffer.Format("%s: %s",DA::Get_Message_Nick(),ArgumentsString);
-					Send_Message(WHITE,Buffer);
-					Console_Output("%s\n",Buffer);
-				}
+				Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,false,-1,-1,true,true);
 				Commands->Create_2D_WAV_Sound("public_message.wav");
 			}
 		}
@@ -617,7 +589,7 @@ public:
 			if (DAEventManager::Host_Chat_Event(Team,TEXT_MESSAGE_TEAM,Parser.Get_Remaining_String())) {
 				cScTextObj *Text = Send_Client_Text(Parser.Get_Remaining_String(),TEXT_MESSAGE_PUBLIC,false,-1,-1,false,false);
 				Set_Object_Dirty_Bit_For_Team_Version_Less_Than(Text,Team,2.6f,NetworkObjectClass::BIT_CREATION,true);
-				Send_Message_Team_With_Team_Color(Team,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Parser.Get_Remaining_String()));
+				Send_Message_Team_With_Team_Color(Team,StringFormat("Host: %s",Parser.Get_Remaining_String()));
 				Create_2D_WAV_Sound_Team("public_message.wav",Team);
 			}
 		}
@@ -633,13 +605,7 @@ public:
 	void Activate(const char *ArgumentsString) {
 		if (ArgumentsString && strlen(ArgumentsString)) {
 			if (DAEventManager::Host_Chat_Event(-1,TEXT_MESSAGE_PUBLIC,ArgumentsString)) {
-				if (DA::Get_Message_Nick().Is_Empty()) {
-					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
-				}
-				else {
-					Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,false);
-					Console_Output("%s: %s\n",DA::Get_Message_Nick(),ArgumentsString);
-				}
+				Send_Client_Text(WideStringClass(ArgumentsString),TEXT_MESSAGE_PUBLIC,true,-1,-1,true,true);
 			}
 		}
 	}
@@ -660,7 +626,7 @@ public:
 				Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,ID,true,true);
 			}
 			else {
-				Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Text.Get_Remaining_String()));
+				Send_Message_Player_By_ID(ID,LIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
 				Create_2D_WAV_Sound_Player_By_ID(ID,"yo1.wav");
 			}
 		}
@@ -683,7 +649,7 @@ public:
 						Send_Client_Text(Text.Get_Remaining_String(),TEXT_MESSAGE_PRIVATE,false,-1,Player->Get_ID(),true,true);
 					}
 					else {
-						DA::Private_Color_Message(Player,LIGHTBLUE,StringFormat("%s: %s",DA::Get_Message_Nick().Is_Empty()?"Host":DA::Get_Message_Nick(),Text.Get_Remaining_String()));
+						DA::Private_Color_Message(Player,LIGHTBLUE,StringFormat("Host: %s",Text.Get_Remaining_String()));
 						Create_2D_WAV_Sound_Player_By_ID(Player->Get_ID(),"yo1.wav");
 					}
 				}

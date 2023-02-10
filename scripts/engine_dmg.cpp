@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,7 +16,6 @@
 #include "engine_obj.h"
 #include "engine_obj2.h"
 #include "engine_phys.h"
-#include "cPlayer.h"
 #include "ArmorWarheadManager.h"
 #include "BuildingGameObj.h"
 #include "VehicleGameObjDef.h"
@@ -749,6 +748,55 @@ void SCRIPTS_API Ranged_Variable_Percent_Vehicle_Damage(float EnemyPercentage, f
 				}
 			}
 			x = x->Next();
+		}
+		SLNode<BaseGameObj> *x2 = GameObjManager::GameObjList.Head();
+		while (x2)
+		{
+			BaseGameObj *ox = x2->Data();
+			PhysicalGameObj *o = 0;
+			if (ox)
+			{
+				o = ox->As_PhysicalGameObj();
+			}
+			if (o)
+			{
+				if (o->Get_Definition().Get_Encyclopedia_Type() == 3)
+				{
+					float health = Commands->Get_Health(o);
+					if (health > 0)
+					{
+						Vector3 pos1 = Commands->Get_Position(o);
+						Vector3 pos2 = Location;
+						float Distance = Commands->Get_Distance(pos1, pos2);
+						if (Distance <= DamageRadius)
+						{
+							float Max_Health = Commands->Get_Max_Health(o);
+							float Max_Shield = Commands->Get_Max_Shield_Strength(o);
+							if (Commands->Get_Player_Type(Damager) == Commands->Get_Player_Type(o))
+							{
+								float Damage = (Max_Health + Max_Shield) * FriendPercentage;
+								if (The_Game()->Is_Friendly_Fire_Permitted())
+								{
+									if (ForceFriendly)
+									{
+										Commands->Apply_Damage(o, Damage, Warhead, 0);
+									}
+									else
+									{
+										Commands->Apply_Damage(o, Damage, Warhead, Damager);
+									}
+								}
+							}
+							else
+							{
+								float Damage = (Max_Health + Max_Shield) * EnemyPercentage;
+								Commands->Apply_Damage(o, Damage, Warhead, Damager);
+							}
+						}
+					}
+				}
+			}
+			x2 = x2->Next();
 		}
 	}
 }

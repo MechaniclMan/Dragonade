@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -93,8 +93,9 @@ public:
 	Vector2			IconOffset;
 	float			GrenadeSafetyTime;
 	bool            C4Animation;
+	safe_float		TargetingRange;//new
 
-#if (PARAM_EDITING_ON) || (DDBEDIT)
+#if (PARAM_EDITING_ON) || (DDBEDIT) || (W3DVIEWER)
     Vector3 ProjectileExtent;
 #else
     SafeDataClass<Vector3> ProjectileExtent;

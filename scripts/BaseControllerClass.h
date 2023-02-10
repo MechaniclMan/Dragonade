@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,8 +9,6 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
-//Changes made in DA:
-//Exported various functions
 #ifndef TT_INCLUDE_BASECONTROLLERCLASS_H
 #define TT_INCLUDE_BASECONTROLLERCLASS_H
 #include "NetworkObjectClass.h"
@@ -20,9 +18,15 @@
 class BuildingGameObj;
 class VehicleGameObj;
 class BeaconGameObj;
+enum RadarModeEnum {
+	RADAR_NOBODY,
+	RADAR_TEAMMATES,
+	RADAR_ALL,
+};
 class BaseControllerClass :
 	public NetworkObjectClass
 {
+
 private:
 
 	float OperationTimeFactor; // 06B4
@@ -42,6 +46,7 @@ private:
 	unsigned int Unknown2; // 0728
 
 public:
+	BaseControllerClass();
 	~BaseControllerClass();
 	void Import_Occasional(BitStreamClass &BitStream);
 	void Export_Occasional(BitStreamClass &BitStream);
@@ -73,6 +78,7 @@ public:
 	void Add_Building(BuildingGameObj *b);
 	void On_Building_Damaged(BuildingGameObj *);
 	void On_Building_Destroyed(BuildingGameObj *);
+	void On_Building_Revived(BuildingGameObj *);
 	void On_Vehicle_Delivered(VehicleGameObj *);
 	void On_Vehicle_Damaged(VehicleGameObj *);
 	void On_Vehicle_Destroyed(VehicleGameObj *);
@@ -82,6 +88,7 @@ public:
 	SCRIPTS_API bool Can_Build_Air();
 	SCRIPTS_API bool Can_Build_Ground();
 	SCRIPTS_API bool Can_Build_Naval();
+	void Check_Prerequisites();
 
 	bool Is_Base_Powered() const
 	{
@@ -119,9 +126,19 @@ public:
 	{
 		return RadarEnabled;
 	}
-	DynamicVectorClass<BuildingGameObj*> &Get_Building_List() {
+	DynamicVectorClass<BuildingGameObj*> &Get_Building_List()
+	{
 		return BuildingList;
 	}
+	bool Are_All_Buildings_Destroyed();
+	void Initialize(int team);
+	void Initialize_Building_List();
+	void Reset_Building_List();
+	//void Notify_Team(BaseControllerClass::Notification,BuildingConstants::BuildingType);
+	void Set_Base_Powered(bool onoff);
+	void Set_Operation_Time_Factor(float time);
+	void Think();
+	void Shutdown();
 }; // 072C
 
 #endif

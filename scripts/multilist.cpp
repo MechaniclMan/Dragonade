@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -21,7 +21,10 @@ bool GenericMultiListClass::Internal_Add(MultiListObjectClass *obj, bool onlyonc
 		return false;
 	}
 
+PUSH_MEMORY_MACROS;
+#undef new
 	MultiListNodeClass *node = new MultiListNodeClass;
+POP_MEMORY_MACROS;
 	node->Object = obj;
 
 	node->NextList = obj->Get_List_Node();
@@ -46,7 +49,10 @@ bool GenericMultiListClass::Internal_Add_Tail(MultiListObjectClass *obj, bool on
 		return false;
 	}
 
+PUSH_MEMORY_MACROS;
+#undef new
 	MultiListNodeClass *node = new MultiListNodeClass;
+POP_MEMORY_MACROS;
 	node->Object = obj;
 
 	node->NextList = obj->Get_List_Node();
@@ -83,7 +89,10 @@ bool GenericMultiListClass::Internal_Add_After(MultiListObjectClass *obj, const 
 		return false;
 	}
 
+PUSH_MEMORY_MACROS;
+#undef new
 	MultiListNodeClass * node = new MultiListNodeClass;
+POP_MEMORY_MACROS;
 	node->Object = obj;
 	
 	node->NextList = obj->Get_List_Node();
@@ -129,7 +138,10 @@ bool GenericMultiListClass::Internal_Remove(MultiListObjectClass *obj)
 		obj->Set_List_Node(node->NextList);
 	}
 
+PUSH_MEMORY_MACROS;
+#undef delete
 	delete node;
+POP_MEMORY_MACROS;
 	return true;
 };
 

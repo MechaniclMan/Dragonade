@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -232,6 +232,91 @@ JFW_Key_Hook_Base::~JFW_Key_Hook_Base()
 {
 	RemoveHook();
 }
+
+// -------------------------------------------------------------------------------------------------
+// Multi key hook script
+// -------------------------------------------------------------------------------------------------
+
+void MultiKeyHookScriptImpClass::Detach(GameObject *obj)
+{
+  if(Exe != EXE_LEVELEDIT)
+  {
+    Destroyed(obj);   // Double check to make sure we're all cleaned up
+  }
+  ScriptImpClass::Detach(obj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void MultiKeyHookScriptImpClass::Destroyed(GameObject *obj)
+{
+  SLNode<KeyHookWrapperStruct>* head = ms_keyhooks.Head();
+  while(NULL != head)
+  {
+    RemoveHook(head->Data()->hook.key, obj);
+    head = ms_keyhooks.Head();
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void MultiKeyHookBaseHook(void *data)
+{
+  MultiKeyHookScriptImpClass::KeyHookWrapperStruct* hook = (MultiKeyHookScriptImpClass::KeyHookWrapperStruct*)data;
+  hook->owner->KeyHook(hook->hook.key);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void MultiKeyHookScriptImpClass::InstallHook(const char* logicalKey, GameObject *obj)
+{
+  KeyHookWrapperStruct* hookWrapper = FindHook(logicalKey);
+  if (NULL == hookWrapper)
+  {
+    hookWrapper = new KeyHookWrapperStruct();
+    hookWrapper->owner = this;
+    hookWrapper->hook.data = hookWrapper;
+    hookWrapper->hook.hook = MultiKeyHookBaseHook;
+    hookWrapper->hook.PlayerID = Get_Player_ID(obj);
+    hookWrapper->hook.key = newstr(logicalKey);
+    hookWrapper->hookId = AddKeyHook(&hookWrapper->hook);
+    ms_keyhooks.Add_Tail(hookWrapper);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void MultiKeyHookScriptImpClass::RemoveHook(const char* logicalKey, GameObject *obj)
+{
+  KeyHookWrapperStruct* hookWrapper = FindHook(logicalKey);
+  if (NULL != hookWrapper)
+  {
+    RemoveKeyHook(hookWrapper->hookId);
+    ms_keyhooks.Remove(hookWrapper);
+
+    if (NULL != hookWrapper->hook.key)
+      delete [] hookWrapper->hook.key;
+    delete hookWrapper;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+MultiKeyHookScriptImpClass::KeyHookWrapperStruct* MultiKeyHookScriptImpClass::FindHook(const char* logicalKey)
+{
+  for (SLNode<KeyHookWrapperStruct>* node = ms_keyhooks.Head(); node; node = node->Next())
+  {
+    if (0 == strcmp(logicalKey, node->Data()->hook.key))
+      return node->Data();
+  }
+
+  return NULL;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+
+
 
 void JFW_Jetpack::Detach(GameObject *obj)
 {

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -108,6 +108,7 @@ class JFW_2D_Sound_Startup : public ScriptImpClass {
 struct TimeRemainingSound {
 	char *sound;
 	int minutes;
+	bool played;
 };
 
 class JFW_Time_Remaining_Sounds : public ScriptImpClass {
@@ -118,6 +119,17 @@ class JFW_Time_Remaining_Sounds : public ScriptImpClass {
 public:
 	JFW_Time_Remaining_Sounds();
 	~JFW_Time_Remaining_Sounds();
+};
+
+class JFW_Time_Remaining_Sounds_2 : public ScriptImpClass {
+	TimeRemainingSound *Sounds;
+	int SoundCount;
+	int team;
+	void Created(GameObject *obj);
+	void Timer_Expired(GameObject *obj, int number);
+public:
+	JFW_Time_Remaining_Sounds_2();
+	~JFW_Time_Remaining_Sounds_2();
 };
 
 class JFW_2D_Sound_Death_Team : public ScriptImpClass {
@@ -136,4 +148,10 @@ class JFW_C4_Sound : public ScriptImpClass {
 
 class JFW_C4_Sound_2 : public ScriptImpClass {
 	void Created(GameObject *obj);
+};
+
+class JFW_Repair_Complete_Sound : public ScriptImpClass {
+	bool damaged;
+	void Created(GameObject *obj);
+	void Damaged(GameObject *obj, GameObject *damager, float amount);
 };

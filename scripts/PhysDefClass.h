@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -49,6 +49,8 @@ typedef enum {
 	AMPHIBIOUS_UNIT_FLOOR_COLLISION_GROUP,		// collides only with AMPHIBIOUS_UNIT
 	UNDERGROUND_TRANSITION_COLLISION_GROUP,		// behaves like DEFAULT but collides with UNDERGROUND
 
+    DEFAULT_AND_SOLDIER_ONLY_COLLISION_GROUP,   // collides with DEFAULT, SOLDIER, and SOLDIER_GHOST
+
 	COLLISION_GROUP_MAX = 32,					// not a collision group
 } Collision_Group_Type;
 
@@ -78,6 +80,7 @@ inline const char* GetCollisionGroupName(Collision_Group_Type group)
 	case AMPHIBIOUS_UNIT_COLLISION_GROUP:		return "Amphibious Unit";
 	case AMPHIBIOUS_UNIT_FLOOR_COLLISION_GROUP:	return "Amphibious Unit Floor";
 	case UNDERGROUND_TRANSITION_COLLISION_GROUP:return "Underground Transition";
+    case DEFAULT_AND_SOLDIER_ONLY_COLLISION_GROUP: return "Default and Soldier only";
 	default: return NULL; // NULL == do not add to friendly name list
 	};
 };

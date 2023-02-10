@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -270,6 +270,7 @@ void RA_Gap_Generator_Building::Killed(GameObject *obj, GameObject *killer)
 
 void RA_Gap_Generator_Vehicle::Created(GameObject *obj)
 {
+	shroudID = 0;
 	sizeID = 0;
 	GameObject *GapControl = Find_Object_By_Preset(2, Get_Parameter("Gap_Controller"));
 	if (!Commands->Get_Player_Type(obj))

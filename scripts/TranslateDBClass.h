@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -65,7 +65,7 @@ public:
 
 private:
 
-#if (TDBEDIT) || (DDBEDIT)
+#if (TDBEDIT) || (DDBEDIT) || (W3DVIEWER)
 	static TDB_OBJ_LIST m_ObjectList;
 	static HashTemplateClass<StringClass, TDBObjClass*> m_ObjectHash;
 	static TDB_CATEGORY_LIST m_CategoryList;
@@ -80,7 +80,7 @@ private:
 	SHARED_API static REF_DECL(TT_NOOP(HashTemplateClass<StringClass, TDBObjClass*>), m_ObjectHash);
 	static REF_DECL(TDB_CATEGORY_LIST, m_CategoryList);
 	static REF_DECL(uint32, m_VersionNumber);
-	static REF_DECL(uint32, m_LanguageID);
+	SHARED_API static REF_DECL(uint32, m_LanguageID);
 	static REF_DECL(bool, IsSingleLanguageExport);
 	static REF_DECL(uint32, CategoryExportFilter);
 	static REF_DECL(FILTER_OPT, FilterType);
@@ -177,7 +177,6 @@ TT_INLINE const wchar_t* TranslateDBClass::Get_String(uint32 id)
 	if (translation)
 		return translation->Get_String();
 	
-	TT_ASSERT(translation);
 	return STRING_NOT_FOUND;
 }
 
@@ -191,7 +190,6 @@ TT_INLINE const wchar_t* TranslateDBClass::Get_String(const char* id)
 	if (translation)
 		return translation->Get_String();
 	
-	TT_ASSERT(translation);
 	return STRING_NOT_FOUND;
 }
 
@@ -206,7 +204,6 @@ inline const char* TranslateDBClass::Get_English_String (uint32 id)
 	if (translation)
 		return translation->Get_English_String();
 	
-	TT_ASSERT(translation);
 	return ENGLISH_STRING_NOT_FOUND;
 }
 

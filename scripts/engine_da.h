@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,8 +61,6 @@ public:
 #define STYLE_C4 0
 #define STYLE_BEACON 6
 #define CID_Spawner 0x300D
-
-DA_API unsigned int Send_Object_Update(NetworkObjectClass *object, int remoteHostId);
 
 DA_API void Destroy_All_Objects_With_Script(const char *Script);
 DA_API bool Has_Beacon(ArmedGameObj *obj);
@@ -167,7 +165,6 @@ inline bool Is_Player(GameObject *obj) {
 	return (obj && obj->As_SoldierGameObj() && ((SoldierGameObj*)obj)->Get_Player_Data());
 }
 
-DA_API void Update_Game_Settings(int ID = 0);
 DA_API bool Is_Stealth_Enabled2(GameObject *obj);
 DA_API bool Is_Stealth_Unit(GameObject *obj);
 DA_API unsigned int Get_Ground_Vehicle_Count(int Team);

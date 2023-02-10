@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -43,7 +43,7 @@ public:
 	int					Get_Harvester_Def_ID (void) const	{ return Get_Definition ().HarvesterDefID; }
 	void					Set_Is_Harvester_Docked(bool flag);
 	bool					Get_Is_Harvester_Docked(void)			{ return IsHarvesterDocked; }
-	VehicleGameObj SCRIPTS_API *Get_Harvester_Vehicle (void);
+	SCRIPTS_API VehicleGameObj *	Get_Harvester_Vehicle (void);
 	void					Set_Harvester_Vehicle (VehicleGameObj *harvester);
 	HarvesterClass *	Get_Harvester (void)								{ return Harvester; }
 	void					Set_Harvester (HarvesterClass *harvester)	{ Harvester = harvester; }
@@ -80,7 +80,7 @@ private:
 	Matrix3D				DockTM;
 	AudibleSoundClass * MoneyTrickleSound;
 	bool					AllowHarvesterSpawn;
-	//ReferencerClass HarvesterVehicle;
+	ReferencerClass HarvesterVehicle;
 }; // 2232, RH7 2252
 
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,7 +24,7 @@ public:
 	bool Load_Variables(ChunkLoadClass& chunks);
 	uint32 Get_Class_ID() const;
 	PersistClass* Create() const;
-	bool Is_Nuke() const {return IsNuke;}
+	int Is_Nuke() const {return IsNuke;}
 	bool Requires_Silo() const {return RequiresSilo;}
 #ifdef DDBEDIT
 	virtual void                        Dump (FileClass &file);
@@ -45,7 +45,7 @@ public:
 	int PreDetonateCinematicObjDef; // 00DC
 	int PostDetonateCinematicObjDef; // 00E0
 	int ExplosionObjDef; // 00E4
-	bool IsNuke; // 00E8
+	int IsNuke; // 00E8
 	StringClass ArmingAnimationName; // 00EC
 	bool RequiresSilo;
 	friend class BeaconGameObj;

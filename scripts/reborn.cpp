@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,8 @@
 #include "reborn.h"
 #include "VehicleGameObj.h"
 #include "MoveablePhysClass.h"
+#include "PhysColTest.h"
+#include "PhysicsSceneClass.h"
 
 void Reborn_Game_Manager::Created(GameObject *obj)
 {
@@ -353,6 +355,16 @@ void Reborn_Diggable_Vehicle_Animated::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&ug,4,2);
 }
 
+void Reborn_Deployable_Vehicle_Player::Created(GameObject *obj)
+{
+	InstallHook(Get_Parameter("Key"),obj);
+}
+
+void Reborn_Deployable_Vehicle_Player::KeyHook()
+{
+	Commands->Send_Custom_Event(Owner(),Commands->Find_Object(Get_Int_Parameter("ID")),Get_Int_Parameter("Message"),0,0);
+}
+
 void Reborn_IsDeployableMech::Created(GameObject * obj)
 {
 	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
@@ -391,14 +403,18 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 	}
 	else if (type == 923572385)
 	{
+		if (!obj->As_VehicleGameObj()->Can_Drive())
+		{
+			return;
+		}
 		const char *model;
 		model = Get_Parameter("Model_Name");
 		char text[512];
 		sprintf(text,"%s_d",model);
 		//deploy!
-		if (!mode && !enabled)
+		if (!mode)
 		{
-			if (!obj->As_VehicleGameObj()->Is_Immovable() && obj->As_VehicleGameObj()->Can_Drive())
+			if (!obj->As_VehicleGameObj()->Is_Immovable())
 			{
 				obj->As_VehicleGameObj()->Set_Immovable(true);
 				Mode = 2;
@@ -406,13 +422,14 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 				mode = 1;
 				Commands->Set_Model(obj,text);
 				sprintf(text,"%s_d.%s_d",model,model);
+				obj->As_PhysicalGameObj()->Clear_Animation();
 				Commands->Set_Animation(obj,text,false,0,0,-1,0);
 				Commands->Control_Enable(Commands->Find_Object(PilotID),false);
 				obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
 			}
 		}
 		//redeploy!
-		else if ((mode == 2) && (!enabled) && (CanPlayAnim))
+		else if (mode == 2)
 		{
 			//mode: 0=walk;1=deploy;2=deployed;3=redeploy
 			mode = 3;
@@ -420,6 +437,7 @@ void Reborn_IsDeployableMech::Custom(GameObject *obj,int type,int param,GameObje
 			sprintf(text,"%s_d",model);
 			Commands->Set_Model(obj,text);
 			sprintf(text,"%s_d.%s_d",model,model);
+			obj->As_PhysicalGameObj()->Clear_Animation();
 			Commands->Set_Animation(obj,text,false,0,Get_Float_Parameter("Last_Deploy_Frame"),0,0);
 			Commands->Control_Enable(Commands->Find_Object(PilotID),false);
 			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
@@ -448,8 +466,6 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
 		Commands->Enable_Engine(obj,false);
 		Commands->Enable_Hibernation(obj,true);
-		CanPlayAnim = true;
-		Commands->Start_Timer(obj,this,(float)0.1,3);
 		return;
 	}
 	//mech redeployed -> set standard model
@@ -480,6 +496,7 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		{
 			char moveanim[512];
 			sprintf(moveanim,"%s.%s_m",Get_Model(obj),Get_Model(obj));
+			obj->As_PhysicalGameObj()->Clear_Animation();
 			Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
 			LastDir = 1;
 		}
@@ -487,6 +504,7 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		{
 			char moveanim[512];
 			sprintf(moveanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
+			obj->As_PhysicalGameObj()->Clear_Animation();
 			Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
 			LastDir = 2;
 		}
@@ -502,6 +520,7 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		{
 			char moveanim[512];
 			sprintf(moveanim,"%s.%s_m",Get_Model(obj),Get_Model(obj));
+			obj->As_PhysicalGameObj()->Clear_Animation();
 			Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
 			LastDir = 1;
 		}
@@ -509,6 +528,7 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		{
 			char moveanim[512];
 			sprintf(moveanim,"%s.%s_b",Get_Model(obj),Get_Model(obj));
+			obj->As_PhysicalGameObj()->Clear_Animation();
 			Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
 			LastDir = 2;
 		}
@@ -516,17 +536,6 @@ void Reborn_IsDeployableMech::Animation_Complete(GameObject * obj,const char *an
 		{
 			enabled = false;
 		}
-	}
-	sprintf(text,"%s_dd.%s_f",model,model);
-	if (!_stricmp(animation_name,text) && (mode == 2) && Get_Animation_Frame(obj)) 
-	{
-		Commands->Set_Animation(obj,text,false,0,Get_Animation_Frame(obj),0,0);
-		return;
-	}
-	if (!(_stricmp(animation_name,text) && (mode == 2) && !Get_Animation_Frame(obj)))
-	{
-		CanPlayAnim = true;
-		return;
 	}
 }
 
@@ -633,16 +642,19 @@ void Reborn_IsDeployableMech::Timer_Expired(GameObject *obj,int number)
 				enabled = true;
 				if (Mode == 2)
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,moveanim,false,0,0,-1,0);
 					LastDir = 1;
 				}
 				else if (LastDir == 2)
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,movebanim,false,0,Get_Animation_Frame(obj),0,0);
 					LastDir = 3;
 				}
 				else
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,moveanim,false,0,Get_Animation_Frame(obj),-1,0);
 					LastDir = 1;
 				}
@@ -652,16 +664,19 @@ void Reborn_IsDeployableMech::Timer_Expired(GameObject *obj,int number)
 				enabled = true;
 				if (Mode == 2)
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,movebanim,false,0,0,-1,0);
 					LastDir = 2;
 				}
 				else if (LastDir == 1)
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,moveanim,false,0,Get_Animation_Frame(obj),0,0);
 					LastDir = 4;
 				}
 				else
 				{
+					obj->As_PhysicalGameObj()->Clear_Animation();
 					Commands->Set_Animation(obj,movebanim,false,0,Get_Animation_Frame(obj),-1,0);
 					LastDir = 2;
 				}
@@ -686,28 +701,6 @@ void Reborn_IsDeployableMech::Timer_Expired(GameObject *obj,int number)
 			}
 		}
 	}
-	//check for fireanim (Distance:barrel->MuzzleA0)
-	else if ((number == 3) && (mode == 2))
-	{
-		Commands->Start_Timer(obj,this,(float)0.1,3);
-		//are we deployed?
-		if (mode == 2)
-		{
-			bool Is_Recoiling = obj->As_VehicleGameObj()->Is_Recoiling(0);
-			if (!Is_Recoiling)
-			{
-				CanPlayAnim = true;
-				return;
-			}
-			if (Is_Recoiling && CanPlayAnim)
-			{
-				sprintf(anim,"%s_dd.%s_f",model,model);
-				Commands->Set_Animation(obj,anim,false,0,0,-1,false);
-				CanPlayAnim = false;
-				return;
-			}
-		}
-	}
 }
 
 void Reborn_IsDeployableMech::Register_Auto_Save_Variables()
@@ -716,7 +709,6 @@ void Reborn_IsDeployableMech::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&xpos,4,2);
 	Auto_Save_Variable(&ypos,4,3);
 	Auto_Save_Variable(&zpos,4,4);
-	Auto_Save_Variable(&CanPlayAnim,1,6);
 	Auto_Save_Variable(&PilotID,4,7);
 	Auto_Save_Variable(&mode,4,8);
 	Auto_Save_Variable(&play,1,9);
@@ -756,8 +748,8 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 		{
 			PilotID = Commands->Get_ID(sender);
 			char params[50];
-			sprintf(params,"Deploy,%d,923572385,0",Commands->Get_ID(obj));
-			Commands->Attach_Script(sender,"MDB_Send_Custom_On_Key",params);
+			sprintf(params,"Deploy,%d,923572385",Commands->Get_ID(obj));
+			Commands->Attach_Script(sender,"Reborn_Deployable_Vehicle_Player",params);
 		}
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -765,7 +757,7 @@ void Reborn_IsDeployableTank::Custom(GameObject *obj,int type,int param,GameObje
 		if (PilotID == Commands->Get_ID(sender))
 		{
 			PilotID = 0;
-			Remove_Script(sender,"MDB_Send_Custom_On_Key");
+			Remove_Script(sender,"Reborn_Deployable_Vehicle_Player");
 		}
 	}
 	else if (type == 923572385)
@@ -856,18 +848,10 @@ void Reborn_IsDeployableTank::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&mode,4,7);
 }
 
-void Reborn_IsDeployableTank::Killed(GameObject *obj,GameObject *killer)
+void Reborn_IsDeployableTank::Destroyed(GameObject *obj)
 {
-	if (PilotID)
-	{
-		Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
-		if (mode)
-		{
-			Commands->Control_Enable(obj,true);
-			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
-			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
-		}
-	}
+	Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+	Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 }
 
 void Reborn_IsDeployableTank_2::Created(GameObject *obj)
@@ -886,8 +870,8 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 		{
 			PilotID = Commands->Get_ID(sender);
 			char params[50];
-			sprintf(params,"Deploy,%d,923572385,0",Commands->Get_ID(obj));
-			Commands->Attach_Script(sender,"MDB_Send_Custom_On_Key",params);
+			sprintf(params,"Deploy,%d,923572385",Commands->Get_ID(obj));
+			Commands->Attach_Script(sender,"Reborn_Deployable_Vehicle_Player",params);
 		}
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -895,7 +879,7 @@ void Reborn_IsDeployableTank_2::Custom(GameObject *obj,int type,int param,GameOb
 		if (PilotID == Commands->Get_ID(sender))
 		{
 			PilotID = 0;
-			Remove_Script(sender,"MDB_Send_Custom_On_Key");
+			Remove_Script(sender,"Reborn_Deployable_Vehicle_Player");
 		}
 	}
 	else if (type == 923572385)
@@ -982,18 +966,10 @@ void Reborn_IsDeployableTank_2::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&mode,4,7);
 }
 
-void Reborn_IsDeployableTank_2::Killed(GameObject *obj,GameObject *killer)
+void Reborn_IsDeployableTank_2::Destroyed(GameObject *obj)
 {
-	if (PilotID)
-	{
-		Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
-		if (mode)
-		{
-			Commands->Control_Enable(obj,true);
-			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
-			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
-		}
-	}
+	Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+	Commands->Control_Enable(Commands->Find_Object(PilotID),true);
 }
 
 void Reborn_IsMech::Created(GameObject *obj)
@@ -1231,15 +1207,6 @@ void Reborn_IsMech::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&LastDir,4,9);
 }
 
-void Reborn_Deployable_Vehicle_Player::Created(GameObject *obj)
-{
-	InstallHook(Get_Parameter("Key"),obj);
-}
-
-void Reborn_Deployable_Vehicle_Player::KeyHook()
-{
-	Commands->Send_Custom_Event(Owner(),Commands->Find_Object(Get_Int_Parameter("ID")),Get_Int_Parameter("Message"),0,0);
-}
 
 
 void Reborn_IsDeployableTank_3::Created(GameObject *obj)
@@ -1257,8 +1224,8 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 		{
 			PilotID = Commands->Get_ID(sender);
 			char params[50];
-			sprintf(params,"Deploy,%d,923572385,0",Commands->Get_ID(obj));
-			Commands->Attach_Script(sender,"MDB_Send_Custom_On_Key",params);
+			sprintf(params,"Deploy,%d,923572385",Commands->Get_ID(obj));
+			Commands->Attach_Script(sender,"Reborn_Deployable_Vehicle_Player",params);
 		}
 	}
 	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
@@ -1266,7 +1233,7 @@ void Reborn_IsDeployableTank_3::Custom(GameObject *obj,int type,int param,GameOb
 		if (PilotID == Commands->Get_ID(sender))
 		{
 			PilotID = 0;
-			Remove_Script(sender,"MDB_Send_Custom_On_Key");
+			Remove_Script(sender,"Reborn_Deployable_Vehicle_Player");
 		}
 	}
 	else if (type == 923572385)
@@ -1361,21 +1328,172 @@ void Reborn_IsDeployableTank_3::Register_Auto_Save_Variables()
 	Auto_Save_Variable(&mode,4,7);
 }
 
-void Reborn_IsDeployableTank_3::Killed(GameObject *obj,GameObject *killer)
+void Reborn_IsDeployableTank_3::Destroyed(GameObject *obj)
 {
-	if (PilotID)
+	Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+	Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+}
+
+void Reborn_IsDeployableTank_4::Created(GameObject *obj)
+{
+	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
+	mode = 0;
+	PilotID = 0;
+}
+
+void Reborn_IsDeployableTank_4::Custom(GameObject *obj, int type, int param, GameObject *sender)
+{
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
 	{
-		Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
-		if (mode)
+		if (!PilotID)
 		{
-			Commands->Control_Enable(obj,true);
-			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
-			Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+			PilotID = Commands->Get_ID(sender);
+			char params[50];
+			sprintf(params, "Deploy,%d,923572385", Commands->Get_ID(obj));
+			Commands->Attach_Script(sender, "Reborn_Deployable_Vehicle_Player", params);
+		}
+	}
+	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
+	{
+		if (PilotID == Commands->Get_ID(sender))
+		{
+			PilotID = 0;
+			Remove_Script(sender, "Reborn_Deployable_Vehicle_Player");
+		}
+	}
+	else if (type == 923572385)
+	{
+		if (!obj->As_VehicleGameObj()->Can_Drive())
+		{
+			return;
+		}
+		const char *model = Get_Parameter("Model_Name");
+		char deployanim[512];
+		char dmodel[512];
+		sprintf(deployanim, "%s_d.%s_d", model, model);
+		sprintf(dmodel, "%s_d", model);
+		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
+		if (!mode)
+		{
+			Vector3 pos = Commands->Get_Bone_Position(obj, Get_Parameter("GroundBone"));
+			Vector3 pos2 = pos;
+			pos2.Z -= (Get_Float_Parameter("GroundDistance") * 2);
+			CastResultStruct res;
+			res.ComputeContactPoint = true;
+			LineSegClass ray(pos, pos2);
+			PhysRayCollisionTestClass coltest(ray, &res, DEFAULT_COLLISION_GROUP);
+			coltest.CheckDynamicObjs = false;
+			PhysicsSceneClass::Get_Instance()->Cast_Ray(coltest, false);
+			if ((coltest.CollidedRenderObj) && (Vector3::Dot_Product(res.Normal, ray.Get_Dir()) <= 0) && (pos.Z - res.ContactPoint.Z <= Get_Float_Parameter("GroundDistance")) && (!obj->As_VehicleGameObj()->Is_Immovable()))
+			{
+				Commands->Enable_Engine(obj,false);
+				Commands->Start_Timer(obj, this, 2, Commands->Get_ID(sender));
+			}
+			else
+			{
+				if (PilotID)
+				{
+					Create_2D_Sound_Player(Commands->Find_Object(PilotID), Get_Parameter("Sound"));
+					unsigned int red, green, blue;
+					Get_Object_Color(Commands->Find_Object(PilotID), &red, &green, &blue);
+					Send_Message_Player(Commands->Find_Object(PilotID), red, green, blue, Get_Parameter("Message"));
+				}
+			}
+		}
+		//mode: 0=walk;1=deploy;2=deployed;3=redeploy
+		else if (mode == 2)
+		{
+			mode = 3;
+			Commands->Clear_Weapons(obj);
+			Commands->Set_Model(obj, dmodel);
+			Commands->Set_Animation(obj, deployanim, false, 0, Get_Float_Parameter("Last_Deploy_Frame"), 0, 0);
+			Commands->Control_Enable(sender, false);
+			obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+			Commands->Enable_Vehicle_Transitions(obj, false);
 		}
 	}
 }
 
-ScriptRegistrant<Reborn_Game_Manager> Reborn_Game_Manager_Registrant("Reborn_Game_Manager","");
+void Reborn_IsDeployableTank_4::Timer_Expired(GameObject *obj, int number)
+{
+	const char *model = Get_Parameter("Model_Name");
+	char deployanim[512];
+	char dmodel[512];
+	sprintf(deployanim, "%s_d.%s_d", model, model);
+	sprintf(dmodel, "%s_d", model);
+	obj->As_VehicleGameObj()->Set_Immovable(true);
+	mode = 1;
+	Commands->Set_Model(obj, dmodel);
+	Commands->Set_Animation(obj, deployanim, false, 0, 0, -1, 0);
+	Commands->Clear_Weapons(obj);
+	Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
+	Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
+	Commands->Set_Shield_Type(obj, Get_Parameter("Armor"));
+	Commands->Control_Enable(Commands->Find_Object(number), false);
+	obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(false);
+	Commands->Enable_Vehicle_Transitions(obj, false);
+}
+
+void Reborn_IsDeployableTank_4::Animation_Complete(GameObject *obj, const char *animation_name)
+{
+	const char *model;
+	model = Get_Parameter("Model_Name");
+	char deployedmodel[512];
+	sprintf(deployedmodel, "%s_dd", model);
+	char deployanim[512];
+	sprintf(deployanim, "%s_d.%s_d", model, model);
+	//tank deploy
+	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
+	if (!_stricmp(animation_name, deployanim) && (mode == 1))
+	{
+		mode = 2;
+		Commands->Clear_Weapons(obj);
+		Commands->Set_Model(obj, deployedmodel);
+		obj->As_PhysicalGameObj()->Clear_Animation();
+		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name"), false);
+		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name"));
+		Commands->Control_Enable(Commands->Find_Object(PilotID), true);
+		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+		Commands->Enable_Engine(obj, false);
+		Commands->Enable_Vehicle_Transitions(obj, true);
+		Commands->Enable_Innate_Conversations(obj, true);
+		return;
+	}
+	//tank redeploy
+	//mode: 0=walk;1=deploy;2=deployed;3=redeploy
+	if (!_stricmp(animation_name, deployanim) && (mode == 3))
+	{
+		obj->As_VehicleGameObj()->Set_Immovable(false);
+		mode = 0;
+		Commands->Set_Model(obj, model);
+		Commands->Clear_Weapons(obj);
+		Commands->Give_PowerUp(obj, Get_Parameter("Weapon_Powerup_Name2"), false);
+		Commands->Select_Weapon(obj, Get_Parameter("Weapon_Name2"));
+		Commands->Set_Shield_Type(obj, Get_Parameter("Armor2"));
+		obj->As_PhysicalGameObj()->Clear_Animation();
+		Commands->Control_Enable(Commands->Find_Object(PilotID), true);
+		obj->As_VehicleGameObj()->Set_Scripts_Can_Fire(true);
+		Commands->Enable_Hibernation(obj, false);
+		Commands->Enable_Innate_Conversations(obj, true);
+		Commands->Enable_Vehicle_Transitions(obj, true);
+		Commands->Enable_Engine(obj, true);
+		return;
+	}
+}
+
+void Reborn_IsDeployableTank_4::Register_Auto_Save_Variables()
+{
+	Auto_Save_Variable(&PilotID, 4, 6);
+	Auto_Save_Variable(&mode, 4, 7);
+}
+
+void Reborn_IsDeployableTank_4::Destroyed(GameObject *obj)
+{
+	Remove_Script(Commands->Find_Object(PilotID),"Reborn_Deployable_Vehicle_Player");
+	Commands->Control_Enable(Commands->Find_Object(PilotID),true);
+}
+
+ScriptRegistrant<Reborn_Game_Manager> Reborn_Game_Manager_Registrant("Reborn_Game_Manager", "");
 ScriptRegistrant<Reborn_MMK2> Reborn_MMK2_Registrant("Reborn_MMK2","GameManager_ID:int,Explosion_Preset_Name:string,MoneyToReturn:float");
 ScriptRegistrant<Reborn_Cyborg>Reborn_Cyborg_Registrant("Reborn_Cyborg","GameManager_ID:int,Explosion_Preset_Name:string,MoneyToReturn:float");
 ScriptRegistrant<Reborn_Deployable_Vehicle> Reborn_Deployable_Vehicle_Registrant("Reborn_Deployable_Vehicle","Animated_Preset:string,Explosion_Preset:string");
@@ -1388,5 +1506,6 @@ ScriptRegistrant<Reborn_IsDeployableMech> Reborn_IsDeployableMech_Registrant("Re
 ScriptRegistrant<Reborn_IsDeployableTank> Reborn_IsDeployableTank_Registrant("Reborn_IsDeployableTank","Model_Name=v_nod_art:string,Weapon_Name=weapon_artillery:string,Weapon_Powerup_Name=pow_artillery:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
 ScriptRegistrant<Reborn_IsDeployableTank_2> Reborn_IsDeployableTank_2_Registrant("Reborn_IsDeployableTank_2","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Velocity:float,Message:string,Sound:string");
 ScriptRegistrant<Reborn_IsDeployableTank_3> Reborn_IsDeployableTank_3_Registrant("Reborn_IsDeployableTank_3","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string");
-ScriptRegistrant<Reborn_IsMech> Reborn_IsMech_Registrant("Reborn_IsMech","StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=51:int,Stomp1Frame_Backward=10:int,Stomp2Frame_Backward=40:int");
+ScriptRegistrant<Reborn_IsDeployableTank_4> Reborn_IsDeployableTank_4_Registrant("Reborn_IsDeployableTank_4","Model_Name=v_nod_art:string,Last_Deploy_Frame=0.00:float,Weapon_Name:string,Weapon_Powerup_Name:string,Armor:string,Weapon_Name2:string,Weapon_Powerup_Name2:string,Armor2:string,Velocity:float,Message:string,Sound:string,GroundBone:string,GroundDistance:float");
+ScriptRegistrant<Reborn_IsMech> Reborn_IsMech_Registrant("Reborn_IsMech", "StompWAVSound=wolverine_stomp.wav:string,Stomp1Frame_Forward=21:int,Stomp2Frame_Forward=51:int,Stomp1Frame_Backward=10:int,Stomp2Frame_Backward=40:int");
 ScriptRegistrant<Reborn_Deployable_Vehicle_Player> Reborn_Deployable_Vehicle_Player_Registrant("Reborn_Deployable_Vehicle_Player","Key=Deploy:string,ID=0:int,Message=0:int");

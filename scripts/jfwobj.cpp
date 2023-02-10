@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -18,6 +18,7 @@
 #include "ArmorWarheadManager.h"
 #include "MoveablePhysClass.h"
 #include "VehicleGameObj.h"
+#include "SimpleGameObj.h"
 struct TimerParams {
 	int number;
 	float time;
@@ -1892,7 +1893,10 @@ class JFW_Attack_Object : public ScriptImpClass
 			if (Get_Float_Parameter("Speed") == 0)
 			{
 				VehicleGameObj *o = obj->As_VehicleGameObj();
-				o->Set_Immovable(true);
+				if (NULL != o)
+				{
+				  o->Set_Immovable(true);
+				}
 			}
 			params.Set_Basic(this,100,Get_Int_Parameter("ActionID"));
 			params.Set_Movement(Commands->Find_Object(Get_Int_Parameter("ID")),Get_Float_Parameter("Speed"),Get_Float_Parameter("ArriveDistance"));
@@ -1908,8 +1912,15 @@ class JFW_Attack_Object : public ScriptImpClass
 	{
 		if (action_id == Get_Int_Parameter("ActionID"))
 		{
-			VehicleGameObj *o = obj->As_VehicleGameObj();
-			o->Set_Immovable(false);
+			if (Get_Float_Parameter("Speed") == 0)
+			{
+  			VehicleGameObj *o = obj->As_VehicleGameObj();
+				if (NULL != o)
+				{
+  			  o->Set_Immovable(false);
+				}
+			}
+			
 			if (Get_Int_Parameter("CompleteMessage") != 0)
 			{
 				Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("CompleteMessage"),Get_Int_Parameter("CompleteParam"),0);
@@ -1930,7 +1941,10 @@ class JFW_Attack_Location : public ScriptImpClass
 			if (Get_Float_Parameter("Speed") == 0)
 			{
 				VehicleGameObj *o = obj->As_VehicleGameObj();
-				o->Set_Immovable(true);
+				if (NULL != o)
+				{
+				  o->Set_Immovable(true);
+				}
 			}
 			params.Set_Basic(this,100,Get_Int_Parameter("ActionID"));
 			params.Set_Movement(Get_Vector3_Parameter("Location"),Get_Float_Parameter("Speed"),Get_Float_Parameter("ArriveDistance"));
@@ -1946,8 +1960,15 @@ class JFW_Attack_Location : public ScriptImpClass
 	{
 		if (action_id == Get_Int_Parameter("ActionID"))
 		{
-			VehicleGameObj *o = obj->As_VehicleGameObj();
-			o->Set_Immovable(false);
+			if (Get_Float_Parameter("Speed") == 0)
+			{
+  			VehicleGameObj *o = obj->As_VehicleGameObj();
+				if (NULL != o)
+				{
+  			  o->Set_Immovable(false);
+				}
+			}
+			
 			if (Get_Int_Parameter("CompleteMessage") != 0)
 			{
 				Commands->Send_Custom_Event(obj,obj,Get_Int_Parameter("CompleteMessage"),Get_Int_Parameter("CompleteParam"),0);
@@ -2120,6 +2141,86 @@ class JFW_Damage_All_Objects_Area : public ScriptImpClass
 	}
 };
 REGISTER_SCRIPT(JFW_Damage_All_Objects_Area,"Time:float,Damage:float,Warhead:string,Distance:float,Soldiers:int,Vehicles:int,Team:int");
+
+class JFW_Set_HUD_Help_Text_Player : public ScriptImpClass
+{
+	void Custom(GameObject *obj, int type, int param, GameObject *sender)
+	{
+		if (type == Get_Int_Parameter("Message"))
+		{
+			Set_HUD_Help_Text_Player(obj,Get_Int_Parameter("String"),Get_Vector3_Parameter("Color"));
+			if (Get_Bool_Parameter("OnceOnly"))
+			{
+				Destroy_Script();
+			}
+		}
+	}
+};
+REGISTER_SCRIPT(JFW_Set_HUD_Help_Text_Player, "Message:int,String:int,Color:vector3,OnceOnly:int");
+
+class JFW_Spawn_Projectile_Death : public ScriptImpClass
+{
+	void Killed(GameObject *obj,GameObject *killer)
+	{
+		Vector3 spawn_location;
+		float facing;
+		const char *c;
+		GameObject *object;
+		spawn_location = Commands->Get_Position(obj);
+		facing = Commands->Get_Facing(obj);
+		c = Get_Parameter("Projectile");
+		object = Commands->Create_Object (c,spawn_location);
+		Commands->Set_Facing(object,facing);
+		PhysicalGameObj *p = obj->As_PhysicalGameObj();
+		if (p)
+		{
+			PhysClass *ph = p->Peek_Physical_Object();
+			if (ph)
+			{
+				MoveablePhysClass *m = ph->As_MoveablePhysClass();
+				if (m)
+				{
+					PhysicalGameObj *p2 = object->As_PhysicalGameObj();
+					if (p2)
+					{
+						SimpleGameObj *s = p2->As_SimpleGameObj();
+						if (s)
+						{
+							PhysClass *ph2 = s->Peek_Physical_Object();
+							if (ph2)
+							{
+								MoveablePhysClass *m2 = ph2->As_MoveablePhysClass();
+								if (m2)
+								{
+									Vector3 velocity;
+									m->Get_Velocity(&velocity);
+									m2->Set_Velocity(velocity);
+									object->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		Destroy_Script();
+	}
+};
+REGISTER_SCRIPT(JFW_Spawn_Projectile_Death, "Projectile:string");
+
+class JFW_Projectile_Sync : public ScriptImpClass
+{
+	void Created(GameObject *obj)
+	{
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+	}
+	void Timer_Expired(GameObject *obj,int number)
+	{
+		obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+		Commands->Start_Timer(obj,this,Get_Float_Parameter("Time"),1);
+	}
+};
+REGISTER_SCRIPT(JFW_Projectile_Sync, "Time:float");
 
 ScriptRegistrant<JFW_Add_Objective> JFW_Add_Objective_Registrant("JFW_Add_Objective","Type:int,TypeVal:int,Objective_Num:int,Objective_Type:int,Title_ID:int,Unknown:int,Sound_Name:string,Description_ID:int,Timer_Custom:int,Trigger:int");
 ScriptRegistrant<JFW_Remove_Objective> JFW_Remove_Objective_Registrant("JFW_Remove_Objective","Type:int,TypeVal:int,Objective_Num:int,Timer_Custom:int");

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -61,8 +61,10 @@ public:
 	unsigned int Get_Network_Class_ID () const { return 2004; }
 #ifndef TTLE_EXPORTS
 #ifndef DDBEDIT
+#ifndef W3DVIEWER
 	void Export_Occasional(BitStreamClass &packet);
 	void Import_Occasional(BitStreamClass &packet);
+#endif
 #endif
 	int Get_Definition(int index)
 	{

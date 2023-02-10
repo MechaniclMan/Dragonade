@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -25,24 +25,21 @@
 #include "VehicleFactoryGameObjDef.h"
 #include "HarvesterClass.h"
 #include "DefinitionMgrClass.h"
-REF_DEF2(bool, CombatManager::IAmServer,0x00855EC8, 0x008550B0);
+REF_DEF2(bool, CombatManager::IAmServer, 0x00855EC8, 0x008550B0);
 RENEGADE_FUNCTION
 void *Game_Mode_Find(const char *)
 AT2(0x004372B0,0x00437350);
-#ifndef TT_EXPORTS
-RENEGADE_FUNCTION
-void BaseControllerClass::On_Vehicle_Generated(VehicleGameObj* vehicle)
-AT2(0x006EEF00,0x006EE4C0);
-#endif
 RENEGADE_FUNCTION
 cGameData SCRIPTS_API *The_Game()
 AT2(0x00477CA0,0x00477370);
 RENEGADE_FUNCTION
 BaseControllerClass *BaseControllerClass::Find_Base(int Team)
 AT2(0x006EF790,0x006EED50);
+#ifndef TT_EXPORTS
 RENEGADE_FUNCTION
 void BaseControllerClass::Power_Base(bool Power)
 AT2(0x006EF310,0x006EE8D0);
+#endif
 VehicleGameObj *BaseControllerClass::Get_Harvester_Vehicle()
 {
 	BuildingGameObj* refinery = Find_Building(BuildingConstants::TYPE_REFINERY);
@@ -120,12 +117,6 @@ void BaseControllerClass::Check_Radar()
 		Enable_Radar(radarEnabled);
 	}
 }
-
-
-RENEGADE_FUNCTION
-void BaseControllerClass::On_Beacon_Warning(BeaconGameObj*)
-AT2(0x006EF1D0, 0x006EE790);
-
 
 
 REF_DEF2(int, cGameData::HostedGameNumber, 0x0082F120, 0x0082E308);
@@ -303,13 +294,11 @@ void RefineryGameObj::Destroy_Harvester()
 VehicleGameObj *
 RefineryGameObj::Get_Harvester_Vehicle (void)
 {
-	VehicleGameObj *vehicle = NULL;
-
-	if (Harvester != NULL) {
-		vehicle = Harvester->Get_Vehicle ();
+	if (HarvesterVehicle.Get_Ptr()) 
+	{
+		return HarvesterVehicle->As_VehicleGameObj();
 	}
-
-	return vehicle;
+	return 0;
 }
 
 GameObject SCRIPTS_API *Find_Harvester(int team)
@@ -518,7 +507,7 @@ bool SCRIPTS_API Is_Gameplay_Permitted()
 
 bool SCRIPTS_API Is_Dedicated()
 {
-	return Exe >= 1;
+	return Exe == 1;
 }
 
 unsigned int SCRIPTS_API Get_Current_Game_Mode()
@@ -671,4 +660,14 @@ BuildingAggregateClass *BuildingGameObj::Find_MCT()
 		}
 	}
 	return 0;
+}
+
+void SCRIPTS_API Seconds_To_Hms(float secs, int &hours, int &minutes, int &seconds)
+{
+	int i1 = (int) (secs * 0.00027777778f);
+	hours = i1;
+	float f1 = secs - (float) (3600 * (int) i1);
+	int i2 = (int) (f1 * 0.016666668f);
+	minutes = i2;
+	seconds = (int) (f1 - (float) (60 * (int) i2));
 }

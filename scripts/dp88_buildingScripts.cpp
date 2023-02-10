@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -220,7 +220,7 @@ void dp88_buildingScripts_controller::Custom( GameObject *obj, int type, int par
 						{
 							GameObject* child = Commands->Find_Object ( children[i].objectId );
 							if ( child != NULL )
-								Commands->Send_Custom_Event ( obj, sender, CUSTOM_BUILDINGSCRIPTS_BUILDINGOFFLINE, 0, 0.0f );
+								Commands->Send_Custom_Event ( obj, child, CUSTOM_BUILDINGSCRIPTS_BUILDINGOFFLINE, 0, 0.0f );
 						}
 					}
 
@@ -266,7 +266,7 @@ void dp88_buildingScripts_controller::Custom( GameObject *obj, int type, int par
 				{
 					GameObject* child = Commands->Find_Object ( children[i].objectId );
 					if ( child != NULL )
-						Commands->Send_Custom_Event ( obj, sender, CUSTOM_BUILDINGSCRIPTS_BUILDINGDESTROYED, 0, 0.0f );
+						Commands->Send_Custom_Event ( obj, child, CUSTOM_BUILDINGSCRIPTS_BUILDINGDESTROYED, 0, 0.0f );
 				}
 
 				// And now die...
@@ -341,7 +341,7 @@ void dp88_buildingScripts_controller::Custom( GameObject *obj, int type, int par
 						{
 							GameObject* child = Commands->Find_Object ( children[i].objectId );
 							if ( child != NULL )
-								Commands->Send_Custom_Event ( obj, sender, CUSTOM_BUILDINGSCRIPTS_BUILDINGONLINE, 0, 0.0f );
+								Commands->Send_Custom_Event ( obj, child, CUSTOM_BUILDINGSCRIPTS_BUILDINGONLINE, 0, 0.0f );
 						}
 					}
 
@@ -388,7 +388,7 @@ void dp88_buildingScripts_controller::Custom( GameObject *obj, int type, int par
 			{
 				GameObject* child = Commands->Find_Object ( children[i].objectId );
 				if ( child != NULL )
-					Commands->Send_Custom_Event ( obj, sender, CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, param, 0.0f );
+					Commands->Send_Custom_Event ( obj, child, CUSTOM_BUILDINGSCRIPTS_BUILDINGCAPTURED, param, 0.0f );
 			}
 		}
 	}
@@ -502,6 +502,7 @@ dp88_buildingScripts_componentBaseClass::dp88_buildingScripts_componentBaseClass
 
 void dp88_buildingScripts_componentBaseClass::Detach( GameObject* obj )
 {
+  dp88_buildingScripts_baseClass::Detach(obj);
   delete m_pAnimController;
   OnDetach(obj);
 }
@@ -673,8 +674,11 @@ void dp88_buildingScripts_minorWeakpoint::Created ( GameObject *obj )
 
 void dp88_buildingScripts_minorWeakpoint::Damaged ( GameObject *obj, GameObject *damager, float amount )
 {
+  if (-1 == m_parentId)
+    return;
+  
   /* Has this weakpoint been "destroyed"? */
-  if ( !m_bIsDestroyed && Commands->Get_Shield_Strength(obj) == 0 )
+  if (!m_bIsDestroyed && Commands->Get_Shield_Strength(obj) == 0)
   {
     m_bIsDestroyed = true;
 
@@ -688,13 +692,8 @@ void dp88_buildingScripts_minorWeakpoint::Damaged ( GameObject *obj, GameObject 
   }
 
 
-  // Don't permit any repairs if the parent building is dead
-  if ( m_parentId == -1 && amount < 0.0f )
-    Commands->Set_Shield_Strength(obj, 0);
-
-
   /* Has this weakpoint been fully repaired? */
-  else if ( m_bIsDestroyed && amount <= 0.0f && Commands->Get_Shield_Strength(obj) == Commands->Get_Max_Shield_Strength(obj) )
+  else if (m_bIsDestroyed && amount <= 0.0f && Commands->Get_Shield_Strength(obj) == Commands->Get_Max_Shield_Strength(obj))
   {
     m_bIsDestroyed = false;
 
@@ -722,6 +721,7 @@ void dp88_buildingScripts_minorWeakpoint::OnBuildingDestroyed( GameObject *obj )
 {
   m_bIsDestroyed = true;
   Commands->Set_Shield_Strength(obj, 0);
+  Commands->Set_Shield_Type(obj, Get_Skin(obj));  // Skin type should be "Blamo" or equivalent
   UpdateAnimation(obj);
   // Don't call Destroy_Script(), this will stop the destroyed animation
 }
@@ -730,7 +730,7 @@ void dp88_buildingScripts_minorWeakpoint::OnBuildingDestroyed( GameObject *obj )
 
 void dp88_buildingScripts_minorWeakpoint::UpdateAnimation( GameObject* obj )
 {
-  if ( !m_bIsDestroyed )
+  if (!m_bIsDestroyed && -1 != m_parentId)
   {
     PlayAnimation ( obj,
       Get_Parameter("Animation_Name"),
@@ -1054,34 +1054,24 @@ void dp88_buildingScripts_functionMoneyTrickle::Timer_Expired ( GameObject* obj,
 }
 
 
-void dp88_buildingScripts_functionMoneyGrant::Created ( GameObject *obj )
+void dp88_buildingScripts_functionMoneyGrant::Created(GameObject *obj)
 {
-	if ( Get_Object_Type(obj) == 0 || Get_Object_Type(obj) == 1 )
-	{
-		int team = Get_Object_Type(obj);
-		GameObject* pFirstPlayer = Find_First_Player(team);
-		if ( pFirstPlayer )
-		{
-			Commands->Give_Money(pFirstPlayer,Get_Float_Parameter("credits"),true);
-		}
-		if (Get_Int_Parameter("onceOnly") == 1)
-		{
-			Destroy_Script();
-		}
-	}
+  m_credits = Get_Float_Parameter("credits");
+  OnBuildingCaptured(obj, Get_Object_Type(obj));
 }
 
-void dp88_buildingScripts_functionMoneyGrant::OnBuildingCaptured ( GameObject *obj, int team )
+void dp88_buildingScripts_functionMoneyGrant::OnBuildingCaptured(GameObject *obj, int team)
 {
 	if (team == 0 || team == 1)
 	{
 		GameObject* pFirstPlayer = Find_First_Player(team);
-		if ( pFirstPlayer )
+		if(pFirstPlayer)
 		{
-			Commands->Give_Money(pFirstPlayer,Get_Float_Parameter("credits"),true);
+			Commands->Give_Money(pFirstPlayer, m_credits, true);
 		}
-		if (Get_Int_Parameter("onceOnly") == 1)
+		if (Get_Bool_Parameter("onceOnly"))
 		{
+		  m_credits = 0.0f;
 			Destroy_Script();
 		}
 	}
@@ -1149,7 +1139,7 @@ void dp88_buildingScripts_functionSpawnTeamZone::createZone(GameObject* obj)
 			Vector3 position = Commands->Get_Bone_Position(obj,Get_Parameter("scriptZoneBone"));
 			Vector3 size = Get_Vector3_Parameter("scriptZoneSize");
 			Matrix3 rotation(true);
-			rotation.Rotate_Z(Commands->Get_Facing(obj));
+			rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(obj)));
 
 			// Define the bounding box and create the zone
 			OBBoxClass zoneBoundingBox ( position, size, rotation );
@@ -1236,7 +1226,7 @@ void dp88_buildingScripts_functionSpawnZone::createZone(GameObject* obj)
     Vector3 position = Commands->Get_Position(obj);
     Vector3 size = Get_Vector3_Parameter("scriptZoneSize");
     Matrix3 rotation(true);
-    rotation.Rotate_Z(Commands->Get_Facing(obj));
+    rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(obj)));
 
     // Define the bounding box and create the zone
     OBBoxClass zoneBoundingBox ( position, size, rotation );

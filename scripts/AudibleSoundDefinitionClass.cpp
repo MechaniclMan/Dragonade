@@ -22,6 +22,9 @@
 #ifdef PARAM_EDITING_ON
 #include "ParameterImpl.h"
 #endif
+void forcelinkaudiblesound()
+{
+}
 SimplePersistFactoryClass<AudibleSoundDefinitionClass, 196608>	_AudibleSoundDefPersistFactory;
 DECLARE_DEFINITION_FACTORY(AudibleSoundDefinitionClass, 20480, "Sound") _SoundDefFactory;
 

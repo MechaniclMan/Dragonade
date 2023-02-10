@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -436,6 +436,7 @@ void JFW_Time_Remaining_Sounds::Created(GameObject *obj)
 				config->Get_String("Sounds",c,"",Sounds[i].sound,49);
 				sprintf(c,"Sound%dTime",i);
 				Sounds[i].minutes = config->Get_Int("Sounds",c,0);
+				Sounds[i].played = false;
 			}
 			Release_INI(config);
 			Timer_Expired(obj,1);
@@ -445,14 +446,20 @@ void JFW_Time_Remaining_Sounds::Created(GameObject *obj)
 
 void JFW_Time_Remaining_Sounds::Timer_Expired(GameObject *obj,int number)
 {
-	for (int i = 0;i < SoundCount;i++)
+	int hours = 0;
+	int minutes = 0;
+	int seconds = 0;
+	Seconds_To_Hms(The_Game()->Get_Time_Remaining_Seconds(), hours, minutes, seconds);
+	minutes += hours * 60;
+	for (int i = 0; i < SoundCount; i++)
 	{
-		if (Sounds[i].minutes == (int)(The_Game()->Get_Time_Remaining_Seconds() / 60))
+		if (Sounds[i].minutes == minutes && !Sounds[i].played)
 		{
 			Commands->Create_2D_Sound(Sounds[i].sound);
+			Sounds[i].played = true;
 		}
 	}
-	Commands->Start_Timer(obj,this,60.0,1);
+	Commands->Start_Timer(obj, this, 1, 1);
 }
 
 JFW_Time_Remaining_Sounds::JFW_Time_Remaining_Sounds(): ScriptImpClass()
@@ -470,6 +477,71 @@ JFW_Time_Remaining_Sounds::~JFW_Time_Remaining_Sounds()
 			SAFE_DELETE_ARRAY(Sounds[i].sound);
 		}
 		delete[] Sounds;
+		Sounds = NULL;
+	}
+}
+
+void JFW_Time_Remaining_Sounds_2::Created(GameObject *obj)
+{
+	if (The_Game()->Get_Time_Remaining_Seconds())
+	{
+		INIClass *config = Get_INI(Get_Parameter("ConfigFile"));
+		if (config)
+		{
+			SoundCount = config->Get_Int("Sounds", "SoundCount", 0);
+			Sounds = new TimeRemainingSound[SoundCount];
+			memset(Sounds, 0x00, sizeof(TimeRemainingSound) * SoundCount);
+			for (int i = 0; i < SoundCount; i++)
+			{
+				Sounds[i].sound = new char[50];
+				memset(Sounds[i].sound, 0x00, 50);
+				char c[50];
+				sprintf(c, "Sound%dName", i);
+				config->Get_String("Sounds", c, "", Sounds[i].sound, 49);
+				sprintf(c, "Sound%dTime", i);
+				Sounds[i].minutes = config->Get_Int("Sounds", c, 0);
+				Sounds[i].played = false;
+			}
+			Release_INI(config);
+			team = Get_Int_Parameter("Team");
+			Timer_Expired(obj, 1);
+		}
+	}
+}
+
+void JFW_Time_Remaining_Sounds_2::Timer_Expired(GameObject *obj, int number)
+{
+	int hours = 0;
+	int minutes = 0;
+	int seconds = 0;
+	Seconds_To_Hms(The_Game()->Get_Time_Remaining_Seconds(), hours, minutes, seconds);
+	minutes += hours * 60;
+	for (int i = 0; i < SoundCount; i++)
+	{
+		if (Sounds[i].minutes == minutes && !Sounds[i].played)
+		{
+			Create_2D_Sound_Team(Sounds[i].sound,team);
+			Sounds[i].played = true;
+		}
+	}
+	Commands->Start_Timer(obj, this, 1, 1);
+}
+
+JFW_Time_Remaining_Sounds_2::JFW_Time_Remaining_Sounds_2() : ScriptImpClass()
+{
+	SoundCount = 0;
+	Sounds = 0;
+}
+
+JFW_Time_Remaining_Sounds_2::~JFW_Time_Remaining_Sounds_2()
+{
+	if (Sounds)
+	{
+		for (int i = 0; i < SoundCount; i++)
+		{
+			SAFE_DELETE_ARRAY(Sounds[i].sound);
+		}
+		delete [] Sounds;
 		Sounds = NULL;
 	}
 }
@@ -577,7 +649,25 @@ void JFW_C4_Sound_2::Created(GameObject *obj)
 	Destroy_Script();
 }
 
-ScriptRegistrant<JFW_Set_Background_Music_On_Custom> JFW_Set_Background_Music_On_Custom_Registrant("JFW_Set_Background_Music_On_Custom","Message:int,Music:string");
+void JFW_Repair_Complete_Sound::Created(GameObject *obj)
+{
+	damaged = false;
+}
+
+void JFW_Repair_Complete_Sound::Damaged(GameObject *obj, GameObject *damager, float amount)
+{
+	if (Commands->Get_Health(obj) < Commands->Get_Max_Health(obj) || Commands->Get_Shield_Strength(obj) < Commands->Get_Max_Shield_Strength(obj))
+	{
+		damaged = true;
+	}
+	if (Commands->Get_Health(obj) == Commands->Get_Max_Health(obj) && Commands->Get_Shield_Strength(obj) == Commands->Get_Max_Shield_Strength(obj) && damaged)
+	{
+		Create_2D_Sound_Team(Get_Parameter("NodSound"), 0);
+		Create_2D_Sound_Team(Get_Parameter("GDISound"), 1);
+		damaged = false;
+	}
+}
+ScriptRegistrant<JFW_Set_Background_Music_On_Custom> JFW_Set_Background_Music_On_Custom_Registrant("JFW_Set_Background_Music_On_Custom", "Message:int,Music:string");
 ScriptRegistrant<JFW_Fade_Background_Music_On_Custom> JFW_Fade_Background_Music_On_Custom_Registrant("JFW_Fade_Background_Music_On_Custom","Message:int,Music:string,unk1:int,unk2:int");
 ScriptRegistrant<JFW_Stop_Background_Music_On_Custom> JFW_Stop_Background_Music_On_Custom_Registrant("JFW_Stop_Background_Music_On_Custom","Message:int");
 ScriptRegistrant<JFW_Set_Background_Music_On_Enter> JFW_Set_Background_Music_On_Enter_Registrant("JFW_Set_Background_Music_On_Enter","Music:string");
@@ -597,6 +687,8 @@ ScriptRegistrant<JFW_2D_Sound_Timer> JFW_2D_Sound_Timer_Registrant("JFW_2D_Sound
 ScriptRegistrant<JFW_2D_Sound_Startup> JFW_2D_Sound_Startup_Registrant("JFW_2D_Sound_Startup","Sound:string");
 ScriptRegistrant<JFW_2D_Sound_Death_Team> JFW_2D_Sound_Death_Team_Registrant("JFW_2D_Sound_Death_Team","Sound:string");
 ScriptRegistrant<JFW_Time_Remaining_Sounds> JFW_Time_Remaining_Sounds_Registrant("JFW_Time_Remaining_Sounds","ConfigFile:string");
-ScriptRegistrant<JFW_Vehicle_Full_Sound> JFW_Vehicle_Full_Sound_Registrant("JFW_Vehicle_Full_Sound","Time:float,TimerNum:int,Sound:string");
+ScriptRegistrant<JFW_Time_Remaining_Sounds_2> JFW_Time_Remaining_Sounds_2_Registrant("JFW_Time_Remaining_Sounds_2", "ConfigFile:string,Team:int");
+ScriptRegistrant<JFW_Vehicle_Full_Sound> JFW_Vehicle_Full_Sound_Registrant("JFW_Vehicle_Full_Sound", "Time:float,TimerNum:int,Sound:string");
 ScriptRegistrant<JFW_C4_Sound> JFW_C4_Sound_Registrant("JFW_C4_Sound","Sound:string");
 ScriptRegistrant<JFW_C4_Sound_2> JFW_C4_Sound_2_Registrant("JFW_C4_Sound_2","Sound:string");
+ScriptRegistrant<JFW_Repair_Complete_Sound> JFW_Repair_Complete_Sound_Registrant("JFW_Repair_Complete_Sound", "GDISound:string,NodSound:string");

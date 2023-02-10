@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Vehicle Purchase Queue Game Feature
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -244,7 +244,7 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,DAVehicleQueueStruct
 		}
 		VF->Request_Vehicle(Q->Vehicle->Get_ID(),Delay,Q->Player?Q->Player->Get_GameObj():0);
 		if (Q->Player && Q->Player->Is_Alive_And_Kicking()) { //Gray out for the Player.
-			Send_Object_Update(VF,Q->Player->Get_ID());
+			Update_Network_Object_Player(VF,Q->Player->Get_ID());
 			VF->Set_Busy(false); //Prevent from graying out for other players.
 			VF->Set_Object_Dirty_Bit(Q->Player->Get_ID(),NetworkObjectClass::BIT_RARE,false);
 		}

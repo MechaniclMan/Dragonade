@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Loot Game Feature
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -366,7 +366,7 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(SoldierGameObj *Sol
 	PhysicalGameObj *BackpackObj = Create_Object(BasePowerUpDef,Soldier->Get_Transform());
 	BackpackObj->Add_Observer(Backpack);
 	Commands->Set_Model(BackpackObj,WeaponModel);
-	Update_Network_Object(BackpackObj);
+	//Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
 	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
@@ -377,7 +377,7 @@ DALootBackpackClass *DALootGameFeatureClass::Create_Backpack(const Vector3 &Posi
 	PhysicalGameObj *BackpackObj = Create_Object(BasePowerUpDef,Position);
 	BackpackObj->Add_Observer(Backpack);
 	Commands->Set_Model(BackpackObj,WeaponModel);
-	Update_Network_Object(BackpackObj);
+	//Update_Network_Object(BackpackObj);
 	Commands->Set_Animation(BackpackObj,StringFormat("%s.%s",WeaponModel,WeaponModel),true,0,0,-1.0f,false);
 	Backpack->Set_Expire_Time(ExpireTime);
 	return Backpack;
@@ -388,7 +388,7 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(SoldierGameObj *Soldier) {
 	PhysicalGameObj *DNAObj = Create_Object(BasePowerUpDef,Soldier->Get_Transform());
 	DNAObj->Add_Observer(DNA);
 	Commands->Set_Model(DNAObj,DNAModel);
-	Update_Network_Object(DNAObj);
+	//Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
 	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;
@@ -399,7 +399,7 @@ DALootDNAClass *DALootGameFeatureClass::Create_DNA(const Vector3 &Position,const
 	PhysicalGameObj *DNAObj = Create_Object(BasePowerUpDef,Position);
 	DNAObj->Add_Observer(DNA);
 	Commands->Set_Model(DNAObj,DNAModel);
-	Update_Network_Object(DNAObj);
+	//Update_Network_Object(DNAObj);
 	Commands->Set_Animation(DNAObj,StringFormat("%s.%s",DNAModel,DNAModel),true,0,0,-1.0f,false);
 	DNA->Set_Expire_Time(ExpireTime);
 	return DNA;

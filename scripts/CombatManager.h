@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,6 +9,8 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Made class public.
 #ifndef TT_INCLUDE__COMBATMANAGER_H
 #define TT_INCLUDE__COMBATMANAGER_H
 #include "engine_string.h"
@@ -73,6 +75,8 @@ public:
 	static void Handle_Input();
 	static bool Save(ChunkSaveClass&);
 	static bool Load(ChunkLoadClass&);
+	static void Init_Dazzle_Layer(bool render_available);
+	static void Shutdown_Dazzle_Layer();
 	static void Set_I_Am_Server(bool yes) { IAmServer = yes; }
 	static void Set_I_Am_Client(bool yes) { IAmClient = yes; }
 #endif

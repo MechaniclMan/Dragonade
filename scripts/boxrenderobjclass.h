@@ -59,7 +59,6 @@ class OBBoxRenderObjClass : public BoxRenderObjClass
 {
 public:
 	OBBoxClass CachedBox;
-	int mask;
 	OBBoxRenderObjClass(const OBBoxRenderObjClass& src);
 	OBBoxRenderObjClass(const W3dBoxStruct& src);
 	OBBoxRenderObjClass();
@@ -89,7 +88,6 @@ public:
 class AABoxRenderObjClass : public BoxRenderObjClass {
 public:
 	AABoxClass CachedBox;
-	int mask;
 	AABoxRenderObjClass(const AABoxRenderObjClass& src);
 	AABoxRenderObjClass(const W3dBoxStruct& src);
 	AABoxRenderObjClass();

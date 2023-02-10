@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -46,8 +46,8 @@ public:
 	};
 	struct AddInfoStruct
 	{
-		const char *Filename1;
-		const char *Filename2;
+		StringClass Filename1;
+		StringClass Filename2;
 		bool operator== (const AddInfoStruct &src)
 		{
 			return false;

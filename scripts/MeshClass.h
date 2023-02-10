@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -31,6 +31,7 @@ class MeshLoadInfoClass;
 enum WW3DErrorType;
 class MeshModelClass;
 class LightEnvironmentClass;
+#ifndef TTLE_EXPORTS
 class MeshClass : public RenderObjClass
 {
 public:
@@ -166,4 +167,21 @@ public:
 	virtual PrototypeClass *Load_W3D(ChunkLoadClass & cload);
 };
 
+#else
+class MeshClass : public RenderObjClass
+{
+public:
+	uint32							Get_W3D_Flags(void);
+	const char *					Get_User_Text(void) const;
+    bool                Use_User_Lighting(); //should this mesh have user lighting setup on it
+    void Real_Install_User_Lighting_Array(Vector4* lighting);
+    void Real_Load_User_Lighting(ChunkLoadClass& cload);
+    void Install_User_Lighting_Array(Vector4* lighting);
+	void setup_materials_for_user_lighting();
+	void setup_material_for_user_lighting(VertexMaterialClass* material);
+	void Load_User_Lighting(ChunkLoadClass& cload);
+protected:
+	MeshModelClass *model;
+};
+#endif
 #endif

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #ifndef TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 #define TT_INCLUDE_SCRIPTABLEGAMEOBJ_H
 class ScriptableGameObj;
+#include "audiocallback.h"
 #include "scripts.h"
 #include "ReferencerClass.h"
 #include "BaseGameObj.h"
@@ -25,26 +26,6 @@ class DamageableGameObj;
 class BuildingGameObj;
 class SoldierGameObj;
 class ScriptZoneGameObj;
-class AudioCallbackClass
-{
-public:
-	typedef enum
-	{
-		EVENT_NONE					= 0x0000,
-		EVENT_SOUND_STARTED		= 0x0001,
-		EVENT_SOUND_ENDED			= 0x0002,
-		EVENT_LOGICAL_HEARD		= 0x0004
-	} EVENTS;
-	AudioCallbackClass (void);
-	virtual ~AudioCallbackClass (void);
-	virtual void	On_Sound_Started (SoundSceneObjClass *sound_obj)	{ }
-	virtual void	On_Sound_Ended (SoundSceneObjClass *sound_obj)		{ }
-	virtual void	On_Logical_Heard (LogicalListenerClass *listener, LogicalSoundClass *sound_obj)	{ }
-	void				On_Registered (SoundSceneObjClass *sound);
-	void				On_UnRegistered (SoundSceneObjClass *sound);
-	void				Remove_All_Callbacks (void);
-	DynamicVectorClass<SoundSceneObjClass *>	SoundList;
-};
 
 class GameObjObserverTimerClass {
 public:

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -215,58 +215,22 @@ TT_INLINE bool WWMath::Is_Valid_Double(double x)
 
 TT_INLINE long WWMath::Float_To_Long(float f)
 {
-#if defined(_M_IX86)
-	long i;
-	__asm {
-		fld [f]
-		fistp [i]
-	}
-	return i;
-#elif defined(_M_AMD64)
     return _mm_cvtt_ss2si(_mm_load_ss(&f));
-#endif
 }
 
 TT_INLINE long WWMath::Float_To_Long(double f)	
 {
-#if defined(_M_IX86)
-	long retval;
-	__asm fld	qword ptr [f]
-	__asm fistp dword ptr [retval]
-	return retval;
-#elif defined(_M_AMD64)
     return _mm_cvttsd_si32(_mm_load_pd(&f));
-#endif
 }
 
 TT_INLINE float WWMath::Cos(float val)
 {
-#if defined(_M_IX86)
-	float retval;
-	__asm {
-		fld [val]
-		fcos
-		fstp [retval]
-	}
-	return retval;
-#elif defined(_M_AMD64)
     return ::cos(val);
-#endif
 }
 
 TT_INLINE float WWMath::Sin(float val)
 {
-#if defined(_M_IX86)
-	float retval;
-	__asm {
-		fld [val]
-		fsin
-		fstp [retval]
-	}
-	return retval;
-#elif defined(_M_AMD64)
     return ::sin(val);
-#endif
 }
 
 TT_INLINE float WWMath::Fast_Sin(float val)
@@ -345,17 +309,7 @@ TT_INLINE float WWMath::Asin(float val)
 
 TT_INLINE float WWMath::Sqrt(float val)
 {
-#if defined(_M_IX86)
-	float retval;
-	__asm {
-		fld [val]
-		fsqrt
-		fstp [retval]
-	}
-	return retval;
-#elif defined(_M_AMD64)
     return ::sqrtf(val);
-#endif
 }
 
 TT_INLINE int WWMath::Float_To_Int_Chop(const float& f)

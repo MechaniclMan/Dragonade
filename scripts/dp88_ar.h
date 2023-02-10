@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,6 +14,7 @@
 #include "dp88_customAI.h"
 #include "dp88_custom_timer_defines.h"
 #include "dp88_misc.h"
+#include "PhysDefClass.h"
 
 // -------------------------------------------------------------------------------------------------
 
@@ -129,6 +130,7 @@ Deployable Infantry script
 
 class dp88_AR_Deployable_Infantry : public JFW_Key_Hook_Base
 {
+public:
 	// Events
 	void Created( GameObject *obj );
 	void Killed( GameObject *obj, GameObject *killer );
@@ -137,15 +139,16 @@ class dp88_AR_Deployable_Infantry : public JFW_Key_Hook_Base
 	void Custom( GameObject *obj, int type, int param, GameObject *sender );
 	void Timer_Expired( GameObject *obj,int number );		// TEMPORARY
 
-	// Ugly hack to clean up when buying a new character
-	void Detach(GameObject *obj);
-
 	// Get armour type to set for the given veterancy level
 	const char* GetArmourType ( int vetLevel );
 
 	// Get weapon powerup to grant for the given veterancy level
 	 const char* GetWeaponPowerup ( int vetLevel );
 
+protected:
+  void Deploy(GameObject* obj);
+
+  void Undeploy(GameObject* obj);
 
 	// Variables
 	int objectID;
@@ -334,7 +337,6 @@ protected:
   };
 
   void UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId );
-  MINER_ANIMID m_currentAnimId;
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -438,6 +440,8 @@ public:
 *   How much to shrink the miner zone in the X axis by for each frame in the animation
 * \param Zone_Anim_Step_Y
 *   How much to shrink the miner zone in the Y axis by for each frame in the animation
+* \param AI_Ignore
+*   The name of the resource field (defaults to ore if none is specified)
 */
 class dp88_Ore_Field : public ScriptImpClass
 {
@@ -479,6 +483,9 @@ public:
   /*! Check if this ore field is infinite */
   bool IsInfinite() { return m_oreCapacity == 0; }
 
+  /*! Check if the AI miners can use this field */
+  bool IsSuitableForAI() { return !m_bAiIgnore; }
+
 
 protected:
   void UpdateAnimationFrame();
@@ -501,6 +508,8 @@ protected:
   Vector3 m_zoneSizeFull;
   float m_zoneStepX;
   float m_zoneStepY;
+
+  bool m_bAiIgnore;
   /*! @} */
 
 
@@ -755,14 +764,19 @@ class dp88_RemoteControlConsole : public ScriptImpClass
 
   int vehicleID;
   int pilotID;
+  Collision_Group_Type m_pilotCachedCollisionGroup;
   int m_pilotDummyID;
   Vector3 pilotDummyPos;
   bool m_bEnabled;
   int m_nChargeTime;
+  
+  void HandleDriverEnter(GameObject* obj, GameObject* pilot, GameObject* vehicle);
+  void HandleDriverExit(GameObject* obj, GameObject* pilot, GameObject* vehicle);
+
   void CreateDummy ( GameObject* pilot, Vector3 position, float facing );
   void DestroyDummy();
 
-  void HandleDriverExit ( GameObject* obj, GameObject* pilot, GameObject* vehicle );
+  void UpdateAnimation(GameObject* obj);
 
 protected:
   LoopedAnimationController* m_pLoopedAnimCtrl;
@@ -867,7 +881,7 @@ protected:
   void Damaged( GameObject* pObj, GameObject* pDamager, float amount );
   void Killed( GameObject* pObj, GameObject* pKilled );
   void Timer_Expired ( GameObject* pObj, int number );
-  void Detach();
+  void Detach(GameObject* obj);
 
   void Landed ( GameObject* pObj );
 
@@ -980,6 +994,12 @@ class dp88_AR_Prism_Tower : public dp88_AI_ChargedTurret
   static void clearTowerMap(int idx);
   static void calculateTowerMap();
   static bool calculateTowerMapPathSearch(int* sortedConnections, int numConnections, int tower1, int tower2);
+  
+  /*!
+  * Checks if tower1 can assist tower2 by checking they are in range of each other and that there is
+  * a clear line of sight between the towers
+  */
+  static bool CanAssistTower(GameObject* tower1, GameObject* tower2, int maxRange);
 
   /* -----
   Variables
@@ -1026,6 +1046,16 @@ class dp88_AR_Prism_Tower : public dp88_AI_ChargedTurret
   /* Functions to start and stop charging of another tower */
   void StartAssisting(GameObject* obj, GameObject* tower, float priority);
   void StopAssisting(GameObject* obj);
+  
+  /*!
+  * Get the position to aim at when charging another prism tower, this uses the height of the
+  * other towers muzzle bone and the X,Y components of its position to aim at the right place
+  *
+  * \param[in] pTargetTower
+  *   Pointer to the GameObject of the tower to get an assist aiming point for
+  *   
+  */
+  static Vector3 GetAssistAimPoint(GameObject* pTargetTower);
 
   /*!
   * Send assistance requests to all neighbouring prism towers, except the one we are currently

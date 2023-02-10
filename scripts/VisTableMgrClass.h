@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -20,7 +20,7 @@ class VisDecompressionCacheClass
 {
 public:
 	SimpleVecClass<VisTableClass *> Cache; //0
-	RefMultiListClass<VisTableClass> tablelist; //C
+	MultiListClass<VisTableClass> tablelist; //C
 	int timestamp; //24
 	VisDecompressionCacheClass()
 	{
@@ -40,8 +40,8 @@ public:
 	int size; //4
 	SimpleDynVecClass<CompressedVisTableClass *> tables; //8
 	VisDecompressionCacheClass *cache; //18
-	int s28; //1C
-	VisTableMgrClass() : count(0), size(0), s28(0)
+	int frames; //1C
+	VisTableMgrClass() : count(0), size(0), frames(0)
 	{
 		cache = new VisDecompressionCacheClass();
 		Reset();
@@ -61,7 +61,7 @@ public:
 		tables.Delete_All();
 		size = 1;
 		count = 0;
-		s28 = 0;
+		frames = 0;
 		cache->Reset(0);
 	}
 	void Delete_All_Vis_Tables();

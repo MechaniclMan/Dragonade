@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -928,4 +928,14 @@ SCRIPTS_API bool WeaponClass::Is_Ammo_Maxed( void )
 	if (InventoryRounds == -1) return true;
 	if (((int)Definition->MaxInventoryRounds == 0) && (ClipRounds == 0)) return false;
 	return (InventoryRounds == (int)Definition->MaxInventoryRounds);
+}
+
+SCRIPTS_API float WeaponClass::Get_Targeting_Range(void)
+{
+	if (PrimaryAmmoDefinition != NULL)
+	{
+		float range = PrimaryAmmoDefinition->TargetingRange;
+		return range;
+	}
+	return 0;
 }

@@ -115,7 +115,7 @@ public:
 	}
 };
 
-#if (DDBEDIT) || (TDBEDIT)
+#if (DDBEDIT) || (TDBEDIT) || (W3DVIEWER)
 extern PresetMgrClass _ThePresetMgr;
 #else
 extern REF_DECL(PresetMgrClass, _ThePresetMgr);

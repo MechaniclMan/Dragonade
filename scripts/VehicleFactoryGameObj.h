@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -32,23 +32,22 @@ public:
 	const	PersistFactoryClass &	Get_Factory (void) const;
 	void					CnC_Initialize (BaseControllerClass *base);
 	void					On_Destroyed (void);
+	void					On_Revived (void);
 	void					Think (void);
 	bool					Is_Available (void) const	{ return (IsBusy == false) && (IsDestroyed == false) && (IsDisabled == false); }
 	bool					Is_Available_For_Purchase (void) const;
 	bool					Is_Busy (void) const			{ return IsBusy; }
-	bool					Is_Disabled (void) const			{ return IsDisabled; }
+	bool					Is_Disabled (void) const			{ return IsDisabled != 0; }
 	void					Set_Disabled(bool disabled)         { IsDisabled = disabled; Set_Object_Dirty_Bit (BIT_RARE, true);}
 	int					Get_Team_Vehicle_Count(void) const; 
 	bool					SCRIPTS_API Request_Vehicle (int defintion_id, float generation_time,SoldierGameObj * player = NULL);
-	const Matrix3D &Get_Creation_TM(void) { return CreationTM; }
-	const OBBoxClass &Get_Generating_Region(void) { return GeneratingRegion; }
-	void					Set_Creation_TM(const Matrix3D &tm)	{ CreationTM = tm; }
-	void					Set_Generating_Region(const OBBoxClass &box)	{ GeneratingRegion = box; }
+	const Matrix3D &	Get_Creation_TM (void)						{ return CreationTM; }
+	void					Set_Creation_TM (const Matrix3D &tm)	{ CreationTM = tm; }
 	void					Import_Rare (BitStreamClass &packet);
 	void					Export_Rare (BitStreamClass &packet);
 	static void			Set_Max_Vehicles_Per_Team(int max)		{ MaxVehiclesPerTeam = max; }
 	static int			Get_Max_Vehicles_Per_Team(void)			{ return MaxVehiclesPerTeam; }
-	void Set_Busy(bool busy) 
+	void Set_Busy(bool busy)
 	{
 		IsBusy = busy;
 		Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
@@ -74,7 +73,7 @@ protected:
 	float					GenerationTime;
 	int					GeneratingVehicleID;
 	bool					IsBusy;
-	bool				IsDisabled;
+    bool                IsDisabled;
 	ReferencerClass	Purchaser;
 	int					LastDeliveryPath;
 	int                 LastFlyingDeliveryPath;

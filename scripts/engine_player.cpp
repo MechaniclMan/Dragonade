@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2015 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -546,12 +546,12 @@ WideStringClass cPlayer::getNameLabel() const
 {
 	WideStringClass nameLabel = PlayerName;
 	
-	if (_wcsicmp(PlayerName, The_Game()->Get_MVP_Name()) == 0)
+	if (_wcsicmp(PlayerName, The_Game()->Get_Mvp_Name()) == 0)
 	{
 		nameLabel += L"\n";
 		nameLabel += Get_Wide_Translated_String(9034); // IDS_MP_MVP
 		
-		uint mvpCount = The_Game()->Get_MVP_Count();
+		uint mvpCount = The_Game()->Get_Mvp_Count();
 		if (mvpCount > 1)
 		{
 			WideStringClass mvpMultiplier;

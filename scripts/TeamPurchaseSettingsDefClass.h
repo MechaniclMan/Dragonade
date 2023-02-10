@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -48,8 +48,10 @@ public:
 	unsigned int Get_Network_Class_ID () const { return 2005; }
 #ifndef TTLE_EXPORTS
 #ifndef DDBEDIT
+#ifndef W3DVIEWER
 	void Export_Occasional(BitStreamClass &packet);
 	void Import_Occasional(BitStreamClass &packet);
+#endif
 #endif
 	const wchar_t *Get_Enlisted_Name(int index)
 	{
@@ -67,6 +69,10 @@ public:
 	{
 		return team;
 	}
+    int Get_Enlisted_Cost(int index)
+    {
+        return costs[index];
+    }
 	int Get_Enlisted_Definition(int index)
 	{
 		return presetids[index];
@@ -134,7 +140,7 @@ public:
 		Busy[index] = b;
 		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 	}
-		void Set_Beacon_Definition(int preset) {
+	void Set_Beacon_Definition(int preset) {
 		beaconpresetid = preset;
 	}
 	void Set_Beacon_Cost(int cost) {
@@ -146,7 +152,7 @@ public:
 #endif
 private:
 	TEAM team;
-	int costs[4];
+    int costs[4];
 	int presetids[4];
 	unsigned int stringids[4];
 	StringClass textures[4];

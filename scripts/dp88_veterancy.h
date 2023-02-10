@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -14,9 +14,68 @@
 #include "scripts.h"
 #include "engine.h"
 
+// -------------------------------------------------------------------------------------------------
+
+struct dp88_Veterancy_Settings
+{
+  public:
+    dp88_Veterancy_Settings();
+
+    void Reset();
+
+    static dp88_Veterancy_Settings& GetInstance()
+    {
+      return ms_instance;
+    }
+
+    float valueMultiplier[3];    //!< Value multiplier for veteran and elite levels
+    float carryOverPercentI;     //!< Percentage of infantry points carried over when switching infantry
+    float carryOverPercentV;     //!< Percentage of vehicle points carried over when switching infantry
+    int boostPrice;              //!< Price to buy a single veterancy point, or 0 if boost isn't enabled
+
+private:
+    static dp88_Veterancy_Settings ms_instance;
+};
+
+// -------------------------------------------------------------------------------------------------
+
+/*!
+* \brief Veterancy - Controller
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup scripts_veterancy
+*
+* An optional controller script for the veterancy system, if an instance of this object exists on a
+* map it can alter the behaviour of dp88_veterancyUnit and other scripts in the veterancy family. If
+* there is no instance of this script on a map the other scripts will use the default values instead.
+*
+* \param[in] Veteran_Value_Multiplier_Percent
+*   The percentage increase applied to the veterancy value of a unit at the veteran level, causing
+*   enemies to earn more points when attacking the unit. Default: 10
+* \param[in] Elite_Value_Multiplier_Percent
+*   The percentage increase applied to the veterancy value of a unit at the elite level, causing
+*   enemies to earn more points when attacking the unit. Does not stack with the veteran level
+*   increase. Default: 25
+* \param[in] Change_Character_Carry_Over_Percent_Inf
+*   The percentage of infantry veterancy points that are carried over when a player buys a new
+*   infantry unit at a purchase terminal. Default: 60
+* \param[in] Change_Character_Carry_Over_Percent_Veh
+*   The percentage of vehicle veterancy points that are carried over when a player buys a new
+*   infantry unit at a purchase terminal. Default: 60
+* \param[in] Boost_Price
+*   The price to buy 1 veterancy point in the boost system, which adds an additional keyhook for
+*   players to spend money to reach the next level. Boost is disabled if this is 0. Default: 0
+*/
+class dp88_Veterancy_Controller : public ScriptImpClass
+{
+  public:
+    void Created(GameObject* obj);
+    void Destroyed(GameObject* obj);
+};
+
+// -------------------------------------------------------------------------------------------------
 
 /* Script to handle veterancy on any type of object, either player or AI controlled */
-class dp88_veterancyUnit : public JFW_Key_Hook_Base
+class dp88_veterancyUnit : public MultiKeyHookScriptImpClass
 {
   public:
     void Created ( GameObject *obj );
@@ -26,7 +85,7 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     void Detach(GameObject* obj);
     void Custom ( GameObject* obj, int type, int param, GameObject* sender );
     void Timer_Expired( GameObject *obj, int number );
-    void KeyHook();
+    void KeyHook(const char* logicalKey);
 
 
     // Recieve veterancy points
@@ -65,6 +124,10 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
     // Static arrays of pointers to all veterancy units
     static dp88_veterancyUnit* playerData[128];
     static dp88_veterancyUnit* AIUnitData[256];
+
+    // Logical key hooks
+    static const char ShowVeterancyPointsHookName[];
+    static const char BoostVeterancyHookName[];
 
     /****************
     Functions
@@ -110,15 +173,7 @@ class dp88_veterancyUnit : public JFW_Key_Hook_Base
 
 // -------------------------------------------------------------------------------------------------
 
-/* Script for a crate which grants veterancy points to the collector */
-class dp88_veterancyCrate : public ScriptImpClass
-{
-  void Custom ( GameObject *obj, int type, int param, GameObject *sender );
-};
-
-// -------------------------------------------------------------------------------------------------
-
-/* Script to grant veterancy points to whatever it is attached to */
+/*! Script to grant veterancy points to whatever it is attached to, also works for crates */
 class dp88_veterancyGrantPoints : public ScriptImpClass
 {
   void Created ( GameObject *obj );
@@ -149,45 +204,6 @@ class dp88_veterancyPromotionHealthArmourIncrease : public ScriptImpClass
 
 private:
   int m_veterancyLevel;
-};
-
-// -------------------------------------------------------------------------------------------------
-
-/*!
-* \brief Veterancy - Regeneration
-* \author Daniel Paul (danpaul88@yahoo.co.uk)
-*
-* This is a companion script for dp88_veterancyUnit which grants health regeneration to a unit based
-* upon it's current promotion level (rookie, veteran, elite). It can optionally also repair their
-* armour, but only once their health has been fully restored and at the same speed.
-*
-* \param rookie_regenAmount
-*   Number of hitpoints to heal, per second, whilst this unit is at rookie level
-* \param rookie_repairArmour
-*   Whether to repair armour as well as health, whilst this unit is at rookie level. 1 to enable
-*   armour repairs, 0 to disable and only restore health
-* \param veteran_regenAmount
-*   Number of hitpoints to heal, per second, whilst this unit is at veteran level
-* \param veteran_repairArmour
-*   Whether to repair armour as well as health, whilst this unit is at veteran level. 1 to enable
-*   armour repairs, 0 to disable and only restore health
-* \param elite_regenAmount
-*   Number of hitpoints to heal, per second, whilst this unit is at elite level
-* \param elite_repairArmour
-*   Whether to repair armour as well as health, whilst this unit is at elite level. 1 to enable
-*   armour repairs, 0 to disable and only restore health
-*/
-class dp88_veterancyRegeneration : public ScriptImpClass
-{
-  void Created( GameObject *obj );
-  void Timer_Expired( GameObject *obj, int number );
-  void Custom( GameObject *obj, int type, int param, GameObject *sender );
-
-private:
-  int veterancyLevel;
-
-  int m_regenAmount;
-  bool m_bRepairArmour;
 };
 
 // -------------------------------------------------------------------------------------------------

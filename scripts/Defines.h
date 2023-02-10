@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,8 +24,8 @@
 #pragma warning(disable: 4201) // nonstandard extension used : nameless struct/union
 #pragma warning(disable: 4505) // unreferenced local function has been removed
 #pragma warning(disable: 6509) // warning c6509: Return used on precondition
-#pragma warning(disable: 4275) // warning c6509: Return used on precondition
 #pragma warning(disable: 4800) // forcing value to bool
+#pragma warning(disable: 4275) // non dll-interface class used as base for dll-interface class
 
 //class needs to have dll-interface to used by clients of class. Except that it doesn't. 
 //If it did, the linker would complain.
@@ -70,16 +70,9 @@
 
 // unreachable code
 #	ifdef DEBUG
-#		define TT_ASSUME_UNREACHABLE TT_INTERRUPT
+#		define TT_UNREACHABLE TT_INTERRUPT
 #	else
-#		define TT_ASSUME_UNREACHABLE __assume(false);
-#	endif
-
-// unreachable code
-#	ifdef DEBUG
-#		define TT_ASSERT_UNREACHABLE TT_INTERRUPT
-#   else
-#       define TT_ASSERT_UNREACHABLE
+#		define TT_UNREACHABLE __assume(false);
 #	endif
 
 #define TT_UNIMPLEMENTED TT_INTERRUPT

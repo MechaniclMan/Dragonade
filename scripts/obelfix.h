@@ -36,6 +36,7 @@ class Obelisk_Weapon_CnC : public ScriptImpClass {
 	void StartEffect(GameObject* WeaponObj);
 	void StopEffect(GameObject* WeaponObj);
 	void FireAt(GameObject* WeaponObj, GameObject* EnemyObj);
+	void FaceEnemy(GameObject* WeaponObj, GameObject* EnemyObj);
 	void StopFireAt(GameObject* WeaponObj);
 	void Timer_Expired(GameObject* WeaponObj, int Number);
 	void Enemy_Seen(GameObject* WeaponObj, GameObject* EnemyObj);
@@ -66,6 +67,7 @@ class Obelisk_Weapon_CnC_Ground : public ScriptImpClass {
 	void StartEffect(GameObject* WeaponObj);
 	void StopEffect(GameObject* WeaponObj);
 	void FireAt(GameObject* WeaponObj, GameObject* EnemyObj);
+	void FaceEnemy(GameObject* WeaponObj, GameObject* EnemyObj);
 	void StopFireAt(GameObject* WeaponObj);
 	void Timer_Expired(GameObject* WeaponObj, int Number);
 	void Enemy_Seen(GameObject* WeaponObj, GameObject* EnemyObj);

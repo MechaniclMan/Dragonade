@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -455,79 +455,86 @@ void dp88_damageAnimation::Created ( GameObject* obj )
   damageLevelLowPowerStartFrames[5] = Get_Int_Parameter("damageBoundary5_startFrame_lowPower");
   damageLevelLowPowerEndFrames[5] = Get_Int_Parameter("damageBoundary5_endFrame_lowPower");
 
+  m_bUseDestroyedMode = (Get_Parameter_Count() < 33) ? false : 0 != Get_Int_Parameter("useDestroyedMode");
+  m_bIsDestroyed = false;
+
   /* Set default level */
   currentDamageLevel = 0;
   basePowerState = Is_Base_Powered(Get_Object_Type(obj));
   SetDamageAnimation(obj);
 
-	/* If any of the damage levels have a different set of frames for the low power state
-	then start the timer to check power state regularly */
-	for ( int i = 0; i < 6; i++ )
-	{
-		if ( damageLevelBoundaries[i] >= 0 && damageLevelLowPowerStartFrames[i] >= 0
-			&& (damageLevelLowPowerStartFrames[i] != damageLevelStartFrames[i]
-				|| damageLevelLowPowerEndFrames[i] != damageLevelEndFrames[i])
-			)
-		{
-			Commands->Start_Timer(obj, this, 1.0f, TIMER_CHECK_BASE_POWER_STATE );
-			break;
-		}
-	}
+  /* If any of the damage levels have a different set of frames for the low power state
+  then start the timer to check power state regularly */
+  for ( int i = 0; i < 6; i++ )
+  {
+    if ( damageLevelBoundaries[i] >= 0 && damageLevelLowPowerStartFrames[i] >= 0
+      && (damageLevelLowPowerStartFrames[i] != damageLevelStartFrames[i]
+        || damageLevelLowPowerEndFrames[i] != damageLevelEndFrames[i])
+      )
+    {
+      Commands->Start_Timer(obj, this, 1.0f, TIMER_CHECK_BASE_POWER_STATE );
+      break;
+    }
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void dp88_damageAnimation::Detach ( GameObject* obj )
 {
-	if (m_pLoopedAnimCtrl)
-	{
-		delete m_pLoopedAnimCtrl;
-	}
+  ScriptImpClass::Detach(obj);
+  if (m_pLoopedAnimCtrl)
+  {
+    delete m_pLoopedAnimCtrl;
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void dp88_damageAnimation::Damaged( GameObject *obj, GameObject *damager, float amount )
 {
-	if ( amount >= 0 )
-	{
-		while ( currentDamageLevel < 5 && damageLevelBoundaries[currentDamageLevel+1] >= 0
-			&& ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) < damageLevelBoundaries[currentDamageLevel+1] )
-		{
-			currentDamageLevel++;
-			basePowerState = Is_Base_Powered(Get_Object_Type(obj));
-			SetDamageAnimation(obj);
-		}
-	}
+  if ( amount >= 0 )
+  {
+    while ( currentDamageLevel < 5 && damageLevelBoundaries[currentDamageLevel+1] >= 0
+      && ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) < damageLevelBoundaries[currentDamageLevel+1] )
+    {
+      currentDamageLevel++;
+      basePowerState = Is_Base_Powered(Get_Object_Type(obj));
+      SetDamageAnimation(obj);
 
-	// Repairs make the damage level go backwards
-	if ( amount <= 0 )
-	{
-		while ( currentDamageLevel > 0
-			&& ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) > damageLevelBoundaries[currentDamageLevel] )
-		{
-			currentDamageLevel--;
-			basePowerState = Is_Base_Powered(Get_Object_Type(obj));
-			SetDamageAnimation(obj);
-		}
-	}
+      if ( m_bUseDestroyedMode && (currentDamageLevel == 5 || damageLevelBoundaries[currentDamageLevel+1] <= 0) )
+        m_bIsDestroyed = true;
+    }
+  }
+
+  // Repairs make the damage level go backwards, unless we're fully destroyed and not at 100% health
+  if ( amount <= 0 && (!m_bIsDestroyed || Get_Hitpoints(obj) == Get_Max_Hitpoints(obj)) )
+  {
+    while ( currentDamageLevel > 0
+      && ((Get_Hitpoints(obj)/Get_Max_Hitpoints(obj))*100.0f) > damageLevelBoundaries[currentDamageLevel] )
+    {
+      currentDamageLevel--;
+      basePowerState = Is_Base_Powered(Get_Object_Type(obj));
+      SetDamageAnimation(obj);
+    }
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void dp88_damageAnimation::Timer_Expired ( GameObject* obj, int number )
 {
-	if ( number == TIMER_CHECK_BASE_POWER_STATE )
-	{
-		if ( Is_Base_Powered(Get_Object_Type(obj)) != basePowerState )
-		{
-			basePowerState = !basePowerState;
-			SetDamageAnimation(obj);
-		}
+  if ( number == TIMER_CHECK_BASE_POWER_STATE )
+  {
+    if ( Is_Base_Powered(Get_Object_Type(obj)) != basePowerState )
+    {
+      basePowerState = !basePowerState;
+      SetDamageAnimation(obj);
+    }
 
-		// Restart timer
-		Commands->Start_Timer(obj, this, 1.0f, TIMER_CHECK_BASE_POWER_STATE );
-	}
+    // Restart timer
+    Commands->Start_Timer(obj, this, 1.0f, TIMER_CHECK_BASE_POWER_STATE );
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -538,7 +545,7 @@ void dp88_damageAnimation::SetDamageAnimation ( GameObject* obj )
   bool WakeObjects = wakeup_param < Get_Parameter_Count() ? Get_Bool_Parameter(wakeup_param) : false;
   if (WakeObjects)
   {
-	  Wake_Up_Objects_In_Box(obj,"WAKEBOX");
+    Wake_Up_Objects_In_Box(obj,"WAKEBOX");
   }
   if ( basePowerState || damageLevelLowPowerStartFrames[currentDamageLevel] < 0 )
     m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), damageLevelStartFrames[currentDamageLevel], damageLevelEndFrames[currentDamageLevel], (loopAnimation)?0:1 );
@@ -581,7 +588,8 @@ ScriptRegistrant<dp88_damageAnimation> dp88_damageAnimation_Registrant(
   "damageBoundary5_endFrame=0:int,"
   "damageBoundary5_startFrame_lowPower=-1:int,"
   "damageBoundary5_endFrame_lowPower=-1:int,"
-  "wakeObjects=0:int"
+  "wakeObjects=0:int,"
+  "useDestroyedMode=0:int"
 );
 
 // -------------------------------------------------------------------------------------------------
@@ -1271,6 +1279,14 @@ ScriptRegistrant<dp88_customPoints> dp88_customPoints_Registrant(
 Conquest Controller
 --------------------------*/
 
+void dp88_conquestController_ObjectCreateHook(void *data,GameObject *obj)
+{
+  Set_Death_Points(obj, 0);
+  Set_Damage_Points(obj, 0);
+}
+
+// -------------------------------------------------------------------------------------------------
+
 void dp88_conquestController::Created ( GameObject* pSelf )
 {
   m_scoringMode = (unsigned char)Get_Int_Parameter("ScoringMode");
@@ -1283,6 +1299,29 @@ void dp88_conquestController::Created ( GameObject* pSelf )
 
   // Do game intro after 30 seconds, giving people time to load up
   Commands->Start_Timer( pSelf, this, 30.0f, TIMER_CONQUEST_DOINTRO );
+
+  // First set scores for all existing objects
+  SLNode<BaseGameObj> *x = GameObjManager::GameObjList.Head();
+  while (x)
+  {
+    ScriptableGameObj* o = x->Data()->As_ScriptableGameObj();
+    Set_Death_Points(o, 0);
+    Set_Damage_Points(o, 0);
+    x = x->Next();
+  }
+
+  // And now hook all new objects
+  ObjectCreateHookStruct* h = new ObjectCreateHookStruct();
+  h->data = this;
+  h->hook = dp88_conquestController_ObjectCreateHook;
+  m_objectCreateHookId = AddObjectCreateHook(h);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestController::Destroyed(GameObject* pSelf)
+{
+  RemoveObjectCreateHook(m_objectCreateHookId);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1364,6 +1403,10 @@ void dp88_conquestController::Custom ( GameObject* pSelf, int type, int param, G
         BaseControllerClass::Find_Base(otherteam)->Set_Base_Destroyed(true);
       }
     }
+
+    // Update the scores
+    Set_Team_Score(0, (float)m_points[0]);
+    Set_Team_Score(1, (float)m_points[1]);
   }
 }
 
@@ -1485,7 +1528,7 @@ void dp88_conquestControlZone::Created ( GameObject* pObj )
   Vector3::Add ( Commands->Get_Position(pObj), Get_Vector3_Parameter("ZoneOffset"), &position );
   Vector3 size = Get_Vector3_Parameter("ZoneSize");
   Matrix3 rotation(true);
-  rotation.Rotate_Z(Commands->Get_Facing(pObj));
+  rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(pObj)));
 
   // Define the bounding box and create the zone
   OBBoxClass zoneBoundingBox ( position, size, rotation );
@@ -1505,26 +1548,27 @@ void dp88_conquestControlZone::Created ( GameObject* pObj )
     Destroy_Script();
     return;
   }
+  
+  // Read AI objective priorities
+  m_aiPriority_soldier      = Get_Int_Parameter("AIObjective_Priority_Soldier");
+  m_aiPriority_lvehicle     = Get_Int_Parameter("AIObjective_Priority_Light_Vehicle");
+  m_aiPriority_hvehicle     = Get_Int_Parameter("AIObjective_Priority_Heavy_Vehicle");
+  m_aiPriority_aircraft     = Get_Int_Parameter("AIObjective_Priority_Aircraft");
 
   // Determine starting team and, if not neutral, start the tick timer to grant points per tick
   int team = (unsigned char)Get_Object_Type(pObj);
-  if ( team < 2 )
+  if (0 == team || 1 == team)
   {
-    m_captureState = (float)((team==0) ? (m_captureTime*-1) : m_captureTime);
+    ChangeOwner(pObj, team);
     Commands->Start_Timer( pObj, this, (float)Get_Int_Parameter("TickInterval"), TIMER_CONQUEST_TICK );
     m_bTickRunning = true;
   }
   else
   {
-    m_captureState = 0.0f;
-    m_bTickRunning = false;
-
     // Force correct neutral team
-    Set_Object_Type(pObj, 2);
+    ChangeOwner(pObj, 2);
+    m_bTickRunning = false;
   }
-
-  // Set initial animation state
-  UpdateAnimationFrame(pObj);
 
   // Start the think timer to track players in the zone and update ownership accordingly
   Commands->Start_Timer( pObj, this, 1.0f, TIMER_CONQUEST_THINK );
@@ -1657,8 +1701,6 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
   // Have we taken control of the zone?
   if ( m_captureState == targetState && Get_Object_Type(pObj) != team )
   {
-    Set_Object_Type(pObj,team);
-
     // Send control taken message
     int stringId = Get_String_ID_By_Desc(Get_Parameter("CapturedString"));
     if ( stringId != 0 )
@@ -1669,21 +1711,10 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
     {
       DisplayMessage(pObj, StringClass("A conquest zone has been captured by %OWNINGTEAM%"));
     }
+    
+    ChangeOwner(pObj, team);
 
     // \todo Give capture points
-
-
-    // Set AI objectives
-    int aiPriority = Get_Int_Parameter("AIObjectivePriority");
-    if ( aiPriority > 0 )
-    {
-      Remove_Script(pObj,"dp88_AI_Objective");
-
-      Vector3 size = Get_Vector3_Parameter("ZoneSize");
-      int distance = (int)(min(size.X, size.Y)*0.75f);
-      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,%d,2,1,1,1,0", aiPriority, distance, team );          // Defensive
-      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,%d,1,1,1,1,0", aiPriority, distance, (team==0)?1:0 ); // Offensive
-    }
 
     if ( !m_bTickRunning )
       Commands->Start_Timer( pObj, this, (float)Get_Int_Parameter("TickInterval"), TIMER_CONQUEST_TICK );
@@ -1705,18 +1736,7 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
       DisplayMessage(pObj, StringClass("A conquest zone has become neutral"));
     }
 
-    Set_Object_Type(pObj,2);
-
-    // Replace the defensive AI objective script with an offensive one for the previous owners
-    int aiPriority = Get_Int_Parameter("AIObjectivePriority");
-    if ( aiPriority > 0 )
-    {
-      Remove_Duplicate_Script(pObj,"dp88_AI_Objective");  // Removes only the defensive script for the previous owner
-
-      Vector3 size = Get_Vector3_Parameter("ZoneSize");
-      int distance = (int)(min(size.X, size.Y)*0.75f);
-      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,%d,%d,1,1,1,1,0", aiPriority, distance, (team==0)?1:0 );
-    }
+    ChangeOwner(pObj, 2);
   }
 
 
@@ -1729,10 +1749,7 @@ void dp88_conquestControlZone::IncrementCaptureProgress( GameObject* pObj, int t
       DisplayMessage(pObj, StringClass(Get_Translated_String(stringId)), (team==0)?1:0);
     }
   }
-  else
 
-
-  // Set animation state
   UpdateAnimationFrame(pObj);
 }
 
@@ -1744,6 +1761,48 @@ void dp88_conquestControlZone::UpdateAnimationFrame( GameObject* pObj )
   int teamFrames = (int)floor((1+m_nAnimTransitionFrames) * (abs(m_captureState)/m_captureTime));
   animFrame += (m_captureState<0) ? (teamFrames*-1) : teamFrames;
   Commands->Set_Animation_Frame(pObj, Get_Parameter("CaptureAnim"), animFrame);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_conquestControlZone::ChangeOwner(GameObject* pObj, int team)
+{
+  // Get parameters for objectives
+  bool bAddObjectives = (0 < m_aiPriority_soldier || 0 < m_aiPriority_lvehicle || 0 < m_aiPriority_hvehicle || 0 < m_aiPriority_aircraft);
+  Vector3 size = Get_Vector3_Parameter("ZoneSize");
+  int distance = (int)(min(size.X, size.Y)*0.75f);
+  
+  // Remove old objective scripts
+  if (bAddObjectives)
+  {
+    Remove_Script(pObj,"dp88_AI_Objective");
+  }
+  
+  if (0 == team || 1 == team)
+  {
+    Set_Object_Type(pObj, team);
+    m_captureState = (float)((team==0) ? (m_captureTime*-1) : m_captureTime);
+    
+    if (bAddObjectives)
+    {
+      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,2,%d,%d,%d,%d,%d", team, distance, m_aiPriority_soldier, m_aiPriority_lvehicle, m_aiPriority_hvehicle, m_aiPriority_aircraft );          // Defensive
+      Attach_Script_V(pObj, "dp88_AI_Objective", "%d,1,%d,%d,%d,%d,%d", (team==0)?1:0, distance, m_aiPriority_soldier, m_aiPriority_lvehicle, m_aiPriority_hvehicle, m_aiPriority_aircraft ); // Offensive
+    }
+  }
+  
+  else
+  {
+    Set_Object_Type(pObj, 2);
+    m_captureState = 0.0f;
+    
+    if (bAddObjectives)
+    {
+      Attach_Script_V(pObj, "dp88_AI_Objective", "0,1,%d,%d,%d,%d,%d", distance, m_aiPriority_soldier, m_aiPriority_lvehicle, m_aiPriority_hvehicle, m_aiPriority_aircraft );          // Defensive
+      Attach_Script_V(pObj, "dp88_AI_Objective", "1,1,%d,%d,%d,%d,%d", distance, m_aiPriority_soldier, m_aiPriority_lvehicle, m_aiPriority_hvehicle, m_aiPriority_aircraft ); // Offensive
+    }
+  }
+
+  UpdateAnimationFrame(pObj);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1784,7 +1843,10 @@ ScriptRegistrant<dp88_conquestControlZone> dp88_conquestControlZone_Registrant(
   "CapturingString:string,"
   "NeutralString:string,"
   "CapturedString:string,"
-  "AIObjectivePriority=0:int"
+  "AIObjective_Priority_Soldier=0:int,"
+  "AIObjective_Priority_Light_Vehicle=0:int,"
+  "AIObjective_Priority_Heavy_Vehicle=0:int,"
+  "AIObjective_Priority_Aircraft=0:int"
 );
 
 
@@ -2218,8 +2280,10 @@ void dp88_Ammo_Animation::Timer_Expired ( GameObject* pObj, int number )
 void dp88_Ammo_Animation::UpdateAnimationFrame ( GameObject* pObj )
 {
   GameObject* pAnimObj = ( m_ammoAnimObjId != NULL ) ? Commands->Find_Object(m_ammoAnimObjId) : pObj;
-  int frame = (int)floor(((m_nFrames-1)*(1.0f-(float)m_nBullets/Get_Current_Max_Bullets(pObj))));
+  int maxBullets = (m_bUseTotal) ? Get_Current_Total_Max_Bullets(pObj) : Get_Current_Max_Bullets(pObj);
+  int frame = (int)floor(((m_nFrames-1)*(1.0f-(float)m_nBullets/maxBullets)));
   Commands->Set_Animation_Frame(pAnimObj, m_strAnimation, frame);
+  Update_Network_Object(pObj);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -2412,4 +2476,187 @@ void dp88_Set_Team_On_Custom::Custom ( GameObject* pObj, int type, int param, Ga
 ScriptRegistrant<dp88_Set_Team_On_Custom> dp88_Set_Team_On_Custom_Registrant(
   "dp88_Set_Team_On_Custom",
   "Message:int"
+);
+
+
+
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Health regeneration script
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::Created(GameObject *obj)
+{
+  m_mode = (Get_Parameter_Count() >= 8) ? Get_Int_Parameter("Mode") : MODE_HEALTH + MODE_ARMOUR;
+  m_amount = Get_Float_Parameter("Hitpoints");
+  m_maxPercent = Get_Int_Parameter("Max_Percent")/100.0f;
+  m_interval = (float)Get_Int_Parameter("Interval");
+
+  m_lastDamage = time(NULL);
+  m_lastDamageTimeout = Get_Int_Parameter("Damage_Timeout");
+
+  m_warheadId = -1;
+
+  const char* warhead = Get_Parameter("Warhead");
+  if (Is_Valid_Warhead_Type(warhead))
+    m_warheadId = ArmorWarheadManager::Get_Warhead_Type(warhead);
+
+  Commands->Start_Timer(obj, this, m_interval, TIMER_MISC_TICK);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+bool dp88_RegenerateHitpoints::IsModeEnabled(int mode)
+{
+  return (m_mode & mode) == mode;
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::Timer_Expired(GameObject *obj, int number)
+{
+  // Only process this if we are not dead and are not inside the combat timeout
+  if (Commands->Get_Health(obj) > 0.0f && m_amount > 0 && m_lastDamageTimeout <= time(NULL)-m_lastDamage )
+  {
+    // Repair self
+    RegenObject(obj, IsModeEnabled(MODE_HEALTH), IsModeEnabled(MODE_ARMOUR));
+
+    // Handle soldier-specific modes (piloted / occupied vehicle)
+    if (obj->As_SoldierGameObj())
+    {
+      GameObject* vehicle = Get_Vehicle(obj);
+
+      if (NULL != vehicle)
+      {
+        GameObject* driver = Get_Vehicle_Driver(vehicle);
+        bool bIsPilot = NULL != driver && driver->Get_ID() == obj->Get_ID();
+
+        // Repair piloted vehicle
+        if (bIsPilot)
+        {
+          RegenObject(vehicle, IsModeEnabled(MODE_PILOTED_HEALTH), IsModeEnabled(MODE_PILOTED_ARMOUR));
+        }
+
+        // Repair occupied vehicle
+        else
+        {
+          RegenObject(vehicle, IsModeEnabled(MODE_OCCUPIED_HEALTH), IsModeEnabled(MODE_OCCUPIED_ARMOUR));
+        }
+      }
+    }
+
+    // Handle vehicle-specific modes (driver / passengers)
+    if (obj->As_VehicleGameObj())
+    {
+      // Repair driver
+      RegenObject(Get_Vehicle_Driver(obj), IsModeEnabled(MODE_DRIVER_HEALTH), IsModeEnabled(MODE_DRIVER_ARMOUR));
+      
+      // Repair passengers
+      bool bPassengersHealth = IsModeEnabled(MODE_PASSENGERS_HEALTH);
+      bool bPassengersArmour = IsModeEnabled(MODE_PASSENGERS_ARMOUR);
+
+      if (bPassengersHealth || bPassengersArmour)
+      {
+        int seats = Get_Vehicle_Seat_Count(obj);
+        for (int i = 1; i < seats; ++i)
+        {
+          RegenObject(Get_Vehicle_Occupant(obj, i), bPassengersHealth, bPassengersArmour);
+        }
+      }
+    }
+  }
+
+  Commands->Start_Timer(obj, this, m_interval, TIMER_MISC_TICK);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::RegenObject(GameObject* obj, bool bHealth, bool bArmour)
+{
+  if (NULL == obj || !bHealth && !bArmour)
+    return;
+
+  float hitpoints = (bHealth ? Commands->Get_Health(obj) : 0.0f) + (bArmour ? Commands->Get_Shield_Strength(obj) : 0.0f);
+  float maxHitpoints = (bHealth ? Commands->Get_Max_Health(obj) : 0.0f) + (bArmour ? Commands->Get_Max_Shield_Strength(obj) : 0.0f);
+
+  if (hitpoints < maxHitpoints)
+  {
+    float regenCap = (maxHitpoints*m_maxPercent);
+    float amount = min(m_amount, regenCap);
+
+    if (hitpoints < regenCap)
+    {
+      if (m_warheadId != -1)
+      {
+        Commands->Apply_Damage(obj, amount, ArmorWarheadManager::Get_Warhead_Name(m_warheadId), NULL);
+      }
+      else
+      {
+        ApplyNonWarheadRepairs(obj, amount, bHealth, bArmour);
+      }
+    }
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::ApplyNonWarheadRepairs(GameObject* obj, float amount, bool bHealth, bool bArmour)
+{
+  if (bHealth)
+  {
+    float health = Commands->Get_Health(obj);
+    float hrepair = min(amount, Commands->Get_Max_Health(obj) - health);
+    Commands->Set_Health(obj, health + hrepair);
+    amount -= hrepair;
+  }
+
+  if (bArmour)
+  {
+    float armour = Commands->Get_Shield_Strength(obj);
+    float arepair = min(amount, Commands->Get_Max_Shield_Strength(obj) - armour);
+    Commands->Set_Shield_Strength(obj, armour + arepair);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::Damaged(GameObject *obj, GameObject *damager, float amount)
+{
+  if (amount > 0.0f)
+    m_lastDamage = time(NULL);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RegenerateHitpoints::Custom ( GameObject* pObj, int type, int param, GameObject* pSender )
+{
+  if ( type == CUSTOM_VETERANCY_PROMOTED )
+  {
+    if (2==param)
+      m_amount = Get_Float_Parameter("Hitpoints_Elite");
+    else if (1==param)
+      m_amount = Get_Float_Parameter("Hitpoints_Veteran");
+    else
+      m_amount = Get_Float_Parameter("Hitpoints");
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_RegenerateHitpoints> dp88_RegenerateHitpoints_Registrant(
+  "dp88_RegenerateHitpoints",
+  "Hitpoints:float,"
+  "Interval=1:int,"
+  "Warhead:string,"
+  "Max_Percent=100:int,"
+  "Damage_Timeout=0:int,"
+  "Hitpoints_Veteran:float,"
+  "Hitpoints_Elite:float,"
+  "Mode=3:int"
 );

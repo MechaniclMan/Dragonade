@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1368,8 +1368,8 @@ ScriptRegistrant<JFW_Poke_Play_2D_Sound_Team> JFW_Poke_Play_2D_Sound_Team_Regist
 ScriptRegistrant<JFW_Poke_Play_3D_Sound_Team> JFW_Poke_Play_3D_Sound_Team_Registrant("JFW_Poke_Play_3D_Sound_Team","Player_Type:int,Sound:string,Position:vector3");
 ScriptRegistrant<JFW_Poke_Play_2D_Sound_Player> JFW_Poke_Play_2D_Sound_Player_Registrant("JFW_Poke_Play_2D_Sound_Player","Player_Type:int,Sound:string");
 ScriptRegistrant<JFW_Poke_Play_3D_Sound_Player> JFW_Poke_Play_3D_Sound_Player_Registrant("JFW_Poke_Play_3D_Sound_Player","Player_Type:int,Sound:string,Position:vector3");
-ScriptRegistrant<JFW_Look_At_Location_Poke> JFW_Look_At_Location_Poke("JFW_Look_At_Location_Poke","Player_Type:int,Location:vector3");
-ScriptRegistrant<JFW_Look_At_Object_Poke> JFW_Look_At_Object_Poke("JFW_Look_At_Object_Poke","Player_Type:int,ObjectID:int");
+ScriptRegistrant<JFW_Look_At_Location_Poke> JFW_Look_At_Location_Poke_Registrant("JFW_Look_At_Location_Poke","Player_Type:int,Location:vector3");
+ScriptRegistrant<JFW_Look_At_Object_Poke> JFW_Look_At_Object_Poke_Registrant("JFW_Look_At_Object_Poke","Player_Type:int,ObjectID:int");
 ScriptRegistrant<JFW_PCT> JFW_PCT_Registrant("JFW_PCT","Player_Type:int");
 ScriptRegistrant<JFW_Weapon_Buy_Poke> JFW_Weapon_Buy_Poke_Registrant("JFW_Weapon_Buy_Poke","Weapon_Name:string,Cost:int,Player_Type:int");
 ScriptRegistrant<JFW_Preset_Buy_Poke_Timer> JFW_Preset_Buy_Poke_Timer_Registrant("JFW_Preset_Buy_Poke_Timer","Preset_Name:string,Cost:int,location:vector3,Player_Type:int,Time:float,TimerNum:int");

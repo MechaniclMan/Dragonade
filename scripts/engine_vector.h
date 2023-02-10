@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -489,6 +489,13 @@ public:
 			}
 		}
 		return &((*this)[ActiveCount++]);
+	}
+	void Add_Multiple(int number_to_add)
+	{
+		for (int i = 0;i < number_to_add;i++)
+		{
+			Uninitialized_Add();
+		}
 	}
 }; // 0018
 
@@ -1403,6 +1410,7 @@ private:
 
 	static void* operator new[](size_t size, const char* file = NULL, uint line = 0, const char* function = NULL);
 	static void operator delete[](void* object);
+    static void operator delete[](void* object, const char* file, uint line, const char* function);
 
 public:
 
@@ -1417,6 +1425,12 @@ public:
 		if (object)
 			objectPoolClass(T, nAlign).Free_Object_Memory(*(T*)object);
 	}
+
+    static void operator delete(void* object, const char* file, uint line, const char* function)
+    {
+        if (object)
+            objectPoolClass(T, nAlign).Free_Object_Memory(*(T*)object);
+    }
 
 }; // 0000
 

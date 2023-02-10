@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,11 @@
 void SimpleFileFactoryClass::Get_Sub_Directory(StringClass& new_dir) const
 {
 	CriticalSectionClass::LockClass lock(Mutex);
+#ifndef TTLE_EXPORTS
+    new_dir = subdirectories.c_str();
+#else
 	new_dir = SubDirectory;
+#endif
 }
 
 void SimpleFileFactoryClass::Set_Sub_Directory(const char *sub_directory)
@@ -23,7 +27,11 @@ void SimpleFileFactoryClass::Set_Sub_Directory(const char *sub_directory)
 	CriticalSectionClass::LockClass lock(Mutex);
 	if (sub_directory)
 	{
+#ifndef TTLE_EXPORTS
+        subdirectories = sub_directory;
+#else
 		SubDirectory = sub_directory;
+#endif
 	}
 }
 
@@ -38,12 +46,21 @@ void SimpleFileFactoryClass::Append_Sub_Directory(const char *sub_directory)
 			temp_sub_dir[strlen(sub_directory)] = '\\';
 			temp_sub_dir[strlen(sub_directory) + 1] = 0;
 		}
+
 		CriticalSectionClass::LockClass lock(Mutex);
+#ifndef TTLE_EXPORTS
+        if (subdirectories.size() && subdirectories[subdirectories.size() - 1] != ';')
+		{
+            subdirectories += ';';
+		}
+        subdirectories += temp_sub_dir;
+#else
 		if (SubDirectory.Get_Length() && SubDirectory[SubDirectory.Get_Length() - 1] != ';')
 		{
 			SubDirectory += ';';
 		}
 		SubDirectory += temp_sub_dir;
+#endif
 	}
 }
 
@@ -60,8 +77,13 @@ void SimpleFileFactoryClass::Prepend_Sub_Directory(const char *sub_directory)
 		}
 		temp_sub_dir[strlen(sub_directory)] = ';';
 		temp_sub_dir[strlen(sub_directory) + 1] = 0;
+
 		CriticalSectionClass::LockClass lock(Mutex);
+#ifndef TTLE_EXPORTS
+        subdirectories = temp_sub_dir + subdirectories;
+#else
 		SubDirectory = temp_sub_dir + SubDirectory;
+#endif
 	}
 }
 
@@ -78,6 +100,57 @@ bool Is_Full_Path(const char *path)
 
 FileClass* SimpleFileFactoryClass::Get_File(const char* filename)
 {
+#ifndef TTLE_EXPORTS
+    const char* stripped_name = filename;
+
+    if (IsStripPath)
+    {
+        const char* separator = strrchr(filename, '/');
+        if (separator)
+            stripped_name = separator + 1;
+        else
+            stripped_name = filename;
+    }
+    else
+        stripped_name = filename;
+
+    std::string new_name;
+
+    BufferedFileClass *file = new BufferedFileClass;
+    if (!Is_Full_Path(stripped_name))
+    {
+        CriticalSectionClass::LockClass lock(Mutex);
+        if (subdirectories.size() != 0)
+        {
+            if (strchr(subdirectories.c_str(), ';'))
+            {
+                char* subdir = _strdup(subdirectories.c_str());
+
+                for (const char* token = strtok(subdir, ";"); token; token = strtok(NULL, ";"))
+                {
+                    new_name = token;
+                    new_name.append(stripped_name);
+                    file->Set_Name(new_name.c_str());
+                    if (file->Is_Available(0)) break;
+                }
+
+                free(subdir);
+            }
+            else
+            {
+                new_name = subdirectories + stripped_name;
+            }
+        }
+	}
+    else
+    {
+        new_name = stripped_name;
+    }
+
+    file->Set_Name(new_name.c_str());
+
+    return file;
+#else
 	StringClass stripped_name(248, true);
 	StringClass new_name(248, true);
 	if (IsStripPath)
@@ -90,8 +163,8 @@ FileClass* SimpleFileFactoryClass::Get_File(const char* filename)
 	}
 	else
 		stripped_name = filename;
-	
-	
+
+
 	BufferedFileClass *file = new BufferedFileClass;
 	if (!Is_Full_Path(stripped_name))
 	{
@@ -118,6 +191,7 @@ FileClass* SimpleFileFactoryClass::Get_File(const char* filename)
 	}
 	file->Set_Name(new_name);
 	return file;
+#endif
 }
 
 void SimpleFileFactoryClass::Return_File(FileClass* file)

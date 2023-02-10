@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -26,6 +26,7 @@
 #include "AirFactoryGameObjDef.h"
 #include "VehicleFactoryGameObjDef.h"
 #include "NavalFactoryGameObj.h"
+#include "StealthEffectClass.h"
 
 RENEGADE_FUNCTION
 GameObject *Create_Library_Object(const char *preset)
@@ -654,7 +655,7 @@ SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team)
 
 SCRIPTS_API GameObject* Create_Object_Attach_To_Object(GameObject* host, const char* preset, const char* bone = NULL)
 {
-  GameObject* obj = Commands->Create_Object_At_Bone(host, "preset", (NULL != bone) ? bone : "origin");
+  GameObject* obj = Commands->Create_Object_At_Bone(host, preset, (NULL != bone) ? bone : "origin");
   if ( NULL != obj )
   {
     Commands->Set_Facing(obj, Commands->Get_Facing(host));
@@ -662,6 +663,31 @@ SCRIPTS_API GameObject* Create_Object_Attach_To_Object(GameObject* host, const c
   }
 
   return obj;
+}
+
+int SCRIPTS_API Get_Occupant_Seat(GameObject *vehicle,GameObject *occupant)
+{
+	if (!vehicle || !vehicle->As_VehicleGameObj())
+	{
+		return -1;
+	}
+	if (!occupant || !occupant->As_SoldierGameObj())
+	{
+		return -1;
+	}
+	return vehicle->As_VehicleGameObj()->Find_Seat(occupant->As_SoldierGameObj());
+}
+
+int	VehicleGameObj::Find_Seat( SoldierGameObj * occupant )
+{
+	for ( int i = 0; i < SeatOccupants.Length(); i++ )
+	{
+		if ( SeatOccupants[i] == occupant )
+		{
+			return i;
+		}
+	}
+	return -1;
 }
 
 REF_DEF2(float, SmartGameObj::GlobalSightRangeScale, 0x00811E64, 0x0081103C);

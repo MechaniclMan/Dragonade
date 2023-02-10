@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -468,7 +468,6 @@ void JFW_BuildingStateSoundSpeaker::Custom(GameObject *obj,int type,int param,Ga
 		if (param == 1)
 		{
 			Commands->Stop_Sound(sound,1);
-			destroyed = true;
 			Timer_Expired(obj,0);
 		}
 		break;
@@ -503,9 +502,9 @@ void JFW_BuildingStateSoundSpeaker::Timer_Expired(GameObject *obj,int number)
 		pos.Y += offset.Y;
 		pos.Z += offset.Z;
 		offset = Get_Vector3_Parameter("Offset_Randomness_Destroyed");
-		pos.X += Commands->Get_Random(offset.X,-offset.X);
-		pos.Y += Commands->Get_Random(offset.Y,-offset.Y);
-		pos.Z += Commands->Get_Random(offset.Z,-offset.Z);
+		pos.X += Commands->Get_Random(-offset.X,offset.X);
+		pos.Y += Commands->Get_Random(-offset.Y,offset.Y);
+		pos.Z += Commands->Get_Random(-offset.Z,offset.Z);
 		if (is3d)
 		{
 			sound = Commands->Create_Sound(Get_Parameter("Sound_Destroyed"),pos,obj);
@@ -524,9 +523,9 @@ void JFW_BuildingStateSoundSpeaker::Timer_Expired(GameObject *obj,int number)
 		pos.Y += offset.Y;
 		pos.Z += offset.Z;
 		offset = Get_Vector3_Parameter("Offset_Randomness");
-		pos.X += Commands->Get_Random(offset.X,-offset.X);
-		pos.Y += Commands->Get_Random(offset.Y,-offset.Y);
-		pos.Z += Commands->Get_Random(offset.Z,-offset.Z);
+		pos.X += Commands->Get_Random(-offset.X,offset.X);
+		pos.Y += Commands->Get_Random(-offset.Y,offset.Y);
+		pos.Z += Commands->Get_Random(-offset.Z,offset.Z);
 		if (is3d)
 		{
 			sound = Commands->Create_Sound(Get_Parameter("Sound_Normal"),pos,obj);
@@ -558,7 +557,6 @@ void JFW_BuildingStateSoundController::Killed(GameObject *obj,GameObject *killer
 		Commands->Send_Custom_Event(obj,object,9026,1,0);
 		Commands->Send_Custom_Event(obj,object,9027,1,0);
 	}
-	Destroy_Script();
 }
 
 void JFW_BuildingStateSoundController::Custom(GameObject *obj,int type,int param,GameObject *sender)
@@ -720,7 +718,7 @@ ScriptRegistrant<JFW_NukeStrike_Anim> JFW_NukeStrike_Anim_Registrant("JFW_NukeSt
 ScriptRegistrant<JFW_PlayAnimation_DestroyObject> JFW_PlayAnimation_DestroyObject_Registrant("JFW_PlayAnimation_DestroyObject","AnimationName:string");
 ScriptRegistrant<JFW_BuildingStateSoundSpeaker> JFW_BuildingStateSoundSpeaker_Registrant("JFW_BuildingStateSoundSpeaker","Sound_Normal:string,Sound_Destroyed:string,BuildingController_ID:int,Is_3D=1:int,Offset:vector3,Offset_Randomness:vector3,Frequency_Min=-1:float,Frequency_Max:float,Is_3D_Destroyed=1:int,Offset_Destroyed:vector3,Offset_Randomness_Destroyed:vector3,Frequency_Min_Destroyed=-1:float,Frequency_Max_Destroyed:float,Explosion_Name:string");
 ScriptRegistrant<JFW_BuildingStateSoundController> JFW_BuildingStateSoundController_Registrant("JFW_BuildingStateSoundController","BuildingSpeaker_ID:int");
-ScriptRegistrant<JFW_BuildingStateSoundSpeaker> M00_BuildingStateSoundSpeaker_Registrant("M00_BuildingStateSoundSpeaker","Sound_Normal:string,Sound_Destroyed:string,BuildingController_ID:int,Is_3D=1:int,Offset:vector3,Offset_Randomness:vector3,Frequency_Min=-1:float,Frequency_Max:float,Is_3D_Destroyed=1:int,Offset_Destroyed:vector3,Offset_Randomness_Destroyed:vector3,Frequency_Min_Destroyed=-1:float,Frequency_Max_Destroyed:float,Explosion_Name:string");
+//ScriptRegistrant<JFW_BuildingStateSoundSpeaker> M00_BuildingStateSoundSpeaker_Registrant("M00_BuildingStateSoundSpeaker","Sound_Normal:string,Sound_Destroyed:string,BuildingController_ID:int,Is_3D=1:int,Offset:vector3,Offset_Randomness:vector3,Frequency_Min=-1:float,Frequency_Max:float,Is_3D_Destroyed=1:int,Offset_Destroyed:vector3,Offset_Randomness_Destroyed:vector3,Frequency_Min_Destroyed=-1:float,Frequency_Max_Destroyed:float,Explosion_Name:string");
 ScriptRegistrant<JFW_BuildingStateSoundController> M00_BuildingStateSoundController_Registrant("M00_BuildingStateSoundController","BuildingSpeaker_ID:int");
 ScriptRegistrant<JFW_Play_Sound_Object_Bone> JFW_Play_Sound_Object_Bone_Registrant("JFW_Play_Sound_Object_Bone","Sound_Preset:string,Frequency_Min=-1.0:float,Frequency_Max:float");
 ScriptRegistrant<JFW_Cinematic_Primary_Killed> JFW_Cinematic_Primary_Killed_Registrant("JFW_Cinematic_Primary_Killed","CallbackID=:int");

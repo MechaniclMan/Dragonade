@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -65,7 +65,6 @@ public:
 	virtual	ComCenterGameObj *		As_ComCenterGameObj (void)			{ return NULL; }
 	virtual	RepairBayGameObj *		As_RepairBayGameObj (void)			{ return NULL; }
 	void											Get_Position(Vector3 * pos) const		{ *pos = Position; }
-	const Vector3									&Get_Position() { return Position; }
 	void											Set_Position(const Vector3 & pos)		{ Position = pos; CollectionSphere.Center = pos; }
 	virtual	void								Apply_Damage( const OffenseObjectClass & damager, 
 																	  float scale = 1.0f, 
@@ -89,8 +88,11 @@ public:
 	virtual void								CnC_Initialize (BaseControllerClass *base);
 	virtual void								On_Destroyed (void);
 	virtual void								On_Damaged (void);
+	virtual void								On_Revived (void);
 	bool											Is_Destroyed (void) const { return IsDestroyed; }
 	void Set_Is_Destroyed(const bool _IsDestroyed) { IsDestroyed = _IsDestroyed; }
+	bool											Is_Spy_Disabled() const { return IsSpyDisabled; }
+	void Set_Is_Spy_Disabled(const bool _IsSpyDisabled) {IsSpyDisabled = _IsSpyDisabled; }
 	virtual	void								Import_Rare (BitStreamClass &packet);
 	virtual	void								Export_Rare (BitStreamClass &packet);
 	virtual	void								Export_Creation (BitStreamClass &packet);
@@ -103,21 +105,28 @@ public:
 	bool	Is_GDI( void )						{ return Get_Player_Type() == PLAYERTYPE_GDI; }
 	bool	Is_Nod( void )						{ return Get_Player_Type() == PLAYERTYPE_NOD; }
 #ifndef TTLE_EXPORTS
+#ifndef W3DVIEWER
+    const AABoxClass& Get_Bounds()                      { return BoundingBox; }
 	static void	Set_Can_Repair_Buildings(bool flag)		{CanRepairBuildings = flag;}
 	static bool	Get_Can_Repair_Buildings(void)			{return CanRepairBuildings;}
+#endif
 #endif
 	SCRIPTS_API void							Find_Closest_Poly(const Vector3 &pos, float *distance2);
 	float										Find_Closest_Poly(const Vector3 &pos) { float distance2; Find_Closest_Poly(pos,&distance2); return distance2; }
 	int											Building_In_Range(const Vector3 &point, float range);	//return 0 for no, 1 for yes and 2 for MCT in range
 	bool										Is_In_Range_Coarse(const Vector3& point, float range_sq);
+	bool Cast_Ray(RayCollisionTestClass& raytest);
+
 	virtual ConstructionYardGameObj *				As_ConstructionYardGameObj (void)	{ return NULL; }
 	virtual	AirFactoryGameObj *		As_AirFactoryGameObj (void)			{ return NULL; }
 	virtual	NavalFactoryGameObj *		As_NavalFactoryGameObj (void)			{ return NULL; }
 	virtual	SuperweaponGameObj *		As_SuperweaponGameObj (void)			{ return NULL; }
+
 	int Get_State() { return CurrentState; }
 	BaseControllerClass *Get_Base() { return BaseController; }
 	void Update_State(bool force_update = false);
 	static REF_DECL(bool, CanRepairBuildings);
+
 protected:
 	BuildingMonitorClass *					BuildingMonitor;
 	BaseControllerClass *					BaseController;
@@ -135,7 +144,9 @@ protected:
 	RefMultiListClass<LightPhysClass>				PowerOnLights;
 	RefMultiListClass<LightPhysClass>				PowerOffLights;
 #ifndef TTLE_EXPORTS
+#ifndef W3DVIEWER
 	AABoxClass										BoundingBox;
+#endif
 #endif
 	void											Initialize_Building(void);	
 	void											Reset_Components(void);

@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Engine Functions
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -555,10 +555,6 @@ void Console_InputF(const char *Format,...) {
 	vsnprintf(Buffer,256,Format,arg_list);
 	Console_Input(Buffer);
 	va_end(arg_list);
-}
-
-void Update_Game_Settings(int ID) {
-	The_Game()->Set_Max_Players(The_Game()->Get_Max_Players());
 }
 
 bool Is_Stealth_Unit(GameObject *obj) {
@@ -1303,15 +1299,6 @@ bool Exit_Vehicle(SoldierGameObj *Soldier) {
 	return false;
 }
 
-int	VehicleGameObj::Find_Seat(SoldierGameObj *Soldier) {
-	for (int i = 0;i < SeatOccupants.Length();i++) {
-		if (SeatOccupants[i] == Soldier) {
-			return i;
-		}
-	}
-	return -1;
-}
-
 void ScriptableGameObj::Remove_Observer(const char *Name) {
 	for (int i = Observers.Count()-1;i >= 0;i--) {
 		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
@@ -1355,4 +1342,70 @@ void DefenseObjectClass::Add_Shield_Strength(float str) {
 		ShieldStrength = ShieldStrengthMax;
 	}
 	Mark_Owner_Dirty();
+}
+
+int VehicleGameObjDef::Get_Damage_Report(int Team) const {
+	if (Team == 0) {
+		return NodDamageReportID;
+	}
+	else if (Team == 1) {
+		return GDIDamageReportID;
+	}
+	return 0;
+}
+
+int VehicleGameObjDef::Get_Destroy_Report(int Team) const {
+	if (Team == 0) {
+		return NodDestroyReportID;
+	}
+	else if (Team == 1) {
+		return GDIDestroyReportID;
+	}
+	return 0;
+}
+
+int BuildingGameObjDef::Get_Damage_Report(int Team) const {
+	if (Team == 0) {
+		return NodDamageReportID;
+	}
+	else if (Team == 1) {
+		return GDIDamageReportID;
+	}
+	return 0;
+}
+
+int BuildingGameObjDef::Get_Destroy_Report(int Team) const {
+	if (Team == 0) {
+		return NodDestroyReportID;
+	}
+	else if (Team == 1) {
+		return GDIDestroyReportID;
+	}
+	return 0;
+}
+
+
+void WeaponClass::Set_Clip_Rounds(int Rounds) {
+	ClipRounds = Rounds;
+}
+
+void WeaponClass::Set_Inventory_Rounds(int Rounds) {
+	InventoryRounds = Rounds;
+}
+
+void cGameData::Set_Time_Limit_Minutes(int Minutes) {
+	TimeLimit_Minutes = Minutes;
+}
+
+void SmartGameObj::Set_Player_Data(PlayerDataClass *Data) {
+	PlayerData = Data;
+}
+
+uint DA_API Send_Object_Update(NetworkObjectClass *Object, int ID) {
+	Update_Network_Object_Player(Object,ID);
+	return 0;
+}
+
+void DA_API Update_Game_Settings(int ID) {
+	Update_Game_Options(ID);
 }

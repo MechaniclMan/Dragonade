@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,7 @@
 class SoldierFactoryGameObjDef : public BuildingGameObjDef
 {
 public:
-	SoldierFactoryGameObjDef (void);
+	SoldierFactoryGameObjDef(void);
 	~SoldierFactoryGameObjDef (void);
 	uint32								Get_Class_ID (void) const;
 	PersistClass *						Create (void) const;
@@ -28,6 +28,10 @@ public:
 	DECLARE_EDITABLE (SoldierFactoryGameObjDef, BuildingGameObjDef);
 protected:
 	void					Load_Variables (ChunkLoadClass &cload);
+private:
+	int unk1;
+	int unk2;
+	int unk3;
 	friend class PresetDump;
 };
 

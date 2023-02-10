@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -45,14 +45,15 @@
 #define CUSTOM_UNITSOUNDS_HEALDECREMENT           (DP88_CUSTOM|MISC|0x02)             //!< Used by dp88_unitSounds to track the amount of healing a unit has recieved over a time period
 #define CUSTOM_ROCKETEER_VEHICLEKILLED            (DP88_CUSTOM|MISC|0x03)             //!< Used by dp88_AR_Rocketeer to notify itself when the flight vehicle dies (via JFW_Death_Send_Custom)
 
-#define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x01)              //!< Used by dp88_randomWeather to do a weather update
-#define TIMER_SPAWNVEHICLEPART                    (DP88_TIMER|MISC|0x02)              //!< Used by dp88_spawnVehiclePart
-#define TIMER_MIRAGE_CHECKMOVEMENT                (DP88_TIMER|MISC|0x03)              //!< Used by dp88_AR_MirageTank to test for movement to toggle mirage mode
-#define TIMER_TURRETSOUND                         (DP88_TIMER|MISC|0x04)              //!< Used by dp88_turretSound to test for turret rotation
-#define TIMER_ROCKETEER_ENTERVEHICLE              (DP88_TIMER|MISC|0x05)              //!< Used by dp88_AR_Rocketeer to enter the flight vehicle
-#define TIMER_PARADROP_CHECKFALLRATE              (DP88_TIMER|MISC|0x06)              //!< Used by dp88_AR_Paradrop to check if the falling speed drops (ie: landed)
-#define TIMER_AMMO_ANIMATION                      (DP88_TIMER|MISC|0x07)              //!< Used by dp88_Ammo_Animation to check for changes in ammo count
-#define TIMER_CHECK_BASE_POWER_STATE              (DP88_TIMER|MISC|0x08)              //!< Used by any scripts which need to check if a base is still powered
+#define TIMER_MISC_TICK                           (DP88_TIMER|MISC|0x01)              //!< Miscellaneous tick timer for generic use by scripts that implement on-tick events
+#define TIMER_RANDOMWEATHER                       (DP88_TIMER|MISC|0x02)              //!< Used by dp88_randomWeather to do a weather update
+#define TIMER_SPAWNVEHICLEPART                    (DP88_TIMER|MISC|0x03)              //!< Used by dp88_spawnVehiclePart
+#define TIMER_MIRAGE_CHECKMOVEMENT                (DP88_TIMER|MISC|0x04)              //!< Used by dp88_AR_MirageTank to test for movement to toggle mirage mode
+#define TIMER_TURRETSOUND                         (DP88_TIMER|MISC|0x05)              //!< Used by dp88_turretSound to test for turret rotation
+#define TIMER_ROCKETEER_ENTERVEHICLE              (DP88_TIMER|MISC|0x06)              //!< Used by dp88_AR_Rocketeer to enter the flight vehicle
+#define TIMER_PARADROP_CHECKFALLRATE              (DP88_TIMER|MISC|0x07)              //!< Used by dp88_AR_Paradrop to check if the falling speed drops (ie: landed)
+#define TIMER_AMMO_ANIMATION                      (DP88_TIMER|MISC|0x08)              //!< Used by dp88_Ammo_Animation to check for changes in ammo count
+#define TIMER_CHECK_BASE_POWER_STATE              (DP88_TIMER|MISC|0x09)              //!< Used by any scripts which need to check if a base is still powered
 
 // -------------------------------------------------------------------------------------------------
 // Veterancy group
@@ -130,11 +131,12 @@
 // -------------------------------------------------------------------------------------------------
 
 #define CUSTOM_TURRETAI_ENEMYSEEN                 (DP88_CUSTOM|AI|0x01)               //!< Sent from dp88_AI_PopupTurret_Spotter to dp88_AI_PopupTurret
-#define CUSTOM_TURRETAI_ANIMATIONCOMPLETE         (DP88_CUSTOM|AI|0x02)               //!< Sent from dp88_AI_ChargeTurret_Animation to dp88_AI_ChargeTurret
+//#define CUSTOM_TURRETAI_ANIMATIONCOMPLETE         (DP88_CUSTOM|AI|0x02)               //!< Sent from dp88_AI_ChargeTurret_Animation to dp88_AI_ChargeTurret
 #define CUSTOM_AI_DISABLEAI                       (DP88_CUSTOM|AI|0x03)               //!< Custom message that can be sent to a turret AI to disable it
 #define CUSTOM_AI_ENABLEAI                        (DP88_CUSTOM|AI|0x04)               //!< Custom message that can be sent to a turret AI to enable it
 
 #define TIMER_AI_THINK                            (DP88_TIMER|AI|0x01)                //!< Fires every second to process AI actions such as checking target status
+#define TIMER_AI_CHARGE_PRERELOAD_COMPLETE        (DP88_TIMER|AI|0x02)                //!< Used by dp88_AI_ChargedTurret to indicate when pre-reloading is complete
 
 // -------------------------------------------------------------------------------------------------
 // AR IFV group
@@ -172,7 +174,6 @@ Unsorted customs and timers
 #define TIMER_CLEG_CHECKRELEASETARGET			10055224
 #define TIMER_LINKHEALTH						10055235
 #define TIMER_LINKVETPOINTS						10055236
-#define TIMER_HEALTHARMOURREGENTICK				10055239
 
 // Timers for prism towers and tesla coils
 #define TIMER_TESLACOIL_DECREMENT_CHARGE      2244040002

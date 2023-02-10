@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -191,16 +191,7 @@ SCRIPTS_API bool Is_Script_Attached(GameObject *obj,const char *script)
 	{
 		return false;
 	}
-	const SimpleDynVecClass<GameObjObserverClass *> *observers = &obj->Get_Observers();
-	int x = observers->Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (!_stricmp((*observers)[i]->Get_Name(),script))
-		{
-			return true;
-		}
-	}
-	return false;
+	return obj->Find_Observer(script) != 0;
 }
 
 SCRIPTS_API void Attach_Script_Once(GameObject *obj,const char *script,const char *params)
@@ -584,17 +575,7 @@ SCRIPTS_API ScriptImpClass* Find_Script_On_Object(GameObject* obj, const char *s
 	{
 		return NULL;
 	}
-	const SimpleDynVecClass<GameObjObserverClass *> *observers = &obj->Get_Observers();
-	int x = observers->Count();
-	for (int i = 0;i < x;i++)
-	{
-		if (!_stricmp((*observers)[i]->Get_Name(),script))
-		{
-			return ((ScriptImpClass*)(*observers)[i]);
-		}
-	}
-
-	return NULL;
+	return (ScriptImpClass *)obj->Find_Observer(script);
 }
 
 void SCRIPTS_API Attach_Script_Occupants(GameObject *obj,const char *script,const char *params)

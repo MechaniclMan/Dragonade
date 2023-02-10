@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Object Manager
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -77,9 +77,9 @@ void Enable_Stealth(GameObject *obj,bool Enable) {
 						cPlayer *Player = z->Data();
 						if (Player->Is_Alive_And_Kicking() && !Player->Get_DA_Player()->Is_TT_Client()) {
 							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-							Send_Object_Update(obj,Player->Get_ID());
+							Update_Network_Object_Player(obj,Player->Get_ID());
 							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
-							Send_Object_Update(obj,Player->Get_ID());
+							Update_Network_Object_Player(obj,Player->Get_ID());
 						}
 					}
 					obj->Definition = DefSave;
@@ -150,7 +150,7 @@ void DAGameObjManager::Set_GameObj_TT_Only(GameObject *obj) {
 		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_Stock_Client()) {
-				Send_Object_Update(obj,Player->Get_ID());
+				Update_Network_Object_Player(obj,Player->Get_ID());
 			}
 		}
 		obj->Set_Is_Delete_Pending(PendingSave);
@@ -166,7 +166,7 @@ void DAGameObjManager::Set_GameObj_Stock_Only(GameObject *obj) {
 		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
 			cPlayer *Player = z->Data();
 			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_TT_Client()) {
-				Send_Object_Update(obj,Player->Get_ID());
+				Update_Network_Object_Player(obj,Player->Get_ID());
 			}
 		}
 		obj->Set_Is_Delete_Pending(PendingSave);
@@ -215,7 +215,7 @@ void DAGameObjManager::Player_Loaded_Event(cPlayer *Player) {
 				if (Stealth) {
 					const BaseGameObjDef *DefSave = Soldier->Definition;
 					Soldier->Definition = Stealth;
-					Send_Object_Update(Soldier,Player->Get_ID());
+					Update_Network_Object_Player(Soldier,Player->Get_ID());
 					Soldier->Definition = DefSave;
 				}
 			}

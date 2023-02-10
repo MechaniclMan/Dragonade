@@ -17,6 +17,9 @@
 #include "TwiddlerClass.h"
 SimplePersistFactoryClass<PresetClass,327687> _PresetClassFactory;
 PresetMgrClass _ThePresetMgr;
+void forcelinkpresetmgr()
+{
+}
 PresetClass::PresetClass() : m_NextPreset(0), m_PrevPreset(0), parent(0), definition(0), IsTemp(false), IsGood(true), ParentID(0), m_DefinitionID(0)
 {
 }

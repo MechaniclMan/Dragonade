@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -85,7 +85,6 @@ class Reborn_IsDeployableMech : public ScriptImpClass {
 	float xpos;
 	float ypos;
 	float zpos;
-	bool CanPlayAnim;
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	void Timer_Expired(GameObject *obj,int number);
@@ -99,7 +98,7 @@ class Reborn_IsDeployableTank : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	void Killed(GameObject *obj,GameObject *killer);
+	void Destroyed(GameObject *obj);
 	public: void Register_Auto_Save_Variables();
 };
 
@@ -108,7 +107,7 @@ class Reborn_IsDeployableTank_2 : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	void Killed(GameObject *obj,GameObject *killer);
+	void Destroyed(GameObject *obj);
 	public: void Register_Auto_Save_Variables();
 };
 
@@ -117,8 +116,18 @@ class Reborn_IsDeployableTank_3 : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Animation_Complete(GameObject *obj,const char *animation_name);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
-	void Killed(GameObject *obj,GameObject *killer);
+	void Destroyed(GameObject *obj);
 	public: void Register_Auto_Save_Variables();
+};
+
+class Reborn_IsDeployableTank_4 : public ScriptImpClass {
+	int PilotID, mode;
+	void Created(GameObject *obj);
+	void Animation_Complete(GameObject *obj, const char *animation_name);
+	void Custom(GameObject *obj, int type, int param, GameObject *sender);
+	void Destroyed(GameObject *obj);
+	void Timer_Expired(GameObject *obj, int number);
+public: void Register_Auto_Save_Variables();
 };
 
 class Reborn_IsMech : public ScriptImpClass {

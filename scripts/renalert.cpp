@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -2800,7 +2800,7 @@ void RA_Vehicle_Regen::Damaged(GameObject *obj, GameObject *damager, float amoun
 
 void RA_Vehicle_Regen::Timer_Expired(GameObject *obj, int number)
 {
-	if (number == Get_Float_Parameter("TimerID") && Commands->Get_Health(obj))
+	if (number == Get_Float_Parameter("TimerID"))
 	{
 		float max_total = Commands->Get_Max_Health(obj) + Commands->Get_Max_Shield_Strength(obj);
 		float cur_total = Commands->Get_Health(obj) + Commands->Get_Shield_Strength(obj);
@@ -3944,7 +3944,7 @@ void RA_MAD_Tank_Devolved::Animation_Complete(GameObject *obj, const char *anima
 		}
 		//Kill MAD Tank 
 		//'0' Damager used so owner won't get points for tank itself
-		Commands->Apply_Damage(obj,100,"BlamoKiller",0);
+		Commands->Apply_Damage(obj,10000,"BlamoKiller",0);
 	}
 }
 

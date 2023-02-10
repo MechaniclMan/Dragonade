@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -15,7 +15,8 @@
 #include "engine.h"
 #include "dp88_ar_unitScripts.h"
 #include "SoldierGameObj.h"
-
+#include "vehiclegameobj.h"
+#include "vehiclegameobjdef.h"
 
 
 
@@ -43,7 +44,7 @@ void dp88_AR_Rocketeer::Created ( GameObject* pObj )
   }
 
   m_nSoldierID    = Commands->Get_ID(pObj);
-  m_nVehicleID    = 0;
+  m_nVehicleID    = NULL;
   m_lastDeploy    = 0;
   m_bCanDrive     = (pObj->As_SoldierGameObj())->Can_Drive_Vehicles();
 
@@ -58,6 +59,29 @@ void dp88_AR_Rocketeer::Created ( GameObject* pObj )
 
 // -------------------------------------------------------------------------------------------------
 
+void dp88_AR_Rocketeer::Destroyed (GameObject* pObj)
+{
+  RemoveHook();
+  
+  if (NULL != m_nVehicleID)
+  {
+    if (GameObject* pVehicle = Commands->Find_Object(m_nVehicleID))
+    {
+      if (pVehicle->As_VehicleGameObj())
+      {
+		  int sound = pVehicle->As_VehicleGameObj()->Get_Definition().Get_Engine_Sound(ENGINE_SOUND_STATE_STOPPING);
+		  const char *sound2 = Get_Definition_Name(sound);
+		  Commands->Create_Sound(sound2, Commands->Get_Position(pVehicle), pVehicle);
+      }
+      Commands->Destroy_Object(pVehicle);
+    }
+    
+    m_nVehicleID = NULL;
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
 void dp88_AR_Rocketeer::Custom( GameObject* pObj, int type, int param, GameObject* pSender )
 {
   // Only interested in the flight vehicle being destroyed
@@ -65,7 +89,7 @@ void dp88_AR_Rocketeer::Custom( GameObject* pObj, int type, int param, GameObjec
   {
     Commands->Attach_Script ( pObj, "RA_DriverDeath", "" );
     RemoveHook();
-    m_nVehicleID = 0;
+    m_nVehicleID = NULL;
   }
 }
 
@@ -73,10 +97,6 @@ void dp88_AR_Rocketeer::Custom( GameObject* pObj, int type, int param, GameObjec
 
 void dp88_AR_Rocketeer::Timer_Expired ( GameObject* pObj, int number )
 {
-  // Ignore any timer events from the flight vehicle
-  if ( m_nSoldierID != Commands->Get_ID(pObj) )
-    return;
-
   if ( number == TIMER_ROCKETEER_ENTERVEHICLE )
   {
     //Console_Output ( "[%d:%s:%s] Transitioning driver into vehicle\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
@@ -97,7 +117,7 @@ void dp88_AR_Rocketeer::KeyHook()
     return;
 
   // If we are not currently flying then toggle flight mode on
-  if ( m_nVehicleID == 0 && !Get_Vehicle(pObj) )
+  if (NULL == m_nVehicleID && !Get_Vehicle(pObj) )
   {
     if (time(NULL) - m_lastDeploy < m_minWalkTime)
     {
@@ -110,7 +130,7 @@ void dp88_AR_Rocketeer::KeyHook()
   }
 
   // If we are currently flying then toggle flight mode off
-  else if ( m_nVehicleID != 0 )
+  else if (NULL != m_nVehicleID)
   {
     if (time(NULL) - m_lastDeploy < m_minFlightTime)
     {
@@ -130,7 +150,7 @@ void dp88_AR_Rocketeer::Toggle_Flight_Mode ( SoldierGameObj* pSoldier, bool bSta
   if ( !pSoldier )
     return;
 
-  if ( bState && m_nVehicleID == 0 )
+  if ( bState && NULL == m_nVehicleID)
   {
     if ( !m_bCanDrive )
       (pSoldier->As_SoldierGameObj())->Set_Can_Drive_Vehicles(true);
@@ -161,7 +181,7 @@ void dp88_AR_Rocketeer::Toggle_Flight_Mode ( SoldierGameObj* pSoldier, bool bSta
 
 
 
-  else if ( !bState && m_nVehicleID != 0 )
+  else if ( !bState && NULL != m_nVehicleID)
   {
     GameObject* pVehicle = Commands->Find_Object(m_nVehicleID);
     if ( pVehicle )
@@ -169,10 +189,16 @@ void dp88_AR_Rocketeer::Toggle_Flight_Mode ( SoldierGameObj* pSoldier, bool bSta
       Commands->Set_Health(pSoldier,Commands->Get_Health(pVehicle));
       Commands->Set_Shield_Strength(pSoldier,Commands->Get_Shield_Strength(pVehicle));
 
-      Commands->Destroy_Object(pVehicle);
+	  if (pVehicle->As_VehicleGameObj())
+	  {
+		  int sound = pVehicle->As_VehicleGameObj()->Get_Definition().Get_Engine_Sound(ENGINE_SOUND_STATE_STOPPING);
+		  const char *sound2 = Get_Definition_Name(sound);
+		  Commands->Create_Sound(sound2, Commands->Get_Position(pVehicle), pVehicle);
+	  }
+	  Commands->Destroy_Object(pVehicle);
     }
 
-    m_nVehicleID = 0;
+    m_nVehicleID = NULL;
     m_lastDeploy = time(NULL);
 
     Commands->Set_Is_Rendered(pSoldier,true);
@@ -203,154 +229,175 @@ ScriptRegistrant<dp88_AR_Rocketeer> dp88_AR_Rocketeer_Registrant(
 Mirage Tank Script Functions
 --------------------------*/
 
-void dp88_AR_MirageTank::Created ( GameObject *obj )
+void dp88_AR_MirageTank::Created(GameObject *obj)
 {
-	hidden = false;
-	pilotID = 0;
-	mirageID = 0;
+  m_driverID = NULL;
+  m_mirageID = NULL;
+  m_lastActivity = time(NULL);
 
-	// If the game controller does not exist then bail out
-	GameObject *gameController = Find_Object_With_Script("dp88_ar_gameController");
-	if ( !gameController )
-	{
-		Console_Output ( "dp88_AR_MirageTank - Unable to find Game Controller, unable to continue. Destroying script...\n" );
-		Destroy_Script();
-		return;
-	}
-	else
-		gameControllerId = Commands->Get_ID(gameController);
+  // If the game controller does not exist then bail out
+  GameObject *gameController = Find_Object_With_Script("dp88_ar_gameController");
+  if ( !gameController )
+  {
+    Console_Output("dp88_AR_MirageTank - Unable to find Game Controller, unable to continue. Destroying script...\n");
+    Destroy_Script();
+    return;
+  }
+
+  m_controllerID = Commands->Get_ID(gameController);
+
+  m_delay = Get_Int_Parameter("Mirage_Delay");
 }
 
-void dp88_AR_MirageTank::Damaged ( GameObject* obj, GameObject* damager, float amount )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_MirageTank::Damaged(GameObject* obj, GameObject* damager, float amount)
 {
-	if ( hidden )
-		setHidden ( obj, false );
+  m_lastActivity = time(NULL);
+
+  if (NULL != m_mirageID)
+    setHidden(obj, false);
 }
 
-void dp88_AR_MirageTank::Killed ( GameObject* obj, GameObject* killer )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_MirageTank::Killed(GameObject* obj, GameObject* killer)
 {
-	if ( hidden )
-		setHidden ( obj, false );
+  if (NULL != m_mirageID)
+    setHidden(obj, false);
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_MirageTank::Custom( GameObject *obj, int type, int param, GameObject *sender )
+void dp88_AR_MirageTank::Custom(GameObject *obj, int type, int param, GameObject *sender)
 {
 	// Look for vehicle entry
-	if ( type == CUSTOM_EVENT_VEHICLE_ENTERED )
+	if (type == CUSTOM_EVENT_VEHICLE_ENTERED)
 	{
-		if ( pilotID == 0 )
+		if (NULL == m_driverID)
 		{
-			pilotID = Commands->Get_ID(sender);
+			m_driverID = Commands->Get_ID(sender);
+      m_lastActivity = time(NULL);
 
 			// Start timer to check for no movement (and create mirage)
-			Commands->Start_Timer ( obj, this, 0.5, TIMER_MIRAGE_CHECKMOVEMENT );
+			Commands->Start_Timer(obj, this, 0.5, TIMER_MIRAGE_CHECKMOVEMENT);
 		}
 	}
 
 	// Look for vehicle exit
-	else if ( type == CUSTOM_EVENT_VEHICLE_EXITED )
+	else if (type == CUSTOM_EVENT_VEHICLE_EXITED)
 	{
-		if ( Commands->Get_ID(sender) == pilotID )
+		if (Commands->Get_ID(sender) == m_driverID)
 		{
-			pilotID = 0;
-			setHidden ( obj, false );
+			m_driverID = NULL;
+			setHidden(obj, false);
 		}
 	}
 }
 
+// -------------------------------------------------------------------------------------------------
 
-void dp88_AR_MirageTank::Timer_Expired( GameObject *obj, int number )
+void dp88_AR_MirageTank::Timer_Expired(GameObject *obj, int number)
 {
-	if ( number == TIMER_MIRAGE_CHECKMOVEMENT && pilotID != 0 )
-	{
-		Vector3 currentPos = Commands->Get_Position ( obj );
-		
-		// Because stationary vehicles seem to 'drift' without moving we check
-		// that the difference is very low to see if it is stationary.
-		float diffX = currentPos.X - lastPos.X;		if ( diffX < 0 ) diffX = -diffX;
-		float diffY = currentPos.Y - lastPos.Y;		if ( diffY < 0 ) diffY = -diffY;
-		float diffZ = currentPos.Z - lastPos.Z;		if ( diffZ < 0 ) diffZ = -diffZ;
+  if (number == TIMER_MIRAGE_CHECKMOVEMENT && NULL != m_driverID)
+  {
+    // Because stationary vehicles seem to 'drift' without moving we check that the difference is
+    // very low to see if it is stationary. Also check if we are shooting currently. Apparently
+    // vehicles drift a LOT, hence why we're using the relatively large value of 0.1...
+    Vector3 speed = Get_Velocity(obj);
+    if (fabs(speed.X) > 0.1 || fabs(speed.Y) > 0.1 || fabs(speed.Z) > 0.1 || Get_Current_Bullets(obj) == 0)
+    {
+      //Console_Output("dp88_AR_MirageTank::Timer_Expired - movement or shooting detected (%.4f, %.4f, %.4f, %d)\n", speed.X, speed.Y, speed.Z, Get_Current_Bullets(obj));
+      m_lastActivity = time(NULL);
 
-		if ( hidden && ( diffX > 0.005 || diffY > 0.005 || diffZ > 0.005 || pilotID == 0 ) )
-			setHidden ( obj, false );
+      if (NULL != m_mirageID)
+        setHidden(obj, false);
+    }
 
-		else if ( !hidden && ( diffX < 0.005 && diffY < 0.005 && diffZ < 0.005 ) )
-			setHidden ( obj, true );
+    else if (NULL == m_mirageID && time(NULL) - m_lastActivity > m_delay)
+    {
+      setHidden(obj, true);
+    }
 
-		// Reset lastPos and restart timer
-		if ( pilotID )
-			Commands->Start_Timer ( obj, this, 0.5, TIMER_MIRAGE_CHECKMOVEMENT );
-		lastPos = Commands->Get_Position ( obj );
-	}
+    Commands->Start_Timer(obj, this, 0.5, TIMER_MIRAGE_CHECKMOVEMENT);
+  }
 }
 
-void dp88_AR_MirageTank::setHidden ( GameObject *obj, bool hide )
+// -------------------------------------------------------------------------------------------------
+
+void dp88_AR_MirageTank::setHidden(GameObject *obj, bool hide)
 {
-	if ( hide && !hidden )
-	{
-		/* Get handle to game controller script */
-		GameObject *gameController = Commands->Find_Object(gameControllerId);
-		if ( !gameController ) return;
-		dp88_AR_GameController *gameControllerScript = (dp88_AR_GameController*)Find_Script_On_Object(gameController, "dp88_ar_gameController");
-		if ( !gameControllerScript ) return;
+  //Console_Output("dp88_AR_MirageTank::setHidden - %s\n", (hide)?"true":"false");
 
+  if (hide && NULL == m_mirageID)
+  {
+    /* Get handle to game controller script */
+    GameObject *gameController = Commands->Find_Object(m_controllerID);
+    dp88_AR_GameController *gameControllerScript = (NULL != gameController) ? (dp88_AR_GameController*)Find_Script_On_Object(gameController, "dp88_ar_gameController") : NULL;
+    if ( !gameControllerScript )
+      return;
 
-		// Check if there are any model names defined
-		if ( gameControllerScript->mirageTank_disguisePresets[0] == 0
-			&& gameControllerScript->mirageTank_disguisePresets[1] == 0
-			&& gameControllerScript->mirageTank_disguisePresets[2] == 0 )
-		{
+    // Check if there are any model names defined
+    if ( gameControllerScript->mirageTank_disguisePresets[0] == 0
+      && gameControllerScript->mirageTank_disguisePresets[1] == 0
+      && gameControllerScript->mirageTank_disguisePresets[2] == 0 )
+    {
+      Console_Output ( "[%d:%s:%s] No valid Mirage Tank disguises have been set in the GameController, aborting script!", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
+      Destroy_Script();
+      return;
+    }
 
-			Console_Output ( "[%d:%s:%s] No valid Mirage Tank disguises have been set in the GameController, aborting script!", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
-			Destroy_Script();
-		}
-		else
-		{
-			// Get a disguise number to use
-			int disguiseID = -1;
-			while ( disguiseID == -1 )
-			{
-				disguiseID = Commands->Get_Random_Int ( 0, 3 );		// 0 -> 2
-				TT_ASSERT(disguiseID >= 0 && disguiseID < 3);
-				if ( gameControllerScript->mirageTank_disguisePresets[disguiseID] == 0 )
-					disguiseID = -1;
-			}
+    // Get a disguise number to use
+    int disguiseID = -1;
+    while ( disguiseID == -1 )
+    {
+      disguiseID = Commands->Get_Random_Int(0, 3); // 0 -> 2
+      if (NULL == gameControllerScript->mirageTank_disguisePresets[disguiseID])
+        disguiseID = -1;
+    }
 
-			// Create mirage
-			Vector3 miragePosition = Commands->Get_Position ( obj );
-			miragePosition.Z -= 3;
-			TT_ASSERT(disguiseID >= 0 && disguiseID < 3);
-			GameObject* mirage = Commands->Create_Object ( gameControllerScript->mirageTank_disguisePresets[disguiseID], miragePosition );
-			Commands->Disable_All_Collisions ( mirage );
-			mirageID = Commands->Get_ID ( mirage );
-
-      // Setup tank variables
-      Commands->Enable_Stealth ( obj, true );     // Disable targeting box
-      Commands->Set_Is_Rendered ( obj, false );   // Disables rendering
-      Commands->Set_Is_Visible(obj, false);         // Prevents AI seeing tank
-      Commands->Enable_Engine ( obj, false );     // Disable engine sounds
-
-			hidden = true;
-		}
-	}
-
-
-	else if ( !hide && hidden )
-	{
-		// Delete mirage
-		Commands->Destroy_Object ( Commands->Find_Object ( mirageID ) );
-		mirageID = 0;
+    // Create mirage
+    Vector3 miragePosition = Commands->Get_Position(obj);
+    miragePosition.Z -= 3;
+    GameObject* mirage = Commands->Create_Object(gameControllerScript->mirageTank_disguisePresets[disguiseID], miragePosition);
+    Commands->Disable_All_Collisions(mirage);
+    m_mirageID = Commands->Get_ID(mirage);
 
     // Setup tank variables
-    Commands->Enable_Engine ( obj, true );
-    Commands->Set_Is_Visible(obj, true);
-    Commands->Set_Is_Rendered ( obj, true );
-    Commands->Enable_Stealth ( obj, false );
-		
-		hidden = false;
+    Commands->Enable_Stealth(obj, true);        // Disable targeting box
+    Commands->Set_Is_Rendered(obj, false);      // Disables rendering
+    Commands->Set_Is_Visible(obj, false);       // Prevents AI seeing tank
+    Commands->Enable_Engine(obj, false);        // Disable engine sounds
+  }
+
+
+  else if (!hide && NULL != m_mirageID)
+  {
+    // Delete mirage
+    GameObject* mirage = Commands->Find_Object(m_mirageID);
+    if (NULL != mirage)
+    {
+      Commands->Destroy_Object(mirage);
+      m_mirageID = NULL;
+    }
+
+    // Setup tank variables
+	if (m_driverID)
+	{
+		Commands->Enable_Engine(obj, true);
 	}
+    Commands->Set_Is_Visible(obj, true);
+    Commands->Set_Is_Rendered(obj, true);
+    Commands->Enable_Stealth(obj, false);
+  }
 }
+
+// -------------------------------------------------------------------------------------------------
+
+ScriptRegistrant<dp88_AR_MirageTank> dp88_AR_MirageTank_Registrant(
+  "dp88_AR_MirageTank",
+  "Mirage_Delay=2:int"
+);
 
 
 
@@ -827,15 +874,6 @@ ScriptRegistrant<dp88_AR_Tesla_Coil> dp88_AR_Tesla_Coil_Registrant(
   "Debug=0:int,"
   "Detects_Stealth=1:int"
 );
-
-
-
-
-
-
-
-// Mirage Tank
-ScriptRegistrant<dp88_AR_MirageTank> dp88_AR_MirageTank_Registrant( "dp88_AR_MirageTank", "" );
 
 // IFV
 ScriptRegistrant<dp88_AR_IFV> dp88_AR_IFV_Registrant( "dp88_AR_IFV", "Turret_Frames_Animation=v_all_ifv.v_all_ifv:string,Switch_Time=10:int,Switching_Anim_Frame=2:int,Keyhook=VDeploy:string" );

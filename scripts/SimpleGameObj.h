@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,6 +27,8 @@ public:
 	SimpleGameObj * As_SimpleGameObj() {return this;}
 	const SimpleGameObjDef SCRIPTS_API & Get_Definition( void ) const;
 	bool Is_Hidden_Object() {return Get_Definition().IsHiddenObject;}
+	void Export_Rare( BitStreamClass &packet );
+	void Import_Rare( BitStreamClass &packet );
 }; // 07B0
 
 #endif

@@ -2952,11 +2952,6 @@ void JFW_Message_Send_Zone_Team::Entered(GameObject *obj,GameObject *enterer)
 void JFW_Message_Send_Zone_Player::Entered(GameObject *obj,GameObject *enterer)
 {
 	int team = Get_Int_Parameter("Player_Type");
-	GameObject *driver = Get_Vehicle_Driver(enterer);
-	if (driver)
-	{
-		enterer = driver;
-	}
 	if (CheckPlayerType(enterer,team))
 	{
 		return;

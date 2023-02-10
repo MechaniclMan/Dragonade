@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Event Manager
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -375,7 +375,7 @@ private:
 	static bool IsSoldierReInit;
 };
 
-class DAEventClass abstract {
+class DA_API DAEventClass abstract {
 public:
 	inline void Register_Event(DAEvent::Type Type,int Priority = 0) {
 		DAEventManager::Register_Event(this,Type,Priority);
@@ -407,12 +407,12 @@ public:
 	inline void Clear_Timers() {
 		DAEventManager::Clear_Timers(this);
 	}
-	DA_API void Register_Chat_Command(DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
-	DA_API void Unregister_Chat_Command(const char *Trigger);
-	DA_API void Clear_Chat_Commands();
-	DA_API void Register_Key_Hook(DAEKH Func,const char *Triggers);
-	DA_API void Unregister_Key_Hook(const char *Trigger);
-	DA_API void Clear_Key_Hooks();
+	void Register_Chat_Command(DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	void Unregister_Chat_Command(const char *Trigger);
+	void Clear_Chat_Commands();
+	void Register_Key_Hook(DAEKH Func,const char *Triggers);
+	void Unregister_Key_Hook(const char *Trigger);
+	void Clear_Key_Hooks();
 	
 	virtual void Settings_Loaded_Event() { }
 	virtual bool Chat_Event(cPlayer *Player,TextMessageEnum Type,const wchar_t *Message,int ReceiverID) { return true; }

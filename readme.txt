@@ -1,4 +1,4 @@
-Dragonade 1.6.2
+Dragonade 1.7
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -16,7 +16,7 @@ dblaney1, misc. code and fixes.
 Installation:
 
 1. Download and install the latest server version of TT from http://www.tiberiantechnologies.org/downloads. 
-   Note that DA was designed to work with TT 4.1. It will not work with earlier versions and may or may not work with later versions.
+   Note that DA was designed to work with TT 4.2. It probably won't work with other versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
@@ -25,6 +25,18 @@ Installation:
 
 
 Update History:
+
+
+Version 1.7:
+  Additions:
+   - Updated to TT 4.2.
+  
+  Changes:
+   - Removed "MessageNick" setting.
+
+  Bug Fixes:
+   - Damage events doing 0 damage will once again call GameObjObserverClass::Damaged.
+
 
 
 Version 1.6.2:

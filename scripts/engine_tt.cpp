@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -129,6 +129,7 @@ SCRIPTS_API dps Display_Security_Dialog;
 SCRIPTS_API geo GetExplosionObj;
 SCRIPTS_API seo SetExplosionObj;
 SCRIPTS_API uno Update_Network_Object;
+SCRIPTS_API unop Update_Network_Object_Player;
 SCRIPTS_API sct Send_Client_Text;
 SCRIPTS_API sca Send_Client_Announcement;
 SCRIPTS_API dod Do_Objectives_Dlg;
@@ -141,6 +142,8 @@ SCRIPTS_API sspop Send_Shader_Param_Obj_Player;
 SCRIPTS_API sspo Send_Shader_Param_Obj;
 SCRIPTS_API ssn Set_GDI_Soldier_Name;
 SCRIPTS_API ssn Set_Nod_Soldier_Name;
+SCRIPTS_API gsnx Get_GDI_Soldier_Name;
+SCRIPTS_API gsnx Get_Nod_Soldier_Name;
 SCRIPTS_API Get_IP_Addressx Get_IP_Address;
 SCRIPTS_API Get_IP_Portx Get_IP_Port;
 SCRIPTS_API Get_IPx Get_IP;
@@ -181,7 +184,19 @@ SCRIPTS_API rwpa Retrieve_Waypaths;
 SCRIPTS_API rwpo Retrieve_Waypoints;
 SCRIPTS_API gwp Get_Waypoint_Position;
 SCRIPTS_API cl Create_Lightning;
+SCRIPTS_API gc Get_Clouds;
+SCRIPTS_API gli Get_Lightning;
+SCRIPTS_API gw Get_Wind;
+SCRIPTS_API gp Get_Rain;
+SCRIPTS_API gp Get_Snow;
+SCRIPTS_API gp Get_Ash;
+SCRIPTS_API ugo Update_Game_Options;
 SCRIPTS_API gttv GetTTVersion;
+SCRIPTS_API gttr GetTTRevision;
+SCRIPTS_API htp Set_HUD_Help_Text_Player;
+SCRIPTS_API csp Change_String_Player;
+SCRIPTS_API fpu Force_Position_Update;
+SCRIPTS_API grps Get_Random_Pathfind_Spot;
 
 SCRIPTS_API bool Can_Team_Build_Vehicle(int Team)
 {
@@ -1119,6 +1134,3 @@ void SCRIPTS_API Grant_Powerup(GameObject *obj,const char *Preset_Name)
 	}
 }
 
-RENEGADE_FUNCTION
-SCRIPTS_API uint Send_Object_Update(NetworkObjectClass* object, int remoteHostId)
-AT2(0x00461820,0x004612F0);

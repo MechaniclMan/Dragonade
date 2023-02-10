@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -97,18 +97,24 @@ class JFW_Visible_People_In_Vechicle : public ScriptImpClass {
 
 class JFW_Per_Preset_Visible_Person_In_Vechicle : public ScriptImpClass {
 	int modelid;
+	bool stealth;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
+	void Timer_Expired(GameObject *obj, int number);
 	public: void Register_Auto_Save_Variables();
 };
 
 class JFW_Per_Preset_Visible_People_In_Vechicle : public ScriptImpClass {
 	int modelid1;
 	int modelid2;
+	int driverid1;
+	int driverid2;
+	bool stealth;
 	void Created(GameObject *obj);
 	void Custom(GameObject *obj,int type,int param,GameObject *sender);
 	void Killed(GameObject *obj,GameObject *killer);
+	void Timer_Expired(GameObject *obj,int number);
 	public: void Register_Auto_Save_Variables();
 };
 
@@ -230,4 +236,23 @@ class JFW_Empty_Vehicle_Timer : public ScriptImpClass {
 class JFW_Vehicle_Visible_Weapon : public ScriptImpClass {
 	void Created(GameObject *obj);
 	void Timer_Expired(GameObject *obj,int number);
+};
+
+class SoldierObject : public NoEqualsClass<SoldierObject>
+{
+public:
+	int ModelID;
+	int SoldierID;
+	SoldierObject() : ModelID(0), SoldierID(0)
+	{
+	}
+};
+
+class JFW_Per_Preset_Visible_Multiple_People_In_Vehicle : public ScriptImpClass {
+	VectorClass<SoldierObject> SoldierObjects;
+	bool stealth;
+	void Created(GameObject *obj);
+	void Custom(GameObject *obj,int type,int param,GameObject *sender);
+	void Killed(GameObject *obj,GameObject *killer);
+	void Timer_Expired(GameObject *obj, int number);
 };

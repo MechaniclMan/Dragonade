@@ -270,6 +270,7 @@ void GDI_AGT_Missile::Created(GameObject* MissileObj)
 	Commands->Enable_Hibernation(MissileObj, false);
 }
 
+
 void GDI_AGT_Missile::Destroyed(GameObject* MissileObj)
 {
 	Commands->Action_Reset(MissileObj, 100);

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -415,22 +415,7 @@ void dp88_AR_Deployable_Infantry::KeyHook()
       return;
     }
 
-		// Destroy the defensive structure
-		if ( deployedObjectId != NULL )
-			Commands->Destroy_Object ( Commands->Find_Object ( deployedObjectId ) );
-
-		deployed = false;
-		lastDeploy = time(NULL);
-
-		// Remove deployed weapon
-		const char* powerup = GetWeaponPowerup(currentVetLevel);
-		if ( powerup )
-			Remove_Weapon ( obj, Get_Powerup_Weapon ( powerup ) );
-
-    // Re-enable loiters and vehicle entry
-    if ( SoldierGameObj* sObj = obj->As_SoldierGameObj() )  // Should always be true, but safety first...
-      sObj->Set_Can_Drive_Vehicles(m_bCanDrive);
-    Commands->Set_Loiters_Allowed(obj,true);
+    Undeploy(obj);
 	}
 	else
 	{
@@ -462,39 +447,7 @@ void dp88_AR_Deployable_Infantry::KeyHook()
 		}
 		else
 		{
-			// Create the defensive structure
-			GameObject* deployedObject = Commands->Create_Object ( Get_Parameter ( "deployedObjectPreset" ), Commands->Get_Position ( obj ) );
-			deployedObjectId = Commands->Get_ID ( deployedObject );
-
-			// Grant deployed weapon and select it for use
-			const char* powerup = GetWeaponPowerup(currentVetLevel);
-			if ( powerup )
-			{
-				Commands->Give_PowerUp( obj, powerup, true );
-				Commands->Select_Weapon ( obj, Get_Powerup_Weapon ( powerup ) );
-			}
-
-			// Set armour & skin types
-			const char* armourType = GetArmourType(currentVetLevel);
-			if ( armourType )
-			{
-				Commands->Set_Shield_Type(obj, armourType);
-				Set_Skin(obj, armourType);
-			}
-
-			deployed = true;
-			lastDeploy = time(NULL);
-
-      // Disable loiters and vehicle entry
-      if ( SoldierGameObj* sObj = obj->As_SoldierGameObj() )  // Should always be true, but safety first...
-      {
-        m_bCanDrive = sObj->Can_Drive_Vehicles(); // Save value for when we undeploy...
-        sObj->Set_Can_Drive_Vehicles(false);
-      }
-      Commands->Set_Loiters_Allowed(obj,false);
-
-			// TEMP - Start timer to check position
-			Commands->Start_Timer(obj,this,2.0f,154785);
+			Deploy(obj);
 		}
 	}
 }
@@ -558,6 +511,7 @@ void dp88_AR_Deployable_Infantry::Custom ( GameObject *obj, int type, int param,
 					const char* oldWeaponPowerup = GetWeaponPowerup(oldVetLevel);
 					Remove_Weapon ( obj, Get_Powerup_Weapon ( oldWeaponPowerup ) );
 				}
+
 				// Grant and select new weapon
 				const char* powerup = GetWeaponPowerup(currentVetLevel);
 				Commands->Give_PowerUp( obj, powerup, true );
@@ -571,73 +525,140 @@ void dp88_AR_Deployable_Infantry::Custom ( GameObject *obj, int type, int param,
 // TEMPORARY - CHECK IF GI MOVES AWAY FROM SANDBAGS
 void dp88_AR_Deployable_Infantry::Timer_Expired ( GameObject* obj, int number )
 {
-	if ( deployed && number == 154785 )
-	{
-		GameObject* deployedObject = Commands->Find_Object(deployedObjectId);
-		float distance = Commands->Get_Distance(Commands->Get_Position(deployedObject),Commands->Get_Position(obj));
+  if ( deployed && number == 154785 )
+  {
+    GameObject* deployedObject = Commands->Find_Object(deployedObjectId);
+    float distance = Commands->Get_Distance(Commands->Get_Position(deployedObject),Commands->Get_Position(obj));
 
-		// If more than 3m away, undeploy
-		if ( deployedObject != NULL && distance > 1.5f )
-		{
-			// Destroy the defensive structure
-			if ( deployedObjectId != NULL )
-				Commands->Destroy_Object ( Commands->Find_Object ( deployedObjectId ) );
+    // If more than 3m away, undeploy
+    if ( deployedObject != NULL && distance > 1.5f )
+    {
+      Undeploy(obj);
 
-			deployed = false;
-			lastDeploy = time(NULL);
+      // Remove script to punish abusers
+      Send_Message_Player(obj, DP88_RGB_ERROR_MSG, StringClass::getFormattedString("Deployment abuse detected, disabling deploy script... (distance from deployment: %.2fm)", distance));
+      RemoveHook();
+      Destroy_Script();
+      return;
+    }
 
-			// Remove deployed weapon
-			if ( Is_Valid_Preset ( Get_Parameter ( "deployedWeaponPowerup" ) ) )
-				Remove_Weapon ( obj, Get_Powerup_Weapon ( Get_Parameter ( "deployedWeaponPowerup" ) ) );
-
-			// Remove script to punish abusers
-			StringClass message;
-			message.Format ("Deployment abuse detected, disabling deploy script... (distance from deployment: %.2fm)", distance);
-			Send_Message_Player(obj, DP88_RGB_ERROR_MSG, message);
-			RemoveHook();
-			Destroy_Script();
-		}
-
-
-		// Otherwise restart timer
-		else
-			Commands->Start_Timer(obj,this,2.0f,154785);
-	}
-}
-
-
-// Ugly hack to clean up when player purchases new character
-void dp88_AR_Deployable_Infantry::Detach(GameObject *obj)
-{
-	if ( Exe != EXE_LEVELEDIT )	// Don't call destroyed if called from LE, it will crash!
-		Destroyed(obj);
-	JFW_Key_Hook_Base::Detach(obj);
+    Commands->Start_Timer(obj,this,2.0f,154785);
+  }
 }
 
 
 // Get armour type to set for the given veterancy level
 const char* dp88_AR_Deployable_Infantry::GetArmourType ( int vetLevel )
 {
-	if ( vetLevel == 2 && strcmp ( Get_Parameter( "deployedArmourType_elite" ), "null" ) != 0 )
-		return Get_Parameter ( "deployedArmourType_elite" );
-	else if ( vetLevel >= 1 && strcmp ( Get_Parameter( "deployedArmourType_veteran" ), "null" ) != 0 )
-		return Get_Parameter ( "deployedArmourType_veteran" );
-	else if ( strcmp ( Get_Parameter( "deployedArmourType" ), "null" ) != 0 )
-		return Get_Parameter ( "deployedArmourType" );
-	return NULL;
+  if ( vetLevel == 2 && strcmp ( Get_Parameter( "deployedArmourType_elite" ), "null" ) != 0 )
+    return Get_Parameter ( "deployedArmourType_elite" );
+  else if ( vetLevel >= 1 && strcmp ( Get_Parameter( "deployedArmourType_veteran" ), "null" ) != 0 )
+    return Get_Parameter ( "deployedArmourType_veteran" );
+  else if ( strcmp ( Get_Parameter( "deployedArmourType" ), "null" ) != 0 )
+    return Get_Parameter ( "deployedArmourType" );
+  return NULL;
 }
 
 
 // Get weapon powerup to grant for the given veterancy level
 const char* dp88_AR_Deployable_Infantry::GetWeaponPowerup ( int vetLevel )
 {
-	if ( vetLevel == 2 && hasEliteWeaponPowerup )
-		return Get_Parameter("deployedWeaponPowerup_elite");
-	else if ( vetLevel >= 1 && hasVeteranWeaponPowerup )
-		return Get_Parameter("deployedWeaponPowerup_veteran");
-	else if ( hasRookieWeaponPowerup )
-		return Get_Parameter("deployedWeaponPowerup");
-	return NULL;
+  if ( vetLevel == 2 && hasEliteWeaponPowerup )
+    return Get_Parameter("deployedWeaponPowerup_elite");
+  else if ( vetLevel >= 1 && hasVeteranWeaponPowerup )
+    return Get_Parameter("deployedWeaponPowerup_veteran");
+  else if ( hasRookieWeaponPowerup )
+    return Get_Parameter("deployedWeaponPowerup");
+  return NULL;
+}
+
+void dp88_AR_Deployable_Infantry::Deploy(GameObject* obj)
+{
+  if (deployed)
+    return;
+
+  lastDeploy = time(NULL);
+  deployed = true;
+
+  // Create the defensive structure
+  GameObject* deployedObject = Commands->Create_Object ( Get_Parameter ( "deployedObjectPreset" ), Commands->Get_Position ( obj ) );
+  deployedObjectId = Commands->Get_ID ( deployedObject );
+
+  // Grant deployed weapon and select it for use
+  const char* powerup = GetWeaponPowerup(currentVetLevel);
+  if ( powerup )
+  {
+    Commands->Give_PowerUp( obj, powerup, true );
+    Commands->Select_Weapon ( obj, Get_Powerup_Weapon ( powerup ) );
+  }
+
+  // Set armour & skin types
+  const char* armourType = GetArmourType(currentVetLevel);
+  if ( armourType )
+  {
+    Commands->Set_Shield_Type(obj, armourType);
+    Set_Skin(obj, armourType);
+  }
+
+  // Disable loiters and vehicle entry
+  if ( SoldierGameObj* sObj = obj->As_SoldierGameObj() )  // Should always be true, but safety first...
+  {
+    m_bCanDrive = sObj->Can_Drive_Vehicles(); // Save value for when we undeploy...
+    sObj->Set_Can_Drive_Vehicles(false);
+    Commands->Set_Loiters_Allowed(obj,false);
+  }
+  const char *sound = Get_Parameter("deploySound");
+  if (sound[0])
+  {
+	  Commands->Create_Sound(sound, Commands->Get_Position(obj), obj);
+  }
+
+  // TEMP - Start timer to check position for script abuse
+  Commands->Start_Timer(obj,this,2.0f,154785);
+}
+
+void dp88_AR_Deployable_Infantry::Undeploy(GameObject* obj)
+{
+  if (!deployed)
+    return;
+
+  lastDeploy = time(NULL);
+  deployed = false;
+
+  // Destroy the defensive structure
+  if (NULL != deployedObjectId)
+  {
+    Commands->Destroy_Object(Commands->Find_Object(deployedObjectId));
+    
+    // Wake up any objects inside the box to prevent abusing the physics engine to
+    // "walk on air" by moving forward, undeploying and redeploying (and repeating)
+    // without waking the physics engine to check for terrain under the soldier
+    Vector3 pos = Commands->Get_Position(obj);
+    Vector3 extent(10.0f, 10.0f, 10.0f);
+    OBBoxClass boundingBox(pos, extent);
+    Wake_Up_Objects_In_OBBox(boundingBox);
+  }
+
+  // Remove deployed weapon
+  const char* powerup = GetWeaponPowerup(currentVetLevel);
+  if (powerup)
+    Remove_Weapon(obj, Get_Powerup_Weapon(powerup));
+
+  // Re-enable loiters and vehicle entry
+  if (SoldierGameObj* sObj = obj->As_SoldierGameObj())  // Should always be true, but safety first...
+  {
+    sObj->Set_Can_Drive_Vehicles(m_bCanDrive);
+    Commands->Set_Loiters_Allowed(obj,true);
+  }
+  const char *sound = Get_Parameter("undeploySound");
+  if (sound[0])
+  {
+	  Commands->Create_Sound(sound, Commands->Get_Position(obj), obj);
+  }
+
+  // Reset armour & skin types
+  Set_Skin(obj, undeployedSkinType);
+  Commands->Set_Shield_Type(obj, undeployedArmourType);
 }
 
 
@@ -890,7 +911,6 @@ void dp88_Ore_Miner::Created ( GameObject *obj )
   }
 
   // Set the initial animation state
-  m_currentAnimId = MINER_ANIM_DUMPING;
   UpdateAnimation(obj, MINER_ANIM_IDLE);
 
   /* For AI miners send a message to ourselves to start searching for an ore field - note the delay
@@ -911,7 +931,7 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
 
 
   // Message from an ore field indicating we have left it
-  else if ( type == CUSTOM_MINER_EXITED_ORE_FIELD )
+  else if ( type == CUSTOM_MINER_EXITED_ORE_FIELD && Commands->Get_ID(sender) == m_oreFieldId )
   {
     ExitedOreField(obj, sender);
   }
@@ -987,8 +1007,7 @@ void dp88_Ore_Miner::Custom ( GameObject *obj, int type, int param, GameObject *
     if ( m_bUseAI )
       m_aiState = MINER_AISTATE_UNLOADING_ORE;
 
-    // Send a timed event to notify us when the ore unload is completed and
-    // call the DockedAtRefinery() event
+    // Send a timed event to notify us when the dump is complete and then call the docking event
     Commands->Send_Custom_Event(obj, obj, CUSTOM_MINER_UNLOAD_ORE_COMPLETE, 0, m_oreDumpTime);
     DockedAtRefinery(obj);
   }
@@ -1047,38 +1066,57 @@ void dp88_Ore_Miner::DriveToOreField ( GameObject *obj )
 {
   m_aiState = MINER_AISTATE_SEARCH_FOR_ORE;
 
+  GameObject* bestField = NULL;
+  double bestFieldScore = 0.0;
+
   // \todo Check number of units available in an ore field and find one with a sufficient quantity - 
   //       ideally 1.5x our capacity to avoid it being depleted before we get there!
   SList<GameObject> oreFields;
-  Find_All_Objects_With_Script_By_Distance ( "dp88_Ore_Field", oreFields, Commands->Get_Position(obj));
+  Find_All_Objects_With_Script("dp88_Ore_Field", oreFields);
 
   for ( SLNode<GameObject>* oreFieldNode = oreFields.Head(); oreFieldNode != NULL; oreFieldNode = oreFieldNode->Next() )
   {
-    if ( GameObject* oreField = oreFieldNode->Data() )
+    if (GameObject* oreField = oreFieldNode->Data())
     {
       dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(oreField,"dp88_Ore_Field"));
-      if ( !pOreFieldScript || (!pOreFieldScript->IsInfinite() && pOreFieldScript->NumOreUnits() < 15) )    // 15 is a magic number currently, should fix...
+      if (!pOreFieldScript || !pOreFieldScript->IsSuitableForAI())
         continue;
 
-      Vector3 position = Commands->Get_Position(oreField);
-      //Console_Output ( "dp88_Ore_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
+      int availableUnits = min(m_oreCapacity, (pOreFieldScript->IsInfinite()?m_oreCapacity:(int)pOreFieldScript->NumOreUnits()));
+      if (0 == availableUnits)
+        continue;
 
-      /* Setup parameters and get going! */
-      m_aiState = MINER_AISTATE_DRIVE_TO_ORE;
-      ActionParamsStruct params;
-      params.Set_Basic( this, 100.0f, MINER_ACTIONID_DRIVE_TO_ORE );
-      params.Set_Movement ( position, 1.0f, 1.0f );
-      params.MovePathfind = true;
-      params.ShutdownEngineOnArrival = true;
-      params.AttackActive = false;
-      Commands->Action_Goto( obj, params );
+      Vector3 fieldPosition = Commands->Get_Position(oreField);
+      double fieldScore = (availableUnits*pOreFieldScript->GetOreValue()) / (0.5*Commands->Get_Distance(Commands->Get_Position(oreField), Commands->Get_Position(obj)));
 
-      return;
+      if (fieldScore > bestFieldScore || NULL == bestField)
+      {
+        bestField = oreField;
+        bestFieldScore = fieldScore;
+      }
     }
   }
 
-  // No ore fields are available at the moment... send ourselves a message to have another look in 5 seconds...
-  Commands->Send_Custom_Event( obj, obj, CUSTOM_MINER_AI_SEARCH_FOR_ORE, 1, (float)5.0f );
+  if (NULL == bestField)
+  {
+    //Console_Output ( "dp88_Ore_Miner: No ore fields available..." );
+
+    // No ore fields are available at the moment... send ourselves a message to have another look in 5 seconds...
+    Commands->Send_Custom_Event(obj, obj, CUSTOM_MINER_AI_SEARCH_FOR_ORE, 1, (float)5.0f);
+    return;
+  }
+
+  //Console_Output ( "dp88_Ore_Miner: Driving to location: %.2f, %.2f, %.2f\n", position.X, position.Y, position.Z );
+
+  /* Setup parameters and get going! */
+  m_aiState = MINER_AISTATE_DRIVE_TO_ORE;
+  ActionParamsStruct params;
+  params.Set_Basic(this, 100.0f, MINER_ACTIONID_DRIVE_TO_ORE);
+  params.Set_Movement(Commands->Get_Position(bestField), 1.0f, 1.0f);
+  params.MovePathfind = true;
+  params.ShutdownEngineOnArrival = true;
+  params.AttackActive = false;
+  Commands->Action_Goto(obj, params);
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -1091,16 +1129,26 @@ void dp88_Ore_Miner::EnteredOreField ( GameObject *obj, GameObject* oreField )
 
   // Check if this is a valid ore field
   dp88_Ore_Field* pOreFieldScript = (dp88_Ore_Field *)(Find_Script_On_Object(oreField,"dp88_Ore_Field"));
-  if ( !pOreFieldScript )
+  if (!pOreFieldScript || (m_bUseAI && !pOreFieldScript->IsSuitableForAI()))
     return;
 
+  // Check this field isn't empty (we might have just driven into it on the way to another one, or
+  // some thief might have stolen the resources!)
+  if (!pOreFieldScript->IsInfinite() && 0 == pOreFieldScript->NumOreUnits())
+  {
+    if (m_bUseAI)
+      DriveToOreField(obj);
+
+    return;
+  }
+
   // Set AI state, notify driver or abort if neither AI controlled nor player driven...
-  if ( m_bUseAI )
+  if (m_bUseAI)
   {
     m_aiState = MINER_AISTATE_COLLECTING_ORE;
     Commands->Action_Reset ( obj, 101.0f );
   }
-  else if ( Get_Vehicle_Driver(obj) != NULL )
+  else if (NULL != Get_Vehicle_Driver(obj))
   {
     StringClass str;
     str.Format("Collecting %s...",m_resourceName);
@@ -1180,7 +1228,7 @@ void dp88_Ore_Miner::DockAtRefinery ( GameObject *obj )
 
     /* Setup parameters and get going! */
     ActionParamsStruct params;
-    params.Set_Basic( this, 100.0f, 3 );
+    params.Set_Basic( this, 100.0f, MINER_ACTIONID_DOCK_AT_REFINERY );
     params.Set_Movement ( position, 1.0f, 1.0f );
     params.MoveBackup = true;
     params.ShutdownEngineOnArrival = true;
@@ -1231,9 +1279,6 @@ void dp88_Ore_Miner::UndockedFromRefinery ( GameObject *obj )
 
 void dp88_Ore_Miner::UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId )
 {
-  if ( animId == m_currentAnimId )
-    return;
-
   pObj->As_PhysicalGameObj()->Clear_Animation();
 
   if ( animId < countof(m_animations) && m_animations[animId] != NULL )
@@ -1242,7 +1287,6 @@ void dp88_Ore_Miner::UpdateAnimation ( GameObject* pObj, MINER_ANIMID animId )
     Commands->Set_Animation(pObj,m_animations[animId],bLooping,NULL,0,-1,false);
   }
 
-  // Mining sound is played after each full load
   if (animId < countof(m_animSounds) && m_animSounds[animId] != NULL)
     Commands->Create_Sound(m_animSounds[animId],Commands->Get_Position(pObj),pObj);
 }
@@ -1622,7 +1666,7 @@ void dp88_Ore_Field::Created ( GameObject* pObj )
 
 
   m_strAnimation = Get_Parameter("Animation_Name");
-  if ( strlen(m_strAnimation) <= 0 || !pObj->As_PhysicalGameObj())
+  if (strlen(m_strAnimation) <= 0 || !pObj->As_PhysicalGameObj())
     m_strAnimation = NULL;
   else
   {
@@ -1639,29 +1683,32 @@ void dp88_Ore_Field::Created ( GameObject* pObj )
     m_zoneStepY = Get_Float_Parameter("Zone_Anim_Step_Y");
   }
 
+
+  m_bAiIgnore = (Get_Parameter_Count() >= 10) ? Get_Bool_Parameter("AI_Ignore") : false;
+
   if (!pObj->As_ScriptZoneGameObj())
   {
-	// Create the miner script zone
-	Matrix3 rotation(true);
-	rotation.Rotate_Z(Commands->Get_Facing(pObj));
-	
-	// Define the bounding box and create the zone
-	OBBoxClass zoneBoundingBox ( Commands->Get_Position(pObj), m_zoneSizeFull, rotation );
-	if ( GameObject* pMinerZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
-	{
-	    m_minerZoneId = Commands->Get_ID(pMinerZone);
-	
-	    // Attach observer to the script zone
-	    m_pZoneObserver = new dp88_Ore_Field_Observer(this);
-	    pMinerZone->Add_Observer(m_pZoneObserver);
-	
-	    return;
-	}
+    // Create the miner script zone
+    Matrix3 rotation(true);
+    rotation.Rotate_Z(DEG2RAD(Commands->Get_Facing(pObj)));
+
+    // Define the bounding box and create the zone
+    OBBoxClass zoneBoundingBox ( Commands->Get_Position(pObj), m_zoneSizeFull, rotation );
+    if ( GameObject* pMinerZone = Create_Zone("Script_Zone_All",zoneBoundingBox) )
+    {
+      m_minerZoneId = Commands->Get_ID(pMinerZone);
+
+      // Attach observer to the script zone
+      m_pZoneObserver = new dp88_Ore_Field_Observer(this);
+      pMinerZone->Add_Observer(m_pZoneObserver);
+
+      return;
+    }
   }
   else
   {
-	  m_minerZoneId = Commands->Get_ID(pObj);
-	  return;
+    m_minerZoneId = Commands->Get_ID(pObj);
+    return;
   }
 
   m_pZoneObserver = NULL;
@@ -1763,7 +1810,8 @@ ScriptRegistrant<dp88_Ore_Field> dp88_Ore_Field_Registrant(
   "Animation_Empty_Frame:int,"
   "Zone_Size:vector3,"
   "Zone_Anim_Step_X:float,"
-  "Zone_Anim_Step_Y:float"
+  "Zone_Anim_Step_Y:float,"
+  "AI_Ignore=0:int"
 );
 
 
@@ -1815,7 +1863,8 @@ void dp88_Ore_Extractor::Timer_Expired ( GameObject* pObj, int number )
 
 void dp88_Ore_Extractor::Animation_Complete ( GameObject* pObj, const char* animationName )
 {
-  if ( (m_strAnimation == NULL || animationName == NULL) || _stricmp(m_strAnimation,animationName) == 0 )
+  if ( (m_strAnimation == NULL && animationName == NULL)
+    || (m_strAnimation != NULL && animationName != NULL && 0 == _stricmp(m_strAnimation,animationName)) )
   {
     // Populate ore field with additional ore
     GameObject* pOreField = Commands->Find_Object(m_oreFieldId);
@@ -2079,18 +2128,16 @@ void dp88_RemoteControlConsole::Created ( GameObject *obj )
   if ( m_nChargeTime > 0 )
   {
     Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameCharging1"), Get_Int_Parameter("animFrameCharging2") );
   }
-  else
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2") );
 
-  Commands->Enable_HUD_Pokable_Indicator(obj, (m_nChargeTime == 0));
+  UpdateAnimation(obj);
 }
 
 // -------------------------------------------------------------------------------------------------
 
 void dp88_RemoteControlConsole::Detach ( GameObject* obj )
 {
+	ScriptImpClass::Detach(obj);
 	if (m_pLoopedAnimCtrl)
 	{
 		delete m_pLoopedAnimCtrl;
@@ -2149,14 +2196,13 @@ void dp88_RemoteControlConsole::Poked ( GameObject *obj, GameObject *poker )
 		pilotID = Commands->Get_ID( poker );
 		Commands->Control_Enable ( poker, false );
 
-		// Disable pokeable indicator
-		Commands->Enable_HUD_Pokable_Indicator(obj, false);
+		UpdateAnimation(obj);
 
 		// ...Then create the vehicle...
 		//Console_Output ( "[%d:%s:%s] Creating remote control vehicle %s\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name(), Get_Parameter ( "vehiclePreset" ) );
 		if (!Create_Vehicle( Get_Parameter ( "vehiclePreset" ), 0.0, Commands->Find_Object( pilotID ), Get_Object_Type( Commands->Find_Object(pilotID) ) ))
 		{
-			Timer_Expired(obj,TIMER_REMOTECONTROL_TIMEOUT);
+			Timer_Expired(obj, TIMER_REMOTECONTROL_TIMEOUT);
 		}
 		else
 		{
@@ -2178,7 +2224,7 @@ void dp88_RemoteControlConsole::Poked ( GameObject *obj, GameObject *poker )
 			Commands->Control_Enable ( poker, false );
 
 			// Disable pokeable indicator
-			Commands->Enable_HUD_Pokable_Indicator(obj, false);
+			UpdateAnimation(obj);
 
 			Commands->Enable_Vehicle_Transitions( vehicle, true );
 			Commands->Start_Timer ( obj, this, 0.5, TIMER_REMOTECONTROL_DRIVERENTER );
@@ -2230,34 +2276,20 @@ void dp88_RemoteControlConsole::Custom( GameObject *obj, int type, int param, Ga
 
 		vehicleID = NULL;
 
-    // Make driver invisible and uncollidable so they can't be killed before they are teleported home
-    if ( GameObject* pilot = Commands->Find_Object(pilotID) )
-    {
-      Commands->Set_Is_Rendered ( pilot, false );
-      Commands->Disable_All_Collisions ( pilot );
-      Update_Network_Object(pilot);
-    }
-
 		// Start timer to return the pilot (if we do it immediately the game will crash...)
-		if ( pilotID != NULL )
+		if (NULL != pilotID)
 			Commands->Start_Timer ( obj, this, 0.5, TIMER_REMOTECONTROL_DRIVEREXIT );
 
 		// Reset charge time
-		m_nChargeTime	= Get_Int_Parameter ( "chargeTime" );
+		m_nChargeTime	= Get_Int_Parameter("chargeTime");
 
 		// Start charge tick timer if necessary and set initial animation frames
-		if ( m_bEnabled )
+		if (m_bEnabled && m_nChargeTime > 0)
 		{
-			if ( m_nChargeTime > 0 )
-			{
-				Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
-        m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameCharging1"), Get_Int_Parameter("animFrameCharging2") );
-			}
-			else
-        m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2") );
+			Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
 		}
-
-		Commands->Enable_HUD_Pokable_Indicator(obj, (m_bEnabled && m_nChargeTime == 0));
+    
+    UpdateAnimation(obj);
 	}
 
 	else if ( type == CUSTOM_REMOTECONTROL_DISABLED )
@@ -2282,13 +2314,12 @@ void dp88_RemoteControlConsole::Timer_Expired ( GameObject *obj, int number )
 		GameObject* pilot = Commands->Find_Object(pilotID);
 		if ( pilot )
 		{
-			Commands->Control_Enable ( pilot, true );
-			Commands->Give_Money( pilot, (float)(Get_Int_Parameter ( "cost" )), 0 );
+			Commands->Control_Enable(pilot, true);
+			Commands->Give_Money(pilot, (float)(Get_Int_Parameter("cost")), 0);
 		}
 		pilotID = NULL;
 
-		// Enable pokeable indicator
-		Commands->Enable_HUD_Pokable_Indicator(obj, (m_bEnabled && m_nChargeTime == 0));
+    UpdateAnimation(obj);
 	}
 
 
@@ -2297,27 +2328,15 @@ void dp88_RemoteControlConsole::Timer_Expired ( GameObject *obj, int number )
 		//Console_Output ( "[%d:%s:%s] Transitioning driver into vehicle\n", Commands->Get_ID(obj), Commands->Get_Preset_Name(obj), this->Get_Name() );
 		GameObject* vehicle = Commands->Find_Object(vehicleID);
 		GameObject* pilot = Commands->Find_Object(pilotID);
-		if ( pilot )
+		if (pilot)
 		{
-			// Create pilot dummy...
-			CreateDummy ( pilot, Commands->Get_Position(pilot), Commands->Get_Facing(pilot) );
-
-			Commands->Control_Enable ( pilot, true );
-			Force_Vehicle_Entry(pilot,vehicle);
-
-			// Play control established sound
-			Create_2D_Sound_Player(pilot, Get_Parameter("connectionEstablishedSound") );
-
-			// Set animation frame
-      m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameActive1"), Get_Int_Parameter("animFrameActive2") );
+			HandleDriverEnter(obj, pilot, vehicle);
 		}
 		else	// This should never actually happen... but just in case...
 		{
-			Commands->Enable_Vehicle_Transitions( vehicle, false );
+			Commands->Enable_Vehicle_Transitions(vehicle, false);
 			pilotID = NULL;
-
-			// Enable pokeable indicator
-			Commands->Enable_HUD_Pokable_Indicator(obj, (m_bEnabled && m_nChargeTime == 0));
+			UpdateAnimation(obj);
 		}
 	}
 
@@ -2341,8 +2360,7 @@ void dp88_RemoteControlConsole::Timer_Expired ( GameObject *obj, int number )
 				Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
 			else
 			{
-        m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2") );
-        Commands->Enable_HUD_Pokable_Indicator(obj, true);
+        UpdateAnimation(obj);
 			}
 		}
 	}
@@ -2350,105 +2368,89 @@ void dp88_RemoteControlConsole::Timer_Expired ( GameObject *obj, int number )
 
 // -------------------------------------------------------------------------------------------------
 
-void dp88_RemoteControlConsole::SetEnabled ( GameObject* obj, bool state )
+void dp88_RemoteControlConsole::SetEnabled(GameObject* obj, bool state)
 {
-	if ( state == m_bEnabled )
-		return;
+  if ( state == m_bEnabled )
+    return;
 
-	m_bEnabled = state;
+  m_bEnabled = state;
 
-	// If we are no longer enabled evict the driver
-	if ( !m_bEnabled && pilotID != NULL )
-	{
-		GameObject* pilot = Commands->Find_Object(pilotID);
-		if ( pilot )
-		{
-      Soldier_Transition_Vehicle ( pilot );
-      Create_2D_Sound_Player(pilot, Get_Parameter("consoleOfflineSound") );
+  // If we are no longer enabled evict the driver
+  if (!m_bEnabled && NULL != pilotID)
+  {
+    GameObject* pilot = Commands->Find_Object(pilotID);
+    if (NULL != pilot)
+    {
+      Soldier_Transition_Vehicle(pilot);
+      Create_2D_Sound_Player(pilot, Get_Parameter("consoleOfflineSound"));
 
-      // Make driver invisible and uncollidable so they can't be killed before they are teleported home
-      Commands->Set_Is_Rendered ( pilot, false );
-      Commands->Disable_All_Collisions ( pilot );
+      // Force a network update
       Update_Network_Object(pilot);
 
       // Can't do this instantly or the game crashes. Yay!
-      Commands->Start_Timer ( obj, this, 0.5, TIMER_REMOTECONTROL_DRIVEREXIT );
-		}
-	}
-
-	// Set pokeable indicator state
-	Commands->Enable_HUD_Pokable_Indicator(obj, (m_bEnabled && m_nChargeTime == 0));
-
-  // Update the animation frame state
-  if ( !m_bEnabled )
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameDisabled1"), Get_Int_Parameter("animFrameDisabled2") );
-
-  else if ( m_nChargeTime > 0 )
-  {
-    Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameCharging1"), Get_Int_Parameter("animFrameCharging2") );
+      Commands->Start_Timer(obj, this, 0.5, TIMER_REMOTECONTROL_DRIVEREXIT);
+    }
   }
 
-  else
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2") );
+  // Start charging for next use (if applicable)
+  if (m_nChargeTime > 0)
+  {
+    Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
+  }
+
+  UpdateAnimation(obj);
 }
 
 // -------------------------------------------------------------------------------------------------
 
-void dp88_RemoteControlConsole::CreateDummy ( GameObject* pilot, Vector3 position, float facing )
+void dp88_RemoteControlConsole::HandleDriverEnter(GameObject* obj, GameObject* pilot, GameObject* vehicle)
 {
-	GameObject* dummy = Commands->Create_Object ( "Invisible_Object_2", position );
-	if ( dummy )
-	{
-		m_pilotDummyID = Commands->Get_ID(dummy);
-		Commands->Set_Facing(dummy, facing);
-		pilotDummyPos = position;	// Used to put the pilot back in his original location
+  if (NULL != pilot && NULL != vehicle)
+  {
+    // Create pilot dummy...
+    CreateDummy(pilot, Commands->Get_Position(pilot), Commands->Get_Facing(pilot));
 
-		// Clone health/armour
-		Set_Skin(dummy, Get_Skin(pilot) );
-		Commands->Set_Shield_Type(dummy, Get_Shield_Type(pilot) );
-		Set_Max_Health(dummy, Commands->Get_Max_Health(pilot) );
-		Set_Max_Shield_Strength(dummy, Commands->Get_Max_Shield_Strength(pilot) );
-		Commands->Set_Health(dummy, Commands->Get_Health(pilot) );
-		Commands->Set_Shield_Strength(dummy, Commands->Get_Shield_Strength(pilot) );
+    Commands->Control_Enable(pilot, true);
 
-		// Link dummy and pilot health and armour
-		char pilotIdString[12];
-		sprintf ( pilotIdString, "%d", Commands->Get_ID(pilot) );
-		Attach_Script_Once ( dummy, "dp88_linkHealth", pilotIdString );
+    // Make driver invisible so you don't see them flash on screen when exiting a drone
+    Commands->Set_Is_Rendered(pilot, false);
+    
+    // Set the pilot to the uncollidable group so they can't be killed before they are teleported home
+    PhysicalGameObj *physPilot = pilot->As_PhysicalGameObj();
+    if (NULL != physPilot)
+    {
+      m_pilotCachedCollisionGroup = physPilot->Peek_Physical_Object()->Get_Collision_Group();
+      physPilot->Peek_Physical_Object()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
+    }
 
-		// Clone player model onto dummy
-		Commands->Set_Model ( dummy, Get_Model(pilot) );
-	}
+    // Update the pilot object and then force them into the vehicle
+    Update_Network_Object(pilot);
+    Force_Vehicle_Entry(pilot, vehicle);
+
+    // Play control established sound
+    Create_2D_Sound_Player(pilot, Get_Parameter("connectionEstablishedSound"));
+
+    UpdateAnimation(obj);
+  }
 }
 
 // -------------------------------------------------------------------------------------------------
 
-void dp88_RemoteControlConsole::DestroyDummy()
+void dp88_RemoteControlConsole::HandleDriverExit(GameObject* obj, GameObject* pilot, GameObject* vehicle)
 {
-	if ( m_pilotDummyID != NULL )
-	{
-		GameObject* dummy = Commands->Find_Object(m_pilotDummyID);
-		m_pilotDummyID = NULL;
-
-		// Destroy the dummy object rather than killing it - this prevents dp88_linkHealth from also
-		// killing the pilot
-		if ( dummy )
-			Commands->Destroy_Object(dummy);
-	}
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void dp88_RemoteControlConsole::HandleDriverExit ( GameObject* obj, GameObject* pilot, GameObject* vehicle )
-{
-  if ( pilot )
+  if (pilot)
   {
     Commands->Set_Position ( pilot, pilotDummyPos );
 
     // Make driver visible and collidable again
     Commands->Set_Is_Rendered ( pilot, true );
-    Commands->Enable_Collisions ( pilot );
+
+    PhysicalGameObj *physPilot = pilot->As_PhysicalGameObj();
+    if (NULL != physPilot)
+    {
+      physPilot->Peek_Physical_Object()->Set_Collision_Group(m_pilotCachedCollisionGroup);
+    }
+
     Update_Network_Object(pilot);
   }
 
@@ -2462,24 +2464,95 @@ void dp88_RemoteControlConsole::HandleDriverExit ( GameObject* obj, GameObject* 
 		Commands->Enable_Vehicle_Transitions( vehicle, false );
 	}
 
-	// Enable pokeable indicator
-	Commands->Enable_HUD_Pokable_Indicator(obj, (m_bEnabled && m_nChargeTime == 0));
-
-  // Set animation frame
-  if ( !m_bEnabled )
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameDisabled1"), Get_Int_Parameter("animFrameDisabled2") );
-
-  else if ( vehicle )
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameIdle2"), Get_Int_Parameter("animFrameActive2") );
-
-  else if ( m_nChargeTime > 0 )
+  // Start charging for next use (if applicable)
+  if (m_nChargeTime > 0)
   {
     Commands->Start_Timer( obj, this, 1.0f, TIMER_REMOTECONTROL_CHARGETICK);
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameCharging1"), Get_Int_Parameter("animFrameCharging2") );
   }
 
+  UpdateAnimation(obj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RemoteControlConsole::CreateDummy ( GameObject* pilot, Vector3 position, float facing )
+{
+  GameObject* dummy = Commands->Create_Object ( "Invisible_Object_2", position );
+  if ( dummy )
+  {
+    m_pilotDummyID = Commands->Get_ID(dummy);
+    Commands->Set_Facing(dummy, facing);
+    pilotDummyPos = position;   // Used to put the pilot back in his original location
+
+    // Clone health/armour
+    Set_Skin(dummy, Get_Skin(pilot) );
+    Commands->Set_Shield_Type(dummy, Get_Shield_Type(pilot) );
+    Set_Max_Health(dummy, Commands->Get_Max_Health(pilot) );
+    Set_Max_Shield_Strength(dummy, Commands->Get_Max_Shield_Strength(pilot) );
+    Commands->Set_Health(dummy, Commands->Get_Health(pilot) );
+    Commands->Set_Shield_Strength(dummy, Commands->Get_Shield_Strength(pilot) );
+    Set_Object_Type(dummy, Get_Object_Type(pilot));
+
+    // Link dummy and pilot health and armour
+    char pilotIdString[12];
+    sprintf ( pilotIdString, "%d", Commands->Get_ID(pilot) );
+    Attach_Script_Once ( dummy, "dp88_linkHealth", pilotIdString );
+
+    // Clone player model onto dummy and set a pose
+    Commands->Set_Model(dummy, Get_Model(pilot));
+    Commands->Set_Animation(dummy, "S_A_HUMAN.H_A_A0A0", true, NULL, 0, 0, false);
+    
+    // Setup soldier collision mode on the dummy
+    PhysicalGameObj *physDummy = dummy->As_PhysicalGameObj();
+    if (NULL != physDummy)
+      physDummy->Peek_Physical_Object()->Set_Collision_Group(SOLDIER_COLLISION_GROUP);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RemoteControlConsole::DestroyDummy()
+{
+  if (NULL != m_pilotDummyID)
+  {
+    GameObject* dummy = Commands->Find_Object(m_pilotDummyID);
+    m_pilotDummyID = NULL;
+
+    // Destroy the dummy object rather than killing it - this prevents dp88_linkHealth from also
+    // killing the pilot
+    if ( dummy )
+      Commands->Destroy_Object(dummy);
+  }
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_RemoteControlConsole::UpdateAnimation(GameObject* obj)
+{
+  bool bPokable = false;
+
+  if (!m_bEnabled)
+    m_pLoopedAnimCtrl->PlayAnimation(Get_Parameter("animationName"), Get_Int_Parameter("animFrameDisabled1"), Get_Int_Parameter("animFrameDisabled2"));
+
+  else if (NULL != pilotID)
+    m_pLoopedAnimCtrl->PlayAnimation(Get_Parameter("animationName"), Get_Int_Parameter("animFrameActive1"), Get_Int_Parameter("animFrameActive2"));
+
+  else if (NULL != vehicleID)
+  {
+    m_pLoopedAnimCtrl->PlayAnimation(Get_Parameter("animationName"), Get_Int_Parameter("animFrameIdle1"), Get_Int_Parameter("animFrameIdle2"));
+    bPokable = true;
+  }
+
+  else if (m_nChargeTime > 0)
+    m_pLoopedAnimCtrl->PlayAnimation(Get_Parameter("animationName"), Get_Int_Parameter("animFrameCharging1"), Get_Int_Parameter("animFrameCharging2"));
+
   else
-    m_pLoopedAnimCtrl->PlayAnimation ( Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2") );
+  {
+    m_pLoopedAnimCtrl->PlayAnimation(Get_Parameter("animationName"), Get_Int_Parameter("animFrameAvailable1"), Get_Int_Parameter("animFrameAvailable2"));
+    bPokable = true;
+  }
+
+  Commands->Enable_HUD_Pokable_Indicator(obj, bPokable);
 }
 
 
@@ -2741,10 +2814,10 @@ void dp88_AR_Paradrop::Damaged( GameObject* pObj, GameObject* pDamager, float am
     // armour, so we can't use Apply_Damage to heal the damage, it has to be done manually
     float health = Commands->Get_Health(pObj);
     float max = Commands->Get_Max_Health(pObj);
-    health =+ amount;
+    health += amount;
     if ( health > max )
     {
-      amount = abs(max-health);
+      amount -= abs(max-health);
       health = max;
     }
     else
@@ -2798,8 +2871,9 @@ void dp88_AR_Paradrop::Timer_Expired( GameObject* pObj, int number )
 
 // -------------------------------------------------------------------------------------------------
 
-void dp88_AR_Paradrop::Detach()
+void dp88_AR_Paradrop::Detach(GameObject* obj)
 {
+  ScriptImpClass::Detach(obj);
   delete m_pAnimController;
   m_pAnimController = NULL;
 }
@@ -2944,14 +3018,12 @@ void dp88_AR_Prism_Tower::calculateTowerMap()
 				{
 					GameObject* t2 = Commands->Find_Object(prismTowerIds[j]);
 					
-					// If these towers are within firing range of each other then add
-					// them to the connections list
-					int distance = (int)Commands->Get_Distance(Commands->Get_Position(t1),Commands->Get_Position(t2));
-					if ( distance < ((dp88_AR_Prism_Tower*)prismTowerScripts[i])->primary_maxRange )
+					// If these towers can assist each other then add them to the connections list
+					if (CanAssistTower(t1,t2, ((dp88_AR_Prism_Tower*)prismTowerScripts[i])->primary_maxRange))
 					{
-						towerConnections[connectionCount*3] = i;
+					  towerConnections[connectionCount*3] = i;
 						towerConnections[(connectionCount*3)+1] = j;
-						towerConnections[(connectionCount*3)+2] = distance;
+						towerConnections[(connectionCount*3)+2] = (int)Commands->Get_Distance(Commands->Get_Position(t1),Commands->Get_Position(t2));
 						connectionCount++;
 					}
 				}
@@ -3112,6 +3184,31 @@ bool dp88_AR_Prism_Tower::calculateTowerMapPathSearch(int* sortedConnections, in
 
 	// Nothing found...
 	return false;
+}
+
+
+bool dp88_AR_Prism_Tower::CanAssistTower(GameObject* tower1, GameObject* tower2, int maxRange)
+{
+  int distance = (int)Commands->Get_Distance(Commands->Get_Position(tower1),Commands->Get_Position(tower2));
+  if (distance > maxRange)
+    return false;
+    
+  // In weapons range so lets do a collision test to check for obstructions
+/*  CastResultStruct res;
+  LineSegClass ray(Commands->Get_Bone_Position(tower1,"muzzlea0"),GetAssistAimPoint(tower2));
+  PhysRayCollisionTestClass coltest(ray, &res, BULLET_COLLISION_GROUP);
+  PhysicsSceneClass::Get_Instance()->Cast_Ray(coltest,false);
+  
+  if (NULL != coltest.CollidedPhysObj)
+  {
+    // todo: verify the collided object == tower2
+    // todo: what if we hit the source tower on the way out? Do we need to figure out some math
+    //       to offset the beam origin to slightly beyond the bounds of the origin? Or maybe
+    //       set the turret rotation to aim at the tower2?
+	// use PhysClass::Inc_Ignore_Counter and PhysClass::Dec_Ignore_Counter here to make the ray casting code ignore the object you want it to ignore
+  }*/
+  
+  return true;
 }
 
 
@@ -3317,8 +3414,7 @@ void dp88_AR_Prism_Tower::StartAssisting(GameObject* obj, GameObject* tower, flo
   isAssistingTower = true;
 
   // Work out attack position
-  Vector3 chargePos = Commands->Get_Bone_Position(tower,"turret");
-  chargePos.Z += 1;
+  Vector3 chargePos = GetAssistAimPoint(tower);
 
   // Start charging the tower - this will also trigger assistance notifications to be sent out
   attackLocation ( obj, chargePos, true );
@@ -3339,6 +3435,16 @@ void dp88_AR_Prism_Tower::StopAssisting(GameObject* obj)
 
   // Send end assistance notifications
   SendEndAssistanceNotifications(obj);
+}
+
+// -------------------------------------------------------------------------------------------------
+
+Vector3 dp88_AR_Prism_Tower::GetAssistAimPoint(GameObject* pTargetTower)
+{
+  Vector3 target = Commands->Get_Position(pTargetTower);
+  Vector3 height = Commands->Get_Bone_Position(pTargetTower,"muzzlea0");
+  target.Z = height.Z;
+  return target;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -3433,47 +3539,50 @@ void dp88_linkHealth::Killed ( GameObject* obj, GameObject *killer )
 
 void dp88_linkHealth::equaliseHealth ( GameObject* obj )
 {
-	GameObject* parent = Commands->Find_Object ( parentObjID );
-	if ( !parent )
-	{
-		Commands->Apply_Damage ( obj, 5000.00, "Death", obj );
-		return;
-	}
+  GameObject* parent = Commands->Find_Object(parentObjID);
+  if (!parent)
+  {
+    Commands->Apply_Damage(obj, 5000.00, "Death", obj);
+    return;
+  }
 
-	/* Work out difference in our health and armour since last check */
-	float difference = ((Commands->Get_Health(obj)-lastHealth)+(Commands->Get_Shield_Strength(obj)-lastArmour));
+  /* Work out difference in our health and armour since last check */
+  float difference = ((Commands->Get_Health(obj)-lastHealth)+(Commands->Get_Shield_Strength(obj)-lastArmour));
 
 	/* Apply damage to parent using 'None' warhead (this should be 1-1 ratio against all skin and
   shield types. Special case scenario: if the target is a soldier in a vehicle we need to use a
   special function to override the check that prevents damage to soldiers in a vehicle */
-  if ( parent->As_SoldierGameObj() && parent->As_SoldierGameObj()->Is_In_Vehicle() )
+  if (0.0f != difference)
   {
-    OffenseObjectClass offense(difference*-1.0f, ArmorWarheadManager::Get_Warhead_Type("None"), NULL);
-    parent->As_SoldierGameObj()->Apply_Damage_IgnoreVehicleCheck ( offense, 1, -1 );
+    if ( parent->As_SoldierGameObj() && parent->As_SoldierGameObj()->Is_In_Vehicle() )
+    {
+      OffenseObjectClass offense(difference*-1.0f, ArmorWarheadManager::Get_Warhead_Type("None"), NULL);
+      parent->As_SoldierGameObj()->Apply_Damage_IgnoreVehicleCheck ( offense, 1, -1 );
+    }
+    else
+      Commands->Apply_Damage ( parent, difference*-1.0f, "None", NULL );
   }
-  else
-    Commands->Apply_Damage ( parent, difference*-1.0f, "None", NULL );
 
-	/* Update our health/armour from the parents new health/armour */
-	Commands->Set_Health ( obj, Commands->Get_Health(parent) );
-	Commands->Set_Shield_Strength ( obj, Commands->Get_Shield_Strength(parent) );
+  /* Update our health/armour from the parents new health/armour */
+  Commands->Set_Health ( obj, Commands->Get_Health(parent) );
+  Commands->Set_Shield_Strength ( obj, Commands->Get_Shield_Strength(parent) );
 
-	/* Set lastHealth / lastArmour */
-	lastHealth = Commands->Get_Health(obj);
-	lastArmour = Commands->Get_Shield_Strength(obj);
+  /* Set lastHealth / lastArmour */
+  lastHealth = Commands->Get_Health(obj);
+  lastArmour = Commands->Get_Shield_Strength(obj);
 
-	/* Are we dead? */
-	if ( lastHealth <= 0.0f )
-	{
-		Commands->Set_Health ( obj, 1.0f );
-		Commands->Apply_Damage ( obj, 5000.00f, "Death", obj );
-		Commands->Set_Health ( parent, 1.0f );
-		Commands->Apply_Damage ( parent, 5000.00f, "Death", NULL );
-	}
+  /* Are we dead? */
+  if ( lastHealth <= 0.0f )
+  {
+    Commands->Set_Health ( obj, 1.0f );
+    Commands->Apply_Damage ( obj, 5000.00f, "Death", obj );
+    Commands->Set_Health ( parent, 1.0f );
+    Commands->Apply_Damage ( parent, 5000.00f, "Death", NULL );
+  }
 
-	/* Otherwise apply 0 damage to ourselves to trigger any on-damage events
-	that need to run, such as dp88_damageAnimation() */
-	Commands->Apply_Damage ( obj, 0.0, "None", obj );
+  /* Otherwise apply 0 damage to ourselves to trigger any on-damage events
+  that need to run, such as dp88_damageAnimation() */
+  Commands->Apply_Damage ( obj, 0.0, "None", obj );
 }
 
 
@@ -3492,7 +3601,7 @@ ScriptRegistrant<dp88_AR_GameController> dp88_AR_GameController_Registrant( "dp8
 //ScriptRegistrant<dp88_AR_Vehicle> dp88_AR_Vehicle_Registrant( "dp88_AR_Vehicle", "TD_attack_animName=modelfile.animfile:string,TD_attack_firstFrame=0.0:float,TD_attack_lastFrame=30.0:float,CLEG_Resistance=10:int" );
 
 // Deployable Infantry
-ScriptRegistrant<dp88_AR_Deployable_Infantry> dp88_AR_Deployable_Infantry_Registrant("dp88_AR_Deployable_Infantry","deployedObjectPreset=null:string,deployedObjectSpaceRequired=6:float,deployAnimation=obj.obj:string,deployTime=4:float,undeployAnimation=obj.obj:string,undeployTime=4:float,deployedWeaponPowerup=null:string,deployedWeaponPowerup_veteran=null:string,deployedWeaponPowerup_elite=null:string,cannotDeployStringId=0:int,deployKeyhook=IDeploy:string,deployedArmourType=null:string,deployedArmourType_veteran=null:string,deployedArmourType_elite=null:string");
+ScriptRegistrant<dp88_AR_Deployable_Infantry> dp88_AR_Deployable_Infantry_Registrant("dp88_AR_Deployable_Infantry", "deployedObjectPreset=null:string,deployedObjectSpaceRequired=6:float,deployAnimation=obj.obj:string,deployTime=4:float,undeployAnimation=obj.obj:string,undeployTime=4:float,deployedWeaponPowerup=null:string,deployedWeaponPowerup_veteran=null:string,deployedWeaponPowerup_elite=null:string,cannotDeployStringId=0:int,deployKeyhook=IDeploy:string,deployedArmourType=null:string,deployedArmourType_veteran=null:string,deployedArmourType_elite=null:string,deploySound:string,undeploySound:string");
 
 // CLEG
 ScriptRegistrant<dp88_AR_CLEG> dp88_AR_CLEG_Registrant("dp88_AR_CLEG","");

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -64,7 +64,7 @@ private:
 	FileClass* File;
 	bool HasOpened;
 public:
-	FileStraw(class FileClass&);
+	FileStraw(FileClass&);
 	~FileStraw();
 	int Get(void* source,int slen);
 };

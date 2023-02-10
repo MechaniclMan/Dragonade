@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -483,8 +483,7 @@ void JFW_Cinematic::Created(GameObject *obj)
 	memset(Slots,0,sizeof(Slots));
 	Load_Control_File(Get_Parameter("ControlFilename"));
 
-    int start_paused_param = Get_Parameter_Index("StartPaused");
-    StartPaused = start_paused_param < Get_Parameter_Count() ? Get_Bool_Parameter(start_paused_param) : false;
+    StartPaused = Get_Parameter_Count() >= 2 ? Get_Bool_Parameter(1) : false;
 
     if (!StartPaused)
     {

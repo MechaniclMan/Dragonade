@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -27,6 +27,7 @@ public:
 	const	PersistFactoryClass &	Get_Factory (void) const;
 	void					CnC_Initialize (BaseControllerClass *base);
 	void					On_Destroyed (void);
+	void					On_Revived (void);
 private:
 	void					Load_Variables (ChunkLoadClass &cload);	
 };

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,46 +17,61 @@ class ChunkSaveClass;
 class ChunkLoadClass;
 class DialogueOptionClass
 {
+private:
+	float Weight;
+	int Conversation_ID;
 public:
-	float unk1;
-	int unk2;
-	DialogueOptionClass() : unk1(1), unk2(0)
-	{
-	}
-	virtual ~DialogueOptionClass()
-	{
-	}
-	const DialogueOptionClass& operator=(const DialogueOptionClass& string)
-	{
-		unk1 = string.unk1;
-		unk2 = string.unk2;
-		return *this;
-	}
-	bool Load         (ChunkLoadClass& chunkLoader);
-	bool Save         (ChunkSaveClass& chunkSaver);
+	DialogueOptionClass();
+	DialogueOptionClass(DialogueOptionClass const &that);
+	virtual ~DialogueOptionClass();
+	const DialogueOptionClass& operator=(DialogueOptionClass const &that);
+	void Save(ChunkSaveClass& csave);
+	void Load(ChunkLoadClass& cload);
+	void Load_Variables(ChunkLoadClass& cload);
+	int Get_Conversation_ID() const {return Conversation_ID;}
+	float Get_Weight() const {return Weight;}
+	void Set_Conversation_ID(int id) {Conversation_ID = id;}
 };
 class DialogueClass
 {
-
 private:
-
-   DynamicVectorClass<DialogueOptionClass*> DialogueOptions;   // RH7
-   float                                    SilenceWeight;
-
-
+	DynamicVectorClass<DialogueOptionClass*> DialogueOptions;
+	float SilenceWeight;
 public:
-
-            DialogueClass();
-   virtual ~DialogueClass();
-
-   void Free_Options ();
-   int Get_Conversation();
-   bool Load         (ChunkLoadClass& chunkLoader);
-   bool Save         (ChunkSaveClass& chunkSaver);
-   const DialogueClass& operator=(const DialogueClass& string);
-
+	DialogueClass();
+	DialogueClass(DialogueClass const &that);
+	virtual ~DialogueClass();
+	const DialogueClass& operator=(const DialogueClass& string);
+	void Save(ChunkSaveClass& csave);
+	void Load(ChunkLoadClass& cload);
+	void Load_Variables(ChunkLoadClass& cload);
+	void Free_Options();
+	int Get_Conversation();
 }; // size: 32
-
+enum DialogueTypes
+{
+	DIALOG_ON_TAKE_DAMAGE_FROM_FRIEND,
+	DIALOG_ON_TAKE_DAMAGE_FROM_ENEMY,
+	DIALOG_ON_DAMAGE_FRIEND,
+	DIALOG_ON_DAMAGE_ENEMY,
+	DIALOG_ON_KILLED_FRIEND,
+	DIALOG_ON_KILLED_ENEMY,
+	DIALOG_ON_SAW_FRIEND,
+	DIALOG_ON_SAW_ENEMY,
+	DIALOG_ON_OBSOLETE_01,
+	DIALOG_ON_OBSOLETE_02,
+	DIALOG_ON_DIE,
+	DIALOG_ON_POKE_IDLE,
+	DIALOG_ON_POKE_SEARCH,
+	DIALOG_ON_POKE_COMBAT,
+	DIALOG_ON_IDLE_TO_COMBAT,
+	DIALOG_ON_IDLE_TO_SEARCH,
+	DIALOG_ON_SEARCH_TO_COMBAT,
+	DIALOG_ON_SEARCH_TO_IDLE,
+	DIALOG_ON_COMBAT_TO_SEARCH,
+	DIALOG_ON_COMBAT_TO_IDLE,
+	DIALOG_MAX
+};
 
 #endif
 

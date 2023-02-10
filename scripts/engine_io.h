@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -9,6 +9,9 @@
 	In addition, an exemption is given to allow Run Time Dynamic Linking of this code with any closed source module that does not contain code covered by this licence.
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
+//Changes made in DA:
+//Added Get_File_Name.
+//Removed case sensitivity from Find_Entry.
 #ifndef SCRIPTS_INCLUDE__ENGINE_IO_H
 #define SCRIPTS_INCLUDE__ENGINE_IO_H
 #include "engine_vector.h"

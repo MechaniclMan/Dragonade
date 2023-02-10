@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -30,6 +30,7 @@ public:
 
 protected:
   void Created ( GameObject* pObj );
+  void Destroyed (GameObject* pObj);
   void Custom ( GameObject* pObj, int type, int param, GameObject* pSender );
   void Timer_Expired ( GameObject* pObj, int number );
   void KeyHook();
@@ -55,6 +56,18 @@ protected:
 Mirage Tank Script
 --------------------------*/
 
+/*!
+* \brief Apocalypse Rising Mirage Tank
+* \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \arscript
+*
+* Script for the Mirage Tank in Apocalypse Rising, controls the appearance and disappearance of the
+* tree disguise based on whether the unit is moving, firing or taking damage
+*
+* \param[in] Mirage_Delay
+*   The length of time, in seconds, before the mirage disguise becomes active when the tank is not
+*   moving, firing or taking damage
+*/
 class dp88_AR_MirageTank : public ScriptImpClass
 {
 	void Created( GameObject *obj );
@@ -65,13 +78,15 @@ class dp88_AR_MirageTank : public ScriptImpClass
 
 	void setHidden ( GameObject *obj, bool hidden );
 
-	int pilotID;
-	bool hidden;
-	Vector3 lastPos;
-	int gameControllerId;
+	int m_driverID;         //!< ID of our driver
+  int m_mirageID;         //!< ID of the mirage disguising us
+  int m_controllerID;     //!< ID of the game controller
 
-	// ID of the mirage disguising us
-	int mirageID;
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  int m_delay;                //!< Delay before the mirage disguise activates
+  time_t m_lastActivity;      //!< The time of the last activity that would interrupt mirage mode (moving, shooting, damage)
+  /*! @} */
 };
 
 

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -28,6 +28,7 @@ public:
 	const	PersistFactoryClass &	Get_Factory (void) const;
 	void					CnC_Initialize (BaseControllerClass *base);
 	void					On_Destroyed (void);
+	void					On_Revived (void);
 	void					Think (void);
 	bool					Is_Available (void) const	{ return (IsBusy == false) && (IsDestroyed == false) && (IsDisabled == false); }
 	bool					Is_Available_For_Purchase (void) const;
@@ -54,6 +55,7 @@ private:
 	ReferencerClass	Purchaser;
 	DynamicVectorClass<PhysicalGameObj *> LandingPositions;
 	int CurrentLandingPosition;
+	Collision_Group_Type CollisionGroup;
 	static int MaxVehiclesPerTeam;
 };
 

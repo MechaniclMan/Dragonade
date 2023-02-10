@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Game Manager
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -249,8 +249,8 @@ void DAGameManager::Settings_Loaded_Event() {
 
 	Game->Set_Time_Limit_Minutes(DASettingsManager::Get_Int("TimeLimitMinutes",SvrCfg.Get_Int("Settings","TimeLimitMinutes",30)));
 	Game->Set_Time_Remaining_Seconds((float)(Game->Get_Time_Limit_Minutes()*60)-Game->Get_Game_Duration_S());
-
-	Game->RadarMode = DASettingsManager::Get_Int("RadarMode",SvrCfg.Get_Int("Settings","RadarMode",1));
+	
+	Game->RadarMode = (RadarModeEnum)DASettingsManager::Get_Int("RadarMode",SvrCfg.Get_Int("Settings","RadarMode",1));
 	Game->IsLaddered = DASettingsManager::Get_Bool("IsLaddered",SvrCfg.Get_Bool("Settings","IsLaddered",true));
 	Game->CanRepairBuildings = DASettingsManager::Get_Bool("CanRepairBuildings",SvrCfg.Get_Bool("Settings","CanRepairBuildings",true));
 	BuildingGameObj::CanRepairBuildings = Game->CanRepairBuildings;
@@ -263,11 +263,11 @@ void DAGameManager::Settings_Loaded_Event() {
 	CombatManager::BeaconPlacementEndsGame = Game->BeaconPlacementEndsGame;
 	Game->StartingCredits = DASettingsManager::Get_Int("StartingCredits",SvrCfg.Get_Int("Settings","StartingCredits",0));
 
-	Update_Game_Settings();
+	Update_Game_Options(-1);
 }
 
 void DAGameManager::Player_Loaded_Event(cPlayer *Player) {
-	//Update_Game_Settings();
+	Update_Game_Options(Player->Get_ID());
 }
 
 DAGameModeFactoryClass *DAGameManager::Get_Game_Mode() {
@@ -422,18 +422,3 @@ public:
 	}
 };
 Register_Console_Function(DATimeoutConsoleFunctionClass);
-
-class DATimeLConsoleFunctionClass : public ConsoleFunctionClass {
-public:
-	const char *Get_Name() { return "timel"; }
-	const char *Get_Help() { return "TIMEL <new limit> - Changes the time limit."; }
-	void Activate(const char *ArgumentsString) {
-		if (Is_Numeric(ArgumentsString)) {
-			cGameDataCnc *Game = The_Cnc_Game();
-			Game->Set_Time_Limit_Minutes(atoi(ArgumentsString));
-			Game->Set_Time_Remaining_Seconds((float)(Game->Get_Time_Limit_Minutes()*60)-Game->Get_Game_Duration_S());
-			Update_Game_Settings();
-		}
-	}
-};
-Register_Console_Function(DATimeLConsoleFunctionClass);

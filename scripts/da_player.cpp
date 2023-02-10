@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Player Manager
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -1091,9 +1091,6 @@ void DAPlayerManager::Settings_Loaded_Event() {
 	}
 	DisallowedNicks.Add(L"Host");
 	DisallowedNicks.Add(The_Game()->Owner);
-	if (!DA::Get_Message_Nick().Is_Empty()) {
-		DisallowedNicks.Add(WideStringClass(DA::Get_Message_Nick()));
-	}
 	WideStringClass MessagePrefix = DA::Get_Message_Prefix();
 	if (!MessagePrefix.Is_Empty()) {
 		for (int i = 0;i < MessagePrefix.Get_Length();i++) {
@@ -1218,7 +1215,7 @@ void DAPlayerManager::Player_Join_Event(cPlayer *Player) {
 		DA::Page_Player(Player,"%s",Message);
 	}
 
-	//Send team kills, death, and score to new player.
+	//Send team kills, deaths, and score to new player.
 	cTeam *Nod = Find_Team(0);
 	cTeam *GDI = Find_Team(1);
 	if (Nod) {

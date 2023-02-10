@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -436,6 +436,11 @@ class dp88_buildingScripts_functionMoneyGrant : public dp88_buildingScripts_base
 {
   void Created ( GameObject* obj );
   void OnBuildingCaptured ( GameObject* obj, int team );
+  
+  /*! \name Cached Script Parameters */
+  /*! @{ */
+  float m_credits;
+  /*! @} */
 };
 
 // -------------------------------------------------------------------------------------------------

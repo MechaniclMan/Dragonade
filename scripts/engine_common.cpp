@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -24,18 +24,14 @@ RENEGADE_FUNCTION
 void Parse_Console_Input(const char *)
 AT2(0x004287E0,0x00428960);
 
-RENEGADE_FUNCTION
-void Console_Input(const char *)
-AT2(0x004287E0,0x00428960);
-
-/*void SCRIPTS_API Console_Input(const char *Input)
+void SCRIPTS_API Console_Input(const char *Input)
 {
 	if (strlen(Input) > 255)
 	{
 		return;
 	}
 	Parse_Console_Input(Input);
-}*/
+}
 
 void ConsoleOutputDirect(const char *Output){
 	Console_Output("%s", Output);
@@ -61,7 +57,7 @@ void* HookupAT3(void* a, void* b, void* c, void* patch_start)
         case 0: function = a; break;
         case 1: function = b; break;
         case 4: function = c; break;
-        default: TT_ASSUME_UNREACHABLE;
+        default: TT_UNREACHABLE;
     }
     TT_ASSERT(function != nullptr);
 

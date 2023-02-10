@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -66,7 +66,7 @@ public:
    virtual const Vector3& Get_Ambient_Light();
    virtual void Set_Fog_Enable(bool set);
    virtual bool Get_Fog_Enable();
-   virtual void Set_Fog_Color(Vector3& color);
+   virtual void Set_Fog_Color(const Vector3& color);
    virtual Vector3& Get_Fog_Color();
    virtual void Set_Fog_Range(float start,float end);
    virtual void Get_Fog_Range(float* start,float* end);

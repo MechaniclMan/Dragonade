@@ -13,6 +13,8 @@
 #include "scripts.h"
 #include "obelfix.h"
 #include "engine.h"
+#include "DamageableGameObj.h"
+#include "SoldierGameObj.h"
 
 
 void Nod_Obelisk_CnC::Created(GameObject* ObeliskObj) {
@@ -108,6 +110,7 @@ void Obelisk_Weapon_CnC::StartFiring(GameObject* WeaponObj) {
 	
 	// Start charging
 	Commands->Start_Timer(WeaponObj, this, 2, 1);
+	Commands->Start_Timer(WeaponObj, this, 1.5f, 4);  //face enemy right before firing
 	Firing = true;
 }
 
@@ -141,12 +144,32 @@ void Obelisk_Weapon_CnC::StopEffect(GameObject* WeaponObj) {
 
 void Obelisk_Weapon_CnC::FireAt(GameObject* WeaponObj, GameObject* EnemyObj)
 {
+	Vector3 pos;
+	if(EnemyObj->As_SoldierGameObj())
+	{
+		pos = EnemyObj->As_SoldierGameObj()->Get_Bullseye_Position();
+	}
+	else
+	{
+		pos = Commands->Get_Position(EnemyObj);
+	}
+
+	
 	ActionParamsStruct AttackParams;
 	AttackParams.Set_Basic(this, 100, 0);
-	AttackParams.Set_Attack(EnemyObj, 150.f, 0, true);
+	AttackParams.Set_Attack(pos, 150.f, 0, true);
+	AttackParams.AttackCheckBlocked = false;
 	Commands->Action_Attack(WeaponObj, AttackParams);
 
 	Commands->Start_Timer(WeaponObj, this, 1, 3);
+}
+
+void Obelisk_Weapon_CnC::FaceEnemy(GameObject* WeaponObj, GameObject* EnemyObj)
+{
+	ActionParamsStruct FaceParams;
+	FaceParams.Set_Basic(this, 90, 0);
+	FaceParams.Set_Attack(EnemyObj, 0.f, 0, true);  //face enemyobj before firing.
+	Commands->Action_Attack(WeaponObj, FaceParams);
 }
 
 void Obelisk_Weapon_CnC::StopFireAt(GameObject* WeaponObj)
@@ -163,6 +186,14 @@ void Obelisk_Weapon_CnC::Timer_Expired(GameObject* WeaponObj, int Number) {
 		if (IsValidEnemy(WeaponObj, EnemyObj)) {
 			// Fire at the enemy
 			FireAt(WeaponObj, EnemyObj);
+			Commands->Create_Sound("Obelisk_Warm_Up", Commands->Get_Position(WeaponObj), WeaponObj);
+			if(!Commands->Find_Object(EffectID))
+			{
+				GameObject* EffectObj = Commands->Create_Object("Obelisk Effect", Commands->Get_Position(WeaponObj));
+				if (EffectObj) {
+					EffectID = Commands->Get_ID(EffectObj);
+					}
+			}
 
 			// Check effect in 4 seconds
 			Commands->Start_Timer(WeaponObj, this, 4, 1);
@@ -187,6 +218,31 @@ void Obelisk_Weapon_CnC::Timer_Expired(GameObject* WeaponObj, int Number) {
 	} else if (Number == 3)
 	{
 		StopFireAt(WeaponObj);
+		GameObject* EnemyObj = Commands->Find_Object(EnemyID);
+		if (IsValidEnemy(WeaponObj, EnemyObj)) 
+		{
+			Commands->Create_Sound("Obelisk_Warm_Up", Commands->Get_Position(WeaponObj), WeaponObj);
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+		else
+		{
+			Commands->Start_Timer(WeaponObj, this, 1.5f, 5);
+		}
+	}
+
+	else if (Number == 4) {
+		GameObject *EnemyObj = Commands->Find_Object(EnemyID);
+		if (IsValidEnemy(WeaponObj, EnemyObj)) {
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+	}
+
+	else if (Number == 5) {
+		GameObject* EnemyObj = Commands->Find_Object(EnemyID);
+		if (!IsValidEnemy(WeaponObj, EnemyObj))
+		{
+			StopEffect(WeaponObj);  //If there is no valid enemy stop effect to synchronise with sound.
+		}
 	}
 }
 
@@ -208,7 +264,13 @@ void Obelisk_Weapon_CnC::Enemy_Seen(GameObject* WeaponObj, GameObject* EnemyObj)
 				FireAt(WeaponObj, EnemyObj);
 			}
 		}
-	} else {
+
+		// if not charged and previous target has gone, face new enemy
+		else if(!IsValidEnemy(WeaponObj, Commands->Find_Object(EnemyID))) {
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+	} 
+	else {
 		StartFiring(WeaponObj);
 	}
 }
@@ -321,6 +383,7 @@ void Obelisk_Weapon_CnC_Ground::StartFiring(GameObject* WeaponObj) {
 	
 	// Start charging
 	Commands->Start_Timer(WeaponObj, this, 2, 1);
+	Commands->Start_Timer(WeaponObj, this, 1.5f, 4); //face enemy before firing
 	Firing = true;
 }
 
@@ -354,12 +417,31 @@ void Obelisk_Weapon_CnC_Ground::StopEffect(GameObject* WeaponObj) {
 
 void Obelisk_Weapon_CnC_Ground::FireAt(GameObject* WeaponObj, GameObject* EnemyObj)
 {
+	Vector3 pos;
+	if(EnemyObj->As_SoldierGameObj())
+	{
+		pos = EnemyObj->As_SoldierGameObj()->Get_Bullseye_Position();
+	}
+	else
+	{
+		pos = Commands->Get_Position(EnemyObj);
+	}
+
 	ActionParamsStruct AttackParams;
 	AttackParams.Set_Basic(this, 100, 0);
-	AttackParams.Set_Attack(EnemyObj, 150.f, 0, true);
+	AttackParams.Set_Attack(pos, 150.f, 0, true);
+	AttackParams.AttackCheckBlocked = false;
 	Commands->Action_Attack(WeaponObj, AttackParams);
 
 	Commands->Start_Timer(WeaponObj, this, 1, 3);
+}
+
+void Obelisk_Weapon_CnC_Ground::FaceEnemy(GameObject* WeaponObj, GameObject* EnemyObj)
+{
+	ActionParamsStruct FaceParams;
+	FaceParams.Set_Basic(this, 90, 0);
+	FaceParams.Set_Attack(EnemyObj, 0.f, 0, true);  //face enemyobj before firing.
+	Commands->Action_Attack(WeaponObj, FaceParams);
 }
 
 void Obelisk_Weapon_CnC_Ground::StopFireAt(GameObject* WeaponObj)
@@ -376,9 +458,19 @@ void Obelisk_Weapon_CnC_Ground::Timer_Expired(GameObject* WeaponObj, int Number)
 		if (IsValidEnemy(WeaponObj, EnemyObj)) {
 			// Fire at the enemy
 			FireAt(WeaponObj, EnemyObj);
+			Commands->Create_Sound("Obelisk_Warm_Up", Commands->Get_Position(WeaponObj), WeaponObj);
+
+			if(!Commands->Find_Object(EffectID))
+			{
+				GameObject* EffectObj = Commands->Create_Object("Obelisk Effect", Commands->Get_Position(WeaponObj));
+				if (EffectObj) {
+					EffectID = Commands->Get_ID(EffectObj);
+					}
+			}
 
 			// Check effect in 4 seconds
 			Commands->Start_Timer(WeaponObj, this, 4, 1);
+
 		} else {
 			// Forget it
 			StopFiring(WeaponObj);
@@ -400,6 +492,31 @@ void Obelisk_Weapon_CnC_Ground::Timer_Expired(GameObject* WeaponObj, int Number)
 	} else if (Number == 3)
 	{
 		StopFireAt(WeaponObj);
+		GameObject* EnemyObj = Commands->Find_Object(EnemyID);
+		if (IsValidEnemy(WeaponObj, EnemyObj)) 
+		{
+			Commands->Create_Sound("Obelisk_Warm_Up", Commands->Get_Position(WeaponObj), WeaponObj);
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+		else
+		{
+			Commands->Start_Timer(WeaponObj, this, 1.5f, 5);
+		}
+	}
+
+	else if (Number == 4) {
+		GameObject *EnemyObj = Commands->Find_Object(EnemyID);
+		if (IsValidEnemy(WeaponObj, EnemyObj)) {
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+	}
+
+	else if (Number == 5) {
+		GameObject* EnemyObj = Commands->Find_Object(EnemyID);
+		if (!IsValidEnemy(WeaponObj, EnemyObj))
+		{
+			StopEffect(WeaponObj);
+		}
 	}
 }
 
@@ -425,7 +542,12 @@ void Obelisk_Weapon_CnC_Ground::Enemy_Seen(GameObject* WeaponObj, GameObject* En
 				FireAt(WeaponObj, EnemyObj);
 			}
 		}
-	} else {
+		// if not charged and previous target has gone, face new enemy
+		else if (!IsValidEnemy(WeaponObj, Commands->Find_Object(EnemyID))) {
+			FaceEnemy(WeaponObj,EnemyObj);
+		}
+	}
+	else {
 		StartFiring(WeaponObj);
 	}
 }

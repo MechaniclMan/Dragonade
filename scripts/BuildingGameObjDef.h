@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -67,24 +67,8 @@ public:
 	void										Set_Type (BuildingConstants::BuildingType type) { Type = type; }
 	BuildingConstants::BuildingType				Get_Type (void) const	{ return Type; }
 	const StringClass &							Get_Mesh_Prefix (void) const	{ return MeshPrefix; }
-	int Get_Damage_Report(int Team) const {
-		if (Team == 0) {
-			return NodDamageReportID;
-		}
-		else if (Team == 1) {
-			return GDIDamageReportID;
-		}
-		return 0;
-	}
-	int Get_Destroy_Report(int Team) const {
-		if (Team == 0) {
-			return NodDestroyReportID;
-		}
-		else if (Team == 1) {
-			return GDIDestroyReportID;
-		}
-		return 0;
-	}
+	int Get_Damage_Report(int team) const;
+	int Get_Destroy_Report(int team) const;
 	StringClass MeshPrefix; // 0084
 	ArmorType MCTSkin; // 0088
 	BuildingConstants::BuildingType Type; // 008C

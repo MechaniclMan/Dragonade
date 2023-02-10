@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -19,7 +19,6 @@
 #include "engine_vector.h"
 #include "engine_threading.h"
 #include "engine_string.h"
-#define DIALOG_MAX 20
 class SoldierGameObjDef : public SmartGameObjDef
 {
 public:
@@ -38,6 +37,7 @@ public:
 	float Get_Skeleton_Height() const {return SkeletonHeight;};
 	float Get_Skeleton_Width() const {return SkeletonWidth;};
 	bool Is_Spy() const {return IsSpy;}
+	bool Can_Refill() const { return CanRefill; }
 protected:
 	float											TurnRate;
 	float											JumpVelocity;
@@ -52,9 +52,12 @@ protected:
 	int											HumanAnimOverrideDefID;
 	int											HumanLoiterCollectionDefID;
 	int											DeathSoundPresetID;
-	bool						CanStealVehicles;
-	bool						CanDriveVehicles;
-	bool                        IsSpy;
+	bool										CanStealVehicles;
+	bool										CanDriveVehicles;
+	bool										IsSpy;
+	bool										IsUnsquishable;
+	bool CanRefill;
+
 	friend	class								SoldierGameObj;
 	friend	class								SoldierObserverClass;
 	friend class PresetDump;

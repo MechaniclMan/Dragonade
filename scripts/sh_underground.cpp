@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -79,6 +79,8 @@ protected:
     bool                    surface_pending;
 	unsigned int			lock_state;			// stack of "can I set underground?"
 	int						lock_state_index;	// index of topmost ^that
+	time_t					lastTransition;		//!< Time of the last state transition
+	int						cooldown;			//!< Length of cooldown timer, or 0 if no cooldown is used
 
 	bool IsStateLocked()
 	{
@@ -123,7 +125,23 @@ protected:
 		
 		SetStateLocked(IsStateLocked()); //use this to update the color
 		// paranoia check
-		//TT_ASSERT("LockState popped too many times" && lock_state_index >= 0);
+		TT_ASSERT("LockState popped too many times" && lock_state_index >= 0);
+	};
+
+	bool CheckCooldown(GameObject* requester)
+	{
+		if (cooldown > 0 && cooldown > time(NULL) - lastTransition)
+		{
+			if (-1 != Get_Player_ID(requester))
+			{
+				Send_Message_Player(requester, 255,50,50, StringClass::getFormattedString("You cannot %s for another %d seconds",
+					(underground?"surface":"dig"), cooldown - (time(NULL) - lastTransition)));
+			}
+
+			return false;
+		}
+
+		return true;
 	};
 
 	void EnterUndergroundMode(bool force = false)
@@ -227,6 +245,8 @@ protected:
 
 		// you are now underground, congrats
 		underground = true;
+
+		lastTransition = time(NULL);
 	};
 
     void ExitUndergroundMode(bool force = false)
@@ -301,11 +321,13 @@ protected:
 
         // no longer mark us as underground
         underground = false;
+
+        lastTransition = time(NULL);
     };
 
 public:
 
-	void Attach(GameObject* obj)
+  void Attach(GameObject* obj)
 	{
 		// base implementation
 		ScriptImpClass::Attach(obj);
@@ -316,6 +338,8 @@ public:
         surface_pending = false;
 		lock_state = 0;
 		lock_state_index = 0;
+		lastTransition = 0;
+		cooldown = (Get_Parameter_Count() >= 9) ? Get_Int_Parameter("Cooldown") : 0;
 
 		// hook up any customizations
 		SetStateLocked(Get_Int_Parameter("DefaultLockState") != 0);
@@ -355,9 +379,12 @@ public:
 			else ExitUndergroundMode();
 			break;
 		case SH_UNDERGROUND_TOGGLESTATE:
-			// toggle states
-			if (!underground) EnterUndergroundMode();
-			else ExitUndergroundMode();
+			if (CheckCooldown(sender))
+			{
+				// toggle states
+				if (!underground) EnterUndergroundMode();
+				else ExitUndergroundMode();
+			}
 			break;
 		case SH_UNDERGROUND_DETACH:
 			Destroy_Script();
@@ -404,5 +431,5 @@ public:
 
 REGISTER_SCRIPT(SH_UndergroundDigZone, "");
 REGISTER_SCRIPT(SH_UndergroundNoDigZone, "");
-REGISTER_SCRIPT(SH_UndergroundVehicle, "DefaultLockState=0:int,DigAnimation:string,SurfaceAnimation:string,Velocity:float,DigExplosion:string,SurfaceExplosion:string,DigMessage:string,SurfaceMessage:string");
+REGISTER_SCRIPT(SH_UndergroundVehicle, "DefaultLockState=0:int,DigAnimation:string,SurfaceAnimation:string,Velocity:float,DigExplosion:string,SurfaceExplosion:string,DigMessage:string,SurfaceMessage:string,Cooldown:int");
 REGISTER_SCRIPT(SH_UndergroundKey, "Key=Key:string");

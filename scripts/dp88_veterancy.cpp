@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -17,19 +17,90 @@
 #include "VehicleGameObjDef.h"
 #include "ScriptableGameObj.h"
 #include "GameData.h"
+#include "PhysicalGameObj.h"
 
 /******************************
 Initialise static pointer lists to null
 ******************************/
 
+dp88_Veterancy_Settings dp88_Veterancy_Settings::ms_instance;
 dp88_veterancyUnit* dp88_veterancyUnit::playerData[128] = { NULL };
 dp88_veterancyUnit* dp88_veterancyUnit::AIUnitData[256] = { NULL };
-dp88_veterancyUnit::PointsCarryOverData dp88_veterancyUnit::carryOverData;
+dp88_veterancyUnit::PointsCarryOverData dp88_veterancyUnit::carryOverData;// Set default values
+
+const char dp88_veterancyUnit::ShowVeterancyPointsHookName[] = "ShowVeterancyPoints";
+const char dp88_veterancyUnit::BoostVeterancyHookName[] = "BoostVeterancyLevel";
 
 
-/******************************
-Event handler functions
-******************************/
+
+
+// -------------------------------------------------------------------------------------------------
+// Veterancy - Settings Struct
+// -------------------------------------------------------------------------------------------------
+
+dp88_Veterancy_Settings::dp88_Veterancy_Settings()
+{
+  Reset();
+}
+
+// -------------------------------------------------------------------------------------------------
+
+// Call on DLL initialisation to set default values
+void dp88_Veterancy_Settings::Reset()
+{
+  valueMultiplier[0] = 1.0f;
+  valueMultiplier[1] = 1.1f;
+  valueMultiplier[2] = 1.25f;
+  carryOverPercentI = 0.6f;
+  carryOverPercentV = 0.6f;
+  boostPrice = 0;
+}
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Veterancy - Controller
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Veterancy_Controller::Created(GameObject* obj)
+{
+  dp88_Veterancy_Settings::GetInstance().valueMultiplier[1] = 1.0f + (Get_Int_Parameter("Veteran_Value_Multiplier_Percent")/100.0f);
+  dp88_Veterancy_Settings::GetInstance().valueMultiplier[2] = 1.0f + (Get_Int_Parameter("Elite_Value_Multiplier_Percent")/100.0f);
+  dp88_Veterancy_Settings::GetInstance().carryOverPercentI = Get_Int_Parameter("Change_Character_Carry_Over_Percent_Inf")/100.0f;
+  dp88_Veterancy_Settings::GetInstance().carryOverPercentV = Get_Int_Parameter("Change_Character_Carry_Over_Percent_Veh")/100.0f;
+  dp88_Veterancy_Settings::GetInstance().boostPrice = Get_Int_Parameter("Boost_Price");
+}
+
+// -------------------------------------------------------------------------------------------------
+
+void dp88_Veterancy_Controller::Destroyed(GameObject* obj)
+{
+  dp88_Veterancy_Settings::GetInstance().Reset();
+}
+
+// -------------------------------------------------------------------------------------------------
+
+// Script Registrant
+ScriptRegistrant<dp88_Veterancy_Controller> dp88_Veterancy_Controller_Registrant (
+  "dp88_Veterancy_Controller",
+  "Veteran_Value_Multiplier_Percent=10:int,"
+  "Elite_Value_Multiplier_Percent=25:int,"
+  "Change_Character_Carry_Over_Percent_Inf=60:int,"
+  "Change_Character_Carry_Over_Percent_Veh=60:int,"
+  "Boost_Price=0:int"
+);
+
+
+
+
+
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Veterancy - Unit :: Event handler functions
+// -------------------------------------------------------------------------------------------------
 
 /* Created event :: Set all data variables to default values and
 register with one of the static pointer arrays */
@@ -101,7 +172,9 @@ void dp88_veterancyUnit::Created ( GameObject* obj )
       }
 
       // Install a keyhook for getting your current veterancy data
-      InstallHook( "ShowVeterancyPoints", obj );
+      InstallHook(ShowVeterancyPointsHookName, obj );
+      if (dp88_Veterancy_Settings::GetInstance().boostPrice > 0 )
+        InstallHook(BoostVeterancyHookName, obj );
     }
 
 
@@ -151,8 +224,8 @@ void dp88_veterancyUnit::Damaged( GameObject *obj, GameObject *damager, float am
 	if ( damager == NULL || Commands->Get_ID ( damager ) == Commands->Get_ID ( obj ) )
 		return;
 
-	// Calculate our veterancy points value ( add 10% extra per promotion level )
-	float pointsValue = (float)Get_Int_Parameter( "pointsValue" ) * (1.0f+(0.1f*currentLevel));
+	// Calculate our veterancy points value
+	float pointsValue = (float)Get_Int_Parameter("pointsValue") * dp88_Veterancy_Settings::GetInstance().valueMultiplier[currentLevel];
 
 	// Work out our total hit points
 	float totalHitPoints = Commands->Get_Max_Health(obj) + Commands->Get_Max_Shield_Strength ( obj );
@@ -196,8 +269,8 @@ void dp88_veterancyUnit::Destroyed(GameObject *obj)
   {
     carryOverData.playerId = Get_Player_ID(obj);
     carryOverData.gameTime = The_Game()->Get_Game_Duration_S();
-    carryOverData.infantryVeterancyPoints = infantryVeterancyPoints * 0.60f;
-    carryOverData.vehicleVeterancyPoints = vehicleVeterancyPoints * 0.60f;
+    carryOverData.infantryVeterancyPoints = infantryVeterancyPoints * dp88_Veterancy_Settings::GetInstance().carryOverPercentI;
+    carryOverData.vehicleVeterancyPoints = vehicleVeterancyPoints * dp88_Veterancy_Settings::GetInstance().carryOverPercentV;
   }
 
   Deregister(obj);
@@ -208,11 +281,10 @@ void dp88_veterancyUnit::Detach(GameObject* obj)
 {
   if ( Exe != EXE_LEVELEDIT )
   {
-    // Safety net
     Deregister(obj);
   }
 
-  JFW_Key_Hook_Base::Detach(obj);
+  MultiKeyHookScriptImpClass::Detach(obj);
 }
 
 
@@ -230,8 +302,9 @@ void dp88_veterancyUnit::Deregister(GameObject* obj)
     {
       playerData[Get_Player_ID(obj)] = NULL;
 
-      // Remove keyhook
-      RemoveHook();
+      // Remove keyhooks
+      RemoveHook(ShowVeterancyPointsHookName, obj);
+      RemoveHook(BoostVeterancyHookName, obj);
     }
     else
     {
@@ -361,42 +434,81 @@ void dp88_veterancyUnit::Timer_Expired( GameObject *obj, int number )
 }
 
 
-void dp88_veterancyUnit::KeyHook()
+void dp88_veterancyUnit::KeyHook(const char* logicalKey)
 {
   // Get GameObject
   GameObject* obj = Commands->Find_Object ( objectId );
   if ( obj == NULL || deregistered )
     return;
 
-  // Catch non player units somehow using a keyhook (LAN mode fucking up maybe?)
-  if ( Get_Player_ID( obj ) < 0 )
+  GameObject* vehicle = Get_Vehicle(obj);
+
+
+  if (0 == strcmp(logicalKey, ShowVeterancyPointsHookName))
   {
-    Console_Output ( "Error: Unit with no player ID used veterancy data keyhook!" );
-    return;
-  }
-
-
-  // Send infantry page
-  StringClass message;
-  const char *str = Get_Translated_Preset_Name (obj);
-  message.Format ( "You currently have %.2f infantry veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", infantryVeterancyPoints, str, infantryVeteranRequirement, infantryEliteRequirement );
-  delete[] str;
-  Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
-
-
-  // Send vehicle page
-  if ( Get_Vehicle ( obj ) != NULL )
-  {
-    const char *str2 = Get_Translated_Preset_Name (Get_Vehicle(obj));
-    if ( vehicleVeteranRequirement > 0 )
-      message.Format ( "You currently have %.2f vehicle veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", vehicleVeterancyPoints, str2, vehicleVeteranRequirement, vehicleEliteRequirement );
+    // Send infantry page
+    StringClass message;
+    const char *str = Get_Translated_Preset_Name (obj);
+    if ( infantryVeteranRequirement > 0 )
+      message.Format ( "You currently have %.2f infantry veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", infantryVeterancyPoints, str, infantryVeteranRequirement, infantryEliteRequirement );
     else
-      message.Format ( "You currently have %.2f vehicle veterancy points. A %s cannot be promoted", vehicleVeterancyPoints, str2 );
-    delete[] str2;
+      message.Format ( "You currently have %.2f infantry veterancy points. A %s cannot be promoted", infantryVeterancyPoints, str );
+    delete[] str;
+    Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
+
+
+    // Send vehicle page
+    if (NULL != vehicle)
+    {
+      str = Get_Translated_Preset_Name (vehicle);
+      if ( vehicleVeteranRequirement > 0 )
+        message.Format ( "You currently have %.2f vehicle veterancy points. A %s requires %d points for Veteran status and %d points for Elite status.", vehicleVeterancyPoints, str, vehicleVeteranRequirement, vehicleEliteRequirement );
+      else
+        message.Format ( "You currently have %.2f vehicle veterancy points. A %s cannot be promoted", vehicleVeterancyPoints, str );
+      delete[] str;
+    }
+    else
+      message.Format ( "You currently have %.2f vehicle veterancy points.", vehicleVeterancyPoints );
+    Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
   }
-  else
-    message.Format ( "You currently have %.2f vehicle veterancy points.", vehicleVeterancyPoints );
-  Send_Message_Player( obj,DP88_RGB_GENERAL_MSG,message );
+
+
+
+
+  else if(0 == strcmp(logicalKey, BoostVeterancyHookName))
+  {
+    int nextLevel = currentLevel+1;
+    int requiredPoints = (nextLevel==1) ? infantryVeteranRequirement : infantryEliteRequirement;
+
+    if (NULL != vehicle)
+    {
+      requiredPoints = 0;
+      dp88_veterancyUnit* vetUnit = getVeterancyData(vehicle);
+      if (NULL != vetUnit)
+      {
+        nextLevel = vetUnit->currentLevel+1;
+        requiredPoints = (nextLevel==1) ? vehicleVeteranRequirement : vehicleEliteRequirement;
+      }
+    }
+
+    if (2 < nextLevel || 0 == requiredPoints)
+    {
+      Send_Message_Player(obj, DP88_RGB_GENERAL_MSG, "Your current unit cannot be promoted any further");
+      return;
+    }
+    
+    float outstandingPoints = requiredPoints - (NULL != vehicle ? vehicleVeterancyPoints : infantryVeterancyPoints);
+    float cost = dp88_Veterancy_Settings::GetInstance().boostPrice * outstandingPoints;
+    if (Purchase_Item(obj, (int)ceil(cost)))
+    {
+      recieveVeterancyPoints(outstandingPoints+0.1f); // Add a bit more to "top it up" and avoid rounding errors leaving them just below the promotion boundary
+      Send_Message_Player(obj, DP88_RGB_GENERAL_MSG, StringClass::getFormattedString("Your unit has been boosted to the next level at a cost of %.0f credits", cost));
+    }
+    else
+    {
+      Send_Message_Player(obj, DP88_RGB_GENERAL_MSG, StringClass::getFormattedString("You cannot afford to boost your unit at this time, you need at least %.0f credits", cost));
+    }
+  }
 }
 
 
@@ -850,79 +962,53 @@ ScriptRegistrant<dp88_veterancyUnit> dp88_veterancyUnit_Registrant (
 
 
 
-/* Script for a crate which grants veterancy points to the collector */
-void dp88_veterancyCrate::Custom ( GameObject *obj, int type, int param, GameObject *sender )
-{
-	if ( type == CUSTOM_EVENT_POWERUP_GRANTED )
-	{
-		int points = Commands->Get_Random_Int ( Get_Int_Parameter( "minPoints" ), Get_Int_Parameter( "maxPoints" ) );
-
-		// The sender of the custom is the unit which picked up the crate, if they have the
-		// veterancy script running then grant them some points
-		dp88_veterancyUnit *veterancy_script = (dp88_veterancyUnit*)Find_Script_On_Object(sender, "dp88_veterancyUnit");
-		if ( veterancy_script )
-		{
-			veterancy_script->recieveVeterancyPoints((float)points);
-
-			if ( Get_Player_ID(sender) > 0 )
-			{
-				StringClass message;
-				message.Format("You have been granted %d veterancy points!",points);
-				Send_Message_Player(sender,153,204,25,message);
-			}
-		}
-	}
-}
-
-ScriptRegistrant<dp88_veterancyCrate> dp88_veterancyCrate_Registrant (
-	"dp88_veterancyCrate",
-	"minPoints=1:int,"
-	"maxPoints=20:int"
-);
-
-
-
-
-
-
-
-
 /* Script to grant veterancy points to whatever it is attached to */
 void dp88_veterancyGrantPoints::Created ( GameObject *obj )
 {
-	// Wait for 1 second before taking action to prevent potential issues with this script being
-	// loaded before the dp88_veterancyUnit script is loaded
-	Commands->Send_Custom_Event ( obj, obj, CUSTOM_VETERANCY_GRANT_POINTS_DELAY, 0, 1.0f );
+  // Wait for 1 second before taking action to prevent potential issues with this script being
+  // loaded before the dp88_veterancyUnit script is loaded. Don't do this for powerups.
+  if (NULL == obj->As_PhysicalGameObj() || NULL == obj->As_PhysicalGameObj()->As_PowerUpGameObj())
+  {
+    Commands->Send_Custom_Event(obj, obj, CUSTOM_VETERANCY_GRANT_POINTS_DELAY, 0, 1.0f);
+  }
 }
 
 void dp88_veterancyGrantPoints::Custom ( GameObject *obj, int type, int param, GameObject *sender )
 {
-	if ( type == CUSTOM_VETERANCY_GRANT_POINTS_DELAY )
-	{
-		int points = Commands->Get_Random_Int ( Get_Int_Parameter( "minPoints" ), Get_Int_Parameter( "maxPoints" ) );
+  if (CUSTOM_EVENT_POWERUP_GRANTED == type || CUSTOM_VETERANCY_GRANT_POINTS_DELAY == type)
+  {
+    int points = Commands->Get_Random_Int ( Get_Int_Parameter( "minPoints" ), Get_Int_Parameter( "maxPoints" ) );
 
-		// Give the unit we are attached to some veterancy points
-		dp88_veterancyUnit *veterancy_script = (dp88_veterancyUnit*)Find_Script_On_Object(obj, "dp88_veterancyUnit");
-		if ( veterancy_script )
-		{
-			veterancy_script->recieveVeterancyPoints((float)points);
+    // Give the sender (either ourselves or, if we are attached to a crate, the person who picked
+    // us up) some veterancy points
+    dp88_veterancyUnit *veterancy_script = (dp88_veterancyUnit*)Find_Script_On_Object(sender, "dp88_veterancyUnit");
+    if ( veterancy_script )
+    {
+      veterancy_script->recieveVeterancyPoints((float)points);
 
-			if ( Get_Player_ID(obj) > 0 )
-			{
-				StringClass message;
-				message.Format("You have been granted %d veterancy points!",points);
-				Send_Message_Player(obj,153,204,25,message);
-			}
-		}
+      if ( Get_Player_ID(obj) > 0 )
+      {
+        StringClass message;
+        message.Format("You have been granted %d veterancy points!",points);
+        Send_Message_Player(obj, 153, 204, 25, message);
+      }
+    }
 
-		Destroy_Script();
-	}
+    Destroy_Script();
+  }
 }
 
+// Alternative name for the same script, they're functionally identical so no need to have multiple 
+ScriptRegistrant<dp88_veterancyGrantPoints> dp88_veterancyCrate_Registrant (
+  "dp88_veterancyCrate",
+  "minPoints=1:int,"
+  "maxPoints=20:int"
+);
+
 ScriptRegistrant<dp88_veterancyGrantPoints> dp88_veterancyGrantPoints_Registrant (
-	"dp88_veterancyGrantPoints",
-	"minPoints=1:int,"
-	"maxPoints=20:int"
+  "dp88_veterancyGrantPoints",
+  "minPoints=1:int,"
+  "maxPoints=20:int"
 );
 
 
@@ -1100,121 +1186,6 @@ ScriptRegistrant<dp88_veterancyPromotionHealthArmourIncrease> dp88_veterancyProm
 	"veteranArmourIncrease=0:int,"
 	"eliteHealthIncrease=0:int,"
 	"eliteArmourIncrease=0:int");
-
-
-
-
-
-
-
-
-// -------------------------------------------------------------------------------------------------
-// Veterancy - Regeneration
-// -------------------------------------------------------------------------------------------------
-
-void dp88_veterancyRegeneration::Created( GameObject *obj )
-{
-  veterancyLevel = 0;
-  Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
-
-  m_regenAmount = Get_Int_Parameter("rookie_regenAmount");
-  m_bRepairArmour = (Get_Int_Parameter("rookie_repairArmour")==1);
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void dp88_veterancyRegeneration::Timer_Expired( GameObject *obj, int number )
-{
-  // Only process this if we are not dead...
-  float hitpoints = Commands->Get_Health(obj);
-  if ( hitpoints > 0.0f && m_regenAmount > 0 )
-  {
-    float regenAmount = (float)m_regenAmount;
-
-    // First try to heal some of our health, but don't go beyond the maximum
-    float max = Commands->Get_Max_Health(obj);
-    if ( hitpoints < max )
-    {
-      hitpoints += regenAmount;
-      regenAmount = 0;
-
-      if ( hitpoints > max )
-      {
-        regenAmount = max-hitpoints;
-        hitpoints = max;
-      }
-
-       Commands->Set_Health( obj, hitpoints );
-    }
-
-
-    // If we have any leftover regeneration then apply it to our armour, if enabled
-    if ( m_bRepairArmour && regenAmount > 0 )
-    {
-      hitpoints = Commands->Get_Shield_Strength(obj);
-      max = Commands->Get_Max_Shield_Strength(obj);
-
-      if ( hitpoints < max )
-      {
-        hitpoints += regenAmount;
-
-        if ( hitpoints > max )
-          hitpoints = max;
-      }
-
-      Commands->Set_Shield_Strength( obj, hitpoints );
-    }
-  }
-
-  // Restart the timer
-  Commands->Start_Timer ( obj, this, 1.0f, TIMER_HEALTHARMOURREGENTICK );
-}
-
-// -------------------------------------------------------------------------------------------------
-
-void dp88_veterancyRegeneration::Custom( GameObject *obj, int type, int param, GameObject *sender )
-{
-  if ( type == CUSTOM_VETERANCY_PROMOTED )
-  {
-    veterancyLevel = param;
-    if ( veterancyLevel == 2 )
-    {
-      m_regenAmount = Get_Int_Parameter("elite_regenAmount");
-      m_bRepairArmour = (Get_Int_Parameter("elite_repairArmour")==1);
-    }
-    else if ( veterancyLevel == 1 )
-    {
-      m_regenAmount = Get_Int_Parameter("veteran_regenAmount");
-      m_bRepairArmour = (Get_Int_Parameter("veteran_repairArmour")==1);
-    }
-    else
-    {
-      m_regenAmount = Get_Int_Parameter("rookie_regenAmount");
-      m_bRepairArmour = (Get_Int_Parameter("rookie_repairArmour")==1);
-    }
-  }
-}
-
-// -------------------------------------------------------------------------------------------------
-
-ScriptRegistrant<dp88_veterancyRegeneration> dp88_veterancyRegeneration_Registrant(
-  "dp88_veterancyRegeneration",
-  "rookie_regenAmount=0:int,"
-  "rookie_repairArmour=1:int,"
-  "veteran_regenAmount=0:int,"
-  "veteran_repairArmour=1:int,"
-  "elite_regenAmount=1:int,"
-  "elite_repairArmour=1:int");
-
-// Legacy registrant for existing AR presets
-ScriptRegistrant<dp88_veterancyRegeneration> dp88_AR_Veterancy_HealthArmourRegen_Registrant(
-  "dp88_AR_Veterancy_HealthArmourRegen",
-  "rookie_healthRegenAmount=0:int,"
-  "rookie_armourRegenAmount=0:int,"
-  "veteran_healthRegenAmount=1:int,"
-  "veteran_armourRegenAmount=0:int,"
-  "elite_healthRegenAmount=3:int,"
-  "elite_armourRegenAmount=2:int");
 
 
 

@@ -264,7 +264,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="dp88_buildingScripts.cpp" />
     <ClCompile Include="dp88_customAI.cpp" />
     <ClCompile Include="dp88_misc.cpp" />
-    <ClCompile Include="dp88_securitySystem.cpp" />
     <ClCompile Include="dp88_veterancy.cpp" />
     <ClCompile Include="engine_common.cpp" />
     <ClCompile Include="engine_da.cpp" />
@@ -472,7 +471,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="dp88_custom_timer_defines.h" />
     <ClInclude Include="dp88_customAI.h" />
     <ClInclude Include="dp88_misc.h" />
-    <ClInclude Include="dp88_securitySystem.h" />
     <ClInclude Include="dp88_veterancy.h" />
     <ClInclude Include="DynamicPhysClass.h" />
     <ClInclude Include="DynamicPhysDefClass.h" />

@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -49,10 +49,12 @@ bool SCRIPTS_API Is_Spy(GameObject *obj); //Is this soldier object a spy
 SCRIPTS_API int Get_Player_Count_In_Zone(GameObject *obj,int Team); //Get the player count in a zone
 SCRIPTS_API int Get_Object_Count_In_Zone(GameObject *obj,int Team); //Get the object count in a zone
 SCRIPTS_API bool Is_Stealth_Enabled(GameObject *obj); //Is stealth enabled
+int SCRIPTS_API Get_Occupant_Seat(GameObject *vehicle,GameObject *occupant); //returns the seat that the occupant is sitting in or -1 if they aren't in the vehicle
 
 /*!
 * \brief Create an object and attach it to a bone
 * \author Daniel Paul (danpaul88@yahoo.co.uk)
+* \ingroup api_objects
 *
 * Creates a new instance of the named preset and attaches it to a specific bone on the specified
 * object, or the origin of the object if no bone is specified.

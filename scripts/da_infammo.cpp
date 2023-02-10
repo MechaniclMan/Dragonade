@@ -1,6 +1,6 @@
 /*	Renegade Scripts.dll
     Dragonade Infinite Ammo Game Feature
-	Copyright 2014 Whitedragon, Tiberian Technologies
+	Copyright 2015 Whitedragon, Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -36,6 +36,7 @@ void DAInfiniteAmmoGameFeatureClass::Level_Loaded_Event() {
 void DAInfiniteAmmoGameFeatureClass::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
 	if (Weapon->Get_Definition()->Style != STYLE_C4 && Weapon->Get_Definition()->Style != STYLE_BEACON) {
 		SoldierGameObj *Soldier = Player->Get_GameObj();
+		Update_Network_Object(Player);
 		Update_Network_Object(Soldier);
 		Set_Position_Clip_Bullets(Soldier,Soldier->Get_Weapon_Bag()->Get_Weapon_Position(Weapon),-1);
 	}

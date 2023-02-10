@@ -1,5 +1,5 @@
 /*	Renegade Scripts.dll
-	Copyright 2014 Tiberian Technologies
+	Copyright 2013 Tiberian Technologies
 
 	This file is part of the Renegade scripts.dll
 	The Renegade scripts.dll is free software; you can redistribute it and/or modify it under
@@ -105,19 +105,19 @@ public:
 	int16 Export_Ammo_Info();
 	void				Add_Rounds( int num );
 	void				Add_Rounds_Client( int num );
-	void				Set_Clip_Rounds( int rounds ) { ClipRounds = rounds; }
-	void				Set_Inventory_Rounds( int rounds ) { InventoryRounds = rounds; }
+	void				Set_Clip_Rounds( int rounds );
+	void				Set_Inventory_Rounds( int rounds );
 	void				Set_Clip_Rounds_Client( int rounds );
 	void				Set_Inventory_Rounds_Client( int rounds );
 	int				Get_Clip_Rounds( void )					{ return ClipRounds; }
 	int				Get_Inventory_Rounds( void )			{ return InventoryRounds; }
 	void				Do_Reload( void );
 	void				Decrement_Rounds( int rounds = 1 );
-	SCRIPTS_API bool	Is_Ammo_Maxed( void );
+	SCRIPTS_API bool				Is_Ammo_Maxed( void );
 	bool				Is_Loaded( void )							{ return (ClipRounds != 0); }
 	bool				Is_Reload_OK( void );
 	bool				Is_Reload_Needed( void )				{ return !Is_Loaded() && Is_Reload_OK(); }
-	SCRIPTS_API float				Get_Range( void );
+	SCRIPTS_API float	Get_Range( void );
 	bool				Is_Model_Update_Needed( void )	{ return (UpdateModel == WEAPON_MODEL_UPDATE_IS_NEEDED); }
 	void				Reset_Model_Update( void )			{ UpdateModel = WEAPON_MODEL_UPDATE_NOT_NEEDED; CurrentAnimState = (WeaponAnimState)-1; }
 	bool				Is_Anim_Update_Needed( void )		{ return ( NextAnimState != CurrentAnimState ); }
@@ -151,6 +151,8 @@ public:
 	void				Set_Did_Fire(bool fire) {DidFire = fire;}
     void				Set_State( WeaponStateType new_state );
 
+	//new
+	SCRIPTS_API float	Get_Targeting_Range(void);
 private:
 	void				Fire_C4( const AmmoDefinitionClass *ammo_def );
 	bool				Fire_Beacon( const AmmoDefinitionClass *ammo_def );
