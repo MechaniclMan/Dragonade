@@ -486,8 +486,16 @@ class DASpyCrateClass : public DACrateClass {
 			Soldier->Get_Vehicle()->Add_Observer(new DASpyCrateVehicleObserverClass);
 			DA::Page_Player(Player,"Base defenses will ignore your current vehicle until one of its passengers destroys an enemy building.");
 		}
-		else {
-			SoldierGameObjDef *SBH = (SoldierGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+		else 
+		{
+			DefinitionClass *z = Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+			SoldierGameObjDef *SBH = (SoldierGameObjDef*)z;
+			DefinitionClass *x = Find_Named_Definition("CnC_Nod_FlameThrower_2SF_RxD");
+			if ( RxDMap() && x )
+			{
+				SBH = (SoldierGameObjDef*)x;
+			}
+
 			if (SBH) {
 				Soldier->Re_Init(*SBH);
 				Soldier->Post_Re_Init();

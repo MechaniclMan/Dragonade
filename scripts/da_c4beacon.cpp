@@ -72,7 +72,7 @@ void DAC4BeaconManager::Object_Created_Event(GameObject *obj) {
 }
 
 void DAC4BeaconManager::Beacon_Deploy_Event(BeaconGameObj *Beacon) {
-	if (Beacon->Get_Owner()) {
+	if (Commands->Is_A_Star(Beacon->Get_Owner())) {
 		if (The_Cnc_Game()->BeaconPlacementEndsGame && Beacon->Is_In_Enemy_Base()) {
 			DA::Team_Player_Message(Beacon->Get_Owner(),"Defend my beacon on the pedestal!");
 		}

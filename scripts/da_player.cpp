@@ -1769,11 +1769,24 @@ class DAUnstuckObserverClass : public DAGameObjObserverClass {
 						return;
 					}
 				}
-				if (!Phys->Is_Attached_To_An_Object() && Fix_Stuck_Object(Phys,10.0f)) {
-					DA::Page_Player(Soldier,"You have been unstuck.");
-				}
-				else {
-					DA::Page_Player(Soldier,"Unstuck failed. You can try again, or use the \"!killme\" command.");
+
+				
+				//Phys->Get_Definition()
+				//Console_Output("Phy Type %s", Phys->Get_Definition().Type );
+
+				if (!Phys->Is_Attached_To_An_Object() ) 
+				{
+					if ( Fix_Stuck_Object(Phys,10.0f) )
+					{
+						DA::Page_Player(Soldier,"You have been unstuck.");
+					}
+					else 
+					{
+						if ( Phys->As_VehicleGameObj()->Is_Turret() )
+							DA::Page_Player(Soldier,"Unstuck Failed. You can't move a turret.");
+						else
+							DA::Page_Player(Soldier,"Unstuck failed. You can try again, or use the \"!killme\" command.");
+					}
 				}
 			}
 		}
@@ -1785,7 +1798,16 @@ class DAUnstuckObserverClass : public DAGameObjObserverClass {
 
 class DAUnStuckChatCommandClass : public DAChatCommandClass {
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-		if (ChatType != TEXT_MESSAGE_KEYHOOK && !Player->Get_GameObj()->Find_Observer("DAUnstuckObserverClass")) {
+		if (ChatType != TEXT_MESSAGE_KEYHOOK && !Player->Get_GameObj()->Find_Observer("DAUnstuckObserverClass")) 
+		{
+			if (Player->Get_GameObj()->Get_Vehicle()) 
+			{ 
+				if ( Player->Get_GameObj()->Get_Vehicle()->As_VehicleGameObj()->Is_Turret() )
+				{
+					DA::Page_Player(Player,"You can't move a turret.");
+					return false;
+				}
+			}
 			Player->Get_GameObj()->Add_Observer(new DAUnstuckObserverClass);
 			DA::Page_Player(Player,"You will be unstuck in 10 seconds. Moving will cancel this.");
 		}

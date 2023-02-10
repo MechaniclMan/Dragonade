@@ -103,6 +103,17 @@ RENEGADE_FUNCTION
 bool BeaconGameObj::Is_In_Enemy_Base()
 AT2(0,0x00709A90);
 
+bool RxDMap()
+{
+	if ( The_Game() )
+	{
+		StringClass MapName = The_Game()->Get_Map_Name();
+		if (stristr(MapName, "RxD"))
+			return true;
+	}
+	return false;
+}
+
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
 		if (z->Data()->As_ScriptableGameObj()) {
@@ -1064,7 +1075,16 @@ void Fix_Stuck_Objects(const Vector3 &Position,float CheckRange,float Range,bool
 	}
 }
 
-bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
+bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) 
+{
+	/*
+	if ( obj->As_VehicleGameObj() )
+	{
+		if ( obj->As_VehicleGameObj()->Is_Turret() ) //cant move a turret
+			return false;
+	}
+	*/
+
 	MoveablePhysClass *Phys = (MoveablePhysClass*)obj->Peek_Physical_Object();
 	Collision_Group_Type CollisionSave = Phys->Get_Collision_Group();
 	float MinDistance = FLT_MAX;

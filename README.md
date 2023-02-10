@@ -1,4 +1,4 @@
-Dragonade 1.9.5
+Dragonade 1.9.6
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -16,7 +16,7 @@ dblaney1, misc. code and fixes.
 Installation:
 
 1. Download and install the latest server version of TT from http://www.tiberiantechnologies.org/downloads. 
-   Note that DA was designed to work with TT 4.3. It probably won't work with other versions.
+   Note that DA was designed to work with TT 4.6. It probably won't work with other versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
 3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
@@ -25,6 +25,10 @@ Installation:
 
 
 Update History:
+
+Version: 1.9.6:
+Updated to Scripts 4.6 Update 7.
+Fixed a crash when AI or non-player deploys a beacon.
 
 Version 1.9.5:
 Swapped the radio command for 'thank you' and the rush with vehicle command.

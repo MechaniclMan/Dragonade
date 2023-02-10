@@ -288,7 +288,8 @@ void DA::Page_Team_Except(int Team,cPlayer *Except,const char *Format,...) {
 	}
 }
 
-void DA::Page_Player(cPlayer *Player,const char *Format,...) {
+void DA::Page_Player(cPlayer *Player,const char *Format,...) 
+{
 	int ID = Player->Get_Id();
 	char Message[256];
 	Format_String_Prefix(Message);
