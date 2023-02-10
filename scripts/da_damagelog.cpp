@@ -456,6 +456,146 @@ DADamageLogObserverClass *DADamageLog::Get_Damage_Log(GameObject *obj) {
 	return 0;
 }
 
+float DADamageLog::Compile_Damage_Table_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Compile_Damage_Table_Team(DamageTable,Team);
+	}
+	return 0.0f;
+}
+
+float DADamageLog::Compile_Damage_Table_Other_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Compile_Damage_Table_Other_Team(DamageTable,Team);
+	}
+	return 0.0f;
+}
+
+void DADamageLog::Get_Damagers_By_Percent_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		Log->Get_Damagers_By_Percent_Team(Buffer,Team,MinimumPercentTotal,MinimumPercentHighest);
+	}
+}
+
+void DADamageLog::Get_Damagers_By_Percent_Other_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		Log->Get_Damagers_By_Percent_Other_Team(Buffer,Team,MinimumPercentTotal,MinimumPercentHighest);
+	}
+}
+
+cPlayer *DADamageLog::Get_Highest_Damager_Team(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Highest_Damager_Team(Team);
+	}
+	return 0;
+}
+
+cPlayer *DADamageLog::Get_Highest_Damager_Other_Team(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Highest_Damager_Other_Team(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Team_Damage(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Team_Damage(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Other_Team_Damage(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Other_Team_Damage(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Player_Damage(GameObject *obj,cPlayer *Player) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Player_Damage(Player);
+	}
+	return 0;
+}
+
+float DADamageLog::Compile_Repair_Table_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Compile_Repair_Table_Team(DamageTable,Team);
+	}
+	return 0.0f;
+}
+
+float DADamageLog::Compile_Repair_Table_Other_Team(DADamageTableStruct *DamageTable,GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Compile_Repair_Table_Other_Team(DamageTable,Team);
+	}
+	return 0.0f;
+}
+
+void DADamageLog::Get_Repairers_By_Percent_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		Log->Get_Repairers_By_Percent_Team(Buffer,Team,MinimumPercentTotal,MinimumPercentHighest);
+	}
+}
+
+void DADamageLog::Get_Repairers_By_Percent_Other_Team(DynamicVectorClass<DADamageTableStruct> &Buffer,GameObject *obj,int Team,float MinimumPercentTotal,float MinimumPercentHighest) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		Log->Get_Repairers_By_Percent_Other_Team(Buffer,Team,MinimumPercentTotal,MinimumPercentHighest);
+	}
+}
+
+cPlayer *DADamageLog::Get_Highest_Repairer_Team(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Highest_Repairer_Team(Team);
+	}
+	return 0;
+}
+
+cPlayer *DADamageLog::Get_Highest_Repairer_Other_Team(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Highest_Repairer_Other_Team(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Team_Repairs(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Team_Repairs(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Other_Team_Repairs(GameObject *obj,int Team) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Other_Team_Repairs(Team);
+	}
+	return 0;
+}
+
+float DADamageLog::Get_Percent_Player_Repairs(GameObject *obj,cPlayer *Player) {
+	DADamageLogObserverClass *Log = Get_Damage_Log(obj);
+	if (Log) {
+		return Log->Get_Percent_Player_Repairs(Player);
+	}
+	return 0;
+}
+
 void DADamageLog::Object_Created_Event(GameObject *obj) {
 	obj->Add_Observer(new DADamageLogObserverClass);
 }

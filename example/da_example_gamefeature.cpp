@@ -41,8 +41,9 @@ void DAExampleGameFeatueClass::Init() {
 	Start_Timer(1,5.0f,true); //Triggers every 5 seconds repeating.
 
 
-	//The settings manager automatically loads settings from both da.ini and the game mode specific settings file.
-	//Game mode map specific > game mode general > da.ini map specific > da.ini general
+	//The settings manager automatically loads settings from all files in the settings chain.
+	//Be default da.ini, da_crates.ini, and gamemode.ini are in the settings chain with the following priority.
+	//gamemode.ini map specific > gamemode.ini general > da_crates.ini map specific > da_crates.ini general > da.ini map specific > da.ini general
 	NodDamageScale = DASettingsManager::Get_Float("NodDamageScale",1.1f); //By default Nod takes 10% more damage.
 	GDIDamageScale = DASettingsManager::Get_Float("GDIDamageScale",0.8f); //By default GDI takes 20% less damage.
 }

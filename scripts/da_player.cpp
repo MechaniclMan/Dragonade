@@ -421,11 +421,19 @@ unsigned int DAPlayerClass::Get_Revision() {
 	return Revision;
 }
 
-void DAPlayerClass::Inc_Flood_Counter() {
+bool DAPlayerClass::Is_TT_Client() {
+	return (Get_Version() >= 4.0f);
+}
+
+bool DAPlayerClass::Is_Stock_Client() {
+	return (Get_Version() < 4.0f);
+}
+
+void DAPlayerClass::Increment_Flood_Counter() {
 	FloodProtection.Add(GetTickCount());
 }
 
-void DAPlayerClass::Dec_Flood_Counter() {
+void DAPlayerClass::Decrement_Flood_Counter() {
 	FloodProtection.Delete(0);
 }
 
@@ -436,7 +444,7 @@ bool DAPlayerClass::Is_Flooding() {
 		}
 	}
 	
-	Inc_Flood_Counter();
+	Increment_Flood_Counter();
 
 	if (FloodProtection.Count() >= 7) {
 		Send_Announcement_Player(Get_ID(),"IDS_FLOOD_MSG");
@@ -954,6 +962,7 @@ void DAPlayerManager::Level_Loaded_Event() {
 }
 
 void DAPlayerManager::Settings_Loaded_Event() {
+	//Disallowed nicks and characters
 	StringClass Buffer;
 	DASettingsManager::Get_String(Buffer,"DisallowedNickFirstCharacters"," ");
 	DisallowedNickFirstCharacters = Buffer.Peek_Buffer();
@@ -983,16 +992,68 @@ void DAPlayerManager::Settings_Loaded_Event() {
 		DisallowedNicks.Add(MessagePrefix);
 	}
 
+	//TT
 	ForceTT = (unsigned int)DASettingsManager::Get_Int("ForceTT",0);
 	TTRevision = (unsigned int)DASettingsManager::Get_Int("TTRevision",0);
+
+	//Kill messages and kill/death counters
+	EnableStockKillMessages = DASettingsManager::Get_Bool("EnableStockKillMessages",true);
+	DisableKillCounter = DASettingsManager::Get_Bool("DisableKillCounter",false);
+	DisableTeamKillCounter = DASettingsManager::Get_Bool("DisableTeamKillCounter",false);
+	DisableDeathCounter = DASettingsManager::Get_Bool("DisableDeathCounter",false);
+	DisableTeamDeathCounter = DASettingsManager::Get_Bool("DisableTeamDeathCounter",false);
 }
 
 ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(ConnectionRequest &Request,WideStringClass &RefusalMessage) {
 	cGameData *TheGame = The_Game();
+
 	if (Request.clientSerialHash.Is_Empty()) {
 		return ConnectionAcceptanceFilter::STATUS_INDETERMINATE;
 	}
-	else if (TheGame->Is_Passworded() && Request.password.Compare(TheGame->Get_Password()) != 0) {
+	
+	CheckFirst:
+	for (wchar_t *DisallowedPtr = DisallowedNickFirstCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
+		if (Request.clientName[0] == *DisallowedPtr) {
+			Request.clientName.TruncateLeft(1);
+			goto CheckFirst;
+		}
+	}
+	for (int i = 0;i < Request.clientName.Get_Length();i++) {
+		if (Request.clientName[i] < 33 || Request.clientName[i] > 126) {
+			Request.clientName.RemoveSubstring(i,1);
+			i--;
+		}
+		else {
+			for (wchar_t *DisallowedPtr = DisallowedNickCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
+				if (Request.clientName[i] == *DisallowedPtr) {
+					Request.clientName.RemoveSubstring(i,1);
+					i--;
+				}
+			}
+		}
+	}
+	if (Request.clientName.Get_Length() > 20) {
+		Request.clientName.Erase(20,Request.clientName.Get_Length()-20);
+	}
+	if (DisallowedNicks.ID(Request.clientName) != -1) {
+		RefusalMessage = L"Disallowed name.";
+		return ConnectionAcceptanceFilter::STATUS_REFUSING;
+	}
+	else if (Request.clientName.Get_Length() <= 2) {
+		RefusalMessage = L"Name too short.";
+		return ConnectionAcceptanceFilter::STATUS_REFUSING;
+	}
+	else if (cPlayer *Player = Find_Player(Request.clientName)) {
+		if (Request.clientAddress.sin_addr.s_addr == (unsigned int)Player->Get_Ip_Address() && Request.clientSerialHash == Player->Get_DA_Player()->Get_Serial()) { //Client reconnecting before their ghost has timed out.
+			Evict_Client(Player->Get_ID(),L"Ghost");
+		}
+		else {
+			RefusalMessage = L"Name already in use.";
+			return ConnectionAcceptanceFilter::STATUS_REFUSING;
+		}
+	}
+
+	if (TheGame->Is_Passworded() && Request.password.Compare(TheGame->Get_Password())) {
 		RefusalMessage = L"Invalid password.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
@@ -1013,51 +1074,8 @@ ConnectionAcceptanceFilter::STATUS DAPlayerManager::Connection_Request_Event(Con
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
 	}
 	else if (Request.clientVersion >= 4.0f && Request.clientRevisionNumber < TTRevision) {
-		RefusalMessage = L"Your version of Tiberian Technologies is outdated. Please launch your game through UAC Launcher.exe to automatically download the latest version.";
+		RefusalMessage = L"Your version of Tiberian Technologies is outdated. Please launch your game through the TT launcher(game.exe) to automatically download the latest version.";
 		return ConnectionAcceptanceFilter::STATUS_REFUSING;
-	}
-	else {
-		CheckFirst:
-		for (wchar_t *DisallowedPtr = DisallowedNickFirstCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
-			if (Request.clientName[0] == *DisallowedPtr) {
-				Request.clientName.TruncateLeft(1);
-				goto CheckFirst;
-			}
-		}
-		for (int i = 0;i < Request.clientName.Get_Length();i++) {
-			if (Request.clientName[i] < 33 || Request.clientName[i] > 126) {
-				Request.clientName.RemoveSubstring(i,1);
-				i--;
-			}
-			else {
-				for (wchar_t *DisallowedPtr = DisallowedNickCharacters.Peek_Buffer();*DisallowedPtr != '\0';DisallowedPtr++) {
-					if (Request.clientName[i] == *DisallowedPtr) {
-						Request.clientName.RemoveSubstring(i,1);
-						i--;
-					}
-				}
-			}
-		}
-		if (Request.clientName.Get_Length() > 20) {
-			Request.clientName.Erase(20,Request.clientName.Get_Length()-20);
-		}
-		if (DisallowedNicks.ID(Request.clientName) != -1) {
-			RefusalMessage = L"Disallowed name.";
-			return ConnectionAcceptanceFilter::STATUS_REFUSING;
-		}
-		else if (Request.clientName.Get_Length() <= 2) {
-			RefusalMessage = L"Name too short.";
-			return ConnectionAcceptanceFilter::STATUS_REFUSING;
-		}
-		else if (cPlayer *Player = Find_Player(Request.clientName)) {
-			if (Request.clientAddress.sin_addr.s_addr == (unsigned int)Player->Get_Ip_Address() && Request.clientSerialHash == Player->Get_DA_Player()->Get_Serial()) { //Client reconnecting before their ghost has timed out.
-				Evict_Client(Player->Get_ID(),L"Ghost");
-			}
-			else {
-				RefusalMessage = L"Name already in use.";
-				return ConnectionAcceptanceFilter::STATUS_REFUSING;
-			}
-		}
 	}
 	return ConnectionAcceptanceFilter::STATUS_ACCEPTING;
 }
@@ -1078,13 +1096,25 @@ void DAPlayerManager::Player_Join_Event(cPlayer *Player) {
 		}
 		Players.Add(DAPlayer);
 	}
-	if (DAPlayer->Get_Version() < 4.0f) {
+	if (DAPlayer->Is_Stock_Client()) {
 		if (ForceTT == 1) {
 			DAPlayer->Set_Server_Damage(true);
 		}
 		StringClass Message("Download the Tiberian Technologies community patch at http://www.tiberiantechnologies.org/. It includes anti-cheat, automatic map downloading, and many more bug fixes and additions.");
 		DA::Private_Admin_Message(Player,"%s",Message);
 		DA::Page_Player(Player,"%s",Message);
+	}
+
+	//Send team kills, death, and score to new player.
+	cTeam *Nod = Find_Team(0);
+	cTeam *GDI = Find_Team(1);
+	if (Nod) {
+		Nod->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+		Nod->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_OCCASIONAL,true);
+	}
+	if (GDI) {
+		GDI->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+		GDI->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_OCCASIONAL,true);
 	}
 }
 
@@ -1226,7 +1256,19 @@ void DAPlayerManager::Object_Created_Event(GameObject *obj) {
 }
 
 void DAPlayerManager::Object_Destroyed_Event(GameObject *obj) {
-	((SoldierGameObj*)obj)->Get_DA_Player()->Destroyed();
+	cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
+	Player->Get_DA_Player()->Destroyed();
+	if ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health()) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
+		if (!DisableDeathCounter) { //Handle death counters.
+			Player->Increment_Deaths();
+			if (!DisableTeamDeathCounter) {
+				cTeam *Team = Find_Team(Player->Get_Player_Type());
+				if (Team) {
+					Team->Increment_Deaths();
+				}
+			}
+		}
+	}
 }
 
 bool DAPlayerManager::Damage_Request_Event(DamageableGameObj *Victim,OffenseObjectClass *Offense,DADamageType::Type Type,const char *Bone) {
@@ -1252,7 +1294,22 @@ void DAPlayerManager::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damag
 
 void DAPlayerManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
 	if (Is_Player(Killer)) {
-		((SoldierGameObj*)Killer)->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
+		cPlayer *Player = ((SoldierGameObj*)Killer)->Get_Player();
+		Player->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Type,Bone);
+		if (Victim->As_SoldierGameObj() && Killer != Victim) { //Handle kill counters.
+			if (!DisableKillCounter) {
+				Player->Increment_Kills();
+				if (!DisableTeamKillCounter) {
+					cTeam *Team = Find_Team(Player->Get_Team());
+					if (Team) {
+						Team->Increment_Kills();
+					}
+				}
+			}
+			if (EnableStockKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
+				Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
+			}
+		}
 	}
 	if (Is_Player(Victim)) {
 		((SoldierGameObj*)Victim)->Get_DA_Player()->Kill_Received(Killer,Damage,Warhead,Type,Bone);
@@ -1502,8 +1559,8 @@ class DAVoteYesKeyHookClass : public DAKeyHookClass {
 	void Activate(cPlayer *Player) {
 		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote yes",-1)) {
 			Console_Output("%ls: !vote yes\n",Player->Get_Name());
-			Player->Get_DA_Player()->Inc_Flood_Counter();
-			Player->Get_DA_Player()->Inc_Flood_Counter();
+			Player->Get_DA_Player()->Increment_Flood_Counter();
+			Player->Get_DA_Player()->Increment_Flood_Counter();
 		}
 	}
 };
@@ -1513,8 +1570,8 @@ class DAVoteNoKeyHookClass : public DAKeyHookClass {
 	void Activate(cPlayer *Player) {
 		if (DAEventManager::Chat_Event(Player,TEXT_MESSAGE_PUBLIC,L"!vote no",-1)) {
 			Console_Output("%ls: !vote no\n",Player->Get_Name());
-			Player->Get_DA_Player()->Inc_Flood_Counter();
-			Player->Get_DA_Player()->Inc_Flood_Counter();
+			Player->Get_DA_Player()->Increment_Flood_Counter();
+			Player->Get_DA_Player()->Increment_Flood_Counter();
 		}
 	}
 };

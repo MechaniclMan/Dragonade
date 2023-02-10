@@ -35,53 +35,19 @@ public:
 	void Init(int _id);
 	void Init_Team_Name();
 	void Reset();
-	inline void Set_Kills(int kills) {
-		Kills = kills;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline void Inc_Kills() {
-		Kills++;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline void Dec_Kills() {
-		Kills--;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline int Get_Kills() {
-		return Kills;
-	}
-	inline void Set_Deaths(int deaths) {
-		Deaths = deaths;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline void Inc_Deaths() {
-		Deaths++;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline void Dec_Deaths() {
-		Deaths--;
-		Set_Object_Dirty_Bit(BIT_RARE,true);
-	}
-	inline int Get_Deaths() {
-		return Deaths;
-	}
-	inline void Set_Score(float score) {
-		Score = score;
-		Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
-	}
-	inline float Get_Score() {
-		return Score;
-	}
-	inline float Get_Kill_To_Death_Ratio() {
-		if (!Deaths) {
-			return 0.0f;
-		}
-		return (float)Kills/(float)Deaths;
-	}
+	SCRIPTS_API void Set_Kills(int kills);
+	SCRIPTS_API void Increment_Kills();
+	SCRIPTS_API void Decrement_Kills();
+	SCRIPTS_API int Get_Kills();
+	SCRIPTS_API void Set_Deaths(int deaths);
+	SCRIPTS_API void Increment_Deaths();
+	SCRIPTS_API void Decrement_Deaths();
+	SCRIPTS_API int Get_Deaths();
+	SCRIPTS_API void Set_Score(float score);
+	SCRIPTS_API void Increment_Score(float score);
+	SCRIPTS_API float Get_Score();
+	SCRIPTS_API float Get_Kill_To_Death_Ratio();
 	int Tally_Size();
-	void Increment_Kills();
-	void Increment_Deaths();
-	void Increment_Score(float amount);
 	void Get_Team_String(int, WideStringClass&);
 	Vector3 Get_Color();
 	int Tally_Money();

@@ -64,7 +64,7 @@ void DATeamManager::Level_Loaded_Event() {
 			Remix();
 			RemixCount = 0;
 		}
-		else if (Commands->Get_Random_Int(1,101) > SwapChance) {
+		else if (Get_Random_Int(1,101) <= SwapChance) {
 			Swap();
 		}
 		if (EnableRebalance) {
@@ -157,6 +157,14 @@ void DATeamManager::Set_Force_Team(int Team) {
 	}
 }
 
+int DATeamManager::Get_Force_Team() {
+	return ForceTeam;
+}
+
+bool DATeamManager::Is_Free_Team_Changing_Enabled() {
+	return EnableFreeTeamChanging;
+}
+
 void DATeamManager::Remix() {
 	if (ForceTeam != -1) {
 		return;
@@ -169,7 +177,7 @@ void DATeamManager::Remix() {
 
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) { //First pass
 		cPlayer *Player = z->Data();
-		if (Player->Is_Active() && rand() % 2) {
+		if (Player->Is_Active() && Get_Random_Bool()) {
 			if (Player->Get_Player_Type() == Winner) {
 				Winners.Add(Player);
 			}
@@ -200,7 +208,7 @@ void DATeamManager::Remix() {
 	for (int i = 0;i < Winners.Count();i++) { //Team winners first so that each team will have half the winners...
 		cPlayer *Player = Winners[i];
 		if (Player->Is_Active() && Player->Get_Player_Type() == 2) {
-			int RandTeam = rand() % 2;
+			int RandTeam = Get_Random_Bool();
 			if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) { //If the randomly chosen team has the same or less players we use it.
 				Change_Team_4(Player,RandTeam);
 				TeamCount[RandTeam]++;
@@ -214,7 +222,7 @@ void DATeamManager::Remix() {
 	for (int i = 0;i < Losers.Count();i++) { //And half the losers.
 		cPlayer *Player = Losers[i];
 		if (Player->Is_Active() && Player->Get_Player_Type() == 2) { //Only remix player if another event hasn't already handled them.
-			int RandTeam = rand() % 2;
+			int RandTeam = Get_Random_Bool();
 			if (TeamCount[RandTeam] <= TeamCount[RandTeam?0:1]) {
 				Change_Team_4(Player,RandTeam);
 				TeamCount[RandTeam]++;

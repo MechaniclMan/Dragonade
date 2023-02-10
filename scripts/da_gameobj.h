@@ -76,12 +76,16 @@ private:
 class DAGameObjManager : public DAEventClass {
 public:
 	static void Init();
-	DA_API static inline bool Is_DAGameObjObserverClass(GameObjObserverClass *Observer);
+	static inline bool Is_DAGameObjObserverClass(GameObjObserverClass *Observer);
 	DA_API static void Set_Observer_Delete_Pending(DAGameObjObserverClass *Observer);
 	DA_API static void Set_GameObj_Delete_Pending(GameObject *obj);
+	DA_API static void Set_GameObj_TT_Only(GameObject *obj);
+	DA_API static void Set_GameObj_Stock_Only(GameObject *obj);
+	DA_API static void Set_GameObj_Invisible(GameObject *obj);
 
 private:
 	virtual void Think();
+	virtual void Player_Join_Event(cPlayer *Player);
 	virtual bool Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat);
 	virtual void Vehicle_Enter_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
 	virtual void Vehicle_Exit_Event(VehicleGameObj *Vehicle,cPlayer *Player,int Seat);
@@ -98,7 +102,10 @@ private:
 	virtual void Object_Destroyed_Event(GameObject *obj);
 
 	static DynamicVectorClass<DAGameObjObserverClass*> ObserversDeletePending;
-	static DynamicVectorClass<GameObject*> GameObjDeletePending;
+	static DynamicVectorClass<GameObject*> GameObjsDeletePending;
+	static DynamicVectorClass<GameObject*> TTGameObjs;
+	static DynamicVectorClass<GameObject*> StockGameObjs;
+	static DynamicVectorClass<GameObject*> InvisibleGameObjs;
 };
 
 #endif

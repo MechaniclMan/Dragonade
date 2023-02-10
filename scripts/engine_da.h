@@ -216,4 +216,14 @@ DA_API StringClass Get_Weapon_PowerUp_Model(const WeaponDefinitionClass *Weapon)
 
 DA_API void Add_Console_Function(ConsoleFunctionClass *Func);
 
+DA_API int Get_Building_Count(int Team,bool Destroyed);
+
+DA_API void Enable_HUD(bool Enable);
+DA_API void Enable_HUD_Player_By_ID(int ID,bool Enable);
+
+DA_API void Set_Fog_Enable_Player_By_ID(int ID,bool Enable);
+DA_API void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDistance,float Transition);
+
+DA_API void Send_Player_Kill_Message(int Killer,int Victim);
+
 #endif

@@ -19,113 +19,72 @@
 
 class DA_API DASettingsClass {
 public:
-	inline DASettingsClass() {
-		INI = 0;
-	}
-	inline DASettingsClass(const char *Name) {
-		INI = 0;
-		Set_INI(Name);
-	}
-	inline DASettingsClass(INIClass *That) {
-		INI = 0;
-		Set_INI(That->Get_File_Name());
-	}
-	inline DASettingsClass(const DASettingsClass &That) {
-		INI = 0;
-		Set_INI(That.INI->Get_File_Name());
-	}
-	inline DASettingsClass &operator=(const DASettingsClass &That) { 
-		Set_INI(That.INI->Get_File_Name());
-		return *this; 
-	}
-	inline DASettingsClass &operator=(INIClass *That) {
-		Set_INI(That->Get_File_Name());
-		return *this;
-	}
-	inline DASettingsClass &operator=(const char *Name) {
-		Set_INI(Name);
-		return *this;
-	}
-	inline void Set_INI(const char *ini) {
-		RawFileClass File(ini);
-		INIClass *Temp = INI;
-		INI = new INIClass(File);
-		delete Temp;
-	}
-	inline void Set_INI(INIClass *That) {
-		Set_INI(That->Get_File_Name());
-	}
-	inline void Set_INI(const DASettingsClass &That) {
-		Set_INI(That.Get_File_Name());
-	}
-	inline const INIClass *Get_INI() const {
-		return INI;
-	}
-	inline const char *Get_File_Name() const {
-		return INI->Get_File_Name();
-	}
-	inline void Release() {
-		delete INI;
-		INI = 0;
-	}
-	inline void Reload() {
-		if (INI) {
-			Set_INI(INI->Get_File_Name());
-		}
-	}
-	~DASettingsClass() {
-		Release();
-	}
+	DASettingsClass();
+	DASettingsClass(const char *Name);
+	DASettingsClass(INIClass *That);
+	DASettingsClass(const DASettingsClass &That);
+	const INIClass *Get_INI() const;
+	const char *Get_File_Name() const;
+	virtual ~DASettingsClass();
 
-	int Get_Int(const char *Entry,int Default) const;
-	int Get_Int(const char *Section,const char *Entry,int Default) const;
+	void Reload(); //Reload from disk and display message if file has been modified.
+	void Reload_Silent(); //Reload without displaying message.
+
+	int Get_Int(const char *Entry,int Default) const; //Get an int from the "[General]" and "[<Current Map>]" sections.
+	int Get_Int(const char *Section,const char *Entry,int Default) const; //Get an int from the "[<Section>]" and "[<Current Map>_<Section>]" sections.
+	int Get_Int(const char *Section1,const char *Section2,const char *Entry,int Default) const; //Get an int from the "[<Section1>]" and "[<Section2>]" sections.
 	float Get_Float(const char *Entry,float Default) const;
 	float Get_Float(const char *Section,const char *Entry,float Default) const;
+	float Get_Float(const char *Section1,const char *Section2,const char *Entry,float Default) const;
 	bool Get_Bool(const char *Entry,bool Default) const;
 	bool Get_Bool(const char *Section,const char *Entry,bool Default) const;
-	StringClass &Get_String(StringClass &Str,const char *Entry,const char *Default) const;
-	StringClass &Get_String(StringClass &Str,const char *Section,const char *Entry,const char *Default) const;
+	bool Get_Bool(const char *Section1,const char *Section2,const char *Entry,bool Default) const;
+	StringClass &Get_String(StringClass &Buffer,const char *Entry,const char *Default) const;
+	StringClass &Get_String(StringClass &Buffer,const char *Section,const char *Entry,const char *Default) const;
+	StringClass &Get_String(StringClass &Buffer,const char *Section1,const char *Section2,const char *Entry,const char *Default) const;
 	void Get_Vector3(Vector3 &Buffer,const char *Entry,const Vector3 &Default) const;
 	void Get_Vector3(Vector3 &Buffer,const char *Section,const char *Entry,const Vector3 &Default) const;
-	INISection *Get_Section(const char *Section) const;
+	void Get_Vector3(Vector3 &Buffer,const char *Section1,const char *Section2,const char *Entry,const Vector3 &Default) const;
+	INISection *Get_Section(const char *Section) const; //Get the entire section "[<Section>]" or "[<Current Map>_<Section>]".
 
 private:
+	void Set_INI(RawFileClass &File);
 	INIClass *INI;
+	unsigned int LastModTime;
 };
 
 class DA_API DASettingsManager {
 public:
-	static void Init();
 	static void Shutdown();
-	static void Reload(); //Reloads da.ini and gamemode.ini. Does not check for new game mode.
-	static void Reload_GameMode(); //Sets gamemode.ini if the game mode has changed.
-	static void Post_Reload(); //Triggers settings loaded event and displays new settings detected message.
+	static void Reload(); //Reload all settings from disk, call setting loaded event, and display message if file has been modified.
+	static void Reload_Silent(); //Reload all settings without calling settings loaded event or displaying message.
 	
-	static const DASettingsClass *Get_Main_Settings() {
-		return Main;
-	}
-	static const DASettingsClass *Get_GameMode_Settings() {
-		return GameMode;
-	}
+	static void Add_Settings(const char *Name); //Add a file to the settings chain.
+	static void Remove_Settings(const char *Name); //Remove a file from the settings chain.
+	static void Remove_Settings(int Position);
+	static const DASettingsClass *Get_Settings(const char *Name); //Get the DASettingsClass for the given file.
+	static const DASettingsClass *Get_Settings(int Position);
+	static int Get_Settings_Count();
 
-	static int Get_Int(const char *Entry,int Default);
-	static int Get_Int(const char *Section,const char *Entry,int Default);
+	static int Get_Int(const char *Entry,int Default); //Get an int from the "[General]" and "[<Current Map>]" sections of all files in the settings chain.
+	static int Get_Int(const char *Section,const char *Entry,int Default); //Get an int from the "[<Section>]" and "[<Current Map>_<Section>]" sections of all files in the settings chain.
+	static int Get_Int(const char *Section1,const char *Section2,const char *Entry,int Default); //Get an int from the "[<Section1>]" and "[<Section2>]" sections of all files in the settings chain.
 	static float Get_Float(const char *Entry,float Default);
 	static float Get_Float(const char *Section,const char *Entry,float Default);
+	static float Get_Float(const char *Section1,const char *Section2,const char *Entry,float Default);
 	static bool Get_Bool(const char *Entry,bool Default);
 	static bool Get_Bool(const char *Section,const char *Entry,bool Default);
-	static StringClass &Get_String(StringClass &Str,const char *Entry,const char *Default);
-	static StringClass &Get_String(StringClass &Str,const char *Section,const char *Entry,const char *Default);
+	static bool Get_Bool(const char *Section1,const char *Section2,const char *Entry,bool Default);
+	static StringClass &Get_String(StringClass &Buffer,const char *Entry,const char *Default);
+	static StringClass &Get_String(StringClass &Buffer,const char *Section,const char *Entry,const char *Default);
+	static StringClass &Get_String(StringClass &Buffer,const char *Section1,const char *Section2,const char *Entry,const char *Default);
 	static void Get_Vector3(Vector3 &Buffer,const char *Entry,const Vector3 &Default);
 	static void Get_Vector3(Vector3 &Buffer,const char *Section,const char *Entry,const Vector3 &Default);
-	static INISection *Get_Section(const char *Section);
-	static INISection *Get_Section_No_Map(const char *Section);
+	static void Get_Vector3(Vector3 &Buffer,const char *Section1,const char *Section2,const char *Entry,const Vector3 &Default);
+	static INISection *Get_Section(const char *Section);  //Get the entire section "[<Section>]" or "[<Current Map>_<Section>]" from all files in the settings chain.
 	
 private:
-	static DASettingsClass *Main;
-	static DASettingsClass *GameMode;
-	static unsigned int LastMainModTime;
-	static unsigned int LastGameModeModTime;
+	static DynamicVectorClass<DASettingsClass*> Settings;
 };
 
 #endif

@@ -16,19 +16,15 @@
 
 #include "da_event.h"
 
-class DA_API DATeamManager : private DAEventClass {
+class DATeamManager : public DAEventClass {
 public:
 	static void Init();
-	static void Set_Force_Team(int Team);
-	static inline int Get_Force_Team() {
-		return ForceTeam;
-	}
-	static inline bool Is_Free_Team_Changing_Enabled() {
-		return EnableFreeTeamChanging;
-	}
-	static void Remix();
-	static void Rebalance();
-	static void Swap();
+	DA_API static void Set_Force_Team(int Team);
+	DA_API static int Get_Force_Team();
+	DA_API static bool Is_Free_Team_Changing_Enabled();
+	DA_API static void Remix();
+	DA_API static void Rebalance();
+	DA_API static void Swap();
 
 private:
 	virtual void Settings_Loaded_Event();

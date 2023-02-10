@@ -212,11 +212,11 @@ void DASSGMPluginManager::Level_Loaded_Event() {
 void DASSGMPluginManager::Settings_Loaded_Event() {
 	for (int i = Events[EVENT_GLOBAL_INI].Count()-1;i >= 0;i--) {
 		Events[EVENT_GLOBAL_INI][i]->OnFreeData();
-		Events[EVENT_GLOBAL_INI][i]->OnLoadGlobalINISettings(const_cast<INIClass*>(DASettingsManager::Get_Main_Settings()->Get_INI()));
+		Events[EVENT_GLOBAL_INI][i]->OnLoadGlobalINISettings(const_cast<INIClass*>(DASettingsManager::Get_Settings(0)->Get_INI()));
 	}
 	for (int i = Events[EVENT_MAP_INI].Count()-1;i >= 0;i--) {
 		Events[EVENT_MAP_INI][i]->OnFreeMapData();
-		Events[EVENT_MAP_INI][i]->OnLoadMapINISettings(const_cast<INIClass*>(DASettingsManager::Get_Main_Settings()->Get_INI()));
+		Events[EVENT_MAP_INI][i]->OnLoadMapINISettings(const_cast<INIClass*>(DASettingsManager::Get_Settings(0)->Get_INI()));
 	}
 }
 

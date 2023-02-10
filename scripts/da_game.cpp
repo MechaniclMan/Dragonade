@@ -30,7 +30,7 @@ bool DAGameManager::ShowGameModeTitle = true;
 DynamicVectorClass<DAGameFeatureFactoryClass*> DAGameManager::GameFeatures;
 bool DAGameManager::FirstMap = true;
 bool DAGameManager::ShutdownPending = false;
-StringClass DAGameManager::Map;
+StringClass DAGameManager::Map = "";
 int DAGameManager::MapIndexShift = 0;
 
 void DAGameManager::Init() {
@@ -42,6 +42,8 @@ void DAGameManager::Init() {
 
 	Console_Output("\nDragonade %s with Scripts %.1f\n",DA::Get_Version(),GetTTVersion());
 	Console_Output("Created by Black-Cell.net\n\n");
+
+	DASettingsManager::Add_Settings("da.ini"); //Add da.ini to the settings chain. Gamemode.ini will be added/removed at the start of each map after the game mode is selected.
 
 	/*RawFileClass MapIndex;
 	if (MapIndex.Open("mapindex",0)) {
@@ -112,8 +114,9 @@ void DAGameManager::Game_Over_Event() {
 }
 
 void DAGameManager::Level_Loaded_Event() {
+	//Startup commands
 	if (FirstMap) {
-		INISection *Section = DASettingsManager::Get_Main_Settings()->Get_INI()->Get_Section("Startup_Commands");
+		INISection *Section = DASettingsManager::Get_Section("Startup_Commands");
 		if (Section) {
 			for (int i = 0;i < Section->Count();i++) {
 				Console_InputF("%s %s",Section->Peek_Entry(i)->Entry,Section->Peek_Entry(i)->Value);
@@ -126,16 +129,11 @@ void DAGameManager::Level_Loaded_Event() {
 	DALogManager::Write_Log("_LEVEL","%s",The_Game()->Get_Map_Name());
 	Map = The_Game()->Get_Map_Name();
 
-	DASettingsManager::Reload(); //Reload any changes made to the settings files.
 	
 	//Game Mode
-	if (GameMode) {
-		GameMode->Destroy_Instance();
-		GameMode = 0;
-	}
-	//Unlike other settings the game mode needs to be loaded in the order: gamemode.ini map specific > da.ini map specific > gamemode.ini general > da.ini general.
+	DASettingsManager::Reload_Silent(); //Reload settings files in case the "GameMode" setting was changed. Don't trigger events yet.
 	StringClass Name;
-	DASettingsManager::Get_GameMode_Settings()->Get_INI()->Get_String(Name,The_Game()->Get_Map_Name(),"GameMode",DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(Name,The_Game()->Get_Map_Name(),"GameMode",DASettingsManager::Get_GameMode_Settings()->Get_INI()->Get_String(Name,"General","GameMode",DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(Name,"General","GameMode","AOW"))));
+	DASettingsManager::Get_String(Name,"GameMode","AOW");
 	DAGameModeFactoryClass *Factory = 0;
 	
 	if (Name == "Random") { //Select random game mode. Default to AOW if no other game modes exist or are usable on this map.
@@ -167,32 +165,35 @@ void DAGameManager::Level_Loaded_Event() {
 		}
 	}
 	
+	if (GameMode) {
+		if (GameMode != Factory) {
+			DASettingsManager::Remove_Settings(StringFormat("da_%s.ini",GameMode->Get_Short_Name())); //Remove old gamemode.ini from settings chain.
+			DASettingsManager::Add_Settings(StringFormat("da_%s.ini",Factory->Get_Short_Name())); //Add new gamemode.ini.
+		}
+		GameMode->Destroy_Instance(); //Destroy old game mode.
+	}
+	else {
+		DASettingsManager::Add_Settings(StringFormat("da_%s.ini",Factory->Get_Short_Name())); //Add new gamemode.ini.
+	}
 	GameMode = Factory;
-	DASettingsManager::Reload_GameMode(); //Reload gamemode.ini, changing it to the new gamemode if necessary.
-	GameMode->Create_Instance(); //Create the gamemode.
-	DASettingsManager::Post_Reload(); //Trigger settings loaded events and messages.
+	GameMode->Create_Instance(); //Create the game mode. The Init method of the game mode will be called here.
+	DASettingsManager::Reload(); //Now reload all the settings and trigger the events and messages. Game Features will be (un)loaded and all Settings_Loaded_Events will be called.
 	
 	StringClass Config;
 	DASettingsClass("server.ini").Get_String(Config,"Server","Config","svrcfg_cnc.ini");
 	StringClass Title;
 	DASettingsClass(StringFormat("data\\%s",Config)).Get_INI()->Get_String(Title,"Settings","bGameTitle");
 
-	ShowGameModeTitle = DASettingsManager::Get_Bool("ShowGameModeTitle",true); //Show gamemode in title.
-	if (ShowGameModeTitle) {
+	ShowGameModeTitle = DASettingsManager::Get_Bool("ShowGameModeTitle",true);
+	if (ShowGameModeTitle) { //Show the game mode in title.
 		The_Game()->Get_Game_Title().Format(L"%hs %hs",Title,Factory->Get_Short_Name());
 	}
-	else {
+	else { //Don't show the game mode. Title still needs to be set in case this setting changed from the last map.
 		The_Game()->Get_Game_Title().Format(L"%hs",Title);
 	}
 	DA::Host_Message("Running in %s Mode.",GameMode->Get_Long_Name());
 	DALogManager::Write_Log("_GAMEMODE","%s",GameMode->Get_Long_Name());
 
-	/*RawFileClass MapIndex;
-	if (MapIndex.Open("mapindex",2)) {
-		int Index = Get_Current_Map_Index() + MapIndexShift;
-		MapIndex.Write(&Index,4);
-		MapIndex.Close();
-	}*/
 
 	//This is used for all powerups in DA.
 	PowerUpGameObjDef *BasePowerUpDef = (PowerUpGameObjDef*)Find_Named_Definition("Soldier PowerUps");
@@ -200,6 +201,14 @@ void DAGameManager::Level_Loaded_Event() {
 	BasePowerUpDef->GrantWeapon = false;
 	BasePowerUpDef->AlwaysAllowGrant = true;
 	BasePowerUpDef->IdleAnimationName = "";
+
+
+	/*RawFileClass MapIndex;
+	if (MapIndex.Open("mapindex",2)) {
+		int Index = Get_Current_Map_Index() + MapIndexShift;
+		MapIndex.Write(&Index,4);
+		MapIndex.Close();
+	}*/
 }
 
 void DAGameManager::Settings_Loaded_Event() {
@@ -259,6 +268,28 @@ void DAGameManager::Player_Loaded_Event(cPlayer *Player) {
 	Update_Game_Settings();
 }
 
+DAGameModeFactoryClass *DAGameManager::Get_Game_Mode() {
+	return GameMode;
+}
+
+const char *DAGameManager::Get_Game_Mode_Long_Name() {
+	if (GameMode) {
+		return GameMode->Get_Long_Name();
+	}
+	return "Unknown";
+}
+
+const char *DAGameManager::Get_Game_Mode_Short_Name() {
+	if (GameMode) {
+		return GameMode->Get_Short_Name();
+	}
+	return "Unknown";
+}
+
+bool DAGameManager::Is_Game_Mode(const char *Name) {
+	return (!_stricmp(Get_Game_Mode_Long_Name(),Name) || !_stricmp(Get_Game_Mode_Short_Name(),Name));
+}
+
 DAGameModeFactoryClass *DAGameManager::Find_Game_Mode(const char *Name) {
 	for (int i = 0;i < GameModes.Count();i++) {
 		if ((GameModes[i]->Get_Short_Name() && !_stricmp(GameModes[i]->Get_Short_Name(),Name)) || (GameModes[i]->Get_Long_Name() && !_stricmp(GameModes[i]->Get_Long_Name(),Name))) {
@@ -299,9 +330,29 @@ void DAGameManager::Add_Game_Feature(DAGameFeatureFactoryClass* Factory) {
 	GameFeatures.Add(Factory);
 }
 
+const DynamicVectorClass<DAGameFeatureFactoryClass*> &DAGameManager::Get_Game_Features() {
+	return GameFeatures;
+}
+
+bool DAGameManager::Is_Shutdown_Pending() {
+	return ShutdownPending;
+}
+	
+const StringClass &DAGameManager::Get_Map() {
+	return Map;
+}
+
 /********************************************************************************************************************************/
 
-void DAGameModeFactoryClass::Add_Game_Mode() {
+DAGameModeFactoryClass::DAGameModeFactoryClass(const char *ShortName,const char *LongName,const char *RequiredData) {
+	this->Instance = 0;
+	this->ShortName = ShortName;
+	this->LongName = LongName;
+	this->RequiredData = RequiredData;
+	DAGameManager::Add_Game_Mode(this);
+}
+
+_declspec(deprecated) void DAGameModeFactoryClass::Add_Game_Mode() {
 	DAGameManager::Add_Game_Mode(this);
 }
 
@@ -321,7 +372,15 @@ void DAGameModeFactoryClass::Destroy_Instance() {
 
 /********************************************************************************************************************************/
 
-void DAGameFeatureFactoryClass::Add_Game_Feature() {
+DAGameFeatureFactoryClass::DAGameFeatureFactoryClass(const char *Name,const char *EnableSetting,const char *RequiredData) {
+	this->Instance = 0;
+	this->Name = Name;
+	this->EnableSetting = EnableSetting;
+	this->RequiredData = RequiredData;
+	DAGameManager::Add_Game_Feature(this);
+}
+
+_declspec(deprecated) void DAGameFeatureFactoryClass::Add_Game_Feature() {
 	DAGameManager::Add_Game_Feature(this);
 }
 

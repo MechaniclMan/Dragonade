@@ -13,6 +13,7 @@
 #include "general.h"
 #include "da_log.h"
 #include "da_settings.h"
+#include "engine_da.h"
 
 //Based on code by danpaul88 from SSGM 4.0.
 
@@ -20,7 +21,7 @@ SOCKET DALogManager::Socket = 0;
 DynamicVectorClass<DALogManager::Connection*> DALogManager::Connections;
 
 void DALogManager::Init() {
-	short Port = (short)DASettingsManager::Get_Main_Settings()->Get_INI()->Get_Int("General","LogPort",0);
+	short Port = (short)DASettingsManager::Get_Int("LogPort",0);
 	if (Port && !Socket) {
 		WSADATA wsaData;
 #pragma warning(suppress:6031)

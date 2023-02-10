@@ -33,6 +33,22 @@ public:
 		Position = String;
 		Delimiter = Delim;
 	}
+	inline void Set(const char *Str,char Delim) {
+		delete[] String;
+		int Len = strlen(Str)+1;
+		String = new char[Len];
+		memcpy(String,Str,Len);
+		Position = String;
+		Delimiter = Delim;
+	}
+	inline void Set(const wchar_t *Str,char Delim) {
+		delete[] String;
+		int Len = wcslen(Str)+1;
+		String = new char[Len];
+		wcstombs(String,Str,Len);
+		Position = String;
+		Delimiter = Delim;
+	}
 	inline ~DATokenParserClass() {
 		delete[] String;
 	}

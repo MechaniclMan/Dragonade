@@ -30,9 +30,8 @@ typedef ScriptableGameObj GameObject;
 #define BROWN 210,105,30
 #define PURPLE 210,115,247
 
-#define Format_String(Buffer) { Buffer[251] = '\0'; va_list arg_list; va_start(arg_list,Format); vsnprintf(Buffer,251,Format,arg_list); va_end(arg_list); };
-#define Format_String_Color(Buffer) { Buffer[233] = '\0'; va_list arg_list; va_start(arg_list,Format); vsnprintf(Buffer,233,Format,arg_list); va_end(arg_list); };
-#define Format_String_Prefix(Buffer) { Buffer[251] = '\0'; va_list arg_list; va_start(arg_list,Format); strcpy(Buffer,MessagePrefix); vsnprintf(Buffer+MessagePrefix.Get_Length(),251-MessagePrefix.Get_Length(),Format,arg_list); va_end(arg_list); };
+#define Format_String(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); vsnprintf(Buffer,255,Format,arg_list); va_end(arg_list); };
+#define Format_String_Prefix(Buffer) { Buffer[255] = '\0'; va_list arg_list; va_start(arg_list,Format); strcpy(Buffer,MessagePrefix); vsnprintf(Buffer+MessagePrefix.Get_Length(),255-MessagePrefix.Get_Length(),Format,arg_list); va_end(arg_list); };
 
 class DA_API DA {
 public:
@@ -111,6 +110,10 @@ public:
 
 DA_API void DebugMsg(const char *Format,...);
 
+DA_API int Get_Random_Int(int Min,int Max);
+DA_API float Get_Random_Float(float Min,float Max);
+DA_API bool Get_Random_Bool();
+
 inline float Diff(float First, float Second) {
 	if (First > Second) {
 		return First - Second;
@@ -140,7 +143,5 @@ inline StringClass Long_To_IP(unsigned long IP) {
 inline float Round(float Number) {
 	return floor(Number+0.5f);
 }
-
-DA_API int Get_Random_Int(int Min,int Max);
 
 #endif

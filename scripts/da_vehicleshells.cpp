@@ -58,8 +58,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	ShadowDefense->Set_Shield_Type(VehicleDefense->ShieldType);
 	ShadowDefense->Set_Damage_Points(0.0f);
 	ShadowDefense->Set_Death_Points(0.0f);
-	Shadow->Clear_Object_Dirty_Bits();
-	Set_Object_Dirty_Bit_For_Version_Less_Than(Shadow,4.0f,NetworkObjectClass::BIT_CREATION,true); //Only clients without 4.0 will see this object.
+	DAGameObjManager::Set_GameObj_Stock_Only(Shadow); //Only stock clients will see this object.
 	this->Shadow = Shadow;
 
 	//This is the "true" shell that 4.0 clients see.
@@ -81,8 +80,7 @@ DAVehicleShellObserverClass::DAVehicleShellObserverClass(DAVehicleShellStruct *S
 	ShellDefense->Set_Shield_Type(VehicleDefense->ShieldType);
 	ShellDefense->Set_Damage_Points(0.0f);
 	ShellDefense->Set_Death_Points(0.0f);
-	Shell->Clear_Object_Dirty_Bits();
-	Set_Object_Dirty_Bit_For_Version_Greater_Than(Shell,4.0f,NetworkObjectClass::BIT_CREATION,true); //Only 4.0 clients will see this object.
+	DAGameObjManager::Set_GameObj_TT_Only(Shell); //Only TT clients will see this object.
 
 	Shell->Add_Observer(this);
 	Shadow->Add_Observer(new DAVehicleShellShadowObserverClass(Shell));
@@ -166,8 +164,7 @@ void DAVehicleShellObserverClass::Timer_Expired(GameObject *obj,int Number) {
 		ShadowDefense->Set_Shield_Type(ShellDefense->Get_Shield_Type());
 		ShadowDefense->Set_Damage_Points(0.0f);
 		ShadowDefense->Set_Death_Points(0.0f);
-		Shadow->Clear_Object_Dirty_Bits();
-		Set_Object_Dirty_Bit_For_Version_Less_Than(Shadow,4.0f,NetworkObjectClass::BIT_CREATION,true);
+		DAGameObjManager::Set_GameObj_Stock_Only(Shadow);
 		Shadow->Add_Observer(new DAVehicleShellShadowObserverClass(obj));
 		this->Shadow = Shadow;
 	}

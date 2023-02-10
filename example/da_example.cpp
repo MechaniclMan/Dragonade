@@ -32,6 +32,8 @@ Player Data Manager - da_example_gamefeature.cpp/h
 Improved GameObject Observers - da_example_gameobjobserver.cpp/h and da_example_gamefeature.cpp/h
 Chat Commands and Keyhook - da_example_chatkeyhook.cpp/h, da_example_gamefeature.cpp/h, and da_example_gamemode.cpp/h
 Console Functions - da_example.cpp/h
+Crates - da_example_crates.cpp
+Settings - da_example.cpp/h and da_example_gamefeature.cpp/h
 
 These systems are designed to allow features to be decentralized. No longer do you have to manually initialize everything from one place,
 nor do you need a central settings struct that holds all settings. Instead game features and game modes are registered using a registrant
@@ -62,15 +64,18 @@ DASettingsManager: da_settings.cpp/h
 -Loads settings files.
 -Provides various functions to retrieve settings.
 -Force settings reload by calling Reload.
+-Files can be added/removed from the settings chain by Add_Settings/Remove_Settings.
 
 DAGameObjManager: da_gameobj.cpp/h
 -Handles calling the extra events added in DAGameObjManager.
--Not interacted with directly.
+-Functions Set_GameObj_TT_Only, Set_GameObj_Stock_Only, and Set_GameObj_Invisible to control gameobject visibilty for different clients.
+-Overloads Commands->Enable_Stealth to make it work for non-TT clients on soldiers.
 
 DAPlayerManager: da_player.cpp/h
 -Creates and manages each player's DAPlayerClass.
 -Default connection request and suicide events.
--Implements DisallowedNickCharacters and DisallowedNicks settings.
+-Implements DisallowedNickCharacters, DisallowedNickFirstCharacters, and DisallowedNicks settings.
+-Controls stock kill messages, and kill and death counters.
 -Writes purchase log messages.
 -Not interacted with directly.
 DAPlayerClass: da_player.cpp/h
@@ -81,9 +86,9 @@ DAPlayerClass: da_player.cpp/h
 -Call cPlayer::Get_DA_Player to get that player's DAPlayerClass.
 
 DAGameManager: da_game.cpp/h
--Selects game mode
--Loads/unloads game features
--Loads da.ini version of the svrcfg_cnc.ini settings.
+-Selects game mode.
+-Loads/unloads game features.
+-Adds da.ini and gamemode.ini to the settings chain.
 -Writes level loaded and gameover log message.
 -Functions provided to get current game mode or a list of game features.
 
@@ -92,7 +97,7 @@ DALogManager: da_log.cpp/h
 -Provides functions Write_Log and Write_GameLog to send log messages.
 
 DATranslationManager: da_translate.cpp/h
--Loads translation DB from da.ini
+-Loads translation DB from da.ini.
 -Provides functions Translate, Translate_With_Team_Name, Translate_Weapon, and Translate_Soldier to translate object names.
 
 DADamageLog: da_damage.cpp/h
@@ -114,6 +119,7 @@ DAVehicleManager: da_vehicle.cpp/h
 
 DASoldierManager: da_soldier.cpp/h
 -Loads spawn character settings.
+-Implements Grant_Weapons setting.
 -Default character purchase event.
 -Writes player and bot kill log messages.
 -Not interacted with directly.
@@ -141,6 +147,10 @@ DAPluginManager: da_plugin.cpp/h
 DADisableListManager: da_disable.cpp/h
 -Implements various disable list settings.
 -Functions Is_Preset_Disabled and Is_Preset_Disabled_For_Character provided to check disable list.
+
+DACrateManager: da_cratemanager.cpp/h
+-Static part holds crate registrants, crate modifier registrants, and adds da_crates.ini to the settings chain.
+-Virtual part implements the Crates Game Feature.
 */
 
 
@@ -199,6 +209,7 @@ extern "C" {
 //These can be left out when using method 1.
 _declspec(dllexport) void Plugin_Init() {
 	DAExampleEvent2 = new DAExampleEventClass;
+	DASettingsManager::Add_Settings("da_example_settings.ini"); //Add file to the settings chain. DASettingsManager will now load settings from this file when used.
 }
 
 _declspec(dllexport) void Plugin_Shutdown() {

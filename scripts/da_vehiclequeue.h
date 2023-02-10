@@ -48,9 +48,7 @@ private:
 	virtual void Timer_Expired(int Number,unsigned int Team);
 
 	void Spawn_Vehicle(int Team,QueueStruct *Q);
-	inline void Spawn_Vehicle(int Team,cPlayer *Purchaser,const VehicleGameObjDef *Vehicle,float Cost) {
-		Spawn_Vehicle(Team,new QueueStruct(Purchaser,Vehicle,Cost));
-	}
+	void Spawn_Vehicle(int Team,cPlayer *Purchaser,const VehicleGameObjDef *Vehicle,float Cost);
 	void Clear(int Team);
 	void Add(cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost);
 	bool Remove(int Team,cPlayer *Player);

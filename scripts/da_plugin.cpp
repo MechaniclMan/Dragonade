@@ -26,7 +26,7 @@ typedef void (*PluginShutdown)();
 
 void DAPluginManager::Init() {
 	DASSGMPluginManager::Init();
-	INISection *Section = DASettingsManager::Get_Main_Settings()->Get_INI()->Get_Section("Plugins");
+	INISection *Section = DASettingsManager::Get_Section("Plugins");
 	if (Section) {
 		bool NewLine = false;
 		for (int i = 0;i < Section->Count();i++) {

@@ -61,27 +61,25 @@ public:
 }; // 0004
 
 class Straw;
+
 struct INIEntry : public Node<INIEntry *>
 {
-public:
 	char* Entry;
 	char* Value;
 	~INIEntry();
 };
+
 struct INISection : public Node<INISection *>
 {
-public:
 	char* Section;
 	List<INIEntry *> EntryList;
 	IndexClass<int,INIEntry *> EntryIndex;
 	~INISection();
-	inline int Count() {
-		return EntryIndex.Count();
-	}
-	inline INIEntry *Peek_Entry(int Index) {
-		return EntryIndex[Index];
-	}
+	SCRIPTS_API int Count() const;
+	SCRIPTS_API INIEntry *Peek_Entry(int Index);
+	SCRIPTS_API INIEntry *Find_Entry(const char *Entry);
 };
+
 class SCRIPTS_API INIClass {
 	List<INISection *> *SectionList;
 	IndexClass<int,INISection *> *SectionIndex;
@@ -112,21 +110,9 @@ public:
 	int Load(Straw& ffile);
 	int Load(FileClass& file);
 	int Save(FileClass& file);
-	int Section_Count() const
-	{
-		return SectionIndex->Count();
-	}
-	const char *Get_File_Name() const {
-		return Filename;
-	}
-	INISection *Get_Section(const char *Section) const {
-		for (int i = 0;i < SectionIndex->Count();i++) {
-			if (!_stricmp((*SectionIndex)[i]->Section,Section)) {
-				return (*SectionIndex)[i];
-			}
-		}
-		return 0;
-	}
+	int Section_Count() const;
+	const char *Get_File_Name() const;
+	INISection *Get_Section(const char *Section) const;
 };
 
 class SCRIPTS_API file_auto_ptr

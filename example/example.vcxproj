@@ -191,6 +191,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
   <ItemGroup>
     <ClCompile Include="da_example.cpp" />
     <ClCompile Include="da_example_chatkeyhook.cpp" />
+    <ClCompile Include="da_example_crates.cpp" />
     <ClCompile Include="da_example_gamefeature.cpp" />
     <ClCompile Include="da_example_gamemode.cpp" />
     <ClCompile Include="da_example_gameobjobserver.cpp" />
@@ -204,7 +205,6 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="da_example.h" />
-    <ClInclude Include="da_example_chatkeyhook.h" />
     <ClInclude Include="da_example_gamefeature.h" />
     <ClInclude Include="da_example_gamemode.h" />
     <ClInclude Include="da_example_gameobjobserver.h" />

@@ -10,7 +10,7 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 //Changes made in DA:
-//Removed cTeam functions.
+//Added Increment_Kills, Increment_Deaths, Decrement_Kills, and Decrement_Deaths.
 #include "general.h"
 #include "scripts.h"
 #include "SoldierGameObj.h"
@@ -668,15 +668,91 @@ SCRIPTS_API void Set_Team_Score(int ID,float score)
 	}
 }
 
-void cPlayer::Set_Kills(int kills)
-{
+void cPlayer::Increment_Kills() {
+	Kills++;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cPlayer::Increment_Deaths() {
+	Deaths++;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cPlayer::Decrement_Kills() {
+	Kills--;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cPlayer::Decrement_Deaths() {
+	Deaths--;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cPlayer::Set_Kills(int kills) {
 	Kills = kills;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 }
 
-void cPlayer::Set_Deaths(int deaths)
-{
+void cPlayer::Set_Deaths(int deaths) {
 	Deaths = deaths;
 	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
 }
 
+void cTeam::Set_Kills(int kills) {
+	Kills = kills;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+void cTeam::Increment_Kills() {
+	Kills++;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+void cTeam::Decrement_Kills() {
+	Kills--;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+int cTeam::Get_Kills() {
+	return Kills;
+}
+
+void cTeam::Set_Deaths(int deaths) {
+	Deaths = deaths;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+void cTeam::Increment_Deaths() {
+	Deaths++;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+void cTeam::Decrement_Deaths() {
+	Deaths--;
+	Set_Object_Dirty_Bit(BIT_RARE,true);
+}
+
+int cTeam::Get_Deaths() {
+	return Deaths;
+}
+
+void cTeam::Set_Score(float score) {
+	Score = score;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+void cTeam::Increment_Score(float score) {
+	Score += score;
+	Set_Object_Dirty_Bit(BIT_OCCASIONAL,true);
+}
+
+float cTeam::Get_Score() {
+	return Score;
+}
+
+float cTeam::Get_Kill_To_Death_Ratio() {
+	if (!Deaths) {
+		return 0.0f;
+	}
+	return (float)Kills/(float)Deaths;
+}

@@ -97,7 +97,7 @@ void DADominationManagerClass::Init() {
 	Score[0] = 0.0f;
 	Score[1] = 0.0f;
 	
-	const DASettingsClass *Settings = DASettingsManager::Get_GameMode_Settings();
+	const DASettingsClass *Settings = DASettingsManager::Get_Settings(DASettingsManager::Get_Settings_Count()-1); //Gamemode.ini will be last in settings chain at this point.
 	Settings->Get_String(ControlNodePreset,"ControlNodePreset",0);
 	Settings->Get_String(ControlNodeModel,"ControlNodeModel",0);
 	Settings->Get_String(ControlNodeAnimation,"ControlNodeAnimation",0);
@@ -177,8 +177,11 @@ void DADominationManagerClass::Init() {
 		VehicleGameObjDef *Recon = (VehicleGameObjDef*)Find_Named_Definition("CnC_Nod_Recon_Bike");
 		if (Recon) {
 			Recon->WeaponDefID = Get_Definition_ID("Weapon_StealthTank_Player");
-			const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
-			const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef()).ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+			DefenseObjectDefClass &Defense = const_cast<DefenseObjectDefClass&>(Recon->Get_DefenseObjectDef());
+			Defense.Skin = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+			Defense.ShieldType = ArmorWarheadManager::Get_Armor_Type("CNCVehicleHeavy");
+			Defense.ShieldStrengthMax = 150;
+			Defense.ShieldStrength = 150;
 			PT->Set_Definition(5,Recon->Get_ID());
 			PT->Set_Cost(5,500);
 		}
@@ -227,29 +230,13 @@ void DADominationManagerClass::Init() {
 }
 
 void DADominationManagerClass::Player_Loaded_Event(cPlayer *Player) {
-	//Send updated stuff to new players when they join.
-	cTeam *Nod = Find_Team(0);
-	cTeam *GDI = Find_Team(1);
-	Nod->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
-	Nod->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_OCCASIONAL,true);
-	GDI->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
-	GDI->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_OCCASIONAL,true);
 	Send_Info_Message(Player->Get_ID());
 }
 
 void DADominationManagerClass::Object_Created_Event(GameObject *obj) {
-	Update_Node_Count();
 	((SoldierGameObj*)obj)->Give_Key(1);
 	((SoldierGameObj*)obj)->Give_Key(2);
 	((SoldierGameObj*)obj)->Give_Key(3);
-	/*if (!_stricmp(obj->Get_Definition().Get_Name(),"CnC_Nod_FlameThrower_2SF")) { //Change Stealth Black Hands into Black Hand Rocket Soldier.
-		Change_Character(obj,"CnC_Nod_RocketSoldier_2SF");
-		WeaponBagClass *Bag = ((SoldierGameObj*)obj)->Get_Weapon_Bag();
-		Bag->Remove_Weapon("Weapon_LaserChaingun_Player");
-		WeaponDefinitionClass *Weapon = (WeaponDefinitionClass*)Find_Named_Definition("CnC_Weapon_RocketLauncher_Player");
-		Bag->Add_Weapon(Weapon,999,true);
-		Bag->Select_Weapon_Name("CnC_Weapon_RocketLauncher_Player");
-	}*/
 }
 
 void DADominationManagerClass::Damage_Event(DamageableGameObj *Victim,ArmedGameObj *Damager,float Damage,unsigned int Warhead,DADamageType::Type Type,const char *Bone) {
@@ -260,9 +247,6 @@ void DADominationManagerClass::Kill_Event(DamageableGameObj *Victim,ArmedGameObj
 	int Team = Killer->Get_Player_Type();
 	if (Team == 0 || Team == 1) {
 		Update_Score(Team); //Remove player score from team total.
-		if (Victim != Killer && Victim->As_SoldierGameObj()) {
-			Find_Team(Team)->Dec_Kills(); //Remove player kill from team total.
-		}
 	}
 }
 

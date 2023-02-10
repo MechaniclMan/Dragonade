@@ -15,7 +15,6 @@
 #include "engine.h"
 #include "engine_da.h"
 #include "da.h"
-#include "da_example_chatkeyhook.h"
 #include "da_chatcommand.h"
 
 /*

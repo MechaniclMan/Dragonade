@@ -43,7 +43,6 @@ public:
 	bool								Is_Post_Think_Allowed( void )				{ return IsPostThinkAllowed; }
 	void								Enable_Cinematic_Freeze( bool enable )	{ EnableCinematicFreeze = enable; }
 	bool								Is_Cinematic_Freeze_Enabled( void )		{ return EnableCinematicFreeze; }
-private:
 	const BaseGameObjDef *	Definition;	// 06BC
 	bool							IsPostThinkAllowed; // 06C0
 	bool							EnableCinematicFreeze; // 06C1

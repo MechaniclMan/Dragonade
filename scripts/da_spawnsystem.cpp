@@ -322,15 +322,13 @@ void DASpawnManagerClass::Init(const INIClass *INI) {
 }
 
 void DASpawnManagerClass::Vehicle_Purchase_Event(cPlayer *Player,float Cost,const VehicleGameObjDef *Item) { 
-	DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
-	if (SpawnState == DASpawnState::WAITINGROOM) {
+	if (Get_Player_Data(Player)->SpawnState == DASpawnState::WAITINGROOM) {
 		Display_PT(Player->Get_GameObj());
 	}
 }
 
 void DASpawnManagerClass::PowerUp_Purchase_Event(cPlayer *Player,float Cost,const PowerUpGameObjDef *Item) {
-	DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
-	if (SpawnState == DASpawnState::WAITINGROOM) {
+	if (Get_Player_Data(Player)->SpawnState == DASpawnState::WAITINGROOM) {
 		Display_PT(Player->Get_GameObj());
 	}
 }
@@ -348,7 +346,7 @@ bool DASpawnManagerClass::Suicide_Event(cPlayer *Player) {
 }
 
 bool DASpawnManagerClass::Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID) {
-	if (Command == "!killme") {
+	if (Command == "!killme" || Command == "!unstuck" || Command == "!unstick" || Command == "!stuck" || Command == "!stick") {
 		DASpawnState::State SpawnState = Get_Player_Data(Player)->SpawnState;
 		if (SpawnState == DASpawnState::WAITINGROOM || SpawnState == DASpawnState::SPAWNING) {
 			DA::Private_Color_Message(Player,WHITE,"Use the Purchase Terminal to select your spawn character.");

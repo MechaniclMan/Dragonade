@@ -10,25 +10,25 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 
-#ifndef INCLUDE_CPURCHASERESPONSEEVENT
-#define INCLUDE_CPURCHASERESPONSEEVENT
+#ifndef INCLUDE_CPLAYERKILL
+#define INCLUDE_CPLAYERKILL
 
 #include "cNetEvent.h"
 
-class cPurchaseResponseEvent : public cNetEvent {
+class cPlayerKill : public cNetEvent {
 public:
-	inline cPurchaseResponseEvent *Constructor();
-	inline void Init(int Type,int ID) {
-		this->ID = ID;
-		this->Type = Type;
-		Set_Object_Dirty_Bits(ID,BIT_CREATION);
+	inline cPlayerKill *Constructor();
+	inline void Init(int Killer,int Victim) {
+		this->Killer = Killer;
+		this->Victim = Victim;
+		Set_Object_Dirty_Bit(BIT_CREATION,true);
 	}
-
+	
 private:
-	int ID;
-	int Type;
+	int Killer;
+	int Victim;
 };
 
-inline _declspec(naked) cPurchaseResponseEvent *cPurchaseResponseEvent::Constructor() AT2(0x004B85F0,0x004B85F0);
+inline _declspec(naked) cPlayerKill *cPlayerKill::Constructor() AT2(0x004B7CD0,0x004B7CD0);
 
 #endif

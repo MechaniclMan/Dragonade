@@ -17,13 +17,13 @@
 #include "da_event.h"
 #include "winsock2.h"
 
-class DA_API DALogManager : public DAEventClass {
+class DALogManager : public DAEventClass {
 public:
 	static void Init();
 	static void Shutdown();
-	static void Write_Log(const char *Header,const char *Format,...);
-	static void Write_GameLog(const char *Format,...);
-	static void Send(const char *Data);
+	DA_API static void Write_Log(const char *Header,const char *Format,...);
+	DA_API static void Write_GameLog(const char *Format,...);
+	DA_API static void Send(const char *Data);
 	
 private:
 	virtual void Think();

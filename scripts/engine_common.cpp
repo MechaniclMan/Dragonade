@@ -31,17 +31,17 @@ void SCRIPTS_API Console_Output(const char *Output,...)
 AT2(0x00428B50,0x00428CD0);
 
 RENEGADE_FUNCTION
-void Parse_Console_Input(const char *)
+void Console_Input(const char *)
 AT2(0x004287E0,0x00428960);
 
-void SCRIPTS_API Console_Input(const char *Input)
+/*void SCRIPTS_API Console_Input(const char *Input)
 {
 	if (strlen(Input) > 255)
 	{
 		return;
 	}
 	Parse_Console_Input(Input);
-}
+}*/
 
 void ConsoleOutputDirect(const char *Output){
 	Console_Output("%s", Output);

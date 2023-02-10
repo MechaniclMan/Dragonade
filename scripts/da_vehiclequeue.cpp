@@ -211,7 +211,14 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,QueueStruct *Q) {
 			Delay *= Get_Build_Time_Multiplier(Team);
 		}
 		VF->Request_Vehicle(Q->Vehicle->Get_ID(),Delay,Q->Purchaser?Q->Purchaser->Get_GameObj():0);
-		VF->Set_Busy(false); //Prevent vehicle menu from graying out.
+		if (Q->Purchaser && Q->Purchaser->Is_Alive_And_Kicking()) { //Gray out for the purchaser.
+			Send_Object_Update(VF,Q->Purchaser->Get_ID());
+			VF->Set_Busy(false); //Prevent from graying out for other players.
+			VF->Set_Object_Dirty_Bit(Q->Purchaser->Get_ID(),NetworkObjectClass::BIT_RARE,false);
+		}
+		else {
+			VF->Set_Busy(false);
+		}
 		Start_Timer(1,VF->Get_Definition().Get_Total_Building_Time()+0.1f,false,Team);
 	}
 	else {
@@ -219,8 +226,16 @@ void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,QueueStruct *Q) {
 	}
 }
 
+void DAVehicleQueueGameFeatureClass::Spawn_Vehicle(int Team,cPlayer *Purchaser,const VehicleGameObjDef *Vehicle,float Cost) {
+	Spawn_Vehicle(Team,new QueueStruct(Purchaser,Vehicle,Cost));
+}
+
 void DAVehicleQueueGameFeatureClass::Timer_Expired(int Number,unsigned int Team) {
 	if (Building[Team]) {
+		if (Building[Team]->Purchaser && Building[Team]->Purchaser->Is_Alive_And_Kicking()) {
+			VehicleFactoryGameObj *VF = (VehicleFactoryGameObj*)BaseControllerClass::Find_Base(Team)->Find_Building(BuildingConstants::TYPE_VEHICLE_FACTORY);
+			VF->Set_Object_Dirty_Bit(Building[Team]->Purchaser->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+		}
 		delete Building[Team];
 		Building[Team] = 0;
 	}

@@ -219,6 +219,23 @@ void SCRIPTS_API Release_INI(INIClass *ini)
 	}
 }
 
+int INISection::Count() const {
+	return EntryIndex.Count();
+}
+
+INIEntry *INISection::Peek_Entry(int Index) {
+	return EntryIndex[Index];
+}
+
+INIEntry *INISection::Find_Entry(const char *Entry) {
+	for (int i = 0;i < Count();i++) {
+		if (!_stricmp(Peek_Entry(i)->Entry,Entry)) {
+			return Peek_Entry(i);
+		}
+	}
+	return 0;
+}
+
 int INIClass::Load(FileClass& file)
 {
 	FileStraw straw(file);
@@ -230,21 +247,85 @@ int INIClass::Load(FileClass& file)
 	return Load(straw);
 }
 
-RENEGADE_FUNCTION
-INIEntry *INIClass::Find_Entry(const char* section,const char* entry) const
-AT2(0x005DFED0,0x005DF770);
-RENEGADE_FUNCTION
-int INIClass::Get_Int(char const *section,char const *entry,int defaultvalue) const
-AT2(0x005E10B0,0x005E0950);
-RENEGADE_FUNCTION
-float INIClass::Get_Float(char const *section,char const *entry,float defaultvalue) const
-AT2(0x005E1670,0x005E0F10);
-RENEGADE_FUNCTION
-bool INIClass::Get_Bool(char const *section,char const *entry,bool defaultvalue) const
-AT2(0x005E27A0,0x005E2040);
-RENEGADE_FUNCTION
-int INIClass::Get_String(char const *section,char const *entry,char const *defaultvalue,char *result,int size) const
-AT2(0x005E1DE0,0x005E1680);
+int INIClass::Section_Count() const {
+	return SectionIndex->Count();
+}
+
+const char *INIClass::Get_File_Name() const {
+	return Filename;
+}
+	
+INISection *INIClass::Get_Section(const char *Section) const {
+	for (int i = 0;i < SectionIndex->Count();i++) {
+		if (!_stricmp((*SectionIndex)[i]->Section,Section)) {
+			return (*SectionIndex)[i];
+		}
+	}
+	return 0;
+}
+
+INIEntry *INIClass::Find_Entry(const char* section,const char* entry) const {
+	INISection *S = Get_Section(section);
+	if (S) {
+		return S->Find_Entry(entry);
+	}
+	return 0;
+}
+
+int INIClass::Get_Int(char const *section,char const *entry,int defaultvalue) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		return atoi(E->Value);
+	}
+	return defaultvalue;
+}
+
+float INIClass::Get_Float(char const *section,char const *entry,float defaultvalue) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		return (float)atof(E->Value);
+	}
+	return defaultvalue;
+}
+
+bool INIClass::Get_Bool(char const *section,char const *entry,bool defaultvalue) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		return (!_stricmp(E->Value,"1") || !_stricmp(E->Value,"true") || !_stricmp(E->Value,"yes"));
+	}
+	return defaultvalue;
+}
+
+int INIClass::Get_String(char const *section,char const *entry,char const *defaultvalue,char *result,int size) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		strncpy(result,E->Value,size);
+		return strlen(result);
+	}
+	strncpy(result,defaultvalue,size);
+	return strlen(result);
+}
+
+StringClass &INIClass::Get_String(StringClass &string,const char *section,const char *entry,const char *defaultvalue) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		string = E->Value;
+		return string;
+	}
+	string = defaultvalue;
+	return string;
+}
+
+WideStringClass &INIClass::Get_Wide_String(WideStringClass &string,const char *section,const char *entry,const wchar_t *defaultvalue) const {
+	INIEntry *E = Find_Entry(section,entry);
+	if (E) {
+		string = E->Value;
+		return string;
+	}
+	string = defaultvalue;
+	return string;
+}
+
 RENEGADE_FUNCTION
 void INIClass::Initialize()
 AT2(0x005DE9E0,0x005DE280);
@@ -264,9 +345,6 @@ RENEGADE_FUNCTION
 const char *INIClass::Get_Entry(char const *section,int index) const
 AT2(0x005E0040,0x005DF8E0);
 RENEGADE_FUNCTION
-StringClass &INIClass::Get_String(StringClass& string, const char* section, const char* entry, const char*) const
-AT2(0x005E1F60,0x005E1800);
-RENEGADE_FUNCTION
 bool INIClass::Put_Wide_String(const char* section, const char* entry, const wchar_t* string)
 AT2(0x005E08B0,0x005E0150);
 RENEGADE_FUNCTION
@@ -284,9 +362,6 @@ AT2(0x005E2760,0x005E2000);
 RENEGADE_FUNCTION
 bool INIClass::Put_Float(const char* section, const char* entry, float value)
 AT2(0x005E17F0,0x005E1090);
-RENEGADE_FUNCTION
-WideStringClass &INIClass::Get_Wide_String(WideStringClass &,char  const*,char  const*,wchar_t  const*) const
-AT2(0x005E06E0,0x005DFF80);
 
 int INIClass::CRC(char *string)
 {

@@ -42,10 +42,12 @@ void DAPointsDistributionGameFeatureClass::Kill_Event(DamageableGameObj *Victim,
 					((SoldierGameObj*)Killer)->Get_Player()->Increment_Money(Points*-1.0f);
 				}
 			}
-			DynamicVectorClass<DADamageTableStruct> Damagers;
-			DADamageLog::Get_Damagers_By_Percent_Other_Team(Damagers,Victim,Team,0.0f,0.0f);
-			for (int i = 0;i < Damagers.Count();i++) {
-				Damagers[i].Player->Increment_Score(Damagers[i].Damage*Points); //Distribute points to all damagers.
+			if (Team != -2) {
+				DynamicVectorClass<DADamageTableStruct> Damagers;
+				DADamageLog::Get_Damagers_By_Percent_Other_Team(Damagers,Victim,Team,0.0f,0.0f);
+				for (int i = 0;i < Damagers.Count();i++) {
+					Damagers[i].Player->Increment_Score(Damagers[i].Damage*Points); //Distribute points to all damagers.
+				}
 			}
 		}
 	}

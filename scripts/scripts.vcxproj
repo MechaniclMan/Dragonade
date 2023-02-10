@@ -205,12 +205,17 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_characterrefunds.cpp" />
     <ClCompile Include="da_chatcommand.cpp" />
     <ClCompile Include="da_coop.cpp" />
+    <ClCompile Include="da_cratemodifiers.cpp" />
+    <ClCompile Include="da_crate.cpp" />
+    <ClCompile Include="da_cratemanager.cpp" />
     <ClCompile Include="da_ctf.cpp" />
     <ClCompile Include="da_damagelog.cpp" />
     <ClCompile Include="da_deathmatch.cpp" />
     <ClCompile Include="da_disable.cpp" />
     <ClCompile Include="da_domination.cpp" />
     <ClCompile Include="da_donate.cpp" />
+    <ClCompile Include="da_genericcrates.cpp" />
+    <ClCompile Include="da_infantrycrates.cpp" />
     <ClCompile Include="da_loot.cpp" />
     <ClCompile Include="da_event.cpp" />
     <ClCompile Include="da_game.cpp" />
@@ -242,6 +247,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClCompile Include="da_teleporter.cpp" />
     <ClCompile Include="da_translation.cpp" />
     <ClCompile Include="da_vehicle.cpp" />
+    <ClCompile Include="da_vehiclecrates.cpp" />
     <ClCompile Include="da_vehicleownership.cpp" />
     <ClCompile Include="da_vehicleshells.cpp" />
     <ClCompile Include="da_vehiclespawn.cpp" />
@@ -424,6 +430,7 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="AudibleSoundDefinitionClass.h" />
     <ClInclude Include="AudioCallbackListClass.h" />
     <ClInclude Include="cNetEvent.h" />
+    <ClInclude Include="cPlayerKill.h" />
     <ClInclude Include="cPurchaseResponseEvent.h" />
     <ClInclude Include="cScTextObj.h" />
     <ClInclude Include="cTeam.h" />
@@ -461,6 +468,8 @@ copy "$(TargetPath)" "%RenServerPath%\$(TargetFileName)"
     <ClInclude Include="da_c4beacon.h" />
     <ClInclude Include="da_characterrefunds.h" />
     <ClInclude Include="da_chatcommand.h" />
+    <ClInclude Include="da_crate.h" />
+    <ClInclude Include="da_cratemanager.h" />
     <ClInclude Include="da_damagelog.h" />
     <ClInclude Include="da_disable.h" />
     <ClInclude Include="da_domination.h" />

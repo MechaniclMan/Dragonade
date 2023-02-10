@@ -49,7 +49,7 @@ public:
 	bool CanRTC;
 };
 
-class DARTCGameFeatureClass : private DAEventClass, private DAPlayerDataManagerClass<DARTCPlayerDataClass>, public DAGameFeatureClass {
+class DARTCGameFeatureClass : public DAEventClass, private DAPlayerDataManagerClass<DARTCPlayerDataClass>, public DAGameFeatureClass {
 	virtual void Init();
 	virtual void Settings_Loaded_Event();
 	virtual bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);

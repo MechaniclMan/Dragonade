@@ -490,11 +490,11 @@ void DASquadManagerClass::Remix_Event() {
 
 	if (RemixSquads) {
 		if (SquadList.Count() == 1) { //If theres only one squad just put it on a random team.
-			int RandTeam = rand() % 2;
+			int RandTeam = Get_Random_Bool();
 			SquadList[0]->Set_Team(RandTeam);	
 		}
 		else if (SquadList.Count() == 2) { //If there are two squads they go on opposite teams.
-			int RandTeam = rand() % 2;
+			int RandTeam = Get_Random_Bool();
 			SquadList[0]->Set_Team(RandTeam);
 			SquadList[1]->Set_Team(RandTeam?0:1);
 		}
@@ -505,7 +505,7 @@ void DASquadManagerClass::Remix_Event() {
 				int LoopTeamCount[2] = {0,0};
 				DynamicVectorClass<DASquadRemixStruct> SquadTeams;
 				for (int i = 0;i < SquadList.Count();i++) {
-					int RandTeam = rand() % 2;
+					int RandTeam = Get_Random_Bool();
 					LoopTeamCount[RandTeam] += SquadList[i]->Size();
 					SquadTeams.Add(DASquadRemixStruct(SquadList[i],RandTeam));
 				}

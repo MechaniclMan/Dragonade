@@ -72,8 +72,10 @@ public:
 	bool Is_Team_Player();
 	int Get_Ping();
 	void Get_Player_String(int id,WideStringClass &str,bool b);
-	void Increment_Kills();
-	void Increment_Deaths();
+	SCRIPTS_API void Increment_Kills();
+	SCRIPTS_API void Increment_Deaths();
+	SCRIPTS_API void Decrement_Kills();
+	SCRIPTS_API void Decrement_Deaths();
 	SCRIPTS_API void Set_Kills(int kills);
 	SCRIPTS_API void Set_Deaths(int deaths);
 	void Set_Fps(int _fps) { Fps = _fps; }

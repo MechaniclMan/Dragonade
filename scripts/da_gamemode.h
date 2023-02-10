@@ -17,7 +17,8 @@
 class DAGameModeClass;
 
 class DAGameModeFactoryClass abstract {
-public:	
+public:
+	DA_API DAGameModeFactoryClass(const char *ShortName,const char *LongName,const char *RequiredData = 0);
 	inline const char *Get_Long_Name() const {
 		return LongName;
 	}
@@ -32,7 +33,7 @@ public:
 	void Destroy_Instance();
 
 protected:
-	DA_API void Add_Game_Mode();
+	DA_API _declspec(deprecated) void Add_Game_Mode();
 	const char *ShortName;
 	const char *LongName;
 	const char *RequiredData;
@@ -42,33 +43,31 @@ protected:
 class DAGameModeClass abstract {
 public:
 	inline const char *Get_Long_Name() const {
-		return Registrant->Get_Long_Name();
+		return Factory->Get_Long_Name();
 	}
 	inline const char *Get_Short_Name() const {
-		return Registrant->Get_Short_Name();
+		return Factory->Get_Short_Name();
+	}
+	inline const DAGameModeFactoryClass *Get_Factory() {
+		return Factory;
+	}
+	inline void Set_Factory(const DAGameModeFactoryClass *Factory) {
+		this->Factory = Factory;
 	}
 	virtual void Init() = 0;
 	virtual ~DAGameModeClass() { }
 
 protected:
-	template <typename T> friend class DAGameModeRegistrant;
-	const DAGameModeFactoryClass *Registrant;
+	const DAGameModeFactoryClass *Factory;
 };
 
 template <typename T> class DAGameModeRegistrant : public DAGameModeFactoryClass {
 public:
-	DAGameModeRegistrant(const char *ShortName,const char *LongName,const char *RequiredData = 0) {
-		this->Instance = 0;
-		this->ShortName = ShortName;
-		this->LongName = LongName;
-		this->RequiredData = RequiredData;
-		Add_Game_Mode();
-	}
-protected:
+	DAGameModeRegistrant(const char *ShortName,const char *LongName,const char *RequiredData = 0) : DAGameModeFactoryClass(ShortName,LongName,RequiredData) { }
 	virtual DAGameModeClass *Create_Instance() {
 		if (!Instance) {
 			Instance = new T;
-			Instance->Registrant = this;
+			Instance->Set_Factory(this);
 			Instance->Init();
 		}
 		return Instance;

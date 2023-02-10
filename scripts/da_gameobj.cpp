@@ -17,9 +17,14 @@
 #include "engine_DA.h"
 #include "da.h"
 #include "da_gameobj.h"
+#include "da_player.h"
+#include "GameObjManager.h"
 
 DynamicVectorClass<DAGameObjObserverClass*> DAGameObjManager::ObserversDeletePending;
-DynamicVectorClass<GameObject*> DAGameObjManager::GameObjDeletePending;
+DynamicVectorClass<GameObject*> DAGameObjManager::GameObjsDeletePending;
+DynamicVectorClass<GameObject*> DAGameObjManager::TTGameObjs;
+DynamicVectorClass<GameObject*> DAGameObjManager::StockGameObjs;
+DynamicVectorClass<GameObject*> DAGameObjManager::InvisibleGameObjs;
 
 void DAGameObjObserverClass::Attach(GameObject *obj) {
 	int &NextID = *(int*)0x00812B1C;
@@ -57,9 +62,41 @@ void DAGameObjObserverClass::Set_Delete_Pending() {
 	DAGameObjManager::Set_Observer_Delete_Pending(this);
 }
 
+void Enable_Stealth(GameObject *obj,bool Enable) {
+	if (obj->As_SmartGameObj() && ((SmartGameObj*)obj)->Is_Stealth_Enabled() != Enable) {
+		WideStringClass Send;
+		Send.Format(L"j\n1\n%d\n%d\n",obj->Get_ID(),Enable);
+		Send_Client_Text(Send,TEXT_MESSAGE_PUBLIC,false,-2,-1,true,true);
+		((SmartGameObj*)obj)->Enable_Stealth(Enable);
+		if (obj->As_SoldierGameObj()) {
+			if (Enable) {
+				const BaseGameObjDef *Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+				if (Stealth) {
+					const BaseGameObjDef *DefSave = obj->Definition;
+					obj->Definition = Stealth;
+					for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
+						cPlayer *Player = z->Data();
+						if (Player->Is_Alive_And_Kicking() && !Player->Get_DA_Player()->Is_TT_Client()) {
+							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+							Send_Object_Update(obj,Player->Get_ID());
+							obj->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_RARE,true);
+							Send_Object_Update(obj,Player->Get_ID());
+						}
+					}
+					obj->Definition = DefSave;
+				}
+			}
+			else {
+				obj->Set_Object_Dirty_Bit(NetworkObjectClass::BIT_RARE,true);
+			}
+		}
+	}
+}
+
 void DAGameObjManager::Init() {
 	static DAGameObjManager Instance;
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
+	Instance.Register_Event(DAEvent::PLAYERJOIN);
 	Instance.Register_Event(DAEvent::VEHICLEENTRYREQUEST,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEENTER,INT_MAX);
 	Instance.Register_Event(DAEvent::VEHICLEEXIT,INT_MAX);
@@ -74,6 +111,8 @@ void DAGameObjManager::Init() {
 	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::ALL,INT_MAX);
+
+	Commands->Enable_Stealth = Enable_Stealth;
 }
 
 bool DAGameObjManager::Is_DAGameObjObserverClass(GameObjObserverClass *Observer) {
@@ -96,20 +135,91 @@ void DAGameObjManager::Set_Observer_Delete_Pending(DAGameObjObserverClass *Obser
 
 //This is a workaround to a bug where you cannot destroy one object within the destroyed event of another.
 void DAGameObjManager::Set_GameObj_Delete_Pending(GameObject *obj) {
-	if (GameObjDeletePending.ID(obj) == -1 && !obj->Is_Delete_Pending()) {
-		GameObjDeletePending.Add(obj);
+	if (GameObjsDeletePending.ID(obj) == -1 && !obj->Is_Delete_Pending()) {
+		GameObjsDeletePending.Add(obj);
+	}
+}
+
+void DAGameObjManager::Set_GameObj_TT_Only(GameObject *obj) {
+	if (TTGameObjs.ID(obj) == -1) {
+		TTGameObjs.Add(obj);
+		Update_Network_Object(obj);
+		bool PendingSave = obj->Is_Delete_Pending();
+		obj->Set_Is_Delete_Pending(true);
+		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
+			cPlayer *Player = z->Data();
+			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_Stock_Client()) {
+				Send_Object_Update(obj,Player->Get_ID());
+			}
+		}
+		obj->Set_Is_Delete_Pending(PendingSave);
+	}
+}
+
+void DAGameObjManager::Set_GameObj_Stock_Only(GameObject *obj) {
+	if (StockGameObjs.ID(obj) == -1) {
+		StockGameObjs.Add(obj);
+		Update_Network_Object(obj);
+		bool PendingSave = obj->Is_Delete_Pending();
+		obj->Set_Is_Delete_Pending(true);
+		for (SLNode<cPlayer>* z = Get_Player_List()->Head();z;z = z->Next()) {
+			cPlayer *Player = z->Data();
+			if (Player->Is_Alive_And_Kicking() && Player->Get_DA_Player()->Is_TT_Client()) {
+				Send_Object_Update(obj,Player->Get_ID());
+			}
+		}
+		obj->Set_Is_Delete_Pending(PendingSave);
+	}
+}
+
+void DAGameObjManager::Set_GameObj_Invisible(GameObject *obj) {
+	if (InvisibleGameObjs.ID(obj) == -1) {
+		InvisibleGameObjs.Add(obj);
+		bool PendingSave = obj->Is_Delete_Pending();
+		obj->Set_Is_Delete_Pending(true);
+		Update_Network_Object(obj);
+		obj->Set_Is_Delete_Pending(PendingSave);
 	}
 }
 
 void DAGameObjManager::Think() {
-	for (int i = 0;i < GameObjDeletePending.Count();i++) {
-		GameObjDeletePending[i]->Set_Delete_Pending();
+	for (int i = GameObjsDeletePending.Count()-1;i >= 0;i--) {
+		GameObject *Temp = GameObjsDeletePending[i];
+		GameObjsDeletePending.Delete(i);
+		Temp->Set_Delete_Pending();
 	}
-	GameObjDeletePending.Delete_All();
 	for (int i = 0;i < ObserversDeletePending.Count();i++) {
 		ObserversDeletePending[i]->Get_Owner()->Remove_Observer(ObserversDeletePending[i]);
 	}
 	ObserversDeletePending.Delete_All();
+}
+
+void DAGameObjManager::Player_Join_Event(cPlayer *Player) {
+	for (int i = 0;i < InvisibleGameObjs.Count();i++) {
+		InvisibleGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+	}
+	if (Player->Get_DA_Player()->Is_TT_Client()) {
+		for (int i = 0;i < StockGameObjs.Count();i++) {
+			StockGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+		}
+	}
+	else {
+		for (int i = 0;i < TTGameObjs.Count();i++) {
+			TTGameObjs[i]->Set_Object_Dirty_Bit(Player->Get_ID(),NetworkObjectClass::BIT_CREATION,false);
+		}
+		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { 
+			SoldierGameObj *Soldier = x->Data();
+			if (Soldier->Is_Stealth_Enabled() && !Soldier->Get_Definition().Is_Stealthed()) {
+				const BaseGameObjDef *Stealth = (BaseGameObjDef*)Find_Named_Definition("CnC_Nod_FlameThrower_2SF");
+				if (Stealth) {
+					const BaseGameObjDef *DefSave = Soldier->Definition;
+					Soldier->Definition = Stealth;
+					Send_Object_Update(Soldier,Player->Get_ID());
+					Soldier->Definition = DefSave;
+				}
+			}
+		}
+	}
 }
 
 bool DAGameObjManager::Vehicle_Entry_Request_Event(VehicleGameObj *Vehicle,cPlayer *Player,int &Seat) {
@@ -302,4 +412,8 @@ void DAGameObjManager::Object_Destroyed_Event(GameObject *obj) {
 			ObserversDeletePending.Delete(i);
 		}
 	}
+	GameObjsDeletePending.DeleteObj(obj);
+	TTGameObjs.DeleteObj(obj);
+	StockGameObjs.DeleteObj(obj);
+	InvisibleGameObjs.DeleteObj(obj);
 }

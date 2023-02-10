@@ -289,6 +289,26 @@ SCRIPTS_API void ScriptableGameObj::Remove_Observer( GameObjObserverClass * obse
 	observer->Detach( this );
 }
 
+SCRIPTS_API void ScriptableGameObj::Remove_Observer(const char *Name)
+{
+	for (int i = Observers.Count()-1;i >= 0;i--) {
+		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
+			Observers[i]->Detach(this);
+			Observers.Delete(i,true);
+		}
+	}
+}
+
+SCRIPTS_API bool ScriptableGameObj::Has_Observer(const char *Name)
+{
+	for (int i = 0;i < Observers.Count();i++) {
+		if (!_stricmp(Observers[i]->Get_Name(),Name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 SCRIPTS_API const ScriptableGameObjDef & ScriptableGameObj::Get_Definition( void ) const
 {
 	return (const ScriptableGameObjDef &)BaseGameObj::Get_Definition();

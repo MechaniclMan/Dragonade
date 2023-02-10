@@ -1,4 +1,4 @@
-Dragonade 1.2
+Dragonade 1.3
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -17,13 +17,37 @@ Installation:
 1. Download and install the latest server version of scripts.dll from http://www.tiberiantechnologies.org/downloads. 
    Note that DA was designed to work with Scripts 4.0. It will not work with earlier versions and may or may not work with later versions.
 2. Copy the contents of the server folder included in this zip to the server folder of your FDS, overwriting any existing files.
-3. Configure da.ini and the relevant gamemode.ini to your liking.
+3. Configure da.ini, da_crates.ini, and the relevant gamemode.ini to your liking.
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 Update History:
+
+Version 1.3:
+  Additions:
+   - Crates have been added. See da_crates.ini.
+   - The settings manager has been overhauled and can now support multiple settings files beyond just da.ini and gamemode.ini. This is used to load
+     da_crates.ini, but can just as easily be used in your own plugins.
+   - Added setting "EnableStockKillMessages".
+   - Added settings "DisableKillCounter", "DisableTeamKillCounter", "DisableDeathCounter", and "DisableTeamDeathCounter".
+   - Added some crate and settings examples to the example plugin.
+   - Added better protection against sending long messages which could cause clients to crash.
+
+  Changes:
+   - Switched to a (hopefully) better random number generator.
+   - The Vehicle Queue will now gray out the vehicle menu for a player when their vehicle is building.
+
+  Bug Fixes:
+   - Fixed a bug where vehicle shells could sometimes not be seen by players that joined the game after the shell was created.
+   - Settings and section names are no longer case sensitive.
+   - Points Distribution will no longer give points for killing neutral vehicles that never had a player in them.
+   - Fixed team swapping not working correctly if "SwapChance" was set to anything besides 50%.
+   - Fixed a rare crash on map end.
+   - Players will no longer get a death when switching teams.
+   - Fixed an exploit in stock Renegade where a player could avoid a death by leaving the game after they died but before they respawned.
+
 
 Version 1.2:
   Additions:

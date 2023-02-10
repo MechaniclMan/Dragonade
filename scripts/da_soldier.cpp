@@ -25,15 +25,18 @@ void DASoldierManager::Init() {
 	static DASoldierManager Instance;
 	Instance.Register_Event(DAEvent::SETTINGSLOADED,INT_MAX);
 	Instance.Register_Event(DAEvent::CHARACTERPURCHASEREQUEST,INT_MIN);
-	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
+	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER,INT_MAX);
+	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::SOLDIER,INT_MAX);
 }
 
 void DASoldierManager::Settings_Loaded_Event() {
+	//Spawn characters
 	StringClass Buffer;
 	Set_Nod_Soldier_Name(DASettingsManager::Get_String(Buffer,"NodSpawnCharacter",Get_Definition_Name(TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_NOD)->Get_Enlisted_Definition(0))));
 	Set_GDI_Soldier_Name(DASettingsManager::Get_String(Buffer,"GDISpawnCharacter",Get_Definition_Name(TeamPurchaseSettingsDefClass::Get_Definition(TeamPurchaseSettingsDefClass::TEAM_GDI)->Get_Enlisted_Definition(0))));
 
+	//Grant weapons
 	GrantWeapons.Remove_All();
 	INISection *Section = DASettingsManager::Get_Section("Grant_Weapons");
 	if (Section) {

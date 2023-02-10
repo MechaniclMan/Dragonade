@@ -167,9 +167,6 @@ namespace DAObjectEvent {
 inline DAObjectEvent::ObjectType operator|(DAObjectEvent::ObjectType First,DAObjectEvent::ObjectType Second) {
 	return (DAObjectEvent::ObjectType)(+First | +Second);
 }
-inline DAObjectEvent::ObjectType operator|=(DAObjectEvent::ObjectType &First,DAObjectEvent::ObjectType Second) {
-	return First = (DAObjectEvent::ObjectType)(+First & +Second);
-}
 
 struct DAObjectEventStruct {
 	inline bool Has_Flag(DAObjectEvent::ObjectType Flag) {
@@ -269,7 +266,8 @@ namespace DADamageType {
 		SQUISH,
 		FALL,
 		TIBERIUM,
-		FLIP
+		FLIP,
+		SPLASHDIRECT
 	};
 };
 

@@ -19,16 +19,16 @@
 #include "Definition.h"
 #include "HashTemplateClass.h"
 
-class DA_API DADisableListManager : private DAEventClass {
+class DADisableListManager : public DAEventClass {
 public:
 	static void Init();
-	static bool Is_Preset_Disabled(GameObject *obj);
-	static bool Is_Preset_Disabled(const char *Preset);
-	static bool Is_Preset_Disabled(const DefinitionClass *Def);
-	static bool Is_Preset_Disabled(unsigned int DefID);
-	static bool Is_Preset_Disabled_For_Character(GameObject *obj,const DefinitionClass *Def);
-	static bool Is_Preset_Disabled_For_Character(GameObject *obj,const char *Preset);
-	static bool Is_Preset_Disabled_For_Character(GameObject *obj,unsigned int DefID);
+	DA_API static bool Is_Preset_Disabled(GameObject *obj);
+	DA_API static bool Is_Preset_Disabled(const char *Preset);
+	DA_API static bool Is_Preset_Disabled(const DefinitionClass *Def);
+	DA_API static bool Is_Preset_Disabled(unsigned int DefID);
+	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,const DefinitionClass *Def);
+	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,const char *Preset);
+	DA_API static bool Is_Preset_Disabled_For_Character(GameObject *obj,unsigned int DefID);
 	
 private:
 	virtual void Level_Loaded_Event();

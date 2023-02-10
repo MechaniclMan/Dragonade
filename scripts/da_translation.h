@@ -17,17 +17,17 @@
 #include "da_event.h"
 #include "HashTemplateClass.h"
 
-class DA_API DATranslationManager : private DAEventClass {
+class DATranslationManager : public DAEventClass {
 public:
 	static void Init();
-	static const char *Translate(GameObject *obj); //Returns the translated name of a GameObject, Weapon, or Preset.
-	static const char *Translate(WeaponClass *Weap); //da.ini translation > strings.tdb translation > preset name
-	static const char *Translate(const DefinitionClass *Def);
-	static const char *Translate(const char *Preset);
-	static const char *Translate(unsigned int DefID);
-	static StringClass Translate_With_Team_Name(GameObject *obj); //Returns the translated name and team of a GameObject.
-	static const char *Translate_Weapon(GameObject *obj); //Returns the translated name of the current weapon of a GameObject.
-	static StringClass Translate_Soldier(GameObject *obj); //Returns the translated name and translated weapon, or the translated vehicle, of a SoldierGameObj.
+	DA_API static const char *Translate(GameObject *obj); //Returns the translated name of a GameObject, Weapon, or Preset.
+	DA_API static const char *Translate(WeaponClass *Weap); //da.ini translation > strings.tdb translation > preset name
+	DA_API static const char *Translate(const DefinitionClass *Def);
+	DA_API static const char *Translate(const char *Preset);
+	DA_API static const char *Translate(unsigned int DefID);
+	DA_API static StringClass Translate_With_Team_Name(GameObject *obj); //Returns the translated name and team of a GameObject.
+	DA_API static const char *Translate_Weapon(GameObject *obj); //Returns the translated name of the current weapon of a GameObject.
+	DA_API static StringClass Translate_Soldier(GameObject *obj); //Returns the translated name and translated weapon, or the translated vehicle, of a SoldierGameObj.
 
 private:
 	virtual void Settings_Loaded_Event();

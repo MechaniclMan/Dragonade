@@ -17,7 +17,8 @@
 class DAGameFeatureClass;
 
 class DAGameFeatureFactoryClass abstract {
-public:	
+public:
+	DA_API DAGameFeatureFactoryClass(const char *Name,const char *EnableSetting,const char *RequiredData = 0);
 	inline const char *Get_Name() const {
 		return Name;
 	}
@@ -36,7 +37,7 @@ public:
 	void Destroy_Instance();
 	
 protected:
-	DA_API void Add_Game_Feature();
+	DA_API _declspec(deprecated) void Add_Game_Feature();
 	const char *Name;
 	const char *EnableSetting;
 	const char *RequiredData;
@@ -46,31 +47,28 @@ protected:
 class DAGameFeatureClass abstract {
 public:
 	inline const char *Get_Name() {
-		return Registrant->Get_Name();
+		return Factory->Get_Name();
+	}
+	inline const DAGameFeatureFactoryClass *Get_Factory() {
+		return Factory;
+	}
+	inline void Set_Factory(const DAGameFeatureFactoryClass *Factory) {
+		this->Factory = Factory;
 	}
 	virtual void Init() = 0;
 	virtual ~DAGameFeatureClass() { }
 	
 protected:
-	template <typename T> friend class DAGameFeatureRegistrant;
-	const DAGameFeatureFactoryClass *Registrant;
+	const DAGameFeatureFactoryClass *Factory;
 };
 
 template <class T> class DAGameFeatureRegistrant : public DAGameFeatureFactoryClass {
 public:
-	DAGameFeatureRegistrant(const char *Name,const char *EnableSetting,const char *RequiredData = 0) {
-		this->Instance = 0;
-		this->Name = Name;
-		this->EnableSetting = EnableSetting;
-		this->RequiredData = RequiredData;
-		Add_Game_Feature();
-	}
-	
-protected:
+	DAGameFeatureRegistrant(const char *Name,const char *EnableSetting,const char *RequiredData = 0) : DAGameFeatureFactoryClass(Name,EnableSetting,RequiredData) { }
 	virtual DAGameFeatureClass *Create_Instance() {
 		if (!Instance) {
 			Instance = new T;
-			Instance->Registrant = this;
+			Instance->Set_Factory(this);
 			Instance->Init();
 		}
 		return Instance;

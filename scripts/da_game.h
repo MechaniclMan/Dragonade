@@ -18,47 +18,28 @@
 #include "da_gamemode.h"
 #include "da_gamefeature.h"
 
-class DA_API DAGameManager : private DAEventClass {
+class DAGameManager : public DAEventClass {
 public:
 	static void Init();
 	static void Shutdown();
-	static inline DAGameModeFactoryClass *Get_Game_Mode() {
-		return GameMode;
-	}
-	static inline const char *Get_Game_Mode_Long_Name() {
-		if (GameMode) {
-			return GameMode->Get_Long_Name();
-		}
-		return "Unknown";
-	}
-	static inline const char *Get_Game_Mode_Short_Name() {
-		if (GameMode) {
-			return GameMode->Get_Short_Name();
-		}
-		return "Unknown";
-	}
-	static inline bool Is_Game_Mode(const char *Name) {
-		return (!_stricmp(Get_Game_Mode_Long_Name(),Name) || !_stricmp(Get_Game_Mode_Short_Name(),Name));
-	}
-	static DAGameModeFactoryClass *Find_Game_Mode(const char *Name);
-	static void Add_Game_Mode(DAGameModeFactoryClass *Factory);
-	static void Add_Game_Feature(DAGameFeatureFactoryClass* Factory);
-	static inline const DynamicVectorClass<DAGameFeatureFactoryClass*> &Get_Game_Features() {
-		return GameFeatures;
-	}
-	static DAGameFeatureFactoryClass *Find_Game_Feature(const char *Name);
-	static inline bool Is_Shutdown_Pending() {
-		return ShutdownPending;
-	}
-	static inline const StringClass &Get_Map() {
-		return Map;
-	}
+	DA_API static DAGameModeFactoryClass *Get_Game_Mode();
+	DA_API static const char *Get_Game_Mode_Long_Name();
+	DA_API static const char *Get_Game_Mode_Short_Name();
+	DA_API static bool Is_Game_Mode(const char *Name);
+	DA_API static DAGameModeFactoryClass *Find_Game_Mode(const char *Name);
+	DA_API static DAGameFeatureFactoryClass *Find_Game_Feature(const char *Name);
+	DA_API static void Add_Game_Mode(DAGameModeFactoryClass *Factory);
+	DA_API static void Add_Game_Feature(DAGameFeatureFactoryClass* Factory);
+	DA_API static const DynamicVectorClass<DAGameFeatureFactoryClass*> &Get_Game_Features();
+	DA_API static bool Is_Shutdown_Pending();
+	DA_API static const StringClass &Get_Map();
 
 private:
 	virtual void Game_Over_Event();
 	virtual void Level_Loaded_Event();
 	virtual void Settings_Loaded_Event();
 	virtual void Player_Loaded_Event(cPlayer *Player);
+
 	static DAGameModeFactoryClass *GameMode;
 	static DynamicVectorClass<DAGameModeFactoryClass*> GameModes;
 	static bool ShowGameModeTitle;

@@ -32,6 +32,9 @@
     <Filter Include="DA Engine">
       <UniqueIdentifier>{cb7a58a0-a60a-43da-9388-25395bdd8f80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DA Crates">
+      <UniqueIdentifier>{0ab9acd4-0566-4cc9-8d70-1590f537a0bd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cAMpaScripts.cpp">
@@ -212,9 +215,6 @@
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="matrix4.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="obelfix.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="ReferencerClass.cpp">
@@ -445,9 +445,6 @@
     <ClCompile Include="z_cold_fever.cpp">
       <Filter>Scripts\Coop Sources</Filter>
     </ClCompile>
-    <ClCompile Include="engine_common.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
     <ClCompile Include="engine_weap.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
@@ -661,6 +658,30 @@
     <ClCompile Include="Quaternion.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="da_infantrycrates.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="da_vehiclecrates.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="da_genericcrates.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="da_cratemodifiers.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="engine_common.cpp">
+      <Filter>DA Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="da_cratemanager.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="da_crate.cpp">
+      <Filter>DA Crates</Filter>
+    </ClCompile>
+    <ClCompile Include="obelfix.cpp">
+      <Filter>Scripts</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AABoxClass.h">
@@ -760,9 +781,6 @@
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="multilist.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="obelfix.h">
       <Filter>Engine</Filter>
     </ClInclude>
     <ClInclude Include="physcoltest.h">
@@ -1811,6 +1829,18 @@
     </ClInclude>
     <ClInclude Include="VehicleFactoryGameObj.h">
       <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="cPlayerKill.h">
+      <Filter>DA Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="da_cratemanager.h">
+      <Filter>DA Crates</Filter>
+    </ClInclude>
+    <ClInclude Include="da_crate.h">
+      <Filter>DA Crates</Filter>
+    </ClInclude>
+    <ClInclude Include="obelfix.h">
+      <Filter>Scripts</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -31,7 +31,8 @@
 #include "da_c4beacon.h"
 #include "da_building.h"
 #include "da_damagelog.h"
-#include "da_hook.h"
+#include "da_cratemanager.h"
+#include <random>
 
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
@@ -39,6 +40,8 @@
 StringClass DA::MessagePrefix;
 StringClass DA::MessageNick;
 DynamicVectorClass<ConsoleFunctionClass*> DA::ConsoleFunctions;
+
+std::mt19937 RNG;
 
 /*
 Settings/Level Loaded Order:
@@ -62,19 +65,15 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.2";
+	return "1.3";
 }
 
 void DA::Init() {
+	RNG.seed((unsigned long)time(0));
+	Commands->Get_Random_Int = Get_Random_Int;
+	Commands->Get_Random = Get_Random_Float;
+
 	DAEventManager::Init(); //These must be initialized in this order.
-	DASettingsManager::Init();
-
-	DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(MessageNick,"General","MessageNick",0);
-	DASettingsManager::Get_Main_Settings()->Get_INI()->Get_String(MessagePrefix,"General","MessagePrefix",0);
-	if (!MessagePrefix.Is_Empty()) {
-		MessagePrefix += " ";
-	}
-
 	DADisableListManager::Init(); //Block disabled presets before any other event classes can hear about them.
 	DAGameObjManager::Init();
 	DAPlayerManager::Init(); //Handle player data before anything is loaded that might need it.
@@ -87,10 +86,9 @@ void DA::Init() {
 	DASoldierManager::Init();
 	DAC4BeaconManager::Init();
 	DABuildingManager::Init();
+	DACrateManager::Static_Init();
 	DAChatCommandManager::Init();
 	DAPluginManager::Init();
-
-	Commands->Get_Random_Int = Get_Random_Int;
 
 	for (int i = 0;i < ConsoleFunctions.Count();i++) { //Add any console functions using the registrant to the main list.
 		Add_Console_Function(ConsoleFunctions[i]);
@@ -103,6 +101,12 @@ void DA::Init() {
 		MessageBox(NULL,"da.dll was not found. Exiting FDS.","Error",MB_OK|MB_ICONEXCLAMATION|MB_TOPMOST);
 		ExitProcess(HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND));
 	}
+
+	DASettingsManager::Get_String(MessageNick,"General","MessageNick",0);
+	DASettingsManager::Get_String(MessagePrefix,"General","MessagePrefix",0);
+	if (!MessagePrefix.Is_Empty()) {
+		MessagePrefix += " ";
+	}
 }
 
 void DA::Shutdown() {
@@ -112,6 +116,20 @@ void DA::Shutdown() {
 	DAGameManager::Shutdown();
 	DAPlayerManager::Shutdown();
 	DASettingsManager::Shutdown();
+}
+
+int Get_Random_Int(int Min,int Max) {
+	std::uniform_int_distribution<int> Dis(Min,Max-1);
+	return Dis(RNG);
+}
+
+float Get_Random_Float(float Min,float Max) {
+	std::uniform_real_distribution<float> Dis(Min,Max);
+	return Dis(RNG);
+}
+
+bool Get_Random_Bool() {
+	return RNG() % 2;
 }
 
 void DA::Host_Message(const char *Format,...) {
@@ -318,7 +336,7 @@ void DA::Page_Player(GameObject *Player,const char *Format,...) {
 
 void DA::Color_Message(unsigned int Red,int unsigned Green,int unsigned Blue,const char *Format,...) {
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	Send_Message(Red,Green,Blue,Message);
 	cScTextObj *ChatEvent = 0;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
@@ -338,7 +356,7 @@ void DA::Color_Message(unsigned int Red,int unsigned Green,int unsigned Blue,con
 
 void DA::Color_Message_With_Team_Color(int Team,const char *Format,...) {
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	if (Team != 0 && Team != 1) {
 		Color_Message(WHITE,"%s",Message);
 	}
@@ -374,7 +392,7 @@ void DA::Color_Message_With_Team_Color(int Team,const char *Format,...) {
 
 void DA::Team_Color_Message(int Team,unsigned int Red,int unsigned Green,int unsigned Blue,const char *Format,...) {
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	Send_Message_Team(Team,Red,Green,Blue,Message);
 	cScTextObj *ChatEvent = 0;
 	for (SLNode<cPlayer> *z = Get_Player_List()->Head();z;z = z->Next()) {
@@ -394,7 +412,7 @@ void DA::Team_Color_Message(int Team,unsigned int Red,int unsigned Green,int uns
 
 void DA::Team_Color_Message_With_Team_Color(int Team,const char *Format,...) {
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	unsigned int Red = 0,Green = 0,Blue = 0;
 	Get_Team_Color(Team,&Red,&Green,&Blue);
 	cScTextObj *ChatEvent = 0;
@@ -430,7 +448,7 @@ void DA::Team_Color_Message_With_Team_Color(int Team,const char *Format,...) {
 void DA::Private_Color_Message(cPlayer *Player,unsigned int Red,unsigned int Green,unsigned int Blue,const char *Format,...) {
 	int ID = Player->Get_ID();
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	if (Player->Get_DA_Player()->Get_Version() < 2.6f) {
 		cScTextObj *ChatEvent = Send_Client_Text(L" ",TEXT_MESSAGE_PUBLIC,false,Setup_Send_Message_Fake(Message,ID),-1,false,false);
 		ChatEvent->Set_Object_Dirty_Bits(ID,NetworkObjectClass::BIT_CREATION);
@@ -446,7 +464,7 @@ void DA::Private_Color_Message(int Player,unsigned int Red,unsigned int Green,un
 	cPlayer *P = Find_Player(Player);
 	if (P) {
 		char Message[256];
-		Format_String_Color(Message);
+		Format_String(Message);
 		Private_Color_Message(P,Red,Green,Blue,"%s",Message);
 	}
 }
@@ -455,7 +473,7 @@ void DA::Private_Color_Message(GameObject *Player,unsigned int Red,unsigned int 
 	if (Is_Player(Player)) {
 		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
 		char Message[256];
-		Format_String_Color(Message);
+		Format_String(Message);
 		Private_Color_Message(P,Red,Green,Blue,"%s",Message);
 	}
 }
@@ -463,7 +481,7 @@ void DA::Private_Color_Message(GameObject *Player,unsigned int Red,unsigned int 
 void DA::Private_Color_Message_With_Team_Color(cPlayer *Player,int Team,const char *Format,...) {
 	int ID = Player->Get_ID();
 	char Message[256];
-	Format_String_Color(Message);
+	Format_String(Message);
 	if (Team != 0 && Team != 1) {
 		Private_Color_Message(ID,WHITE,"%s",Message);
 	}
@@ -495,7 +513,7 @@ void DA::Private_Color_Message_With_Team_Color(int Player,int Team,const char *F
 	cPlayer *P = Find_Player(Player);
 	if (P) {
 		char Message[256];
-		Format_String_Color(Message);
+		Format_String(Message);
 		Private_Color_Message_With_Team_Color(P,Team,"%s",Message);
 	}
 }
@@ -504,7 +522,7 @@ void DA::Private_Color_Message_With_Team_Color(GameObject *Player,int Team,const
 	if (Is_Player(Player)) {
 		cPlayer *P = ((SoldierGameObj*)Player)->Get_Player();
 		char Message[256];
-		Format_String_Color(Message);
+		Format_String(Message);
 		Private_Color_Message_With_Team_Color(P,Team,"%s",Message);
 	}
 }
@@ -556,10 +574,6 @@ void DebugMsg(const char *Format,...) {
 	FILE *file = fopen("Debug.txt","a");
 	fprintf(file,"%s\n",Buffer);
 	fclose(file);
-}
-
-int Get_Random_Int(int Min,int Max) {
-	return (int)((double)rand() / (RAND_MAX + 1) * (Max - Min) + Min);
 }
 
 class DAMsgConsoleFunctionClass : public ConsoleFunctionClass {

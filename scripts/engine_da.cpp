@@ -60,16 +60,20 @@
 #include "SpawnerClass.h"
 #include "cPurchaseResponseEvent.h"
 #include "CombatManager.h"
+#include "cPlayerKill.h"
 
 RENEGADE_FUNCTION
-uint Send_Object_Update(NetworkObjectClass *object, int remoteHostId)
+uint Send_Object_Update(NetworkObjectClass*,int)
 AT2(0x00461820,0x004612F0);
 
 RENEGADE_FUNCTION
-void VehicleGameObj::Add_Occupant(SoldierGameObj *occupant,int seat_id)
+void VehicleGameObj::Add_Occupant(SoldierGameObj*)
+AT2(0x0067AB20,0x0067AB20);
+RENEGADE_FUNCTION
+void VehicleGameObj::Add_Occupant(SoldierGameObj*,int)
 AT2(0x0067AB70,0x0067AB70);
 RENEGADE_FUNCTION
-void VehicleGameObj::Remove_Occupant(SoldierGameObj *occupant)
+void VehicleGameObj::Remove_Occupant(SoldierGameObj*)
 AT2(0x0067AD00,0x0067AD00);
 RENEGADE_FUNCTION
 void VehicleGameObj::Create_And_Destroy_Transitions()
@@ -82,11 +86,14 @@ AT2(0x006D4570,0x006D4570);
 REF_DEF2(SpawnerList, DynamicVectorClass<SpawnerClass*>, 0x008564A8, 0x008564A8);
 
 RENEGADE_FUNCTION
-WeaponClass *WeaponBagClass::Add_Weapon(const WeaponDefinitionClass *, int, bool) 
+WeaponClass *WeaponBagClass::Add_Weapon(const WeaponDefinitionClass *,int,bool) 
 AT2(0x006F3000,0x006F3000);
 RENEGADE_FUNCTION
-WeaponClass *WeaponBagClass::Add_Weapon(const char *, int, bool) 
+WeaponClass *WeaponBagClass::Add_Weapon(const char*,int,bool) 
 AT2(0x006F31C0,0x006F31C0);
+RENEGADE_FUNCTION
+WeaponClass *WeaponBagClass::Add_Weapon(int,int,bool) 
+AT2(0x006F31F0,0x006F31F0);
 RENEGADE_FUNCTION
 void WeaponBagClass::Remove_Weapon(int) 
 AT2(0x006F2EF0,0x006F2EF0);
@@ -97,8 +104,23 @@ RENEGADE_FUNCTION
 void WeaponBagClass::Select_Next() 
 AT2(0x006F3260,0x006F3260);
 RENEGADE_FUNCTION
+void WeaponBagClass::Select_Prev() 
+AT2(0x006F32F0,0x006F32F0);
+RENEGADE_FUNCTION
+void WeaponBagClass::Select_Weapon_ID(int)
+AT2(0x006F3490,0x006F3490);
+RENEGADE_FUNCTION
 void WeaponBagClass::Select_Weapon_Name(const char *)
 AT2(0x006F3520,0x006F3520);
+RENEGADE_FUNCTION
+void WeaponBagClass::Select_Weapon(WeaponClass*)
+AT2(0x006F3640,0x006F3640);
+RENEGADE_FUNCTION
+void WeaponBagClass::Select_Index(int)
+AT2(0x006F36C0,0x006F36C0);
+RENEGADE_FUNCTION
+void WeaponBagClass::Deselect()
+AT2(0x006F3720,0x006F3720);
 
 RENEGADE_FUNCTION
 void PhysClass::Set_Model_By_Name(const char *) 
@@ -121,6 +143,10 @@ REF_DEF2(BuildingGameObj::CanRepairBuildings,bool,0x00810474,0x00810474);
 RENEGADE_FUNCTION
 bool cGameData::Set_Max_Players(int)
 AT2(0x00472080,0x00472080);
+
+RENEGADE_FUNCTION
+void SmartGameObj::Enable_Stealth(bool)
+AT2(0x0069F7A0,0x0069F7A0);
 
 void Destroy_All_Objects_With_Script(const char *Script) {
 	for (SLNode<BaseGameObj> *z = GameObjManager::GameObjList.Head();z;z = z->Next()) {
@@ -207,7 +233,7 @@ BuildingGameObj *Get_Random_Building(int Team) {
 	}
 	BuildingGameObj *Return = Base->Get_Building_List()[Get_Random_Int(0,Base->Get_Building_List().Count())];
 	if (Return->Is_Destroyed()) {
-		if (Get_Random_Int(0,2)) {
+		if (Get_Random_Bool()) {
 			for (int i = 0;i < Base->Get_Building_List().Count();i++) {
 				if (!Base->Get_Building_List()[i]->Is_Destroyed()) {
 					return Base->Get_Building_List()[i];
@@ -363,29 +389,15 @@ void Change_Team_3(cPlayer *Player,int Team) {
 	}
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
 	Disarm_All_C4_Beacons(Player->Get_ID());
-	int OldTeam = Player->Get_Player_Type();
 	Player->Set_Player_Type(Team);
-	if (Player->Destroy_GameObj()) {
-		Player->Set_Deaths(Player->Get_Deaths()-1);
-		cTeam *Team = Find_Team(OldTeam);
-		if (Team) {
-			Team->Dec_Deaths();
-		}
-	}
+	Player->Destroy_GameObj();
 }
 
 void Change_Team_4(cPlayer *Player,int Team) {
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
 	Disarm_All_C4_Beacons(Player->Get_ID());
-	int OldTeam = Player->Get_Player_Type();
 	Player->Set_Player_Type(Team);
-	if (Player->Destroy_GameObj()) {
-		Player->Set_Deaths(Player->Get_Deaths()-1);
-		cTeam *Team = Find_Team(OldTeam);
-		if (Team) {
-			Team->Dec_Deaths();
-		}
-	}
+	Player->Destroy_GameObj();
 }
 
 void Change_Team_5(cPlayer *Player,int Team) {
@@ -393,18 +405,9 @@ void Change_Team_5(cPlayer *Player,int Team) {
 	Player->Set_Kills(0);
 	Player->Set_Money((float)The_Cnc_Game()->StartingCredits);
 	Disarm_All_C4_Beacons(Player->Get_ID());
-	int OldTeam = Player->Get_Player_Type();
 	Player->Set_Player_Type(Team);
-	if (Player->Destroy_GameObj()) {
-		Player->Set_Deaths(-1);
-		cTeam *Team = Find_Team(OldTeam);
-		if (Team) {
-			Team->Dec_Deaths();
-		}
-	}
-	else {
-		Player->Set_Deaths(0);
-	}
+	Player->Destroy_GameObj();
+	Player->Set_Deaths(0);
 }
 
 cPlayer *Match_Player(cPlayer *Player,const StringClass &Nick,bool TeamOnly,bool AllowSelf) {
@@ -539,7 +542,7 @@ void Give_Points_Players_In_Range(const Vector3 &Position,float Range,float Poin
 		if (Commands->Get_Distance(Commands->Get_Position(obj),Position) <= Range) {
 			Commands->Give_Points(obj,Points,false);
 			if (!GiveMoney) {
-				Commands->Give_Points(obj,Points*-1.0f,false);
+				Commands->Give_Money(obj,Points*-1.0f,false);
 			}
 		}
 	}
@@ -551,7 +554,7 @@ void Give_Points_Players_In_Range_Team(int Team,const Vector3 &Position,float Ra
 		if (Get_Object_Type(obj) == Team && Commands->Get_Distance(Commands->Get_Position(obj),Position) <= Range) {
 			Commands->Give_Points(obj,Points,false);
 			if (!GiveMoney) {
-				Commands->Give_Points(obj,Points*-1.0f,false);
+				Commands->Give_Money(obj,Points*-1.0f,false);
 			}
 		}
 	}
@@ -1154,8 +1157,8 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 		Matrix3D Transform = Phys->Get_Transform();
 		Vector3 Position;
 		Transform.Get_Translation(&Position);
-		Transform.Set_X_Translation(Position.X+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Position.Y+WWMath::Random_Float(Range*-1.0f,Range));
+		Transform.Set_X_Translation(Position.X+Get_Random_Float(Range*-1.0f,Range));
+		Transform.Set_Y_Translation(Position.Y+Get_Random_Float(Range*-1.0f,Range));
 		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
 		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
 			if (Distance < MinDistance) { //Use closest positon.
@@ -1179,9 +1182,9 @@ bool Fix_Stuck_Object(PhysicalGameObj *obj,float Range) {
 		Matrix3D Transform = Phys->Get_Transform();
 		Vector3 Position;
 		Transform.Get_Translation(&Position);
-		Transform.Set_X_Translation(Position.X+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Y_Translation(Position.Y+WWMath::Random_Float(Range*-1.0f,Range));
-		Transform.Set_Z_Translation(Position.Z+WWMath::Random_Float(0.0f,Range));
+		Transform.Set_X_Translation(Position.X+Get_Random_Float(Range*-1.0f,Range));
+		Transform.Set_Y_Translation(Position.Y+Get_Random_Float(Range*-1.0f,Range));
+		Transform.Set_Z_Translation(Position.Z+Get_Random_Float(0.0f,Range));
 		float Distance = Commands->Get_Distance(Transform.Get_Translation(),Position);
 		if (Phys->Can_Teleport(Transform)) { //Don't use this position if it collides with something.
 			if (Distance < MinDistance) { //Use closest positon.
@@ -1246,3 +1249,45 @@ void Add_Console_Function(ConsoleFunctionClass *Func) {
 	Verbose_Help_File();
 }
 
+int Get_Building_Count(int Team,bool Destroyed) {
+	int Return = 0;
+	BaseControllerClass *Base = BaseControllerClass::Find_Base(Team);
+	if (Base) {
+		for (int i = 0;i < Base->Get_Building_List().Count();i++) {
+			if (Base->Get_Building_List()[i]->Is_Destroyed() == Destroyed) {
+				Return++;
+			}
+		}
+	}
+	return Return;
+}
+
+void Enable_HUD(bool Enable) {
+	WideStringClass Send;
+	Send.Format(L"j\n29\n%d\n",Enable);
+	Send_Client_Text(Send,TEXT_MESSAGE_PUBLIC,false,-2,-1,true,true);
+}
+
+void Enable_HUD_Player_By_ID(int ID,bool Enable) {
+	WideStringClass Send;
+	Send.Format(L"j\n29\n%d\n",Enable);
+	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
+}
+
+void Set_Fog_Enable_Player_By_ID(int ID,bool Enable) {
+	WideStringClass Send;
+	Send.Format(L"j\n2\n%d\n",Enable);
+	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
+}
+
+void Set_Fog_Range_Player_By_ID(int ID,float StartDistance,float EndDistance,float Transition) {
+	WideStringClass Send;
+	Send.Format(L"j\n3\n%f\n%f\n%f\n",StartDistance,EndDistance,Transition);
+	Send_Client_Text(Send,TEXT_MESSAGE_PRIVATE,false,-2,ID,true,true);
+}
+
+void Send_Player_Kill_Message(int Killer,int Victim) {
+	cPlayerKill *Event = (cPlayerKill*)operator new(sizeof(cPlayerKill));
+	Event->Constructor();
+	Event->Init(Killer,Victim);
+}

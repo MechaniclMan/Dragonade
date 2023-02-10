@@ -207,7 +207,7 @@ private:
 	bool Disbanded;
 };
 
-class DA_API DASquadManagerClass : private DAEventClass, public DAGameFeatureClass {
+class DA_API DASquadManagerClass : public DAEventClass, public DAGameFeatureClass {
 private:
 	virtual void Init();
 	virtual ~DASquadManagerClass();

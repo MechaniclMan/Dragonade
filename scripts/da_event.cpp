@@ -34,7 +34,7 @@ DynamicVectorClass<DAEventStruct*> DAEventManager::Events[DAEvent::MAX];
 DynamicVectorClass<DAObjectEventStruct*> DAEventManager::ObjectEvents[DAObjectEvent::MAX];
 DynamicVectorClass<DAEventTimerStruct*> DAEventManager::Timers;
 bool DAEventManager::IsSoldierReInit = false;
-int DAEventManager::AddOccupantSeat = 0;
+int DAEventManager::AddOccupantSeat = -1;
 DAEventManager::DADamageEventStruct DAEventManager::LastDamageEvent;
 
 void DAEventManager::Register_Event(DAEventClass *Base,DAEvent::Type Type,int Priority) {
@@ -56,7 +56,7 @@ void DAEventManager::Register_Event(DAEventClass *Base,DAEvent::Type Type,int Pr
 }
 
 void DAEventManager::Unregister_Event(DAEventClass *Base,DAEvent::Type Type) {
-	for (int i = Events[Type].Count()-1;i >= 0;i--) {
+	for (int i = 0;i < Events[Type].Count();i++) {
 		if (Events[Type][i]->Base == Base) {
 			delete Events[Type][i];
 			Events[Type].Delete(i);
@@ -66,7 +66,7 @@ void DAEventManager::Unregister_Event(DAEventClass *Base,DAEvent::Type Type) {
 
 void DAEventManager::Clear_Events(DAEventClass *Base) {
 	for (int j = 0;j < DAEvent::MAX;j++) {
-		for (int i = Events[j].Count()-1;i >= 0;i--) {
+		for (int i = 0;i < Events[j].Count();i++) {
 			if (Events[j][i]->Base == Base) {
 				delete Events[j][i];
 				Events[j].Delete(i);
@@ -95,7 +95,7 @@ void DAEventManager::Register_Object_Event(DAEventClass *Base,DAObjectEvent::Typ
 }
 
 void DAEventManager::Unregister_Object_Event(DAEventClass *Base,DAObjectEvent::Type Type) {
-	for (int i = ObjectEvents[Type].Count()-1;i >= 0;i--) {
+	for (int i = 0;i < ObjectEvents[Type].Count();i++) {
 		if (ObjectEvents[Type][i]->Base == Base) {
 			delete ObjectEvents[Type][i];
 			ObjectEvents[Type].Delete(i);
@@ -105,7 +105,7 @@ void DAEventManager::Unregister_Object_Event(DAEventClass *Base,DAObjectEvent::T
 
 void DAEventManager::Clear_Object_Events(DAEventClass *Base) {
 	for (int j = 0;j < DAObjectEvent::MAX;j++) {
-		for (int i = ObjectEvents[j].Count()-1;i >= 0;i--) {
+		for (int i = 0;i < ObjectEvents[j].Count();i++) {
 			if (ObjectEvents[j][i]->Base == Base) {
 				delete ObjectEvents[j][i];
 				ObjectEvents[j].Delete(i);
@@ -274,6 +274,7 @@ void DAEventManager::Level_Loaded_Event() {
 	LastDamageEvent.Bone = "None";
 	LastDamageEvent.Damage = 0.0f;
 	LastDamageEvent.Warhead = 0;
+	AddOccupantSeat = -1;
 }
 
 void DAEventManager::Remix_Event() {
@@ -501,9 +502,15 @@ void DAEventManager::Transition_Check_Event(TransitionInstanceClass *Transition,
 }
 
 void DAEventManager::Add_Occupant_Event(VehicleGameObj *Vehicle,SoldierGameObj *Soldier) {
-	Vehicle->Add_Occupant(Soldier,AddOccupantSeat);
-	if (!Vehicle->Get_Driver()) {
-		Commands->Enable_Engine(Vehicle,false);
+	if (AddOccupantSeat == -1) {
+		AddOccupantSeat = Find_Empty_Vehicle_Seat(Vehicle);
+	}
+	if (AddOccupantSeat != -1) {
+		Vehicle->Add_Occupant(Soldier,AddOccupantSeat);
+		AddOccupantSeat = -1;
+		if (!Vehicle->Get_Driver()) {
+			Commands->Enable_Engine(Vehicle,false);
+		}
 	}
 }
 
@@ -874,11 +881,14 @@ bool DAEventManager::Damage_Request_Event(DefenseObjectClass *Defense,OffenseObj
 					LastDamageEvent.Type = DADamageType::BURN;
 				}
 				else { //Probably Commands->Apply_Damage
-					LastDamageEvent.Type = DADamageType::NORMAL;
+					LastDamageEvent.Type = DADamageType::NONE;
 				}
 			}
-			else { //Splash damage
+			else if (Scale < 1.0f) { //Splash damage from indirect hit
 				LastDamageEvent.Type = DADamageType::SPLASH;
+			}
+			else { //Splash damage from direct hit.
+				LastDamageEvent.Type = DADamageType::SPLASHDIRECT;
 			}
 		}
 		else if (Offense->Get_Warhead() == 9) { //Tiberium damage
@@ -905,14 +915,14 @@ bool DAEventManager::Damage_Request_Event(DefenseObjectClass *Defense,OffenseObj
 				LastDamageEvent.Type = DADamageType::BURN;
 			}
 			else { //Probably Commands->Apply_Damage
-				LastDamageEvent.Type = DADamageType::NORMAL;
+				LastDamageEvent.Type = DADamageType::NONE;
 			}
 		}
 		else if (Offense->Get_Warhead() == 22) { //Fall damage
 			LastDamageEvent.Type = DADamageType::FALL;
 		}
 		else { //Probably Commands->Apply_Damage
-			LastDamageEvent.Type = DADamageType::NORMAL;
+			LastDamageEvent.Type = DADamageType::NONE;
 		}
 		LastDamageEvent.Bone = "None";
 	}
@@ -1067,8 +1077,10 @@ ConnectionAcceptanceFilter::STATUS DAEventManager::DAEventConnectionAcceptanceFi
 	for (int i = 0;i < Events[DAEvent::CONNECTIONREQUEST].Count();i++) {
 		STATUS Return = Events[DAEvent::CONNECTIONREQUEST][i]->Base->Connection_Request_Event(const_cast<ConnectionRequest&>(Request),RefusalMessage);
 		if (Return == ConnectionAcceptanceFilter::STATUS_REFUSING) {
-			Console_Output("Refused connection from %ls(%s)(%s)(%.2f): %ls\n",Request.clientName,Long_To_IP(Request.clientAddress.sin_addr.s_addr),Request.clientSerialHash,Request.clientVersion,RefusalMessage);
-			DALogManager::Write_Log("_CONNECTIONREFUSED","Refused connection from %ls(%s)(%s)(%.2f): %ls",Request.clientName,Long_To_IP(Request.clientAddress.sin_addr.s_addr),Request.clientSerialHash,Request.clientVersion,RefusalMessage);
+			StringClass String;
+			String.Format("Refused connection from %ls(%s)(%s)(%.2f)(%u): %ls\n",Request.clientName,Long_To_IP(Request.clientAddress.sin_addr.s_addr),Request.clientSerialHash,Request.clientVersion,Request.clientRevisionNumber,RefusalMessage);
+			Console_Output("%s\n",String);
+			DALogManager::Write_Log("_CONNECTIONREFUSED","%s\n",String);
 			return ConnectionAcceptanceFilter::STATUS_REFUSING;
 		}
 		else if (Return == ConnectionAcceptanceFilter::STATUS_INDETERMINATE) {

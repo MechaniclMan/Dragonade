@@ -58,20 +58,8 @@ public:
 	static void Init();
 	DA_API static bool Check_Limit_For_Player(cPlayer *Player);
 	DA_API static DAVehicleObserverClass *Get_Vehicle_Data(GameObject *obj);
-	inline static cPlayer *Get_Vehicle_Owner(GameObject *obj) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			return Data->Get_Vehicle_Owner();
-		}
-		return 0;
-	}
-	inline static int Get_Team(GameObject *obj) {
-		DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
-		if (Data) {
-			return Data->Get_Team();
-		}
-		return -2;
-	}
+	DA_API static cPlayer *Get_Vehicle_Owner(GameObject *obj);
+	DA_API static int Get_Team(GameObject *obj);
 	DA_API static void Air_Drop_Vehicle(int Team,VehicleGameObj *Vehicle,const Vector3 &Position,float Facing);
 	DA_API static VehicleGameObj *Air_Drop_Vehicle(int Team,const VehicleGameObjDef *Vehicle,const Vector3 &Position,float Facing);
 	DA_API static VehicleGameObj *Air_Drop_Vehicle(int Team,unsigned int Vehicle,const Vector3 &Position,float Facing);

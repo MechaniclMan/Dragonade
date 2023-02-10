@@ -40,11 +40,12 @@ void DAVehicleObserverClass::Init() {
 }
 
 void DAVehicleObserverClass::Timer_Expired(GameObject *obj,int Number) {
-	if (Team == -2) {
-		Team = Get_Vehicle()->Get_Player_Type();
-	}
 	if (!VehicleOwner && Get_Vehicle()->Get_Lock_Owner()) {
 		VehicleOwner = ((SoldierGameObj*)Get_Vehicle()->Get_Lock_Owner())->Get_Player();
+		Team = VehicleOwner->Get_Team();
+	}
+	if (Team == -2) {
+		Team = Get_Vehicle()->Get_Player_Type();
 	}
 }
 
@@ -154,16 +155,37 @@ DAVehicleObserverClass *DAVehicleManager::Get_Vehicle_Data(GameObject *obj) {
 	return 0;
 }
 
+cPlayer *DAVehicleManager::Get_Vehicle_Owner(GameObject *obj) {
+	DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
+	if (Data) {
+		return Data->Get_Vehicle_Owner();
+	}
+	return 0;
+}
+
+int DAVehicleManager::Get_Team(GameObject *obj) {
+	DAVehicleObserverClass *Data = Get_Vehicle_Data(obj);
+	if (Data) {
+		return Data->Get_Team();
+	}
+	return -2;
+}
+
 void DAVehicleManager::Air_Drop_Vehicle(int Team,VehicleGameObj *Vehicle,const Vector3 &Position,float Facing) {
 	Vehicle->Set_Player_Type(Team);
 	GameObject *Cin = Create_Object("Invisible_Object",Position);
 	Commands->Set_Facing(Cin,Facing);
-	Commands->Attach_Script(Cin,"Test_Cinematic",StringFormat("%s_Air_Drop.txt",Team?"GDI":"Nod")); //Create the cinematic	
-	Commands->Send_Custom_Event(Vehicle,Cin,10004,Vehicle->Get_ID(),0); //Insert vehicle into cinematic at slot 4
+	if (Vehicle->Get_Definition().Get_Type() == VEHICLE_TYPE_FLYING) {
+		Commands->Attach_Script(Cin,"Test_Cinematic","Vehicle_Fly_In.txt"); //Flying vehicles fly in.
+	}
+	else {
+		Commands->Attach_Script(Cin,"Test_Cinematic",StringFormat("%s_Vehicle_Drop.txt",Team?"GDI":"Nod")); //Ground vehicles are carried by a transport helicopter.
+	}
+	Commands->Send_Custom_Event(Vehicle,Cin,10004,Vehicle->Get_ID(),0); //Insert vehicle into cinematic at slot 4.
 	PhysicalGameObj *Flare = Create_Object("SignalFlare_Gold_Phys3",Position);
 	if (Flare) {
 		Flare->Peek_Physical_Object()->Set_Collision_Group(TERRAIN_ONLY_COLLISION_GROUP);
-		Commands->Send_Custom_Event(Flare,Cin,10008,Flare->Get_ID(),0); //Insert flare into cinematic at slot 8
+		Commands->Send_Custom_Event(Flare,Cin,10008,Flare->Get_ID(),0); //Insert flare into cinematic at slot 8.
 	}
 	Vehicle->Add_Observer(new DAAirDroppedVehicleObserverClass);
 }
@@ -356,83 +378,79 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 			}
 		}
 		else {
-			DAVehicleObserverClass *Data = Get_Vehicle_Data(Victim);
-			if (!Killer || (Data->Get_Vehicle_Owner()?Data->Get_Vehicle_Owner()->Get_GameObj():0) != Killer || DADamageLog::Get_Percent_Other_Team_Damage(Victim,Data->Get_Team())) {
-				//If this vehicle was killed entirely by its own team then don't display a kill message. This is done so the other team can't tell you're massing by the kill messages.
-				cPlayer *Owner = 0;
-				if (((VehicleGameObj*)Victim)->Get_Occupant(0)) {
-					Owner = ((VehicleGameObj*)Victim)->Get_Occupant(0)->Get_Player();
+			cPlayer *Owner = 0;
+			if (((VehicleGameObj*)Victim)->Get_Occupant(0)) {
+				Owner = ((VehicleGameObj*)Victim)->Get_Occupant(0)->Get_Player();
+			}
+			else if (cPlayer *Player = Get_Vehicle_Owner(Victim)) {
+				if (Player->Is_Active()) {
+					Owner = Player;
 				}
-				else if (cPlayer *Player = Get_Vehicle_Owner(Victim)) {
-					if (Player->Is_Active()) {
-						Owner = Player;
-					}
+			}
+			else if (((VehicleGameObj*)Victim)->Get_Owner()) {
+				Owner = ((VehicleGameObj*)Victim)->Get_Owner()->Get_Player();
+			}
+			else if (((VehicleGameObj*)Victim)->Get_Lock_Owner()) {
+				Owner = ((SoldierGameObj*)((VehicleGameObj*)Victim)->Get_Lock_Owner())->Get_Player();
+			}
+			StringClass VictimName;
+			if (Owner) {
+				if (Owner->Get_GameObj() == Killer) {
+					VictimName = "their own ";
+					VictimName += DATranslationManager::Translate(Victim);
 				}
-				else if (((VehicleGameObj*)Victim)->Get_Owner()) {
-					Owner = ((VehicleGameObj*)Victim)->Get_Owner()->Get_Player();
+				else {
+					VictimName = Make_Possessive(Owner->Get_Name());
+					VictimName += " ";
+					VictimName += DATranslationManager::Translate(Victim);
 				}
-				else if (((VehicleGameObj*)Victim)->Get_Lock_Owner()) {
-					Owner = ((SoldierGameObj*)((VehicleGameObj*)Victim)->Get_Lock_Owner())->Get_Player();
+			}
+			else {
+				VictimName = a_or_an_Prepend(DATranslationManager::Translate(Victim));
+			}
+			if (!Killer) { //No killer
+				if (!Owner) {
+					VictimName[0] = (char)toupper(VictimName[0]);
+					Message.Format("2 %s was destroyed.",VictimName);
 				}
-				StringClass VictimName;
-				if (Owner) {
-					if (Owner->Get_GameObj() == Killer) {
-						VictimName = "their own ";
-						VictimName += DATranslationManager::Translate(Victim);
+				else {
+					Message.Format("%d %s was destroyed.",Owner->Get_Player_Type(),VictimName);
+				}
+			}
+			else if (Killer->As_SoldierGameObj()) { //Killed by soldier
+				if (((SoldierGameObj*)Killer)->Get_Player()) { //Killed by player
+					if (Type == DADamageType::EXPLOSION) {
+						Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate(GetExplosionObj()),DATranslationManager::Translate(Victim));
 					}
 					else {
-						VictimName = Make_Possessive(Owner->Get_Name());
-						VictimName += " ";
-						VictimName += DATranslationManager::Translate(Victim);
+						Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
 					}
 				}
 				else {
-					VictimName = a_or_an_Prepend(DATranslationManager::Translate(Victim));
+					Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
 				}
-				if (!Killer) { //No killer
+			}
+			else if (Killer->As_VehicleGameObj()) { //Killed by vehicle. Could be defense or AI vehicle.
+				if (Victim == Killer) {
 					if (!Owner) {
 						VictimName[0] = (char)toupper(VictimName[0]);
-						Message.Format("2 %s was destroyed.",VictimName);
+						DA::Color_Message(WHITE,"2 %s destroyed itself.",VictimName);
 					}
-					else {
-						Message.Format("%d %s was destroyed.",Owner->Get_Player_Type(),VictimName);
-					}
-				}
-				else if (Killer->As_SoldierGameObj()) { //Killed by soldier
-					if (((SoldierGameObj*)Killer)->Get_Player()) { //Killed by player
-						if (Type == DADamageType::EXPLOSION) {
-							Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate(GetExplosionObj()),DATranslationManager::Translate(Victim));
-						}
-						else {
-							Message.Format("%d %ls destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),Get_Wide_Player_Name(Killer),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
-						}
-					}
-					else {
-						Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),VictimName,DATranslationManager::Translate_Soldier(Killer),DATranslationManager::Translate(Victim));
+				else {
+						Message.Format("%d %s destroyed itself.",Owner->Get_Player_Type(),VictimName);
 					}
 				}
-				else if (Killer->As_VehicleGameObj()) { //Killed by vehicle. Could be defense or AI vehicle.
-					if (Victim == Killer) {
-						if (!Owner) {
-							VictimName[0] = (char)toupper(VictimName[0]);
-							DA::Color_Message(WHITE,"2 %s destroyed itself.",VictimName);
-						}
-						else {
-							Message.Format("%d %s destroyed itself.",Owner->Get_Player_Type(),VictimName);
-						}
-					}
-					else if (Killer->Get_Defense_Object()->Get_Shield_Type() == 1) {
-						Message.Format("%d The %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),DATranslationManager::Translate_With_Team_Name(Killer),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
-					}
-					else if (((VehicleGameObj*)Killer)->Is_Turret()) {
-						Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate_With_Team_Name(Killer)),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
-					}
-					else {
-						Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
-					}
+				else if (Killer->Get_Defense_Object()->Get_Shield_Type() == 1) {
+					Message.Format("%d The %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),DATranslationManager::Translate_With_Team_Name(Killer),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
 				}
-				DALogManager::Write_Log("_VEHKILL","%s",Message);
+				else if (((VehicleGameObj*)Killer)->Is_Turret()) {
+					Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate_With_Team_Name(Killer)),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
+				}
+				else {
+					Message.Format("%d %s destroyed %s (%s VS. %s)",Killer->Get_Player_Type(),A_Or_An_Prepend(DATranslationManager::Translate(Killer)),VictimName,DATranslationManager::Translate(Killer),DATranslationManager::Translate(Victim));
+				}
 			}
+			DALogManager::Write_Log("_VEHKILL","%s",Message);
 		}
 	}
 	else if (((BuildingGameObj*)Victim)->As_RefineryGameObj()) { //Fix bug where the Nod Harvester can still exist if it is building when the Refinery is killed.

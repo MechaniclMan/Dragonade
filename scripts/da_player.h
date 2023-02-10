@@ -110,8 +110,10 @@ public:
 	void Set_Version(float Ver);
 	float Get_Version();
 	unsigned int Get_Revision();
-	void Inc_Flood_Counter();
-	void Dec_Flood_Counter();
+	bool Is_TT_Client();
+	bool Is_Stock_Client();
+	void Increment_Flood_Counter();
+	void Decrement_Flood_Counter();
 	bool Is_Flooding();
 	void Set_Server_Damage(bool Damage);
 	bool Use_Server_Damage();
@@ -221,6 +223,9 @@ public:
 	inline cPlayer *Get_Owner() {
 		return Owner;
 	}
+	inline void Set_Owner(cPlayer *Player) {
+		Owner = Player;
+	}
 	inline DAPlayerFlags::Flag Get_Flags() {
 		return Flags;
 	}
@@ -249,6 +254,9 @@ public:
 		return Get_Owner()->Get_Team();
 	}
 	
+	inline DynamicVectorClass<DAPlayerObserverTimerStruct*> &Get_Timers() { 
+		return Timers;
+	}
 	DA_API void Start_Timer(int Number,float Duration,bool Repeat = false,unsigned int Data = 0);
 	DA_API void Stop_Timer(int Number,unsigned int Data = 0);
 	DA_API bool Is_Timer(int Number,unsigned int Data = 0);
@@ -327,19 +335,17 @@ public:
 	virtual void Think() { } //Called on each frame. Requires THINK flag.
 	
 private:
-	inline void Set_Owner(cPlayer *Player) {
-		Owner = Player;
-	}
-	inline DynamicVectorClass<DAPlayerObserverTimerStruct*> &Get_Timers() { 
-		return Timers;
-	}
 	cPlayer *Owner;
 	DAPlayerFlags::Flag Flags;
 	DynamicVectorClass<DAPlayerObserverTimerStruct*> Timers;
 	DynamicVectorClass<DAPlayerObserverChatCommandStruct*> ChatCommands;
 	DynamicVectorClass<DAPlayerObserverKeyHookStruct*> KeyHooks;
 	bool DeletePending;
-	friend class DAPlayerClass;
+};
+
+class DAPlayerDataFactoryClass abstract {
+public:
+	virtual DAPlayerDataClass *Create_Data() = 0;
 };
 
 class DAPlayerDataClass abstract {
@@ -347,8 +353,14 @@ public:
 	inline cPlayer *Get_Owner() {
 		return Owner;
 	}
+	inline void Set_Owner(cPlayer *Player) {
+		Owner = Player;
+	}
 	inline const DAPlayerDataFactoryClass *Get_Factory() {
 		return Factory;
+	}
+	inline void Set_Factory(const DAPlayerDataFactoryClass *Fac) {
+		Factory = Fac;
 	}
 	inline int Get_ID() {
 		return Get_Owner()->Get_ID();
@@ -362,28 +374,13 @@ public:
 	inline int Get_Team() {
 		return Get_Owner()->Get_Team();
 	}
-	
-protected:
 	virtual void Init() { };
 	virtual void Clear_Level() { };
 	virtual void Clear_Session() { };
 	
 private:
-	inline void Set_Owner(cPlayer *Player) {
-		Owner = Player;
-	}
-	inline void Set_Factory(const DAPlayerDataFactoryClass *Fac) {
-		Factory = Fac;
-	}
 	cPlayer *Owner;
 	const DAPlayerDataFactoryClass *Factory;
-	friend class DAPlayerClass;
-	template <class T> friend class DAPlayerDataManagerClass;
-};
-
-class DAPlayerDataFactoryClass abstract {
-public:
-	virtual DAPlayerDataClass *Create_Data() = 0;
 };
 
 template <class T> class DAPlayerDataManagerClass : public DAPlayerDataFactoryClass {
@@ -421,12 +418,12 @@ private:
 	}
 };
 
-class DA_API DAPlayerManager : private DAEventClass {
+class DAPlayerManager : public DAEventClass {
 public:
 	static void Init();
 	static void Shutdown();
-	static void Add_Data_Factory(DAPlayerDataFactoryClass *Factory);
-	static void Remove_Data_Factory(DAPlayerDataFactoryClass *Factory);
+	DA_API static void Add_Data_Factory(DAPlayerDataFactoryClass *Factory);
+	DA_API static void Remove_Data_Factory(DAPlayerDataFactoryClass *Factory);
 	
 private:
 	static inline bool Check_Player(DAPlayerClass *DAPlayer);
@@ -480,6 +477,11 @@ private:
 	DynamicVectorClass<WideStringClass> DisallowedNicks;
 	unsigned int ForceTT;
 	unsigned int TTRevision;
+	bool EnableStockKillMessages;
+	bool DisableKillCounter;
+	bool DisableTeamKillCounter;
+	bool DisableDeathCounter;
+	bool DisableTeamDeathCounter;
 };
 
 #endif

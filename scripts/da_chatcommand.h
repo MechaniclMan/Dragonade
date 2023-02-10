@@ -11,8 +11,8 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 
-#ifndef INCLIDE_DACHATCOMMAND
-#define INCLIDE_DACHATCOMMAND
+#ifndef INCLUDE_DACHATCOMMAND
+#define INCLUDE_DACHATCOMMAND
 
 #include "da_event.h"
 #include "da_token.h"
@@ -50,22 +50,22 @@ struct DAEventKeyHookStruct {
 	DAEKH Func;
 };
 
-class DA_API DAChatCommandManager : private DAEventClass {
+class DAChatCommandManager : public DAEventClass {
 public:
 	static void Init();
 	static void Shutdown();
 	virtual bool Chat_Command_Event(cPlayer *Player,TextMessageEnum Type,const StringClass &Command,const DATokenClass &Text,int ReceiverID);
 	virtual bool Key_Hook_Event(cPlayer *Player,const StringClass &Key);
-	static void Register_Chat_Command(DAChatCommandClass *Base,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
-	static void Register_Event_Chat_Command(DAEventClass *Base,DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
-	static void Register_Key_Hook(DAKeyHookClass *Base,const char *Triggers);
-	static void Register_Event_Key_Hook(DAEventClass *Base,DAEKH Func,const char *Triggers);
-	static void Unregister_Chat_Command(const char *Trigger);
-	static void Unregister_Event_Chat_Command(DAEventClass *Base,const char *Trigger);
-	static void Unregister_Key_Hook(const char *Trigger);
-	static void Unregister_Event_Key_Hook(DAEventClass *Base,const char *Trigger);
-	static void Clear_Event_Chat_Commands(DAEventClass *Base);
-	static void Clear_Event_Key_Hooks(DAEventClass *Base);
+	DA_API static void Register_Chat_Command(DAChatCommandClass *Base,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	DA_API static void Register_Event_Chat_Command(DAEventClass *Base,DAECC Func,const char *Triggers,int Parameters = 0,DAAccessLevel::Level AccessLevel = DAAccessLevel::NONE,DAChatType::Type ChatType = DAChatType::ALL);
+	DA_API static void Register_Key_Hook(DAKeyHookClass *Base,const char *Triggers);
+	DA_API static void Register_Event_Key_Hook(DAEventClass *Base,DAEKH Func,const char *Triggers);
+	DA_API static void Unregister_Chat_Command(const char *Trigger);
+	DA_API static void Unregister_Event_Chat_Command(DAEventClass *Base,const char *Trigger);
+	DA_API static void Unregister_Key_Hook(const char *Trigger);
+	DA_API static void Unregister_Event_Key_Hook(DAEventClass *Base,const char *Trigger);
+	DA_API static void Clear_Event_Chat_Commands(DAEventClass *Base);
+	DA_API static void Clear_Event_Key_Hooks(DAEventClass *Base);
 
 private:
 	static DynamicVectorClass<DAChatCommandClass*> ChatCommands;
