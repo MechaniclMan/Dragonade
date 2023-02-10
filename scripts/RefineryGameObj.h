@@ -80,6 +80,7 @@ private:
 	Matrix3D				DockTM;
 	AudibleSoundClass * MoneyTrickleSound;
 	bool					AllowHarvesterSpawn;
+	//ReferencerClass HarvesterVehicle;
 }; // 2232, RH7 2252
 
 

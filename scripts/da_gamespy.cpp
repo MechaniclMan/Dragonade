@@ -114,8 +114,8 @@ void DAGameSpyGameFeatureClass::Think() {
 
 			//Basic
 			Send.Format(
-				"\\gametype\\%s\\mapname\\%s\\nextmap\\%s.mix\\%s\\%s\\Time Limit\\%s\\Starting Credits\\%d\\FDS\\Dragonade %s\\",
-				DAGameManager::Get_Game_Mode_Long_Name(),DAGameManager::Get_Map(),Definitions.Get(NextMap)->mapName,The_Game()->Get_Time_Limit_Minutes()?"Time Remaining":"Time Elapsed",The_Game()->Get_Time_Limit_Minutes()?Format_Time((unsigned long)The_Game()->Get_Time_Remaining_Seconds()):Format_Time(The_Game()->Get_Game_Duration_S()),Format_Time(The_Game()->Get_Time_Limit_Minutes()*60),The_Cnc_Game()->StartingCredits,DA::Get_Version()
+				"\\gametype\\%s\\mapname\\%s\\nextmap\\%s.mix\\timeleft\\%s\\timeelapsed\\%s\\timelimit\\%s\\Starting Credits\\%d\\FDS\\Dragonade %s\\",
+				DAGameManager::Get_Game_Mode_Long_Name(),DAGameManager::Get_Map(),Definitions.Get(NextMap)->mapName,Format_Time((unsigned long)The_Game()->Get_Time_Remaining_Seconds()),Format_Time(The_Game()->Get_Game_Duration_S()),Format_Time(The_Game()->Get_Time_Limit_Minutes()*60),The_Cnc_Game()->StartingCredits,DA::Get_Version()
 			);
 			
 			//Custom rules

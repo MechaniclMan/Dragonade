@@ -933,7 +933,7 @@ void DAPlayerManager::Init() {
 	Instance.Register_Event(DAEvent::THINK,INT_MAX);
 	
 	Instance.Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER,INT_MAX);
-	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::PLAYER,INT_MAX);
+	Instance.Register_Object_Event(DAObjectEvent::DESTROYED,DAObjectEvent::SOLDIER,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVEDREQUEST,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::DAMAGERECEIVED,DAObjectEvent::ALL,INT_MAX);
 	Instance.Register_Object_Event(DAObjectEvent::KILLRECEIVED,DAObjectEvent::ALL,INT_MAX);
@@ -1317,10 +1317,16 @@ void DAPlayerManager::PowerUp_Grant_Event(cPlayer *Player,const PowerUpGameObjDe
 }
 
 bool DAPlayerManager::Add_Weapon_Request_Event(cPlayer *Player,const WeaponDefinitionClass *Weapon) {
+	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 30) {
+		return false;
+	}
 	return Player->Get_DA_Player()->Add_Weapon_Request(Weapon);
 }
 
 void DAPlayerManager::Add_Weapon_Event(cPlayer *Player,WeaponClass *Weapon) {
+	if (Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() >= 30) {
+		DA::Page_Player(Player,"You have reached the weapon limit of 30. To pick up additional weapons you will need to drop some of your current ones with the \"!drop\" command.");
+	}
 	Player->Get_DA_Player()->Add_Weapon(Weapon);
 }
 
@@ -1369,9 +1375,17 @@ void DAPlayerManager::Object_Created_Event(GameObject *obj) {
 
 void DAPlayerManager::Object_Destroyed_Event(GameObject *obj) {
 	cPlayer *Player = ((SoldierGameObj*)obj)->Get_Player();
-	Player->Get_DA_Player()->Destroyed();
-	if (!DisableDeathCounter && !Player->Get_DA_Player()->Is_Spawning() && ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health())) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
-		Player->Increment_Deaths();
+	if (Player) {
+		Player->Get_DA_Player()->Destroyed();
+		if (!DisableDeathCounter && !Player->Get_DA_Player()->Is_Spawning() && ((Player->Is_Alive_And_Kicking() && ((SoldierGameObj*)obj)->Get_Player_Type() == Player->Get_Player_Type()) || !((SoldierGameObj*)obj)->Get_Defense_Object()->Get_Health())) { //Don't give a death if the player is leaving the game or changing teams, unless they're already dead.
+			Player->Increment_Deaths();
+		}
+	}
+	else if (!DisableTeamDeathCounter) { //Bot
+		cTeam *Team = Find_Team(((SoldierGameObj*)obj)->Get_Player_Type());
+		if (Team) {
+			Team->Increment_Deaths();
+		}
 	}
 }
 
@@ -1400,15 +1414,23 @@ void DAPlayerManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,
 	if (Is_Player(Victim)) {
 		((SoldierGameObj*)Victim)->Get_DA_Player()->Kill_Received(Killer,Damage,Warhead,Scale,Type);
 	}
-	if (Is_Player(Killer)) {
+	if (Killer && Killer->As_SoldierGameObj()) {
 		cPlayer *Player = ((SoldierGameObj*)Killer)->Get_Player();
-		Player->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Scale,Type);
-		if (Victim->As_SoldierGameObj() && Killer != Victim) {
-			if (!DisableKillCounter) {
-				Player->Increment_Kills();
+		if (Player) {
+			Player->Get_DA_Player()->Kill_Dealt(Victim,Damage,Warhead,Scale,Type);
+			if (Victim->As_SoldierGameObj() && Killer != Victim) {
+				if (!DisableKillCounter) {
+					Player->Increment_Kills();
+				}
+				if (!DisableKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
+					Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
+				}
 			}
-			if (!DisableKillMessages && ((SoldierGameObj*)Victim)->Get_Player()) { //Send stock kill message.
-				Send_Player_Kill_Message(Player->Get_ID(),((SoldierGameObj*)Victim)->Get_Player()->Get_ID());
+		}
+		else if (!DisableTeamKillCounter && Killer != Victim) { //Bot
+			cTeam *Team = Find_Team(Killer->Get_Player_Type());
+			if (Team) {
+				Team->Increment_Kills();
 			}
 		}
 	}
@@ -1795,3 +1817,14 @@ class DAKillMeChatCommandClass: public DAChatCommandClass, public DAEventClass {
 	}
 };
 Register_Simple_Chat_Command(DAKillMeChatCommandClass,"!killme|!suicide");
+
+class DADropChatCommandClass: public DAChatCommandClass {
+	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
+		if (Bag->Get_Index()) {
+			Bag->Remove_Weapon(Bag->Get_Index());
+		}
+		return true;
+	}
+};
+Register_Simple_Chat_Command(DADropChatCommandClass,"!drop|!wdrop|!weapdrop|!weapondrop|!dropweap|!dropweapon|!rweapon|!removeweapon|WeapDrop");

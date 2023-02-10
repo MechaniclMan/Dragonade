@@ -480,7 +480,7 @@ void DAVehicleManager::Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer
 	}
 	else if (((BuildingGameObj*)Victim)->As_RefineryGameObj()) { //Fix bug where the Nod Harvester can still exist if it is building when the Refinery is killed.
 		for (SLNode<VehicleGameObj> *x = GameObjManager::VehicleGameObjList.Head();x;x = x->Next()) {
-			if (x->Data()->Get_Definition().Get_ID() == (unsigned int)((RefineryGameObj*)Victim)->Get_Definition().HarvesterDefID) {
+			if (x->Data()->Get_Definition().Get_ID() == (unsigned int)((RefineryGameObj*)Victim)->Get_Harvester_Def_ID()) {
 				x->Data()->Set_Delete_Pending();
 			}
 		}
@@ -553,7 +553,7 @@ class DAVehicleChatCommandClass: public DAChatCommandClass { //This will get ove
 		return true;
 	}
 };
-Register_Simple_Chat_Command(DAVehicleChatCommandClass,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit|!vlimit");
+Register_Simple_Chat_Command(DAVehicleChatCommandClass,"!vq|!queue|!q|!veh|!vehicle|!vehlimit|!vehiclelimit|!vlimit|!limit");
 
 class DAVKillsChatCommandClass: public DAChatCommandClass { 
 	bool Activate(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {

@@ -27,6 +27,7 @@
 #include "GameObjManager.h"
 #include "ArmorWarheadManager.h"
 #include "da_soldier.h"
+#include "PhysicsSceneClass.h"
 
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
@@ -564,13 +565,24 @@ void DAEventManager::Beacon_Set_State_Event(BeaconGameObj *Beacon) {
 
 bool DAEventManager::C4_Detonate_Request_Event(C4GameObj *C4) {
 	if (C4->Get_Ammo_Def()->AmmoType == 3) {
-		float TriggerRange = C4->Get_Ammo_Def()->C4TriggerRange1;
-		Vector3 Position = Commands->Get_Position(C4);
+		float Range = 0;
+		if (C4->Get_Detonation_Mode() == 1) {
+			Range = C4->Get_Ammo_Def()->C4TriggerRange1;
+		}
+		else if (C4->Get_Detonation_Mode() == 2) {
+			Range = C4->Get_Ammo_Def()->C4TriggerRange2;
+		}
+		else if (C4->Get_Detonation_Mode() == 3) {
+			Range = C4->Get_Ammo_Def()->C4TriggerRange3;
+		}
+		Vector3 Position;
+		C4->Get_Position(&Position);
 		for (SLNode<SmartGameObj> *z = GameObjManager::SmartGameObjList.Head();z;z = z->Next()) { //Check all objects in range. Detonate if any one of them is allowed to trigger the C4.
-			if (C4->Is_Enemy(z->Data()) && Commands->Get_Distance(Position,z->Data()->Get_Position()) <= TriggerRange) {
+			SmartGameObj *Smart = z->Data();
+			if (C4->Is_Enemy(Smart) && /*PhysicsSceneClass::Get_Instance()->Do_Groups_Collide(C4->Get_Collision_Group(),Smart->Get_Collision_Group()) &&*/ Commands->Get_Distance(Smart->Get_Position(),Position) <= Range && (!Smart->As_SoldierGameObj() || (!((SoldierGameObj*)Smart)->Is_Dead() && !((SoldierGameObj*)Smart)->Is_Destroyed() && !((SoldierGameObj*)Smart)->Is_In_Vehicle()))) {
 				bool Allow = true;
 				for (int i = 0;i < Events[DAEvent::C4DETONATEREQUEST].Count();i++) {
-					if (!Events[DAEvent::C4DETONATEREQUEST][i]->Base->C4_Detonate_Request_Event(C4,z->Data())) {
+					if (!Events[DAEvent::C4DETONATEREQUEST][i]->Base->C4_Detonate_Request_Event(C4,Smart)) {
 						Allow = false;
 						break;
 					}

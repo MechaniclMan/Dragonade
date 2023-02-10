@@ -174,7 +174,6 @@ public:
 	}
 	
 private:
-	bool Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	
 	virtual ~DANodeManagerClass() {
 		for (int i = 0;i < Nodes.Count();i++) {

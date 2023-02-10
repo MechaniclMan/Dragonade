@@ -179,12 +179,9 @@ void DALootBackpackClass::Timer_Expired(GameObject *obj,int Number) {
 			if (Position == LastPos) { //Wait until the powerup has stopped falling before creating the icon.
 				Position.Z += 0.75f;
 				Icon = Create_Object("Invisible_Object",Position);
-				((PhysicalGameObj*)Icon.Get_Ptr())->Peek_Physical_Object()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
+				Set_Icon(0);
 				IconIndex = 0;
-				StringClass Model = Get_Weapon_PowerUp_Model(Weapons[0].Weapon);
-				Commands->Set_Model(Icon,Model);
-				Update_Network_Object(Icon);
-				Commands->Set_Animation(Icon,StringFormat("%s.%s",Model,Model),true,0,0,-1.0f,false);
+				((PhysicalGameObj*)Icon.Get_Ptr())->Peek_Physical_Object()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
 				Start_Timer(5,2.5f);
 			}
 			else {
@@ -202,7 +199,7 @@ void DALootBackpackClass::Timer_Expired(GameObject *obj,int Number) {
 			if (IconIndex >= Weapons.Count()) {
 				IconIndex = 0;
 			}
-			Commands->Set_Model(Icon,Get_Weapon_PowerUp_Model(Weapons[IconIndex].Weapon));
+			Set_Icon(IconIndex);
 		}
 		Start_Timer(5,2.5f);
 	}
@@ -212,6 +209,25 @@ void DALootBackpackClass::Timer_Expired(GameObject *obj,int Number) {
 	else {
 		DALootPowerUpClass::Timer_Expired(obj,Number);
 	}
+}
+
+void DALootBackpackClass::Set_Icon(int Index) {
+	StringClass PowerUpModel = Get_Weapon_PowerUp_Model(Weapons[Index].Weapon);
+	/*Vector3 Position;
+	Get_Owner()->Get_Position(&Position);
+	FileClass *File = Get_Data_File(PowerUpModel+".w3d");
+	if (File->Is_Available()) {
+		Position.Z += 0.75f;
+		Commands->Set_Position(Icon,Position);*/
+		Commands->Set_Model(Icon,PowerUpModel);
+		Commands->Set_Animation(Icon,StringFormat("%s.%s",PowerUpModel,PowerUpModel),true,0,0,-1.0f,false);
+	/*}
+	else {
+		Position.Z += 1.5f;
+		Commands->Set_Position(Icon,Position);
+		Commands->Set_Model(Icon,Clean_Model_Name(Weapons[Index].Weapon->Model));
+	}
+	Close_Data_File(File);*/
 }
 
 DALootBackpackClass::~DALootBackpackClass() {
@@ -252,7 +268,6 @@ void DALootDNAClass::Timer_Expired(GameObject *obj,int Number) {
 				((PhysicalGameObj*)Icon.Get_Ptr())->Peek_Physical_Object()->Set_Collision_Group(UNCOLLIDEABLE_GROUP);
 				StringClass Model = Get_Weapon_PowerUp_Model(Weapon);
 				Commands->Set_Model(Icon,Model);
-				Update_Network_Object(Icon);
 				Commands->Set_Animation(Icon,StringFormat("%s.%s",Model,Model),true,0,0,-1.0f,false);
 			}
 		}
@@ -656,62 +671,62 @@ bool DALootGameFeatureClass::Drop_Chat_Command(cPlayer *Player,const DATokenClas
 	if (!PlayerData->Get_Weapon_Count() || !Player->Get_GameObj() || Player->Get_GameObj()->Get_Defense_Object()->Get_Health() == 0.0f) {
 		DA::Private_Color_Message(Player,WHITE,"You have no weapons to drop.");
 	}
-	else if (Text.Size()) {
-		if (Text[0] == "all") {
-			DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
-			WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-			for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-				WeaponClass *Weapon = Bag->Peek_Weapon(i);
-				const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
-				if (PlayerData->Has_Weapon(WeaponDef) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) {
-					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-					Bag->Remove_Weapon(i);
+	else {
+		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
+		if (Text.Size()) {
+			if (Text[0] == "all") {
+				DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
+				for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+					WeaponClass *Weapon = Bag->Peek_Weapon(i);
+					const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
+					if (PlayerData->Has_Weapon(WeaponDef) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) {
+						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+						Bag->Remove_Weapon(i);
+					}
 				}
-			}
-			if (!Backpack->Get_Weapon_Count()) {
-				Backpack->Get_Owner()->Set_Delete_Pending();
-				DA::Private_Color_Message(Player,WHITE,"You have no weapons to drop.");
-			}
-			else {
-				DA::Private_Color_Message(Player,WHITE,"You have dropped all your weapons.");
-				Backpack->Set_Expire_Time(DropCommandExpireTime);
-				Backpack->Start_Timer(6,5.0f);
-			}
-		}
-		else {
-			WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-			for (int i = Bag->Get_Count()-1;i >= 1;i--) {
-				WeaponClass *Weapon = Bag->Peek_Weapon(i);
-				const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
-				const char *Translation = DATranslationManager::Translate(WeaponDef);
-				if (PlayerData->Has_Weapon(WeaponDef) && stristr(Translation,Text[0]) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
-					DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",Translation);
-					DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
-					Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+				if (!Backpack->Get_Weapon_Count()) {
+					Backpack->Get_Owner()->Set_Delete_Pending();
+					DA::Private_Color_Message(Player,WHITE,"You have no weapons to drop.");
+				}
+				else {
+					DA::Private_Color_Message(Player,WHITE,"You have dropped all your weapons.");
 					Backpack->Set_Expire_Time(DropCommandExpireTime);
 					Backpack->Start_Timer(6,5.0f);
-					Bag->Remove_Weapon(i);
-					return true;
 				}
+			}
+			else {
+				for (int i = Bag->Get_Count()-1;i >= 1;i--) {
+					WeaponClass *Weapon = Bag->Peek_Weapon(i);
+					const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
+					const char *Translation = DATranslationManager::Translate(WeaponDef);
+					if (PlayerData->Has_Weapon(WeaponDef) && stristr(Translation,Text[0]) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
+						DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",Translation);
+						DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
+						Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+						Backpack->Set_Expire_Time(DropCommandExpireTime);
+						Backpack->Start_Timer(6,5.0f);
+						Bag->Remove_Weapon(i);
+						return true;
+					}
+				}
+				DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");
+			}
+		}
+		else if (Bag->Get_Index()) {
+			WeaponClass *Weapon = Bag->Get_Weapon();
+			const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
+			if (PlayerData->Has_Weapon(WeaponDef) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
+				DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",DATranslationManager::Translate(Weapon));
+				DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
+				Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
+				Backpack->Set_Expire_Time(DropCommandExpireTime);
+				Backpack->Start_Timer(6,5.0f);
+				Bag->Select_Next();
+				Bag->Remove_Weapon(WeaponDef);
+				return true;
 			}
 			DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");
 		}
-	}
-	else {
-		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
-		WeaponClass *Weapon = Bag->Get_Weapon();
-		const WeaponDefinitionClass *WeaponDef = Weapon->Get_Definition();
-		if (PlayerData->Has_Weapon(WeaponDef) && (Weapon->Get_Total_Rounds() || (WeaponDef->Style != STYLE_C4 && WeaponDef->Style != STYLE_BEACON))) { //Only let them drop weapons they've picked up, not started with.
-			DA::Private_Color_Message(Player,WHITE,"You have dropped your %s.",DATranslationManager::Translate(Weapon));
-			DALootBackpackClass *Backpack = Create_Backpack(Player->Get_GameObj());
-			Backpack->Add_Weapon(WeaponDef,Weapon->Get_Total_Rounds());
-			Backpack->Set_Expire_Time(DropCommandExpireTime);
-			Backpack->Start_Timer(6,5.0f);
-			Bag->Select_Next();
-			Bag->Remove_Weapon(WeaponDef);
-			return true;
-		}
-		DA::Private_Color_Message(Player,WHITE,"You cannot drop that weapon.");
 	}
 	return true;
 }

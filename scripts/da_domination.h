@@ -104,7 +104,8 @@ private:
 	virtual void Object_Created_Event(GameObject *obj);
 	virtual void Timer_Expired(int Number,unsigned int Data);
 	void Send_Info_Message(int ID);
-	
+	bool Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
+
 	virtual ~DADominationManagerClass() {
 		DANodeManager->Destroy_Instance();
 		DATeleporterManager->Destroy_Instance();

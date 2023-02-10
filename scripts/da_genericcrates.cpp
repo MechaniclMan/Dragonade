@@ -517,7 +517,6 @@ public:
 
 	virtual void Init() {
 		Commands->Attach_To_Object_Bone(Radar,Get_Owner(),"Origin");
-		Update_Network_Object(Radar);
 		if (Get_Owner()->As_SmartGameObj()) {
 			Start_Timer(1,0.0f);
 		}
@@ -537,6 +536,9 @@ public:
 	}
 
 	virtual void Timer_Expired(GameObject *obj,int Number) {
+		if (!Radar) {
+			Set_Delete_Pending();
+		}
 		if (Number == 1) {
 			if (Get_Owner()->As_VehicleGameObj() || ((PhysicalGameObj*)Radar.Get_Ptr())->Get_Player_Type() != ((PhysicalGameObj*)Get_Owner())->Get_Player_Type()) { //Vehicle or different team.
 				Set_Radar_Color();
@@ -577,6 +579,16 @@ public:
 		}
 	}
 
+	int Get_Team() {
+		if (Radar) {
+			return ((PhysicalGameObj*)Radar.Get_Ptr())->Get_Player_Type();
+		}
+		else {
+			Set_Delete_Pending();
+			return 2;
+		}
+	}
+
 private:
 	ReferencerClass Radar;
 };
@@ -585,18 +597,20 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 	virtual void Init() {
 		DACrateClass::Init();
 		Register_Event(DAEvent::GAMEOVER);
-		Team = -1;
+		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::SOLDIER | DAObjectEvent::VEHICLE | DAObjectEvent::BEACON);
+		Active[0] = false;
+		Active[1] = false;
 	}
 
-	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already active.
-		return (Team == -1);
+	virtual bool Can_Activate(cPlayer *Player) { //Don't trigger if already active or radar is disabled.
+		return (!Active[Player->Get_Team()] && The_Game()->Get_Radar_Mode() == 1);
 	}
 
 	virtual void Activate(cPlayer *Player) {
-		Team = Player->Get_Team();
-		DA::Host_Message("A %ls player just picked up the UAV Crate. All %ls units are now marked on radar.",Get_Wide_Team_Name(Team),Get_Wide_Team_Name(!Team));
-		Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::SOLDIER | DAObjectEvent::VEHICLE | DAObjectEvent::BEACON);
-		Start_Timer(1,Get_Random_Float(60.0f,90.0f)); //End timer.
+		int Team = Player->Get_Team();
+		Active[Team] = true;
+		DA::Host_Message("A %ls player just picked up the UAV Crate. All enemy units are now marked on radar.",Get_Wide_Team_Name(Team));
+		Start_Timer(1,Get_Random_Float(60.0f,90.0f),false,Team); //End timer.
 		for (SLNode<SoldierGameObj> *x = GameObjManager::SoldierGameObjList.Head();x;x = x->Next()) { //Mark all enemy infantry.
 			if (x->Data()->Get_Player_Type() != Team) {
 				x->Data()->Add_Observer(new DAUAVCrateObserverClass(Team));
@@ -610,22 +624,29 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 				x->Data()->Add_Observer(new DAUAVCrateObserverClass(Team));
 			}
 		}
+		BaseControllerClass::Find_Base(Team)->Enable_Radar(true); //Re-enable radar if comm. center is dead.
 	}
 	
 	virtual void Object_Created_Event(GameObject *obj) { //Observer must be attached to all newly created objects. It will delete itself if the object turns out to be friendly.
-		obj->Add_Observer(new DAUAVCrateObserverClass(Team));
+		if (Active[0]) {
+			obj->Add_Observer(new DAUAVCrateObserverClass(0));
+		}
+		if (Active[1]) {
+			obj->Add_Observer(new DAUAVCrateObserverClass(1));
+		}
 	}
 
 	virtual void Game_Over_Event() {
 		Clear_Timers();
 		Timer_Expired(1,0);
+		Timer_Expired(1,1);
 	}
 	
-	virtual void Timer_Expired(int Number,unsigned int Data) {
-		for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) { //Destroy observers.
+	virtual void Timer_Expired(int Number,unsigned int Team) {
+		for (SLNode<SmartGameObj> *x = GameObjManager::SmartGameObjList.Head();x;x = x->Next()) { //Destroy observers for this team.
 			const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
 			for (int i = 0;i < Observers.Count();i++) {
-				if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
+				if (Observers[i]->Get_Name() == DAUAVCrateObserverName && ((DAUAVCrateObserverClass*)Observers[i])->Get_Team() == (int)Team) {
 					((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
 				}
 			}
@@ -633,16 +654,16 @@ class DAUAVCrateClass : public DACrateClass, public DAEventClass {
 		for (SLNode<BeaconGameObj> *x = GameObjManager::BeaconGameObjList.Head();x;x = x->Next()) {
 			const SimpleDynVecClass<GameObjObserverClass*> &Observers = x->Data()->Get_Observers();
 			for (int i = 0;i < Observers.Count();i++) {
-				if (Observers[i]->Get_Name() == DAUAVCrateObserverName) {
+				if (Observers[i]->Get_Name() == DAUAVCrateObserverName && ((DAUAVCrateObserverClass*)Observers[i])->Get_Team() == (int)Team) {
 					((DAUAVCrateObserverClass*)Observers[i])->Set_Delete_Pending();
 				}
 			}
 		}
-		Team = -1;
-		Unregister_Object_Event(DAObjectEvent::CREATED);
+		Active[Team] = false;
+		BaseControllerClass::Find_Base(Team)->Check_Radar(); //Disable radar if comm. center is dead.
 	}
 
-	int Team;
+	bool Active[2];
 };
 
 Register_Crate(DAUAVCrateClass,"UAV",DACrateType::INFANTRY | DACrateType::VEHICLE);

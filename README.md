@@ -1,4 +1,4 @@
-Dragonade 1.6
+Dragonade 1.6.1
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,6 +25,18 @@ Installation:
 
 
 Update History:
+
+
+Version 1.6.1:
+  Changes:
+   - The UAV Crate will now temporarily reactivate a team's radar if it is offline.
+   - Both teams can now have the UAV Crate active at the same time.
+
+  Bug Fixes:
+   - Partially fixed map names not showing up in the server info menu. (Full fix will be in TT 4.2 client)
+   - Fixed parachutes getting stuck on uneven terrain.
+   - The Vehicle Queue will now correctly respawn the Harvester when the Refinery is revived.
+   - Added a per-player weapon limit of 30 to prevent a crash.
 
 
 Version 1.6:

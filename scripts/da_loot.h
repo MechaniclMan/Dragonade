@@ -93,6 +93,7 @@ private:
 	virtual void Init();
 	virtual void PowerUp_Grant(cPlayer *Player);
 	virtual void Timer_Expired(GameObject *obj,int Number);
+	void Set_Icon(int Index);
 	virtual const char *Get_Name() { 
 		return "DALootBackpackClass"; 
 	}

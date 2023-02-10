@@ -21,6 +21,7 @@
 #include "da_parachutes.h"
 
 void DAParachutesObserverClass::Init() {
+	Get_Owner()->Get_Position(&LastPos);
 	Start_Timer(1,0.1f);
 }
 
@@ -31,7 +32,9 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	if (Number == 1) { //Check if parachute should be deployed.
 		if (State->Get_State() == HumanStateClass::AIRBORNE) { //Falling.
 			if (State->Get_Jump_Transform().Get_Z_Translation() - Pos.Z >= 10) { //Deploy parachute after 10 meters.
-				Parachute = Create_Object("Soldier Powerups",((PhysicalGameObj*)Get_Owner())->Get_Transform()); //Powerups fall slower than infantry.
+				Matrix3D Transform = ((PhysicalGameObj*)Get_Owner())->Get_Transform();
+				Transform.Rotate_Z(1.57f);
+				Parachute = Create_Object("Soldier Powerups",Transform); //Powerups fall slower than infantry.
 				Commands->Set_Model(Parachute,"X5D_Parachute");
 				Commands->Attach_To_Object_Bone(Get_Owner(),Parachute,"Origin");
 				Commands->Create_3D_WAV_Sound_At_Bone("parachute_open.wav",Get_Owner(),"Origin");
@@ -47,7 +50,7 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 	}
 	else if (Number == 2) { //Check if landed.
 		State->Set_Jump_Transform(((SoldierGameObj*)Get_Owner())->Get_Transform()); //Reset beginning of fall to current position to prevent fall damage.
-		if (State->Get_State() != HumanStateClass::AIRBORNE) { //Landed.
+		if (Pos.Z >= LastPos.Z || State->Get_State() != HumanStateClass::AIRBORNE) { //Landed.
 			if (Parachute) {
 				Parachute->Set_Delete_Pending();
 				Commands->Create_3D_WAV_Sound_At_Bone("parachute_away.wav",Get_Owner(),"Origin");
@@ -55,6 +58,7 @@ void DAParachutesObserverClass::Timer_Expired(GameObject *obj,int Number) {
 			Set_Delete_Pending();
 		}
 		else {
+			LastPos = Pos;
 			Start_Timer(2,0.1f);
 		}
 	}
@@ -95,7 +99,7 @@ void DAParachutesGameFeatureClass::Vehicle_Exit_Event(VehicleGameObj *Vehicle,cP
 }
 
 bool DAParachutesGameFeatureClass::Parachute_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	DA::Page_Player(Player,"Your parachute will automatically deploy when you exit the appropriate vehicle. No command is needed.");
+	DA::Page_Player(Player,"Your parachute will automatically deploy when you exit a %s. No command is needed.",SingleSeat?"flying vehicle":"multi-seat flying vehicle");
 	return false;
 }
 

@@ -267,7 +267,7 @@ void DAGameManager::Settings_Loaded_Event() {
 }
 
 void DAGameManager::Player_Loaded_Event(cPlayer *Player) {
-	Update_Game_Settings();
+	//Update_Game_Settings();
 }
 
 DAGameModeFactoryClass *DAGameManager::Get_Game_Mode() {

@@ -10,7 +10,7 @@
 	Only the source code to the module(s) containing the licenced code has to be released.
 */
 //Changes made in DA:
-//Added Set_Player_Data and Set_Owner
+//Added Set_Player_Data, Set_Owner, and Get_Detonation_Mode
 //Changed Get_Owner to return a SoldierGameObj
 #ifndef TT_INCLUDE_C4GAMEOBJ_H
 #define TT_INCLUDE_C4GAMEOBJ_H
@@ -65,6 +65,8 @@ public:
 	const AmmoDefinitionClass *Get_Ammo_Def() {return AmmoDef;}
 	PlayerDataClass *Get_Player_Data() {return Player;}
 	void Set_Player_Data(PlayerDataClass *player) { Player = player; }
+	int Get_Detonation_Mode() { return DetonationMode; }
+
 };
 
 #endif

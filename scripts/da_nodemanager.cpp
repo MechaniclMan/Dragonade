@@ -18,8 +18,6 @@
 #include "da.h"
 #include "da_nodemanager.h"
 #include "da_log.h"
-#include "HashTemplateClass.h"
-#include "HashTemplateIterator.h"
 #include "GameObjManager.h"
 #include "PhysicsSceneClass.h"
 
@@ -410,35 +408,4 @@ void DANodeManagerClass::Init(const INIClass *INI) {
 	CapturePoints = INI->Get_Float(The_Game()->MapName,"NodeCapturePoints",INI->Get_Float("General","NodeCapturePoints",50.0f));
 	CaptureVeteranPoints = INI->Get_Int(The_Game()->MapName,"NodeCaptureVeteranPoints",INI->Get_Int("General","NodeCaptureVeteranPoints",3));
 	ContestedSpawnTime = (unsigned int)(INI->Get_Float(The_Game()->MapName,"NodeContestedSpawnTime",INI->Get_Float("General","NodeContestedSpawnTime",5.0f))*1000);
-
-	Register_Chat_Command((DAECC)&DANodeManagerClass::Nodes_Chat_Command,"!nodes|!node|!nodeinfo");
-}
-
-bool DANodeManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
-	HashTemplateClass<StringClass,PairClass<int,StringClass>> NodeMap[3];
-	for (int i = 0;i < Nodes.Count();i++) {
-		DABaseNodeClass *Node = Nodes[i];
-		if (!Node->Get_Name().Is_Empty()) {
-			int Team = Node->Get_Team();
-			PairClass<int,StringClass> *Pair = NodeMap[Team].Get(Node->Get_Type());
-			if (Pair) {
-				Pair->First++;
-				Pair->Second += StringFormat(", %s",Node->Get_Name());
-			}
-			else {
-				NodeMap[Team].Insert(Node->Get_Type(),PairClass<int,StringClass>(1,Node->Get_Name()));
-			}
-		}
-	}
-	int ID = Player->Get_ID();
-	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[2];it;++it) {
-		DA::Private_Color_Message(ID,WHITE,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
-	}
-	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[0];it;++it) {
-		DA::Private_Color_Message_With_Team_Color(ID,0,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
-	}
-	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[1];it;++it) {
-		DA::Private_Color_Message_With_Team_Color(ID,1,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
-	}
-	return true;
 }

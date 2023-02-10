@@ -192,18 +192,39 @@ class DAArmsDealerCrateClass : public DACrateClass {
 	virtual void Settings_Loaded() {
 		DACrateClass::Settings_Loaded();
 
-		//Weapons
+		//Add all main weapons to vector.
 		Weapons.Delete_All();
-		for (int Team = 0;Team < 2;Team++) { //Add all main weapons to vector.
+		for (int Team = 0;Team < 2;Team++) {
 			for (int Type = 0;Type < 7;Type++) {
 				PurchaseSettingsDefClass *PT = PurchaseSettingsDefClass::Find_Definition((PurchaseSettingsDefClass::TYPE)Type,(PurchaseSettingsDefClass::TEAM)Team);
 				if (PT) {
 					for (int i = 0;i < 10;i++) {
-						SoldierGameObjDef *Soldier = (SoldierGameObjDef*)Find_Definition(PT->Get_Definition(i));
-						if (Soldier && Soldier->Get_Class_ID() == CID_Soldier) {
-							WeaponDefinitionClass *Weapon = (WeaponDefinitionClass*)Find_Definition(Soldier->WeaponDefID);
+						SoldierGameObjDef *Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Definition(i));
+						if (Def && Def->Get_Class_ID() == CID_Soldier) {
+							WeaponDefinitionClass *Weapon = (WeaponDefinitionClass*)Find_Definition(Def->WeaponDefID);
 							if (Weapon) {
 								Weapons.Add(Weapon);
+							}
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,0));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Weapon = (WeaponDefinitionClass*)Find_Definition(Def->WeaponDefID);
+								if (Weapon) {
+									Weapons.Add(Weapon);
+								}
+							}
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,1));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Weapon = (WeaponDefinitionClass*)Find_Definition(Def->WeaponDefID);
+								if (Weapon) {
+									Weapons.Add(Weapon);
+								}
+							}
+							Def = (SoldierGameObjDef*)Find_Definition(PT->Get_Alt_Definition(i,2));
+							if (Def && Def->Get_Class_ID() == CID_Soldier) {
+								Weapon = (WeaponDefinitionClass*)Find_Definition(Def->WeaponDefID);
+								if (Weapon) {
+									Weapons.Add(Weapon);
+								}
 							}
 						}
 					}
@@ -213,7 +234,7 @@ class DAArmsDealerCrateClass : public DACrateClass {
 	}
 	
 	virtual bool Can_Activate(cPlayer *Player) {
-		return Weapons.Count();
+		return (Weapons.Count() && Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() < 30);
 	}
 
 	virtual void Activate(cPlayer *Player) {
@@ -232,6 +253,10 @@ Register_Crate(DAArmsDealerCrateClass,"Arms Dealer",DACrateType::INFANTRY);
 /********************************************************************************************************************************/
 
 class DADemolitionKitCrateClass : public DACrateClass {
+	virtual bool Can_Activate(cPlayer *Player) {
+		return (Find_Named_Definition("CnC_Weapon_MineTimed_Player_2Max") && Player->Get_GameObj()->Get_Weapon_Bag()->Get_Count() < 30);
+	}
+
 	virtual void Activate(cPlayer *Player) {
 		WeaponBagClass *Bag = Player->Get_GameObj()->Get_Weapon_Bag();
 		Bag->Add_Weapon("Weapon_MineProximity_Player",999);

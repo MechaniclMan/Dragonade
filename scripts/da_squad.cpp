@@ -85,14 +85,14 @@ void DASquadMemberClass::Player_Loaded() {
 }
 
 void DASquadMemberClass::Timer_Expired(int Number,unsigned int Data) {
-	if (Number == 1) {
+	/*if (Number == 1) {
 		for (int i = 0;i < Squad->Size();i++) {
 			Squad->Get_Member(i)->Update_Radar(Get_GameObj());
 		}
 	}
 	else if (Number == 2) {
 		Update_Radar();
-	}
+	}*/
 }
 
 void DASquadMemberClass::Vehicle_Enter(VehicleGameObj *Vehicle,int Seat) {

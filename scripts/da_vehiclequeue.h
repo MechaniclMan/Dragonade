@@ -20,48 +20,46 @@
 
 class DAVehicleQueueGameFeatureClass : public DAEventClass, public DAGameFeatureClass {
 private:
-	struct QueueStruct {
-		QueueStruct(cPlayer *purchaser,const VehicleGameObjDef *def,float cost) {
-			Vehicle = def;
-			Purchaser = purchaser;
-			Cost = cost;
+	struct DAVehicleQueueStruct {
+		DAVehicleQueueStruct(cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost) {
+			this->Vehicle = Vehicle;
+			this->Player = Player;
+			this->Cost = Cost;
 		};
-		cPlayer *Purchaser;
+		cPlayer *Player;
 		const VehicleGameObjDef *Vehicle;
 		float Cost;
 		
 	private:
-		QueueStruct();
+		DAVehicleQueueStruct();
 	};
 
 	virtual void Init();
 	~DAVehicleQueueGameFeatureClass();
 	virtual void Level_Loaded_Event();
-	virtual void Game_Over_Event();
 	virtual int Vehicle_Purchase_Request_Event(BaseControllerClass *Base,cPlayer *Player,float &Cost,const VehicleGameObjDef *Item);
+	virtual bool Request_Vehicle_Event(VehicleFactoryGameObj *Factory,const VehicleGameObjDef *Vehicle,cPlayer *Player,float Delay);
 	virtual void Team_Change_Event(cPlayer *Player);
 	virtual void Player_Leave_Event(cPlayer *Player);
 	virtual void Object_Created_Event(GameObject *obj);
-	virtual void Object_Destroyed_Event(GameObject *obj);
 	virtual void Kill_Event(DamageableGameObj *Victim,ArmedGameObj *Killer,float Damage,unsigned int Warhead,float Scale,DADamageType::Type Type);
 	bool VQ_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType);
 	virtual void Timer_Expired(int Number,unsigned int Team);
 
-	void Spawn_Vehicle(int Team,QueueStruct *Q);
-	void Spawn_Vehicle(int Team,cPlayer *Purchaser,const VehicleGameObjDef *Vehicle,float Cost);
+	void Spawn_Vehicle(int Team,DAVehicleQueueStruct *Q);
+	void Spawn_Vehicle(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost);
 	void Clear(int Team);
-	void Add(cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost);
+	void Add(int Team,cPlayer *Player,const VehicleGameObjDef *Vehicle,float Cost,bool Head = false);
 	bool Remove(int Team,cPlayer *Player);
 	void Send_Positions(int Team);
-	void Send_List(cPlayer *Player);
 
 	inline bool Is_Building(int Team) {
 		return Building[Team];
 	}
 	
 private:
-	QueueStruct *Building[2];
-	DynamicVectorClass<QueueStruct*> Queue[2];
+	DAVehicleQueueStruct *Building[2];
+	DynamicVectorClass<DAVehicleQueueStruct*> Queue[2];
 };
 
 #endif

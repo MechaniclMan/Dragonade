@@ -82,7 +82,7 @@ void DATeamManager::Player_Join_Event(cPlayer *Player) {
 	if (ForceTeam != -1) {
 		Player->Set_Player_Type(ForceTeam);
 	}
-	else if (!EnableFreeTeamChanging && (100.0f > Player->Get_Score() || The_Game()->Get_Game_Duration_S() <= RebalanceTime)) { //Check if this player imbalanced the teams by joining. Can be caused by a player using the team select screen on XWIS or rejoining after other players have joined and changed the team sizes.
+	else if (!EnableFreeTeamChanging && (!Player->Get_Score() || The_Game()->Get_Game_Duration_S() <= RebalanceTime)) { //Check if this player imbalanced the teams by joining. Can be caused by a player using the team select screen on XWIS or rejoining after other players have joined and changed the team sizes.
 		int TeamCount[2] = {0,0};
 		Count_Team();
 		if ((TeamCount[0]-TeamCount[1]) > 1) {
@@ -94,13 +94,6 @@ void DATeamManager::Player_Join_Event(cPlayer *Player) {
 			if (Player->Get_Player_Type() == 1) {
 				Change_Team_3(Player,0);
 			}
-		}
-	}
-	if (The_Game()->IsTeamChangingAllowed) { //Disable team changing when a new player joins so it uses the "fighting for team x" join message.
-		The_Game()->IsTeamChangingAllowed = false;
-		Update_Game_Settings();
-		if (!Is_Timer(2)) {
-			Start_Timer(2,0.1f);
 		}
 	}
 }
@@ -135,13 +128,7 @@ bool DATeamManager::Team_Change_Request_Event(cPlayer *Player) {
 }
 
 void DATeamManager::Timer_Expired(int Number,unsigned int Data) {
-	if (Number == 1) {
-		Rebalance();
-	}
-	else if (Number == 2) {
-		The_Game()->IsTeamChangingAllowed = true;
-		Update_Game_Settings();
-	}
+	Rebalance();
 }
 
 void DATeamManager::Set_Force_Team(int Team) {

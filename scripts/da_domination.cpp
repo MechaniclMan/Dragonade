@@ -24,6 +24,8 @@
 #include "PurchaseSettingsDefClass.h"
 #include "TeamPurchaseSettingsDefClass.h"
 #include "cTeam.h"
+#include "HashTemplateClass.h"
+#include "HashTemplateIterator.h"
 
 void DAControlNodeClass::Init(const INIClass *INI,const StringClass &Header) {
 	Preset = DADominationManager->Get_Control_Node_Preset();
@@ -239,6 +241,8 @@ void DADominationManagerClass::Init() {
 	Register_Object_Event(DAObjectEvent::CREATED,DAObjectEvent::PLAYER);
 	
 	Start_Timer(10,CreditTickTime,true);
+
+	Register_Chat_Command((DAECC)&DADominationManagerClass::Nodes_Chat_Command,"!nodes|!node|!score|!points|!captures|!caps|!cap|!flag|!flags");
 }
 
 void DADominationManagerClass::Settings_Loaded_Event() {
@@ -308,8 +312,8 @@ void DADominationManagerClass::Set_Winner(int Winner) {
 		}
 	}
 
-	DA::Host_Message("%ls controls %d Tiberium Node(s), %d Control Node(s), and has a score of %d.",Get_Wide_Team_Name(0),TiberiumNodeCount[0],ControlNodeCount[0],(int)Score[0]);
-	DA::Host_Message("%ls controls %d Tiberium Node(s), %d Control Node(s), and has a score of %d.",Get_Wide_Team_Name(1),TiberiumNodeCount[1],ControlNodeCount[1],(int)Score[1]);
+	DA::Host_Message("%ls controlled %d Tiberium Node(s), %d Control Node(s), and had a score of %.0f.",Get_Wide_Team_Name(0),TiberiumNodeCount[0],ControlNodeCount[0],Score[0]);
+	DA::Host_Message("%ls controlled %d Tiberium Node(s), %d Control Node(s), and had a score of %.0f.",Get_Wide_Team_Name(1),TiberiumNodeCount[1],ControlNodeCount[1],Score[1]);
 
 	Stop_Timer(10);
 	Start_Timer(11,5.0f,false,Winner?0:1);
@@ -355,11 +359,42 @@ void DADominationManagerClass::Send_Info_Message(int ID) {
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
 		DA::Private_Admin_Message(ID,"When you die you will be asked to use the Purchase Terminal to select a character to spawn as. Once selected you will spawn at either the closest node controlled by your team or your team's starting location.");
 	}
-	DA::Private_Color_Message(ID,WHITE,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to %d points wins.",(int)WinningPoints);
-	DA::Private_Admin_Message(ID,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to %d points wins.",(int)WinningPoints);
+	DA::Private_Color_Message(ID,WHITE,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to reach %.0f points wins.",WinningPoints);
+	DA::Private_Admin_Message(ID,"This is a Domination Mode match. The objective is to capture and hold Tiberium Nodes for money and Control Nodes for points. The first team to reach %.0f points wins.",WinningPoints);
 	if (DASpawnManager && DASpawnManager->Using_Waiting_Room()) {
 		DA::Private_Color_Message(ID,WHITE,"When you die you will be asked to use the Purchase Terminal to select a character to spawn as. Once selected you will spawn at either the closest node controlled by your team or your team's starting location.");
 	}
+}
+
+bool DADominationManagerClass::Nodes_Chat_Command(cPlayer *Player,const DATokenClass &Text,TextMessageEnum ChatType) {
+	HashTemplateClass<StringClass,PairClass<int,StringClass>> NodeMap[3];
+	for (int i = 0;i < DANodeManager->Get_Node_Count();i++) {
+		DABaseNodeClass *Node = DANodeManager->Get_Node(i);
+		if (!Node->Get_Name().Is_Empty()) {
+			int Team = Node->Get_Team();
+			PairClass<int,StringClass> *Pair = NodeMap[Team].Get(Node->Get_Type());
+			if (Pair) {
+				Pair->First++;
+				Pair->Second += StringFormat(", %s",Node->Get_Name());
+			}
+			else {
+				NodeMap[Team].Insert(Node->Get_Type(),PairClass<int,StringClass>(1,Node->Get_Name()));
+			}
+		}
+	}
+	int ID = Player->Get_ID();
+	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[2];it;++it) {
+		DA::Private_Color_Message(ID,WHITE,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
+	}
+	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[0];it;++it) {
+		DA::Private_Color_Message_With_Team_Color(ID,0,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
+	}
+	DA::Private_Color_Message_With_Team_Color(ID,0,"Score: %.0f/%.0f",Score[0],WinningPoints);
+	for (HashTemplateIterator<StringClass,PairClass<int,StringClass>> it = NodeMap[1];it;++it) {
+		DA::Private_Color_Message_With_Team_Color(ID,1,"%s(%d): %s",it.getKey(),it.getValue().First,it.getValue().Second);
+	}
+	DA::Private_Color_Message_With_Team_Color(ID,1,"Score: %.0f/%.0f",Score[1],WinningPoints);
+	return true;
 }
 
 Register_Game_Mode(DADominationManagerClass,"Domination","Domination","Control1_Node_X");
