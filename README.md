@@ -1,4 +1,4 @@
-Dragonade 1.9.6
+Dragonade 1.9.7
 Created by Whitedragon and Black-Cell.net
 
 Special thanks to:
@@ -25,6 +25,10 @@ Installation:
 
 
 Update History:
+
+Version: 1.9.7:
+Added virtual destructors to some classes to prevent memory leaks.
+Exported DAPlayerDataFactoryClass to prevent a warning (4275).
 
 Version: 1.9.6:
 Updated to Scripts 4.6 Update 7.
