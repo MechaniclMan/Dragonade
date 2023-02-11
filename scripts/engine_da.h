@@ -166,8 +166,6 @@ inline bool Is_Player(GameObject *obj) {
 	return (obj && obj->As_SoldierGameObj() && ((SoldierGameObj*)obj)->Get_Player_Data());
 }
 
-DA_API bool RxDMap();
-
 DA_API bool Is_Stealth_Enabled2(GameObject *obj);
 DA_API bool Is_Stealth_Unit(GameObject *obj);
 DA_API unsigned int Get_Ground_Vehicle_Count(int Team);

@@ -25,16 +25,6 @@
 #include "GameDefinition.h"
 #include "GameObjManager.h"
 
-/*
-static time_t GSA_ActiveTime;
-
-time_t GSA::Get_GSA_Activetime() 
-{
-	return GSA_ActiveTime;
-}
-*/
-
-
 void DAGameSpyGameFeatureClass::Init() {
 	StringClass IP = Long_To_IP(The_Game()->Get_Ip_Address());
 	Port = (unsigned short)DASettingsManager::Get_Int("GameSpyQueryPort",DASettingsClass("server.ini").Get_INI()->Get_Int("Server","GameSpyQueryPort",25300));
@@ -84,9 +74,6 @@ void DAGameSpyGameFeatureClass::Init() {
 		Level_Loaded_Event();
 		Timer_Expired(1,0);
 		Start_Timer(1,60.0f,true);
-		//time_t current_time;
-		//current_time = time(NULL);
-		//GSA_ActiveTime = current_time;
 	}
 }
 

@@ -65,7 +65,7 @@ Any other level loaded events
 */
 
 const char *DA::Get_Version() {
-	return "1.95";
+	return "1.97";
 }
 
 void DA::Init() {
@@ -288,8 +288,7 @@ void DA::Page_Team_Except(int Team,cPlayer *Except,const char *Format,...) {
 	}
 }
 
-void DA::Page_Player(cPlayer *Player,const char *Format,...) 
-{
+void DA::Page_Player(cPlayer *Player,const char *Format,...) {
 	int ID = Player->Get_Id();
 	char Message[256];
 	Format_String_Prefix(Message);
